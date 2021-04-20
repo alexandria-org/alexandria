@@ -32,8 +32,8 @@ char const TAG[] = "LAMBDA_ALLOC";
 
 // 5mb chunk
 #define CC_PARSER_CHUNK 1024*1024*5
-#define CC_PARSER_ZLIB_IN 1024*1024*5
-#define CC_PARSER_ZLIB_OUT 1024*1024*5
+#define CC_PARSER_ZLIB_IN 1024*16
+#define CC_PARSER_ZLIB_OUT 1024*16
 
 class CCParser {
 
@@ -54,8 +54,8 @@ private:
 	ofstream m_fout;
 
 	z_stream m_zstream; /* decompression stream */
-	char *m_z_buffer_in;
-	char *m_z_buffer_out;
+	char m_z_buffer_in[CC_PARSER_ZLIB_IN];
+	char m_z_buffer_out[CC_PARSER_ZLIB_OUT];
 
 	string next_range();
 	void handle_record_chunk(char *data, int len);
@@ -70,14 +70,10 @@ CCParser::CCParser(const Aws::S3::S3Client &s3_client, const string &bucket, con
 	m_key = key;
 	m_s3_client = s3_client;
 
-	m_z_buffer_in = new char[CC_PARSER_ZLIB_IN];
-	m_z_buffer_out = new char[CC_PARSER_ZLIB_OUT];
 	m_fout.open("output");
 }
 
 CCParser::~CCParser() {
-	delete m_z_buffer_in;
-	delete m_z_buffer_out;
 	m_fout.close();
 }
 
@@ -93,8 +89,7 @@ string CCParser::next_range() {
    the version of the library linked do not match, or Z_ERRNO if there
    is an error reading or writing the files. */
 #define CHUNK 1024
-int inf(FILE *source, FILE *dest)
-{
+int inf(FILE *source, FILE *dest) {
 	int consumed = 0, consumed_total = 0;
 	int avail_in_start;
 	int ret;
@@ -229,7 +224,7 @@ int CCParser::unzip_record(char *data, int size) {
 	int ret;
 	unsigned have;
 	z_stream strm;
-	unsigned char out[CHUNK];
+	unsigned char out[CC_PARSER_ZLIB_OUT];
 
 	if (!m_continue_inflate) {
 		m_zstream.zalloc = Z_NULL;
