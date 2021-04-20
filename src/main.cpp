@@ -51,6 +51,7 @@ private:
 	Aws::S3::S3Client m_s3_client;
 	int m_cur_offset = 0;
 	bool m_continue_inflate = false;
+	ofstream m_fout;
 
 	z_stream m_zstream; /* decompression stream */
 	char *m_z_buffer_in;
@@ -71,11 +72,13 @@ CCParser::CCParser(const Aws::S3::S3Client &s3_client, const string &bucket, con
 
 	m_z_buffer_in = new char[CC_PARSER_ZLIB_IN];
 	m_z_buffer_out = new char[CC_PARSER_ZLIB_OUT];
+	m_fout.open("output");
 }
 
 CCParser::~CCParser() {
 	delete m_z_buffer_in;
 	delete m_z_buffer_out;
+	m_fout.close();
 }
 
 string CCParser::next_range() {
@@ -186,6 +189,11 @@ string CCParser::run() {
 
 			stream.read(m_z_buffer_in, CC_PARSER_ZLIB_IN);
 
+			if (stream.gcount() == 0) {
+				cout << "Stopped because gcount was 0" << endl;
+				break;
+			}
+
 			unzip_chunk(stream.gcount());
 
 		} else {
@@ -196,9 +204,9 @@ string CCParser::run() {
 		auto elapsed = std::chrono::high_resolution_clock::now() - start;
 		auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 		cout << "offset: " << m_cur_offset << " took: " << microseconds / 1000 << " milliseconds" << endl;
-		if (m_cur_offset > 1024*1024*100) {
+		/*if (m_cur_offset > 1024*1024*100) {
 			break;
-		}
+		}*/
 	}
 
 	auto total_elapsed = std::chrono::high_resolution_clock::now() - total_start;
@@ -208,6 +216,7 @@ string CCParser::run() {
 }
 
 void CCParser::handle_record_chunk(char *data, int len) {
+	m_fout << string(data, len);
 	//cout << string(data, len);
 }
 
@@ -314,41 +323,6 @@ void CCParser::unzip_chunk(int bytes_in) {
 		len -= consumed;
 		consumed_total += consumed;
 	}
-
-	/*
-	int ret, bytes_out;
-
-	m_zstream.next_in = (unsigned char *)m_z_buffer_in;
-	m_zstream.avail_in = bytes_in;
-	do {
-		m_zstream.avail_out = CC_PARSER_ZLIB_OUT;
-		cout << "avail_out: " << m_zstream.avail_out << endl;
-		m_zstream.next_out = (unsigned char *)m_z_buffer_out;
-		ret = inflate(&m_zstream, Z_SYNC_FLUSH);
-
-		switch (ret) {
-			case Z_NEED_DICT:
-				ret = Z_DATA_ERROR;
-			case Z_DATA_ERROR:
-				cout << "Z_DATA_ERROR" << endl;
-				break;
-			case Z_MEM_ERROR:
-				cout << "Z_MEM_ERROR" << endl;
-				break;
-			case Z_STREAM_END:
-				cout << "Z_STREAM_END" << endl;
-				break;
-		}
-
-		bytes_out = CC_PARSER_ZLIB_OUT - m_zstream.avail_out;
-
-		handle_chunk(m_z_buffer_out, bytes_out);
-
-		cout << "avail_out: " << m_zstream.avail_out << endl;
-
-	} while (m_zstream.avail_out == 0);
-	*/
-
 }
 
 void CCParser::handle_chunk(const char *buffer, int len) {
@@ -357,8 +331,7 @@ void CCParser::handle_chunk(const char *buffer, int len) {
 	//printf("%.*s", len, buffer);
 }
 
-static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client)
-{
+static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client) {
 	using namespace Aws::Utils::Json;
 	JsonValue json(req.payload);
 	if (!json.WasParseSuccessful()) {
@@ -383,8 +356,7 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 	return invocation_response::success("We did it! Response: " + response, "application/base64");
 }
 
-std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory()
-{
+std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory() {
 	return [] {
 		return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
 			"console_logger", Aws::Utils::Logging::LogLevel::Info);
@@ -433,14 +405,12 @@ int main(int argc, const char **argv) {
 	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
 	Aws::InitAPI(options);
 
-	run_lambda_handler();
+	//run_lambda_handler();
 
-	/*
 	Aws::Client::ClientConfiguration clientConfig;
 	clientConfig.region = "us-east-1";
 	CCParser parser(Aws::S3::S3Client(clientConfig), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178361510.12/warc/CC-MAIN-20210228145113-20210228175113-00135.warc.gz");
 	cout << parser.run();
-	*/
 
 	Aws::ShutdownAPI(options);
 

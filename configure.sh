@@ -1,18 +1,22 @@
 #!/bin/bash
 
-cd `dirname $0`
+apt-get install libcurl4-openssl-dev
 
-#mkdir -p deps
-#cd deps
-#rm -rf ./*
-#git clone https://github.com/awslabs/aws-lambda-cpp.git
-#cd aws-lambda-cpp
-#mkdir build
-#cd build
-#cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../out
-#make && make install
+rel_path=`dirname $0`
+base_path=`realpath $rel_path`
+cd $base_path
 
-cd `dirname $0`
+mkdir -p deps
+cd deps
+rm -rf ./*
+git clone https://github.com/awslabs/aws-lambda-cpp.git
+cd aws-lambda-cpp
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../out
+make && make install
+
+cd $base_path
 cd deps
 
 git clone https://github.com/aws/aws-sdk-cpp.git
