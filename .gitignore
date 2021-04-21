@@ -1,7 +1,10 @@
 
 deps/*
+src/*.o
+tests/*.o
 cc_parser.zip
 cc_parser
+run_tests
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
