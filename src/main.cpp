@@ -33,7 +33,6 @@ namespace io = boost::iostreams;
 
 char const TAG[] = "LAMBDA_ALLOC";
 
-// 5mb chunk
 #define RUN_ON_LAMBDA 1
 //#define CC_PARSER_CHUNK 1024*1024*8
 #define CC_PARSER_CHUNK 0
@@ -51,6 +50,8 @@ public:
 
 private:
 
+	const vector<string> m_tlds = {"se", "com", "nu", "net", "org", "gov", "edu", "info"};
+
 	string m_bucket;
 	string m_key;
 	Aws::S3::S3Client m_s3_client;
@@ -60,8 +61,6 @@ private:
 	string m_links;
 	HtmlParser m_html_parser;
 
-	//char m_z_buffer_in[CC_PARSER_ZLIB_IN];
-	//char m_z_buffer_out[CC_PARSER_ZLIB_OUT];
 	char *m_z_buffer_in;
 	char *m_z_buffer_out;
 
@@ -73,9 +72,11 @@ private:
 	void handle_chunk(const char *buffer, int len);
 
 	void handle_record_chunk(char *data, int len);
+	void parse_record(const string &record, const string &url);
 	string get_warc_record(const string &record, const string &key, int &offset);
 
 	void upload_result();
+	void upload_links();
 
 };
 
@@ -157,9 +158,9 @@ string CCParser::run() {
 		auto elapsed = std::chrono::high_resolution_clock::now() - start;
 		auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 		cout << "offset: " << m_cur_offset << " took: " << microseconds / 1000 << " milliseconds" << endl;
-		/*if (m_cur_offset > 1024*1024*50) {
+		if (m_cur_offset > 1024*1024*100) {
 			break;
-		}*/
+		}
 		if (!CC_PARSER_CHUNK) {
 			break;
 		}
@@ -169,6 +170,7 @@ string CCParser::run() {
 	auto total_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(total_elapsed).count();
 
 	upload_result();
+	upload_links();
 
 	return string("We read ") + to_string(m_cur_offset) + " bytes in total of " + to_string(total_microseconds / 1000) + "ms";
 }
@@ -313,26 +315,52 @@ void CCParser::handle_record_chunk(char *data, int len) {
 	const string type = get_warc_record(record, "WARC-Type: ", type_offset);
 
 	if (type == "response") {
-		const string url = get_warc_record(record, "WARC-Target-URI:", uri_offset);
+		const string url = get_warc_record(record, "WARC-Target-URI: ", uri_offset);
+		const string tld = m_html_parser.url_tld(url);
+		if (find(m_tlds.begin(), m_tlds.end(), tld) != m_tlds.end()) {
 
-		m_html_parser.parse(record);
+			parse_record(record, url);
 
+		}
+	}
+
+}
+
+void CCParser::parse_record(const string &record, const string &url) {
+
+	m_html_parser.parse(record, url);
+
+	if (m_html_parser.should_insert()) {
 		m_result += (url
 			+ '\t' + m_html_parser.title()
 			+ '\t' + m_html_parser.h1()
 			+ '\t' + m_html_parser.meta()
 			+ '\t' + m_html_parser.text()
 			+ '\n');
-		for (const auto link : m_html_parser.links(record)) {
-			m_links += (url
-				+ '\t' + link.m_url
-				+ '\t' + url
-				+ '\t' + link.m_text
-				+ '\t' + link.m_rel
+		for (const auto &link : m_html_parser.links()) {
+			m_links += (link.host()
+				+ '\t' + link.path()
+				+ '\t' + link.target_host()
+				+ '\t' + link.target_path()
+				+ '\t' + link.text()
 				+ '\n');
 		}
 	}
-
+	//cout << m_links << endl;
+	//if (m_html_parser.links().size() > 100) {
+		/*if (url == "http://store.chessgames.com/chess-books/chess-notation-type/an---algebraic/author/s/alexander-cherniaev-anatoly-karpov-joe-gallagher-joel-r.-steed-miguel-a.-sanchez-richard-obrien/hardware-requirements/windows.html") {
+			cout << record << endl;
+		}
+		cout << url << endl;
+		cout << "link array size: " << m_html_parser.links().size() << endl;*/
+		//cout << "result size is: " << m_result.size() << endl;
+		//cout << "links  size is: " << m_links.size() << endl;
+		/*
+		if (url == "http://store.chessgames.com/chess-books/chess-notation-type/an---algebraic/author/s/alexander-cherniaev-anatoly-karpov-joe-gallagher-joel-r.-steed-miguel-a.-sanchez-richard-obrien/hardware-requirements/windows.html") {
+			exit(0);
+		}*/
+	//}
+	//exit(0);
 }
 
 string CCParser::get_warc_record(const string &record, const string &key, int &offset) {
@@ -349,7 +377,9 @@ void CCParser::upload_result() {
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket("commoncrawl-output");
-	request.SetKey(m_key);
+	string key = m_key;
+	key.replace(key.find(".warc.gz"), 8, string(".gz"));
+	request.SetKey(key);
 
 	stringstream ss;
 	ss << m_result;
@@ -375,6 +405,37 @@ void CCParser::upload_result() {
 	}
 }
 
+void CCParser::upload_links() {
+
+	Aws::S3::Model::PutObjectRequest request;
+	request.SetBucket("commoncrawl-output");
+	string key = m_key;
+	key.replace(key.find(".warc.gz"), 8, string(".links.gz"));
+	request.SetKey(key);
+
+	stringstream ss;
+	ss << m_links;
+
+	filtering_istream in;
+	in.push(gzip_compressor());
+	in.push(ss);
+
+	std::shared_ptr<Aws::StringStream> request_body = Aws::MakeShared<Aws::StringStream>("");
+	*request_body << in.rdbuf();
+	request.SetBody(request_body);
+
+	Aws::S3::Model::PutObjectOutcome outcome = m_s3_client.PutObject(request);
+
+	if (outcome.IsSuccess()) {
+
+	    std::cout << "Added object '" << m_key << "' to bucket '"
+	        << "commoncrawl-output" << "'.";
+	} else {
+	    std::cout << "Error: PutObject: " <<
+	        outcome.GetError().GetMessage() << std::endl;
+
+	}
+}
 
 static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client) {
 	using namespace Aws::Utils::Json;

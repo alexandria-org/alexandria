@@ -169,7 +169,7 @@ static const char *const NAMED_ENTITIES[][2] = {
 	{ "minus;", "−" },
 	{ "mu;", "μ" },
 	{ "nabla;", "∇" },
-	{ "nbsp;", "\xC2\xA0" },
+	{ "nbsp;", " " },
 	{ "ndash;", "–" },
 	{ "ne;", "≠" },
 	{ "ni;", "∋" },
