@@ -52,6 +52,7 @@ int test1_2(void) {
 	ok = ok && parser.h1() == "Resebyrån Främmande Världar - inbunden, Svenska, 2021";
 
 	ok = ok && parser.text() == "";
+	ok = ok && parser.should_insert();
 
 	/*auto time_start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < 40000; i++) {
@@ -83,23 +84,26 @@ int test1_2(void) {
 	ok = ok && parser.title() == "Corona – samlad information för privatpersoner | Skatteverket";
 	ok = ok && parser.h1() == "Corona – information för privatpersoner";
 	ok = ok && parser.meta() == "Här har vi samlat information för privatpersoner som påverkas av corona på olika sätt";
+	ok = ok && parser.should_insert();
 
 	string stackoverflow_html = read_test_file("stackoverflow.html");
 	parser.parse(stackoverflow_html);
 	ok = ok && parser.title() == "node.js - How to use Async and Await with AWS SDK Javascript - Stack Overflow";
 	ok = ok && parser.h1() == "How to use Async and Await with AWS SDK Javascript";
 	ok = ok && parser.meta() == "I am working with the AWS SDK using the KMS libary. I would like to use async and await instead of callbacks. import AWS, { KMS } from \"aws-sdk\"; this.kms = new AWS.KMS(); const key = await this";
+	ok = ok && parser.should_insert();
 
 	html = read_test_file("hallakonsument.html");
 	parser.parse(html, "https://www.hallakonsument.se/konsumentratt-kopsatt/innan-du-tar-ett-lan/");
 	ok = ok && parser.title() == "Innan du tar ett lån | Hallå konsument – Konsumentverket";
 	ok = ok && parser.h1() == "Innan du tar ett lån";
 	ok = ok && parser.meta() == "Om du har ett behov av att låna pengar är det viktigt att läsa på om vilken typ av lån som passar dig. Prata med flera banker, jämför villkoren och kostnaderna för olika lån";
+	ok = ok && parser.should_insert();
 
 	links = parser.links();
 	bool found_link = false;
 	for (const auto &link : links) {
-		if (link.target_host() == "www.konsumenternas.se" &&
+		if (link.target_host() == "konsumenternas.se" &&
 			link.target_path() == "/lan--betalningar/lan/sa-fungerar-ett-lan/forhandsinformation/" &&
 			link.text() == "Läs mer om förhandsinformation på webbplatsen konsumenternas.se") {
 			found_link = true;
@@ -113,6 +117,7 @@ int test1_2(void) {
 	ok = ok && parser.title() == "Lån";
 	ok = ok && parser.h1() == "Lån";
 	ok = ok && parser.meta() == "Att låna pengar kan vara ett sätt att finansiera något som du behöver eller gärna vill köpa, men inte har råd att betala direkt. Men ett lån kostar pengar i form av avgifter och räntor";
+	ok = ok && parser.should_insert();
 
 	links = parser.links();
 	found_link = false;
@@ -130,6 +135,7 @@ int test1_2(void) {
 	ok = ok && parser.title() == "Privatlån - låna pengar till bra ränta - SBAB";
 	ok = ok && parser.h1() == "Privatlån – låna pengar till bra ränta";
 	ok = ok && parser.meta() == "Ansök om ett privatlån mellan 30 000 och 500 000 kronor. Låna pengar utan säkerhet. Ansök och få besked direkt";
+	ok = ok && parser.should_insert();
 
 	links = parser.links();
 	found_link = false;
@@ -147,11 +153,12 @@ int test1_2(void) {
 	ok = ok && parser.title() == "Fem tips om ekonomin förändras | Kronofogden";
 	ok = ok && parser.h1() == "Fem tips om ekonomin förändras";
 	ok = ok && parser.meta() == "";
+	ok = ok && parser.should_insert();
 
 	links = parser.links();
 	found_link = false;
 	for (const auto &link : links) {
-		if (link.target_host() == "www.hallakonsument.se" &&
+		if (link.target_host() == "hallakonsument.se" &&
 			link.target_path() == "/" &&
 			link.text() == "Välkommen till Hallå konsument") {
 			found_link = true;
@@ -164,6 +171,7 @@ int test1_2(void) {
 	ok = ok && parser.title() == "Budget- och skuldrådgivning hos Konsument Uppsala - Uppsala kommun";
 	ok = ok && parser.h1() == "Budget- och skuldrådgivning hos Konsument Uppsala";
 	ok = ok && parser.meta() == "Om du vill göra din egen hushållsbudget, vill ha ekonomisk rådgivning eller har skulder och inte får pengarna att räcka till kan du vända dig till Konsument Uppsala. ";
+	ok = ok && parser.should_insert();
 
 	links = parser.links();
 	found_link = false;
@@ -183,6 +191,24 @@ int test1_2(void) {
 	ok = ok && parser.meta() == "Shop for Chess Books at US Chess Federation Sales. We offer the widest selection of Chess Books at the lowest prices with same-day shipping.Windows, AN - Algebraic, Alexander Cherniaev, Anatoly Karpov, Joe Gallagher, Joel R. Steed, Miguel A. Sanchez and Richard O'Brien";
 
 	ok = ok && parser.links().size() == 0;
+	ok = ok && parser.should_insert();
+
+	html = read_test_file("acomesf.org");
+	parser.parse(html, "http://acomesf.org/download/42104960-3er-congreso-acomesf/");
+	ok = ok && parser.title() == "42104960 3er Congreso ACOMESF | Asociación Colombiana de Médicos Especialistas en Salud Familiar (ACOMESF";
+	ok = ok && parser.h1() == "42104960 3er Congreso ACOMESF";
+	ok = ok && parser.meta() == "";
+	ok = ok && parser.should_insert();
+
+	html = read_test_file("automobileszone.com");
+	parser.parse(html, "http://automobileszone.com/wp-login.php?redirect_to=http%3A%2F%2Fautomobileszone.com%2Fbest-bronco-build-off-our-editors-weigh-in-on-their-ideal-suvs%2F");
+	ok = ok && parser.text() == "Username or Email Address Password Remember Me Lost your password? ← Back to Automobiles Zone Log in with WordPress.com";
+	ok = ok && parser.should_insert();
+
+	html = read_test_file("vcareprojectmanagement.com");
+	parser.parse(html, "https://vcareprojectmanagement.com/products/project-manager-project-management-certification-pmi-atp-authorised-training-provider-pmp-capm-2021-online-training-course-class");
+	ok = ok && parser.h1() == "";
+	ok = ok && parser.text() == "";
 
 	// Test this one: https://www.printingbusinessdirectory.com/company/807554/print-science
 

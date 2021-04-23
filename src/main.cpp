@@ -34,8 +34,8 @@ namespace io = boost::iostreams;
 char const TAG[] = "LAMBDA_ALLOC";
 
 #define RUN_ON_LAMBDA 1
-//#define CC_PARSER_CHUNK 1024*1024*8
-#define CC_PARSER_CHUNK 0
+#define CC_PARSER_CHUNK 1024*1024*50
+//#define CC_PARSER_CHUNK 0
 #define CC_PARSER_ZLIB_IN 1024*1024*16
 #define CC_PARSER_ZLIB_OUT 1024*1024*16
 
@@ -46,7 +46,7 @@ public:
 	CCParser(const Aws::S3::S3Client &s3_client, const string &bucket, const string &key);
 	~CCParser();
 
-	string run();
+	bool run(string &response);
 
 private:
 
@@ -99,7 +99,7 @@ string CCParser::next_range() {
 	return ret;
 }
 
-string CCParser::run() {
+bool CCParser::run(string &response) {
 
 	Aws::S3::Model::GetObjectRequest request;
 	request.SetBucket(m_bucket);
@@ -123,7 +123,23 @@ string CCParser::run() {
 			m_cur_offset += CC_PARSER_CHUNK;
 
 			auto &stream = outcome.GetResultWithOwnership().GetBody();
+			stream.seekg(0, stream.end);
+			int length = stream.tellg();
 			stream.seekg(0, stream.beg);
+
+			cout << "Got stream with " << length << " bytes" << endl;
+
+			if (stream.bad()) {
+				cout << "Badbit was set" << endl;
+				return false;
+			}
+			if (stream.fail()) {
+				cout << "Failbit was set" << endl;
+				return false;
+			}
+			if (stream.eof()) {
+				cout << "Eofbit was set" << endl;
+			}
 
 			
 			int total_bytes_read = 0;
@@ -158,9 +174,9 @@ string CCParser::run() {
 		auto elapsed = std::chrono::high_resolution_clock::now() - start;
 		auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 		cout << "offset: " << m_cur_offset << " took: " << microseconds / 1000 << " milliseconds" << endl;
-		if (m_cur_offset > 1024*1024*100) {
+		/*if (m_cur_offset > 1024*1024*100) {
 			break;
-		}
+		}*/
 		if (!CC_PARSER_CHUNK) {
 			break;
 		}
@@ -172,7 +188,9 @@ string CCParser::run() {
 	upload_result();
 	upload_links();
 
-	return string("We read ") + to_string(m_cur_offset) + " bytes in total of " + to_string(total_microseconds / 1000) + "ms";
+	response = string("We read ") + to_string(m_cur_offset) + " bytes in total of " + to_string(total_microseconds / 1000) + "ms";
+
+	return true;
 }
 
 int CCParser::unzip_record(char *data, int size) {
@@ -458,7 +476,14 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 
 	// Internal execution about 70 seconds...
 	CCParser parser(client, bucket, key);
-	string response = parser.run();
+	string response;
+
+	for (int retry = 1; retry <= 1; retry++) {
+		if (parser.run(response)) {
+			break;
+		}
+		cout << "Retry " << retry << endl;
+	}
 
 	return invocation_response::success("We did it! Response: " + response, "application/json");
 }
@@ -466,7 +491,7 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory() {
 	return [] {
 		return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-			"console_logger", Aws::Utils::Logging::LogLevel::Info);
+			"console_logger", Aws::Utils::Logging::LogLevel::Warn);
 	};
 }
 
@@ -494,7 +519,7 @@ Aws::Client::ClientConfiguration getS3ConfigWithBundle() {
 
 void run_lambda_handler() {
 
-	Aws::S3::S3Client client(getS3ConfigWithBundle());
+	Aws::S3::S3Client client(getS3Config());
 	auto handler_fn = [&client](aws::lambda_runtime::invocation_request const& req) {
 		return my_handler(req, client);
 	};
@@ -504,15 +529,23 @@ void run_lambda_handler() {
 int main(int argc, const char **argv) {
 
 	Aws::SDKOptions options;
-	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Info;
+	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Warn;
 	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
 	Aws::InitAPI(options);
 
 	if (RUN_ON_LAMBDA) {
 		run_lambda_handler();
 	} else {
-		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178361510.12/warc/CC-MAIN-20210228145113-20210228175113-00135.warc.gz");
-		cout << parser.run();
+		//CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178361510.12/warc/CC-MAIN-20210228145113-20210228175113-00135.warc.gz");
+		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178362513.50/warc/CC-MAIN-20210301121225-20210301151225-00040.warc.gz");
+		string response;
+		for (int retry = 1; retry <= 1; retry++) {
+			if (parser.run(response)) {
+				break;
+			}
+			cout << "Retry " << retry << endl;
+		}
+		cout << response << endl;
 	}
 
 	Aws::ShutdownAPI(options);

@@ -48,13 +48,20 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_invisible_pos.clear();
 	m_links.clear();
 
+	parse_encoding(html);
+	if (m_encoding == ENC_UNKNOWN) {
+		m_should_insert = false;
+		return;
+	}
+
 	find_scripts(html);
 	find_styles(html);
+	sort_invisible();
 	find_links(html);
 
 	m_title = get_tag_content(html, "<title", "</title>");
 	clean_text(m_title);
-	if (m_title.size() == 0 || is_exotic_language(m_title)) return;
+	if (m_title.size() == 0 || is_exotic_language(m_title) || m_title.size() > HTML_PARSER_MAX_TITLE_LEN) return;
 
 	m_should_insert = true;
 
@@ -62,9 +69,21 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_meta = get_meta_tag(html);
 	m_text = get_text_after_h1(html);
 
+	if (m_encoding == ENC_ISO_8859_1) {
+		iso_to_utf8(m_title);
+		iso_to_utf8(m_h1);
+		iso_to_utf8(m_meta);
+		iso_to_utf8(m_text);
+	}
+
 	clean_text(m_h1);
 	clean_text(m_meta);
 	clean_text(m_text);
+
+	if (m_h1.size() > HTML_PARSER_MAX_H1_LEN) {
+		m_should_insert = false;
+		return;
+	}
 
 	/*m_title.resize(HTML_PARSER_SHORT_TEXT_LEN);
 	m_h1.resize(HTML_PARSER_SHORT_TEXT_LEN);
@@ -103,6 +122,7 @@ void HtmlParser::find_links(const string &html) {
 		if (tag.second == string::npos) {
 			break;
 		}
+
 		parse_link(html.substr(tag.first, tag.second - tag.first));
 	}
 }
@@ -127,6 +147,10 @@ int HtmlParser::parse_link(const string &link) {
 	if (content_start == string::npos) return CC_ERROR;
 	const size_t content_end = link.find("</a>", content_start);
 	string content = link.substr(content_start, content_end - content_start);
+
+	if (m_encoding == ENC_ISO_8859_1) {
+		iso_to_utf8(content);
+	}
 	clean_text(content);
 
 	if (content == "") return CC_ERROR;
@@ -152,6 +176,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path) {
 	uc = curl_url_get(h, CURLUPART_HOST, &chost, 0);
 	if (!uc) {
 		host = chost;
+		remove_www(host);
 		curl_free(chost);
 	}
 
@@ -182,6 +207,43 @@ int HtmlParser::parse_url(const string &url, string &host, string &path) {
 	curl_url_cleanup(h);
 
 	return CC_OK;
+}
+
+inline void HtmlParser::remove_www(string &path) {
+	size_t pos = path.find("www.");
+	if (pos == 0) path.erase(0, 4);
+	trim(path);
+}
+
+void HtmlParser::parse_encoding(const string &html) {
+	m_encoding = ENC_UTF_8;
+	const size_t pos_start = html.find("charset=");
+	if (pos_start == string::npos || pos_start > 1024) return;
+
+	string encoding = html.substr(pos_start, 40);
+	encoding = lower_case(encoding);
+
+	const size_t utf8_start = encoding.find("utf-8");
+	const size_t iso88591_start = encoding.find("iso-8859-1");
+	if (utf8_start != string::npos) m_encoding = ENC_UTF_8;
+	else if (iso88591_start != string::npos) m_encoding = ENC_ISO_8859_1;
+	else m_encoding = ENC_UNKNOWN;
+}
+
+void HtmlParser::iso_to_utf8(string &str) {
+	string str_out;
+	for (std::string::iterator it = str.begin(); it != str.end(); ++it)
+	{
+		uint8_t ch = *it;
+		if (ch < 0x80) {
+			str_out.push_back(ch);
+		}
+		else {
+			str_out.push_back(0xc0 | ch >> 6);
+			str_out.push_back(0x80 | (ch & 0x3f));
+		}
+	}
+	str = str_out;
 }
 
 string HtmlParser::title() {
@@ -258,7 +320,7 @@ inline pair<size_t, size_t> HtmlParser::find_tag(const string &html, const strin
 
 inline string HtmlParser::get_tag_content(const string &html, const string &tag_start, const string &tag_end) {
 	size_t pos_start = html.find(tag_start);
-	if (pos_start == string::npos) return "";
+	if (pos_start == string::npos || is_invisible(pos_start)) return "";
 	pos_start = html.find(">", pos_start);
 
 	const size_t pos_end = html.find(tag_end, pos_start);
@@ -269,13 +331,16 @@ inline string HtmlParser::get_tag_content(const string &html, const string &tag_
 
 inline string HtmlParser::get_meta_tag(const string &html) {
 	const size_t pos_start = html.find("<meta");
-	const size_t pos_end = html.find("description\"", pos_start);
-	const size_t pos_end_tag = html.find(">", pos_end);
-	if (pos_start == string::npos || pos_end == string::npos || pos_end_tag == string::npos) return "";
-
+	const size_t pos_description = html.find("description\"", pos_start);
+	const size_t pos_end_tag = html.find(">", pos_description);
+	const size_t pos_start_tag = html.rfind("<", pos_description);
+	if (pos_start == string::npos || pos_description == string::npos || pos_end_tag == string::npos ||
+		pos_start_tag == string::npos) return "";
+	
 	const string s = "content=";
-	const size_t content_start = html.rfind(s, pos_end_tag);
+	const size_t content_start = html.find(s, pos_start_tag);
 	if (content_start == string::npos) return "";
+	if (content_start > pos_end_tag) return "";
 
 	return (string)html.substr(content_start + s.size(), pos_end_tag - content_start - s.size() - 1);
 }
@@ -333,7 +398,7 @@ inline void HtmlParser::strip_whitespace(string &html) {
 inline string HtmlParser::get_text_after_h1(const string &html) {
 	const size_t pos_start = html.find("</h1>");
 
-	if (pos_start == string::npos) return "";
+	if (pos_start == string::npos || is_invisible(pos_start)) return "";
 
 	const int len = html.size();
 	bool copy = true;
@@ -353,7 +418,7 @@ inline string HtmlParser::get_text_after_h1(const string &html) {
 		if (html_s[i] == '<') {
 			if (interval != invisible_end && interval->first == i) {
 				// Skip the whole invisible tag.
-				i = interval->second;
+				i = interval->second - 1;
 				interval++;
 				continue;
 			}
@@ -441,6 +506,19 @@ bool HtmlParser::is_exotic_language(const string &str) const {
 	if (total <= 3) return false;
 	if ((float)(num_seminormal + num_exotic) / ((float)total) > 0.5) return true;
 
+	return false;
+}
+
+void HtmlParser::sort_invisible() {
+	sort(m_invisible_pos.begin(), m_invisible_pos.end(), [](const pair<int, int>& lhs, const pair<int, int>& rhs) {
+		return lhs.first < rhs.first;
+	});
+}
+
+inline bool HtmlParser::is_invisible(size_t pos) {
+	for (const auto &interval : m_invisible_pos) {
+		if (interval.first <= pos && pos <= interval.second) return true;
+	}
 	return false;
 }
 
