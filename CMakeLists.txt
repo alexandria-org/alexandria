@@ -11,10 +11,13 @@ find_package(ZLIB)
 
 include_directories(src/)
 
-add_executable(${PROJECT_NAME} "src/main.cpp" "src/entities.cpp" "src/HtmlParser.cpp")
-add_executable(run_tests "tests/test.cpp" "tests/test1.cpp" "src/entities.cpp" "src/HtmlParser.cpp")
+add_executable(${PROJECT_NAME} "src/main.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
+add_executable(run_tests "tests/test.cpp" "tests/test1.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
+	AWS::aws-lambda-runtime 
+	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+target_link_libraries(run_tests PUBLIC
 	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 

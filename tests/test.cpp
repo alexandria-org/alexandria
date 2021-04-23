@@ -1,10 +1,19 @@
 
-#include <iostream>
-#include <stdlib.h>
-
 #include "test1.h"
 
-using namespace std;
+string read_test_file(const string &file_name) {
+	ifstream file("tests/data/" + file_name);
+	if (file.is_open()) {
+		string ret;
+		file.seekg(0, ios::end);
+		ret.resize(file.tellg());
+		file.seekg(0, ios::beg);
+		file.read(&ret[0], ret.size());
+		file.close();
+		return ret;
+	}
+	return "";
+}
 
 int main(void) {
 
@@ -12,11 +21,13 @@ int main(void) {
 
 	int numSuites = 1;
 	int numTestsInSuite [] = {
-		1
+		3
 	};
 
 	int (* testSuite1 [])() = {
 		test1_1,
+		test1_2,
+		test1_3,
 	};
 
 	/*int (* testSuite2 [])() = {
