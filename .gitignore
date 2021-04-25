@@ -14,3 +14,4 @@ CMakeScripts
 Makefile
 cmake_install.cmake
 warc.paths
+.vscode

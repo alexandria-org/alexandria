@@ -20,7 +20,7 @@ int main(void) {
 
 	cout << "Running static tests" << endl;
 
-	int numSuites = 1;
+	int numSuites = 2;
 	int numTestsInSuite [] = {
 		3,
 		1,

@@ -6,25 +6,6 @@
 const vector<string> non_content_tags{"script", "noscript", "style", "embed", "label", "form", "input",
 	"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 
-// trim from start (in place)
-void ltrim(string &s) {
-	s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
-		return !isspace(ch) && !ispunct(ch);
-	}));
-}
-
-// trim from end (in place)
-void rtrim(string &s) {
-	s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-		return !isspace(ch) && !ispunct(ch);
-	}).base(), s.end());
-}
-
-void trim(string &s) {
-	ltrim(s);
-	rtrim(s);
-}
-
 HtmlParser::HtmlParser() {
 }
 
@@ -299,12 +280,6 @@ string HtmlParser::url_tld(const string &url) {
 	curl_url_cleanup(h);
 
 	return response;
-}
-
-inline string HtmlParser::lower_case(const string &str) {
-	string ret = str;
-	transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c){ return tolower(c); });
-	return ret;
 }
 
 inline pair<size_t, size_t> HtmlParser::find_tag(const string &html, const string &tag_start, const string &tag_end,
