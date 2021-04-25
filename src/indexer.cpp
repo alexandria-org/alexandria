@@ -19,13 +19,9 @@
 #include "zlib.h"
 #include <unistd.h>
 
-#include <fstream>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
+#include "CCIndex.h"
 
 using namespace std;
-using namespace boost::iostreams;
 using namespace aws::lambda_runtime;
 
 namespace io = boost::iostreams;
@@ -33,10 +29,6 @@ namespace io = boost::iostreams;
 char const TAG[] = "LAMBDA_ALLOC";
 
 #define RUN_ON_LAMBDA 0
-#define CC_PARSER_CHUNK 1024*1024*50
-//#define CC_PARSER_CHUNK 0
-#define CC_PARSER_ZLIB_IN 1024*1024*16
-#define CC_PARSER_ZLIB_OUT 1024*1024*16
 
 class CCIndexer {
 
@@ -54,18 +46,12 @@ private:
 	string m_link_key;
 	Aws::S3::S3Client m_s3_client;
 
-	char *m_z_buffer_in;
-	char *m_z_buffer_out;
+	filtering_ostream m_zstream; /* decompression stream */
 
-	z_stream m_zstream; /* decompression stream */
+	CCIndex m_index1;
+	CCIndex m_index2;
 
-	string download_file(const string &key);
-	int unzip_record(char *data, int size);
-	int unzip_chunk(int bytes_in);
-
-	void handle_record_chunk(char *data, int len);
-	void parse_record(const string &record, const string &url);
-	string get_warc_record(const string &record, const string &key, int &offset);
+	void download_file(const string &key, CCIndex &index);
 
 };
 
@@ -79,28 +65,20 @@ CCIndexer::CCIndexer(const Aws::S3::S3Client &s3_client, const string &bucket, c
 	m_link_key.replace(key.find(".warc.gz"), 8, ".links.gz");
 	m_s3_client = s3_client;
 
-	m_z_buffer_in = new char[CC_PARSER_ZLIB_IN];
-	m_z_buffer_out = new char[CC_PARSER_ZLIB_OUT];
 }
 
 CCIndexer::~CCIndexer() {
-	delete m_z_buffer_in;
-	delete m_z_buffer_out;
 }
 
 bool CCIndexer::run(string &response) {
-	auto total_start = std::chrono::high_resolution_clock::now();
 
-	string file1 = download_file(m_key);
-	string file2 = download_file(m_link_key);
-
-	cout << file1.substr(0, 10000) << endl;
-	//cout << file2.substr(0, 100) << endl;
+	download_file(m_key, m_index1);
+	download_file(m_link_key, m_index2);
 
 	return true;
 }
 
-string CCIndexer::download_file(const string &key) {
+void CCIndexer::download_file(const string &key, CCIndex &index) {
 
 	Aws::S3::Model::GetObjectRequest request;
 	request.SetBucket(m_bucket);
@@ -111,147 +89,10 @@ string CCIndexer::download_file(const string &key) {
 	if (outcome.IsSuccess()) {
 
 		auto &stream = outcome.GetResultWithOwnership().GetBody();
-		int total_bytes_read = 0;
-		while (stream.good()) {
-			stream.read(m_z_buffer_in, CC_PARSER_ZLIB_IN);
+		index.read_stream(stream);
 
-			auto bytes_read = stream.gcount();
-			total_bytes_read += bytes_read;
-
-			if (bytes_read > 0) {
-				if (unzip_chunk(bytes_read) < 0) {
-					return "";
-				}
-			}
-		}
 	}
 
-	return string(m_z_buffer_out);
-}
-
-int CCIndexer::unzip_record(char *data, int size) {
-
-	/*
-	    data is:
-	    #|------------------|-----|------------------------|--|----#-------|
-	     |doc_a______________doc_b_doc_c_____|
-	                         CC_PARSER_ZLIB_IN
-	     |_________________________________________________________|
-	                                                           size
-	*/
-
-	int data_size = size;
-	int consumed = 0, consumed_total = 0;
-	int avail_in_before_inflate;
-	int ret;
-	unsigned have;
-	z_stream strm;
-
-	m_zstream.zalloc = Z_NULL;
-	m_zstream.zfree = Z_NULL;
-	m_zstream.opaque = Z_NULL;
-
-	m_zstream.avail_in = 0;
-	m_zstream.next_in = Z_NULL;
-
-	int err = inflateInit2(&m_zstream, 16);
-	if (err != Z_OK) {
-		cout << "zlib error" << endl;
-	}
-
-	/* decompress until deflate stream ends or end of file */
-	do {
-
-		m_zstream.next_in = (unsigned char *)(data + consumed_total);
-
-		m_zstream.avail_in = min(CC_PARSER_ZLIB_IN, data_size);
-
-		if (m_zstream.avail_in == 0)
-			break;
-
-		/* run inflate() on input until output buffer not full */
-		do {
-
-			m_zstream.avail_out = CC_PARSER_ZLIB_OUT;
-			m_zstream.next_out = (unsigned char *)m_z_buffer_out;
-
-			avail_in_before_inflate = m_zstream.avail_in;
-
-			ret = inflate(&m_zstream, Z_NO_FLUSH);
-
-			// consumed is the number of bytes read from input in this inflate
-			consumed = (avail_in_before_inflate - m_zstream.avail_in);
-			data_size -= consumed;
-			consumed_total += consumed;
-			assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
-			switch (ret) {
-			case Z_BUF_ERROR:
-				//cout << "Z_BUF_ERROR" << endl;
-				// Not fatal, just keep going.
-				break;
-			case Z_NEED_DICT:
-				ret = Z_DATA_ERROR;	 /* and fall through */
-			case Z_DATA_ERROR:
-			case Z_MEM_ERROR:
-				cout << "Z_MEM_ERROR" << endl;
-				(void)inflateEnd(&m_zstream);
-				return -1;
-			}
-
-			have = CC_PARSER_ZLIB_OUT - m_zstream.avail_out;
-			handle_record_chunk((char *)m_z_buffer_out, have);
-
-		} while (m_zstream.avail_out == 0);
-
-		if (data_size <= 0) {
-			break;
-		}
-
-		/* done when inflate() says it's done */
-	} while (ret != Z_STREAM_END);
-
-	//cout << "ret: " << ret << endl;
-	//cout << "Ending with code: " << ret << endl;
-	(void)inflateEnd(&m_zstream);
-
-	/* clean up and return */
-	return consumed_total;
-}
-
-int CCIndexer::unzip_chunk(int bytes_in) {
-
-	int consumed = 0;
-	int consumed_total = 0;
-
-	char *ptr = m_z_buffer_in;
-	int len = bytes_in;
-
-	while (len > 0) {
-		consumed = unzip_record(ptr, len);
-		//cout << "consumed: " << consumed << " len: " << len << endl;
-		if (consumed == 0) {
-			cout << "Nothing consumed, done..." << endl;
-			break;
-		}
-		if (consumed < 0) {
-			cout << "Encountered fatal error" << endl;
-			return -1;
-		}
-		ptr += consumed;
-		len -= consumed;
-		consumed_total += consumed;
-	}
-
-	return 0;
-}
-
-void CCIndexer::handle_record_chunk(char *data, int len) {
-	
-}
-
-void CCIndexer::parse_record(const string &record, const string &url) {
-
-	
 }
 
 static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client) {
