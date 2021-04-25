@@ -1,5 +1,6 @@
 
 #include "test1.h"
+#include "test2.h"
 
 string read_test_file(const string &file_name) {
 	ifstream file("tests/data/" + file_name);
@@ -21,7 +22,8 @@ int main(void) {
 
 	int numSuites = 1;
 	int numTestsInSuite [] = {
-		3
+		3,
+		1,
 	};
 
 	int (* testSuite1 [])() = {
@@ -30,17 +32,17 @@ int main(void) {
 		test1_3,
 	};
 
-	/*int (* testSuite2 [])() = {
+	int (* testSuite2 [])() = {
 		test2_1,
 	};
 
-	int (* testSuite3 [])() = {
+	/*int (* testSuite3 [])() = {
 		test3_1,
 	};*/
 
 	int (**testSuites[])() = {
 		testSuite1,
-		//testSuite2,
+		testSuite2,
 		//testSuite3,
 	};
 
