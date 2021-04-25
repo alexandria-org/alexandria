@@ -23,7 +23,7 @@ int main(void) {
 	int numSuites = 2;
 	int numTestsInSuite [] = {
 		3,
-		1,
+		2,
 	};
 
 	int (* testSuite1 [])() = {
@@ -34,6 +34,7 @@ int main(void) {
 
 	int (* testSuite2 [])() = {
 		test2_1,
+		test2_2
 	};
 
 	/*int (* testSuite3 [])() = {

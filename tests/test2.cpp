@@ -11,12 +11,6 @@ int test2_1(void) {
 
 	CCIndex index;
 
-	ifstream infile("tests/data/cc_index1.gz", ios_base::in | ios_base::binary);
-
-	ok = ok && infile.is_open();
-
-	index.read_stream(infile);
-
 	vector<string> words = index.get_words("Hej asd!asd jag, heter! !josef. cullhed 	\
 		jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih");
 
@@ -32,3 +26,18 @@ int test2_1(void) {
 	return ok;
 }
 
+int test2_2(void) {
+	int ok = 1;
+
+	CCIndex index;
+
+	ifstream infile("tests/data/cc_index1.gz", ios_base::in | ios_base::binary);
+
+	ok = ok && infile.is_open();
+
+	index.read_stream(infile);
+	index.build_index();
+
+
+	return ok;
+}
