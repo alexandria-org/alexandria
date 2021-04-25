@@ -24,6 +24,7 @@ public:
 
 	void read_stream(basic_iostream< char, std::char_traits< char > > &stream);
 	void read_stream(ifstream &stream);
+	void build_index();
 
 private:
 
