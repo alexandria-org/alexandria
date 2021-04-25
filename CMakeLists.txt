@@ -12,9 +12,13 @@ find_package(ZLIB)
 include_directories(src/)
 
 add_executable(${PROJECT_NAME} "src/main.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
+add_executable(cc_indexer "src/indexer.cpp" )
 add_executable(run_tests "tests/test.cpp" "tests/test1.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
+	AWS::aws-lambda-runtime 
+	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+target_link_libraries(cc_indexer PUBLIC
 	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(run_tests PUBLIC
@@ -22,4 +26,5 @@ target_link_libraries(run_tests PUBLIC
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 
 aws_lambda_package_target(${PROJECT_NAME})
+aws_lambda_package_target(cc_indexer)
 

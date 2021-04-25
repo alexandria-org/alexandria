@@ -5,6 +5,8 @@ tests/*.o
 response.txt
 cc_parser.zip
 cc_parser
+cc_indexer.zip
+cc_indexer
 run_tests
 CMakeCache.txt
 CMakeFiles
