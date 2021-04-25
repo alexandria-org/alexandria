@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include "common.h"
-#include "Link.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -11,6 +9,10 @@
 #include <cctype>
 #include <string.h>
 #include <boost/algorithm/string.hpp>
+
+#include "common.h"
+#include "Link.h"
+#include "TextBase.h"
 
 using namespace std;
 
@@ -26,7 +28,7 @@ using namespace std;
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
 
-class HtmlParser {
+class HtmlParser : public TextBase {
 
 public:
 
@@ -77,7 +79,6 @@ private:
 	void parse_encoding(const string &html);
 	void iso_to_utf8(string &text);
 
-	inline string lower_case(const string &str);
 	inline pair<size_t, size_t> find_tag(const string &html, const string &tag_start, const string &tag_end,
 		size_t pos);
 	inline string get_tag_content(const string &html, const string &tag_start, const string &tag_end);
