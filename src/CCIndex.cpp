@@ -3,7 +3,14 @@
 
 
 CCIndex::CCIndex() {
-	
+	m_group_by = CC_COLUMN_URL;
+	m_columns = {
+		CC_COLUMN_URL,
+		CC_COLUMN_TITLE,
+		CC_COLUMN_H1,
+		CC_COLUMN_META,
+		CC_COLUMN_TEXT
+	};
 }
 
 CCIndex::~CCIndex() {
@@ -30,14 +37,21 @@ void CCIndex::build_index() {
 	int i = 0;
 	for (const vector<string> &cols : m_data) {
 
-		const string url = cols[0];
-		const string title = cols[1];
-		const string h1 = cols[2];
-		const string meta = cols[3];
-		const string text = cols[4];
-
-		vector<string> words = get_words(text);
+		string group_by;
+		for (int i = 0; i < m_columns.size(); i++) {
+			int col_type = m_columns[i];
+			if (col_type == m_group_by) {
+				group_by = cols[i];
+			} else {
+				vector<string> words = get_words(cols[i]);
+				for (const string &word : words) {
+					index_word(word, group_by, m_columns[i]);
+				}
+			}
+		}
 	}
+
+	sort(m_index.begin(), m_index.end(), compare_numeric);
 }
 
 void CCIndex::read_data(filtering_istream &decompress_stream) {
@@ -53,4 +67,12 @@ void CCIndex::read_data(filtering_istream &decompress_stream) {
 		m_data.push_back(row);
 	}
 
+}
+
+void CCIndex::index_word(const string &word, const string &group_by, int col_type) {
+	m_index[word]++;
+}
+
+bool CCIndex::compare_numeric(pair<string, int>& a, pair<string, int>& b) {
+	return a.second > b.second;
 }

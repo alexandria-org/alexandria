@@ -16,6 +16,12 @@
 using namespace boost::iostreams;
 using namespace std;
 
+#define CC_COLUMN_URL 1
+#define CC_COLUMN_TITLE 101
+#define CC_COLUMN_H1 102
+#define CC_COLUMN_META 103
+#define CC_COLUMN_TEXT 104
+
 class CCIndex : public TextBase {
 
 public:
@@ -29,7 +35,12 @@ public:
 private:
 
 	vector<vector<string>> m_data;
+	vector<int> m_columns;
+	map<string, int> m_index;
+	int m_group_by;
 
 	void read_data(filtering_istream &decompress_stream);
+	void index_word(const string &word, const string &group_by, int col_type);
+	bool compare_numeric(pair<string, int>& a, pair<string, int>& b);
 
 };
