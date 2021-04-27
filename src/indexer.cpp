@@ -37,7 +37,7 @@ public:
 	CCIndexer(const Aws::S3::S3Client &s3_client, const string &bucket, const string &key);
 	~CCIndexer();
 
-	bool run(string &response);
+	string run();
 
 private:
 
@@ -70,12 +70,12 @@ CCIndexer::CCIndexer(const Aws::S3::S3Client &s3_client, const string &bucket, c
 CCIndexer::~CCIndexer() {
 }
 
-bool CCIndexer::run(string &response) {
+string CCIndexer::run() {
 
 	download_file(m_key, m_index1);
 	download_file(m_link_key, m_index2);
 
-	return true;
+	return "Indexing complete";
 }
 
 void CCIndexer::download_file(const string &key, CCIndex &index) {
@@ -95,7 +95,8 @@ void CCIndexer::download_file(const string &key, CCIndex &index) {
 
 }
 
-static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client) {
+static invocation_response handle_lambda_invoke(invocation_request const& req, Aws::S3::S3Client const& client) {
+
 	using namespace Aws::Utils::Json;
 	JsonValue json(req.payload);
 	if (!json.WasParseSuccessful()) {
@@ -112,46 +113,24 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 	auto bucket = v.GetString("s3bucket");
 	auto key = v.GetString("s3key");
 
-	AWS_LOGSTREAM_INFO(TAG, "Attempting to download file from s3://" << bucket << "/" << key);
-
-	// Internal execution about 70 seconds...
-	CCIndexer parser(client, bucket, key);
-	string response;
-
-	for (int retry = 1; retry <= 1; retry++) {
-		if (parser.run(response)) {
-			break;
-		}
-		cout << "Retry " << retry << endl;
-	}
+	CCIndexer indexer(client, bucket, key);
+	string response = indexer.run();
 
 	return invocation_response::success("We did it! Response: " + response, "application/json");
 }
 
-std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory() {
+std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> get_logger_factory() {
 	return [] {
 		return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
 			"console_logger", Aws::Utils::Logging::LogLevel::Warn);
 	};
 }
 
-Aws::Client::ClientConfiguration getS3Config() {
+Aws::Client::ClientConfiguration get_s3_config() {
 
 	Aws::Client::ClientConfiguration config;
 	config.region = "us-east-1";
 	config.scheme = Aws::Http::Scheme::HTTP;
-
-	return config;
-}
-
-Aws::Client::ClientConfiguration getS3ConfigWithBundle() {
-
-	cout << "USING S3 REGION: " << Aws::Environment::GetEnv("AWS_REGION") << endl;
-
-	Aws::Client::ClientConfiguration config;
-	config.region = Aws::Environment::GetEnv("AWS_REGION");
-	config.scheme = Aws::Http::Scheme::HTTP;
-	config.caFile = "/etc/pki/tls/certs/ca-bundle.crt";
 	config.verifySSL = false;
 
 	return config;
@@ -159,9 +138,9 @@ Aws::Client::ClientConfiguration getS3ConfigWithBundle() {
 
 void run_lambda_handler() {
 
-	Aws::S3::S3Client client(getS3Config());
+	Aws::S3::S3Client client(get_s3_config());
 	auto handler_fn = [&client](aws::lambda_runtime::invocation_request const& req) {
-		return my_handler(req, client);
+		return handle_lambda_invoke(req, client);
 	};
 	run_handler(handler_fn);
 }
@@ -170,20 +149,15 @@ int main(int argc, const char **argv) {
 
 	Aws::SDKOptions options;
 	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Warn;
-	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
+	options.loggingOptions.logger_create_fn = get_logger_factory();
 	Aws::InitAPI(options);
 
 	if (RUN_ON_LAMBDA) {
 		run_lambda_handler();
 	} else {
-		CCIndexer parser(Aws::S3::S3Client(getS3Config()), "commoncrawl-output", "crawl-data/CC-MAIN-2021-10/segments/1614178347293.1/warc/CC-MAIN-20210224165708-20210224195708-00008.warc.gz");
-		string response;
-		for (int retry = 1; retry <= 1; retry++) {
-			if (parser.run(response)) {
-				break;
-			}
-			cout << "Retry " << retry << endl;
-		}
+		CCIndexer indexer(Aws::S3::S3Client(get_s3_config()), "commoncrawl-output",
+			"crawl-data/CC-MAIN-2021-10/segments/1614178347293.1/warc/CC-MAIN-20210224165708-20210224195708-00008.warc.gz");
+		string response = indexer.run();
 		cout << response << endl;
 	}
 
