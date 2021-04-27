@@ -1,5 +1,10 @@
 {
 	"editor.detectIndentation": false,
 	"editor.insertSpaces": false,
-	"editor.rulers": [120]
+	"editor.rulers": [
+		120
+	],
+	"files.associations": {
+		"*.tcc": "cpp"
+	}
 }

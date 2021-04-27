@@ -36,7 +36,6 @@ void CCIndex::build_index() {
 	
 	int i = 0;
 	for (const vector<string> &cols : m_data) {
-
 		string group_by;
 		for (int i = 0; i < m_columns.size(); i++) {
 			int col_type = m_columns[i];
@@ -51,7 +50,7 @@ void CCIndex::build_index() {
 		}
 	}
 
-	sort(m_index.begin(), m_index.end(), compare_numeric);
+	//sort(m_index.begin(), m_index.end(), compare_numeric);
 }
 
 void CCIndex::read_data(filtering_istream &decompress_stream) {

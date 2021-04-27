@@ -34,10 +34,11 @@ namespace io = boost::iostreams;
 char const TAG[] = "LAMBDA_ALLOC";
 
 #define RUN_ON_LAMBDA 1
-#define CC_PARSER_CHUNK 1024*1024*50
+#define CC_PARSER_CHUNK 1024*1024*600
 //#define CC_PARSER_CHUNK 0
 #define CC_PARSER_ZLIB_IN 1024*1024*16
 #define CC_PARSER_ZLIB_OUT 1024*1024*16
+#define CC_TARGET_BUCKET "alexandria-cc-output"
 
 class CCParser {
 
@@ -394,7 +395,7 @@ string CCParser::get_warc_record(const string &record, const string &key, int &o
 void CCParser::upload_result() {
 
 	Aws::S3::Model::PutObjectRequest request;
-	request.SetBucket("commoncrawl-output");
+	request.SetBucket(CC_TARGET_BUCKET);
 	string key = m_key;
 	key.replace(key.find(".warc.gz"), 8, string(".gz"));
 	request.SetKey(key);
@@ -414,19 +415,17 @@ void CCParser::upload_result() {
 
 	if (outcome.IsSuccess()) {
 
-	    std::cout << "Added object '" << m_key << "' to bucket '"
-	        << "commoncrawl-output" << "'.";
+	    std::cout << "Added object '" << m_key << "' to bucket '" << CC_TARGET_BUCKET << "'.";
 	} else {
-	    std::cout << "Error: PutObject: " <<
-	        outcome.GetError().GetMessage() << std::endl;
-
+		std::cout << "Error: PutObject: " <<
+			outcome.GetError().GetMessage() << std::endl;
 	}
 }
 
 void CCParser::upload_links() {
 
 	Aws::S3::Model::PutObjectRequest request;
-	request.SetBucket("commoncrawl-output");
+	request.SetBucket(CC_TARGET_BUCKET);
 	string key = m_key;
 	key.replace(key.find(".warc.gz"), 8, string(".links.gz"));
 	request.SetKey(key);
@@ -446,8 +445,7 @@ void CCParser::upload_links() {
 
 	if (outcome.IsSuccess()) {
 
-	    std::cout << "Added object '" << m_key << "' to bucket '"
-	        << "commoncrawl-output" << "'.";
+	    std::cout << "Added object '" << m_key << "' to bucket '" << CC_TARGET_BUCKET << "'.";
 	} else {
 	    std::cout << "Error: PutObject: " <<
 	        outcome.GetError().GetMessage() << std::endl;
