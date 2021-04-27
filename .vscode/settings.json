@@ -1,0 +1,5 @@
+{
+	"editor.detectIndentation": false,
+	"editor.insertSpaces": false,
+	"editor.rulers": [120]
+}
