@@ -19,7 +19,8 @@
 #include "zlib.h"
 #include <unistd.h>
 
-#include "CCIndex.h"
+#include "BasicUrlData.h"
+#include "BasicLinkData.h"
 
 using namespace std;
 using namespace aws::lambda_runtime;
@@ -48,10 +49,10 @@ private:
 
 	filtering_ostream m_zstream; /* decompression stream */
 
-	CCIndex m_index1;
-	CCIndex m_index2;
+	BasicUrlData m_url_data;
+	BasicLinkData m_link_data;
 
-	void download_file(const string &key, CCIndex &index);
+	void download_file(const string &key, BasicData &index);
 
 };
 
@@ -72,13 +73,17 @@ CCIndexer::~CCIndexer() {
 
 string CCIndexer::run() {
 
-	download_file(m_key, m_index1);
-	download_file(m_link_key, m_index2);
+	download_file(m_key, m_url_data);
+	download_file(m_key, m_link_data);
+
+	m_url_data.build_index();
+	m_link_data.build_index();
+
 
 	return "Indexing complete";
 }
 
-void CCIndexer::download_file(const string &key, CCIndex &index) {
+void CCIndexer::download_file(const string &key, BasicData &data) {
 
 	Aws::S3::Model::GetObjectRequest request;
 	request.SetBucket(m_bucket);
@@ -89,7 +94,7 @@ void CCIndexer::download_file(const string &key, CCIndex &index) {
 	if (outcome.IsSuccess()) {
 
 		auto &stream = outcome.GetResultWithOwnership().GetBody();
-		index.read_stream(stream);
+		data.read_stream(stream);
 
 	}
 
@@ -155,8 +160,8 @@ int main(int argc, const char **argv) {
 	if (RUN_ON_LAMBDA) {
 		run_lambda_handler();
 	} else {
-		CCIndexer indexer(Aws::S3::S3Client(get_s3_config()), "commoncrawl-output",
-			"crawl-data/CC-MAIN-2021-10/segments/1614178347293.1/warc/CC-MAIN-20210224165708-20210224195708-00008.warc.gz");
+		CCIndexer indexer(Aws::S3::S3Client(get_s3_config()), "alexandria-cc-output",
+			"crawl-data/CC-MAIN-2021-10/segments/1614178351134.11/warc/CC-MAIN-20210225124124-20210225154124-00003.warc.gz");
 		string response = indexer.run();
 		cout << response << endl;
 	}
