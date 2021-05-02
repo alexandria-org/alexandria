@@ -2,7 +2,11 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <fstream>
+#include <set>
+#include <vector>
+#include <map>
 
 using namespace std;
 
@@ -14,6 +18,10 @@ public:
 	~TsvFile();
 
 	string find(const string &key);
+	map<string, string> find_all(const set<string> &keys);
+
+	size_t read_column_into(int column, set<string> &container);
+	size_t read_column_into(int column, vector<string> &container);
 
 private:
 

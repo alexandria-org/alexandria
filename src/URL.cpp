@@ -20,6 +20,10 @@ string URL::host() const {
 	return m_host;
 }
 
+string URL::host_reverse() const {
+	return m_host_reverse;
+}
+
 string URL::path() const {
 	return m_path;
 }
@@ -69,6 +73,11 @@ int URL::parse() {
 	}
 
 	curl_url_cleanup(h);
+
+	vector<string> parts;
+	boost::split(parts, m_host, boost::is_any_of("."));
+	reverse(parts.begin(), parts.end());
+	m_host_reverse = boost::algorithm::join(parts, ".");
 
 	return CC_OK;
 }

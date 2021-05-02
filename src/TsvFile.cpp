@@ -26,6 +26,56 @@ string TsvFile::find(const string &key) {
 	return line;
 }
 
+map<string, string> TsvFile::find_all(const set<string> &keys) {
+	size_t pos = 0;
+	map<string, string> result;
+	string line;
+	for (const string &key : keys) {
+		pos = binary_find_position(m_file_size, pos, key);
+		if (pos != string::npos) {
+			m_file.seekg(pos, m_file.beg);
+			getline(m_file, line);
+			result[key] = line;
+		} else {
+			// Key not found, ignore.
+		}
+	}
+
+	return result;
+}
+
+size_t TsvFile::read_column_into(int column, set<string> &container) {
+	m_file.seekg(0, m_file.beg);
+
+	string line;
+	size_t rows_read = 0;
+	while (getline(m_file, line)) {
+		stringstream ss(line);
+		string col;
+		ss >> col;
+		container.insert(col);
+		rows_read++;
+	}
+
+	return rows_read;
+}
+
+size_t TsvFile::read_column_into(int column, vector<string> &container) {
+	m_file.seekg(0, m_file.beg);
+
+	string line;
+	size_t rows_read = 0;
+	while (getline(m_file, line)) {
+		stringstream ss(line);
+		string col;
+		ss >> col;
+		container.push_back(col);
+		rows_read++;
+	}
+
+	return rows_read;
+}
+
 size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const string &key) {
 
 	string line;

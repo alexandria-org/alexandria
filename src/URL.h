@@ -2,6 +2,7 @@
 #pragma once
 
 #include <iostream>
+#include <boost/algorithm/string/join.hpp>
 #include "common.h"
 
 #include "TextBase.h"
@@ -17,6 +18,7 @@ public:
 
 	string host() const;
 	string path() const;
+	string host_reverse() const;
 
 	friend istream &operator >>(istream &ss, URL &url);
 	friend ostream &operator <<(ostream& os, const URL& url);
@@ -25,6 +27,7 @@ private:
 
 	string m_url_string;
 	string m_host;
+	string m_host_reverse;
 	string m_path;
 	int m_status;
 
