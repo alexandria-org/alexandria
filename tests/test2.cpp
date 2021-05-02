@@ -85,6 +85,8 @@ int test2_2(void) {
 		të bëheshin publike | Gazeta Malesia", 3) == vector<string>({"realiteti", "shqiptar", "fotove"});
 	ok = ok && url.get_words("York County, VA") == vector<string>({"york", "county", "va"});
 	ok = ok && url.get_words("HTML Sitemap 14 - zfreeti.com", 3) == vector<string>({"html", "sitemap", "14"});
+	ok = ok && url.get_words("HTML Sitemap 14 - zfreeti.com") == vector<string>({"html", "sitemap", "14"});
+	ok = ok && url.get_words("Archives.com zfreeti.com best. stream. in .the world") == vector<string>({"best", "stream", "world"});
 
 	BasicUrlData url_data;
 
@@ -93,7 +95,7 @@ int test2_2(void) {
 	ok = ok && infile.is_open();
 
 	url_data.read_stream(infile);
-	url_data.build_index();
+	url_data.build_index(2);
 
 	return ok;
 }

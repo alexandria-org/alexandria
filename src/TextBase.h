@@ -95,7 +95,7 @@ public:
 	*/
 	inline vector<string> get_words(const string &str, size_t limit) {
 
-		const string word_boundary = " \t,|!.,";
+		const string word_boundary = " \t,|!,";
 
 		string str_lc = lower_case(str);
 
