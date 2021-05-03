@@ -11,12 +11,14 @@ find_package(ZLIB)
 
 include_directories(src/)
 
-add_executable(${PROJECT_NAME} "src/main.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
-add_executable(cc_indexer "src/indexer.cpp" "src/TsvFile.cpp" "src/BasicUrlData.cpp" "src/BasicLinkData.cpp"
-	"src/BasicData.cpp" "src/URL.cpp" "src/Stopwords.cpp")
-add_executable(run_tests "tests/test.cpp" "tests/test1.cpp" "tests/test2.cpp" "src/entities.cpp" "src/HtmlParser.cpp"
+add_executable(${PROJECT_NAME} "src/main.cpp" "src/common.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
+add_executable(cc_indexer "src/indexer.cpp" "src/common.cpp" "src/TsvFile.cpp" "src/BasicUrlData.cpp" "src/BasicLinkData.cpp"
+	"src/BasicData.cpp" "src/URL.cpp" "src/Stopwords.cpp" "src/CCIndexer.cpp"  "src/TsvFileS3.cpp" "src/Dictionary.cpp"
+	"src/DictionaryRow.cpp" "src/SubSystem.cpp")
+add_executable(run_tests "tests/test.cpp" "src/common.cpp" "tests/test1.cpp" "tests/test2.cpp" "tests/test3.cpp" "src/entities.cpp" "src/HtmlParser.cpp"
 	"src/Link.cpp" "src/TsvFile.cpp" "src/BasicUrlData.cpp" "src/BasicLinkData.cpp" "src/BasicData.cpp" "src/URL.cpp"
-	"src/Stopwords.cpp")
+	"src/Stopwords.cpp" "src/CCIndexer.cpp" "src/TsvFileS3.cpp" "src/Dictionary.cpp" "src/DictionaryRow.cpp"
+	"src/SubSystem.cpp")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	AWS::aws-lambda-runtime 

@@ -88,14 +88,5 @@ int test2_2(void) {
 	ok = ok && url.get_words("HTML Sitemap 14 - zfreeti.com") == vector<string>({"html", "sitemap", "14"});
 	ok = ok && url.get_words("Archives.com zfreeti.com best. stream. in .the world") == vector<string>({"best", "stream", "world"});
 
-	BasicUrlData url_data;
-
-	ifstream infile("tests/data/CC-MAIN-20210225124124-20210225154124-00003.gz", ios_base::in | ios_base::binary);
-
-	ok = ok && infile.is_open();
-
-	url_data.read_stream(infile);
-	url_data.build_index(2);
-
 	return ok;
 }

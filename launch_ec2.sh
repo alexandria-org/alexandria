@@ -17,23 +17,23 @@ sudo mkfs -t xfs /dev/nvme5n1
 sudo mkfs -t xfs /dev/nvme6n1
 sudo mkfs -t xfs /dev/nvme7n1
 
-sudo mkdir -p /mnt/00
-sudo mkdir -p /mnt/01
-sudo mkdir -p /mnt/02
-sudo mkdir -p /mnt/03
-sudo mkdir -p /mnt/04
-sudo mkdir -p /mnt/05
-sudo mkdir -p /mnt/06
-sudo mkdir -p /mnt/07
+sudo mkdir -p /mnt/0
+sudo mkdir -p /mnt/1
+sudo mkdir -p /mnt/2
+sudo mkdir -p /mnt/3
+sudo mkdir -p /mnt/4
+sudo mkdir -p /mnt/5
+sudo mkdir -p /mnt/6
+sudo mkdir -p /mnt/7
 
-sudo mount /dev/nvme0n1 /mnt/00
-sudo mount /dev/nvme1n1 /mnt/01
-sudo mount /dev/nvme2n1 /mnt/02
-sudo mount /dev/nvme3n1 /mnt/03
-sudo mount /dev/nvme4n1 /mnt/04
-sudo mount /dev/nvme5n1 /mnt/05
-sudo mount /dev/nvme6n1 /mnt/06
-sudo mount /dev/nvme7n1 /mnt/07
+sudo mount /dev/nvme0n1 /mnt/0
+sudo mount /dev/nvme1n1 /mnt/1
+sudo mount /dev/nvme2n1 /mnt/2
+sudo mount /dev/nvme3n1 /mnt/3
+sudo mount /dev/nvme4n1 /mnt/4
+sudo mount /dev/nvme5n1 /mnt/5
+sudo mount /dev/nvme6n1 /mnt/6
+sudo mount /dev/nvme7n1 /mnt/7
 
 EOF
 

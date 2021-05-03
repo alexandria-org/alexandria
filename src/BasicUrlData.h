@@ -16,6 +16,7 @@
 #include "BasicData.h"
 #include "URL.h"
 #include "TsvFile.h"
+#include "SubSystem.h"
 
 using namespace boost::iostreams;
 using namespace std;
@@ -25,22 +26,19 @@ using namespace std;
 class BasicUrlData : public BasicData, public TextBase {
 
 public:
-	BasicUrlData();
+	BasicUrlData() {};
+	BasicUrlData(const SubSystem *);
 	~BasicUrlData();
 
-	void build_index(int id);
+	string build_index(int shard, int id);
 	inline string make_snippet(const string &text_after_h1);
-	void load_domain_meta();
 	void add_to_index(const string &word, const URL &url, const string &title, const string &snippet);
 	inline bool is_in_dictionary(const string &word);
-	void load_dictionary();
 
 private:
 
-	TsvFile m_domain_file;
-	map<string, int> m_domain_meta;
-	set<string> m_dictionary;
 	stringstream m_result;
 
+	string get_output_filename(int shard, int id);
 
 };

@@ -14,6 +14,7 @@ class TsvFile {
 
 public:
 
+	TsvFile();
 	TsvFile(const string &file_name);
 	~TsvFile();
 
@@ -23,11 +24,17 @@ public:
 	size_t read_column_into(int column, set<string> &container);
 	size_t read_column_into(int column, vector<string> &container);
 
-private:
+	bool eof() const;
+	string get_line();
 
+protected:
+
+	string m_file_name;
 	ifstream m_file;
 	size_t m_file_size;
-
+	
 	size_t binary_find_position(size_t file_size, size_t offset, const string &key);
+
+	void set_file_name(const string &file_name);
 
 };

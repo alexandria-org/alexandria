@@ -1,11 +1,12 @@
 
 #include "TsvFile.h"
 
-TsvFile::TsvFile(const string &file_name) :
-	m_file(file_name)
-{
-	m_file.seekg(0, m_file.end);
-	m_file_size = m_file.tellg();
+TsvFile::TsvFile() {
+
+}
+
+TsvFile::TsvFile(const string &file_name) {
+	set_file_name(file_name);
 }
 
 TsvFile::~TsvFile() {
@@ -60,6 +61,16 @@ size_t TsvFile::read_column_into(int column, set<string> &container) {
 	return rows_read;
 }
 
+bool TsvFile::eof() const {
+	return m_file.eof();
+}
+
+string TsvFile::get_line() {
+	string line;
+	getline(m_file, line);
+	return line;
+}
+
 size_t TsvFile::read_column_into(int column, vector<string> &container) {
 	m_file.seekg(0, m_file.beg);
 
@@ -112,4 +123,14 @@ size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const stri
 	}
 
 	return (size_t)m_file.tellg() - (line.size() + 1u);
+}
+
+void TsvFile::set_file_name(const string &file_name) {
+	m_file_name = file_name;
+
+	m_file.open(m_file_name);
+
+	m_file.seekg(0, m_file.end);
+	m_file_size = m_file.tellg();
+	m_file.seekg(0, m_file.beg);
 }
