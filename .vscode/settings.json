@@ -11,6 +11,10 @@
 		"fstream": "cpp",
 		"vector": "cpp",
 		"functional": "cpp",
-		"ostream": "cpp"
+		"ostream": "cpp",
+		"string": "cpp",
+		"istream": "cpp",
+		"stdexcept": "cpp",
+		"type_traits": "cpp"
 	}
 }

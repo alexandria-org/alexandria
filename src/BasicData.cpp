@@ -1,6 +1,15 @@
 
 #include "BasicData.h"
 
+BasicData::BasicData() {
+
+}
+
+BasicData::BasicData(const SubSystem *sub_system) :
+	m_sub_system(sub_system)
+{
+}
+
 void BasicData::read_stream(basic_iostream< char, std::char_traits< char > > &stream) {
 	filtering_istream decompress_stream;
 	decompress_stream.push(gzip_decompressor());

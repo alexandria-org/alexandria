@@ -2,10 +2,9 @@
 #include "BasicUrlData.h"
 
 
-BasicUrlData::BasicUrlData() :
-	m_domain_file("/mnt/00/database/domain_info.tsv")
+BasicUrlData::BasicUrlData(const SubSystem *sub_system) :
+	BasicData(sub_system)
 {
-	load_dictionary();
 }
 
 BasicUrlData::~BasicUrlData() {
@@ -19,11 +18,9 @@ Diskutera med Ivan:
 3. Ska vi plocka både 
 */
 
-void BasicUrlData::build_index(int id) {
+string BasicUrlData::build_index(int shard, int id) {
 
 	map<string, int> word_counts;
-
-	load_domain_meta();
 
 	int added_words = 0;
 	int not_added_words = 0;
@@ -35,8 +32,6 @@ void BasicUrlData::build_index(int id) {
 		getline(ss, col, '\t');
 
 		URL url(col);
-
-
 
 		string title;
 		getline(ss, title, '\t');
@@ -60,45 +55,8 @@ void BasicUrlData::build_index(int id) {
 		}
 	}
 
-	cout << "Added words: " << added_words << endl;
-	cout << "Threw away words: " << not_added_words << endl;
-
-	/*
-
-	typedef pair<string, int> pair_t;
-	vector<pair_t> vec;
-
-	copy(word_counts.begin(), word_counts.end(), std::back_inserter(vec));
-
-	std::sort(vec.begin(), vec.end(), [](const pair_t& l, const pair_t& r) {
-		if (l.second != r.second) {
-			return l.second < r.second;
-		}
-
-		return l.first < r.first;
-	});
-
-	string result;
-
-	for (const auto &iter : vec) {
-		result += iter.first + "\t" + to_string(iter.second) + "\n";
-	}
-
 	ofstream outfile;
-	string file_name = "/mnt/alexandria_main/output_"+to_string(id)+".tsv";
-	outfile.open(file_name, ios::trunc);
-	if (outfile.is_open()) {
-		outfile << result;
-	} else {
-		cout << "Error: " << strerror(errno) << endl;
-		cout << "outfile is not open" << endl;
-	}
-	outfile.close();
-
-	*/
-
-	ofstream outfile;
-	string file_name = "/mnt/00/output/output_"+to_string(id)+".tsv";
+	string file_name = get_output_filename(shard, id);
 	outfile.open(file_name, ios::trunc);
 	if (outfile.is_open()) {
 		outfile << m_result.str();
@@ -108,44 +66,21 @@ void BasicUrlData::build_index(int id) {
 	}
 	outfile.close();
 
+	return file_name;
 }
 
 inline string BasicUrlData::make_snippet(const string &text_after_h1) {
 	return text_after_h1.substr(0, 200);
 }
 
-void BasicUrlData::load_domain_meta() {
-	set<string> hosts;
-	for (const string &line : m_data) {
-
-		stringstream ss(line);
-
-		string col;
-		getline(ss, col, '\t');
-
-		URL url(col);
-
-		string host = url.host_reverse();
-		hosts.insert(host);
-	}
-
-	map<string, string> rows = m_domain_file.find_all(hosts);
-
-	for (const auto &iter : rows) {
-		stringstream ss(iter.second);
-		string domain;
-		double pagerank;
-		int harmonic;
-
-		ss >> domain >> pagerank >> harmonic;
-
-		m_domain_meta[iter.first] = harmonic;
-	}
-}
-
 void BasicUrlData::add_to_index(const string &word, const URL &url, const string &title, const string &snippet) {
 
-	const int harmonic = m_domain_meta[url.host_reverse()];
+	const auto iter = m_sub_system->domain_index()->find(url.host_reverse());
+	if (iter == m_sub_system->domain_index()->end()) return;
+
+	const DictionaryRow row = iter->second;
+
+	const int harmonic = row.get_int(1);
 
 	if (harmonic <= CC_HARMONIC_LIMIT) {
 		return;
@@ -155,10 +90,10 @@ void BasicUrlData::add_to_index(const string &word, const URL &url, const string
 }
 
 inline bool BasicUrlData::is_in_dictionary(const string &word) {
-	return m_dictionary.find(word) != m_dictionary.end();
+	return m_sub_system->dictionary()->has_key(word);
 }
 
-void BasicUrlData::load_dictionary() {
-	TsvFile dictionary("/mnt/00/database/dictionary.tsv");
-	dictionary.read_column_into(0, m_dictionary);
+string BasicUrlData::get_output_filename(int shard, int id) {
+	return "/mnt/"+to_string(shard)+"/output_"+to_string(id)+".tsv";
 }
+
