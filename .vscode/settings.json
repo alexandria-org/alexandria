@@ -17,6 +17,9 @@
 		"stdexcept": "cpp",
 		"type_traits": "cpp",
 		"sstream": "cpp",
-		"list": "cpp"
+		"list": "cpp",
+		"chrono": "cpp",
+		"future": "cpp",
+		"memory": "cpp"
 	}
 }

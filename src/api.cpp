@@ -99,6 +99,10 @@ int main(int argc, const char **argv) {
 	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
 	Aws::InitAPI(options);
 
+	/*CCApi api(get_s3_client());
+	string response_json = api.query("sushi uppsala");
+	cout << response_json << endl;*/
+
 	run_lambda_handler();
 
 	Aws::ShutdownAPI(options);

@@ -84,7 +84,7 @@ public:
 		return true;
 	}
 
-	inline string lower_case(const string &str) {
+	inline string lower_case(const string &str) const {
 		string ret = str;
 		transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c){ return tolower(c); });
 		return ret;
