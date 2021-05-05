@@ -1,5 +1,6 @@
 
 #include "TsvFile.h"
+#include <exception>
 
 TsvFile::TsvFile() {
 
@@ -20,6 +21,7 @@ string TsvFile::find(const string &key) {
 	}
 
 	m_file.seekg(pos, m_file.beg);
+	
 
 	string line;
 	getline(m_file, line);
@@ -28,6 +30,8 @@ string TsvFile::find(const string &key) {
 }
 
 map<string, string> TsvFile::find_all(const set<string> &keys) {
+	m_file.clear();
+	m_file.seekg(0, m_file.beg);
 	size_t pos = 0;
 	map<string, string> result;
 	string line;
@@ -46,7 +50,12 @@ map<string, string> TsvFile::find_all(const set<string> &keys) {
 }
 
 size_t TsvFile::read_column_into(int column, set<string> &container) {
+	m_file.clear();
 	m_file.seekg(0, m_file.beg);
+
+	if (!m_file.is_open()) {
+		throw runtime_error("File is not open any more: " + m_file_name);
+	}
 
 	string line;
 	size_t rows_read = 0;
@@ -72,6 +81,7 @@ string TsvFile::get_line() {
 }
 
 size_t TsvFile::read_column_into(int column, vector<string> &container) {
+	m_file.clear();
 	m_file.seekg(0, m_file.beg);
 
 	string line;
@@ -126,9 +136,15 @@ size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const stri
 }
 
 void TsvFile::set_file_name(const string &file_name) {
+
 	m_file_name = file_name;
+	m_original_file_name = file_name;
 
 	m_file.open(m_file_name);
+
+	if (!m_file.is_open()) {
+		throw runtime_error("Could not open file: " + m_file_name + " error: " + strerror(errno));
+	}
 
 	m_file.seekg(0, m_file.end);
 	m_file_size = m_file.tellg();

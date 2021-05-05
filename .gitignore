@@ -7,6 +7,8 @@ cc_parser.zip
 cc_parser
 cc_indexer.zip
 cc_indexer
+cc_api.zip
+cc_api
 run_tests
 CMakeCache.txt
 CMakeFiles

@@ -7,7 +7,12 @@ SubSystem::SubSystem(const Aws::S3::S3Client &s3_client) {
 	m_domain_index = new Dictionary(domain_index);
 
 	TsvFileS3 dictionary(s3_client, "dictionary.tsv");
+
 	m_dictionary = new Dictionary(dictionary);
+
+	dictionary.read_column_into(0, m_words);
+
+	random_shuffle(m_words.begin(), m_words.end());
 
 	m_s3_client = s3_client;
 
@@ -24,6 +29,10 @@ const Dictionary *SubSystem::domain_index() const {
 
 const Dictionary *SubSystem::dictionary() const {
 	return m_dictionary;
+}
+
+const vector<string> SubSystem::words() const {
+	return m_words;
 }
 
 const Aws::S3::S3Client SubSystem::s3_client() const {

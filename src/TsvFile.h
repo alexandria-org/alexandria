@@ -7,6 +7,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <string.h>
 
 using namespace std;
 
@@ -30,8 +31,10 @@ public:
 protected:
 
 	string m_file_name;
+	string m_original_file_name;
 	ifstream m_file;
 	size_t m_file_size;
+	bool m_is_gzipped = false;
 	
 	size_t binary_find_position(size_t file_size, size_t offset, const string &key);
 

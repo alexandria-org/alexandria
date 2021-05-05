@@ -18,23 +18,20 @@ class CCIndexer {
 
 public:
 
-	CCIndexer(const SubSystem *sub_system, const string &bucket, const string &key, int id, int shard);
+	CCIndexer(const SubSystem *sub_system);
 	~CCIndexer();
 
-	string run();
+	void run(const string &bucket, const string &key, int id, int shard);
+	void index(const vector<string> &words, const vector<string> &input_files, int shard);
+	void sorter(const vector<string> &words, int shard);
 
 private:
 
-	int m_id;
-	int m_shard;
-	string m_bucket;
-	string m_key;
-	string m_link_key;
 	const SubSystem *m_sub_system;
 
 	BasicUrlData m_url_data;
 	BasicLinkData m_link_data;
 
-	void download_file(const string &key, BasicData &index);
+	void download_file(const string &bucket, const string &key, BasicData &index);
 
 };

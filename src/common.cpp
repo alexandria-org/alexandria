@@ -7,6 +7,8 @@ Aws::Client::ClientConfiguration get_s3_config() {
 	config.region = "us-east-1";
 	config.scheme = Aws::Http::Scheme::HTTP;
 	config.verifySSL = false;
+	config.requestTimeoutMs = 300000; // 5 minutes
+	config.connectTimeoutMs = 300000; // 5 minutes
 
 	return config;
 }
