@@ -21,6 +21,7 @@ int test3_1(void) {
 	Aws::InitAPI(options);
 	Aws::S3::S3Client s3_client = get_s3_client();
 
+
 	TsvFileS3 s3_file(s3_client, "dictionary.tsv");
 
 	vector<string> container1;

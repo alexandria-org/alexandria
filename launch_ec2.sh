@@ -17,6 +17,8 @@ sudo mkfs -t xfs /dev/nvme5n1
 sudo mkfs -t xfs /dev/nvme6n1
 sudo mkfs -t xfs /dev/nvme7n1
 
+rm -r /mnt/*
+
 sudo mkdir -p /mnt/0
 sudo mkdir -p /mnt/1
 sudo mkdir -p /mnt/2
@@ -34,6 +36,19 @@ sudo mount /dev/nvme4n1 /mnt/4
 sudo mount /dev/nvme5n1 /mnt/5
 sudo mount /dev/nvme6n1 /mnt/6
 sudo mount /dev/nvme7n1 /mnt/7
+
+sudo mkdir /mnt/0/output
+sudo mkdir /mnt/1/output
+sudo mkdir /mnt/2/output
+sudo mkdir /mnt/3/output
+sudo mkdir /mnt/4/output
+sudo mkdir /mnt/5/output
+sudo mkdir /mnt/6/output
+sudo mkdir /mnt/7/output
+
+sudo chown -R ubuntu:ubuntu /mnt
+
+aws s3 cp s3://alexandria-database/domain_info.tsv /mnt/0/
 
 EOF
 
