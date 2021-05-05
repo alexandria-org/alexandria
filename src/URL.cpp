@@ -16,6 +16,11 @@ URL::~URL() {
 
 }
 
+void URL::set_url_string(const string &url) {
+	m_url_string = url;
+	m_status = parse();
+}
+
 string URL::host() const {
 	return m_host;
 }

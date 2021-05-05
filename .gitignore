@@ -9,6 +9,7 @@ cc_indexer.zip
 cc_indexer
 cc_api.zip
 cc_api
+frontend/node_modules
 run_tests
 CMakeCache.txt
 CMakeFiles
