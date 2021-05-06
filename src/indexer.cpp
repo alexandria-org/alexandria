@@ -30,26 +30,27 @@ std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> get_lo
 	};
 }
 
-void run_indexer(const SubSystem *sub_system, const string &warc_path, int shard, int id) {
+void run_download_thread(const SubSystem *sub_system, const string &warc_path, int shard, int id) {
 	const string bucket = "alexandria-cc-output";
 	CCIndexer indexer(sub_system);
 	indexer.run(bucket, warc_path, shard, id);
 }
 
-void run_indexer2(const SubSystem *sub_system, const vector<string> &chunk, const vector<string> &input_files,
+void run_indexer_thread(const SubSystem *sub_system, const vector<string> &chunk, const vector<string> &input_files,
 		int shard) {
 
 	CCIndexer indexer(sub_system);
 	indexer.index(chunk, input_files, shard);
 }
 
-void run_sorter(const SubSystem *sub_system, const vector<string> &chunk, int shard) {
+void run_sorter_thread(const SubSystem *sub_system, const vector<string> &chunk, int shard) {
 
 	CCIndexer indexer(sub_system);
 	indexer.sorter(chunk, shard);
+
 }
 
-void upload_results(SubSystem *sub_system, const string &word, int retries) {
+void upload_results_thread(SubSystem *sub_system, const string &word, int retries) {
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket("alexandria-index");
@@ -81,7 +82,7 @@ void upload_results(SubSystem *sub_system, const string &word, int retries) {
 		// Retry.
 		if (retries > 0) {
 			cout << "Upload failed, retrying for word: " << word << endl;
-			upload_results(sub_system, word, retries - 1);
+			upload_results_thread(sub_system, word, retries - 1);
 		}
 	}
 }
@@ -115,7 +116,7 @@ int main(int argc, const char **argv) {
 
 		int shard = id % num_shards;
 
-		thread th(run_indexer, sub_system, warc_path, shard, id);
+		thread th(run_download_thread, sub_system, warc_path, shard, id);
 
 		threads.push_back(move(th));
 
@@ -155,7 +156,7 @@ int main(int argc, const char **argv) {
 	for (const vector<string> &chunk : chunks) {
 		cout << "Running chunk: " << id << endl;
 		int shard = id % num_shards;
-		thread th (run_indexer2, sub_system, chunk, input_files, shard);
+		thread th (run_indexer_thread, sub_system, chunk, input_files, shard);
 		threads.push_back(move(th));
 		id++;
 	}
@@ -175,7 +176,7 @@ int main(int argc, const char **argv) {
 	for (const vector<string> &chunk : chunks) {
 		cout << "Running chunk: " << id << endl;
 		int shard = id % num_shards;
-		thread th (run_sorter, sub_system, chunk, shard);
+		thread th (run_sorter_thread, sub_system, chunk, shard);
 		threads.push_back(move(th));
 		id++;
 	}
@@ -201,7 +202,7 @@ int main(int argc, const char **argv) {
 
 		results.emplace_back(
 			pool.enqueue([sub_system, word, idx, word_size] {
-				upload_results(sub_system, word, 3);
+				upload_results_thread(sub_system, word, 3);
 				return word + " done " + to_string(idx) + " out of " + to_string(word_size);
 			})
 		);
