@@ -1,9 +1,13 @@
 .search-box-front {
 
 	margin-top: 20px;
-	text-align: center;
+	margin-left: 20px;
 }
 
 .search-box-front input {
 	width: 300px;
+}
+
+.search-form {
+	margin-bottom: 20px;
 }

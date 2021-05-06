@@ -1,29 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+
+import './App.css'
 import React from 'react'
 import {
-	useLocation,
-	Link,
+	//Link,
 	BrowserRouter
   } from "react-router-dom";
-
+import SearchResults from './SearchResults.js'
+import SearchForm from './SearchForm.js'
 class App extends React.Component {
-
-	constructor(props) {
-		super(props)
-	}
 	
+	componentDidMount() {
+	}
+
 	render() {
-		const {query} = this.props
-		let url = new URLSearchParams(document.location.search)
 		return (
 			<BrowserRouter>
 				<div className="search-box-front">
-					<form method="get">
-						<input type="text" name="q" value={query} />
-						<button className="search-box-button" type="submit">Search</button>
-					</form>
-					<SearchResults name={url.get("q")} />
+					<SearchForm />
+					<SearchResults />
 				</div>
 			</BrowserRouter>
 		)
@@ -31,19 +25,5 @@ class App extends React.Component {
 
 }
 
-App.defaultProps = {
-	query: ""
-}
 
-class SearchResults extends React.Component {
-	render() {
-		const {name} = this.props
-		return (
-			<div>
-				{name}
-			</div>
-		  );
-	}
-}
-
-export default App;
+export default App
