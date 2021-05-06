@@ -30,6 +30,14 @@ private:
 	string m_query;
 	vector<string> m_words;
 
+	size_t m_file_size;
+	size_t m_file_unzipped_size;
+
+	size_t m_download_time;
+	size_t m_parse_time;
+	size_t m_sort_time;
+	size_t m_num_lines;
+
 	string api_failure(const string &reason);
 	vector<SearchResult> get_results();
 	vector<SearchResult> download_index();

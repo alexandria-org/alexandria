@@ -124,8 +124,12 @@ void CCIndexer::sorter(const vector<string> &words, int shard) {
 		});
 
 		ofstream output_file(file_name, ios::trunc);
+		const size_t max_num_lines = 50000;
+		size_t line_num = 0;
 		for (size_t i : indices) {
 			output_file << lines[i] << endl;
+			line_num++;
+			if (line_num >= max_num_lines) break;
 		}
 	}
 

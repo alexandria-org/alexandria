@@ -120,4 +120,9 @@ public:
 
 	}
 
+	string clean_string(const string &str) {
+		const auto pos = str.find_last_of(" ");
+		return str.substr(0, pos);
+	}
+
 };

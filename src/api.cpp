@@ -29,11 +29,23 @@
 using namespace std;
 using namespace boost::iostreams;
 using namespace aws::lambda_runtime;
+using namespace Aws::Utils::Json;
 
 namespace io = boost::iostreams;
 
+string error_response(const string &error_message) {
+	JsonValue response_json;
+
+	response_json.WithObject("statusCode", JsonValue().AsInteger(200));
+	response_json.WithObject("headers", JsonValue().WithObject("Access-Control-Allow-Origin", JsonValue().AsString("*")));
+	response_json.WithObject("body", JsonValue().AsString(error_message));
+	response_json.WithObject("isBase64Encoded", JsonValue().AsBool(false));
+
+	return response_json.View().WriteReadable();
+}
+
 static invocation_response my_handler(invocation_request const& req, Aws::S3::S3Client const& client) {
-	using namespace Aws::Utils::Json;
+	
 	JsonValue json(req.payload);
 	if (!json.WasParseSuccessful()) {
 		return invocation_response::failure("Failed to parse input JSON", "InvalidJSON");
@@ -41,17 +53,31 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 
 	auto v = json.View();
 
-	if (!v.ValueExists("query") || !v.GetObject("query").IsString()) {
-		return invocation_response::failure("Missing query", "InvalidJSON");
+	if (!v.ValueExists("queryStringParameters")) {
+		return invocation_response::success(error_response("Missing query 1"), "application/json");
 	}
 
-	auto query = v.GetString("query");
+	if (!v.GetObject("queryStringParameters").ValueExists("query")) {
+		return invocation_response::success(error_response("Missing query 2"), "application/json");
+	}
 
-	// Internal execution about 70 seconds...
+	auto query = v.GetObject("queryStringParameters").GetString("query");
+
 	CCApi api(client);
-	string response_json = api.query(query);
+	string response_body = api.query(query);
 
-	return invocation_response::success(response_json, "application/json");
+	JsonValue response_json;
+
+	cout << "response_body: " << response_body << endl;
+
+	response_json.WithObject("statusCode", JsonValue().AsInteger(200));
+	response_json.WithObject("headers", JsonValue().WithObject("Access-Control-Allow-Origin", JsonValue().AsString("*")));
+	response_json.WithObject("body", JsonValue().AsString(response_body));
+	response_json.WithObject("isBase64Encoded", JsonValue().AsBool(true));
+
+	cout << "invocation_response: " << response_json.View().WriteReadable() << endl;
+
+	return invocation_response::success(response_json.View().WriteReadable(), "application/json");
 }
 
 std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory() {
