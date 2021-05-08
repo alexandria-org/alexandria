@@ -3,7 +3,7 @@
 cd `dirname $0`
 
 #make aws-lambda-package-cc_parser
-#make aws-lambda-package-cc_indexer
+make aws-lambda-package-cc_indexer
 make aws-lambda-package-cc_api
 
 #aws lambda update-function-configuration --function-name cc-parser --handler cc_parser --runtime provided --role arn:aws:iam::259015057813:role/service-role/cc-parser-role-kqqwot3e

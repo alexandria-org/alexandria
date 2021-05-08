@@ -2,6 +2,13 @@
 #include "URL.h"
 #include <curl/curl.h>
 
+string URL::host_reverse(const string &host) {
+	vector<string> parts;
+	boost::split(parts, host, boost::is_any_of("."));
+	reverse(parts.begin(), parts.end());
+	return boost::algorithm::join(parts, ".");
+}
+
 URL::URL() {
 	m_status = CC_OK;
 }
@@ -79,10 +86,7 @@ int URL::parse() {
 
 	curl_url_cleanup(h);
 
-	vector<string> parts;
-	boost::split(parts, m_host, boost::is_any_of("."));
-	reverse(parts.begin(), parts.end());
-	m_host_reverse = boost::algorithm::join(parts, ".");
+	m_host_reverse = URL::host_reverse(m_host);
 
 	return CC_OK;
 }

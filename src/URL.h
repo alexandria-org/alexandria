@@ -16,6 +16,8 @@ public:
 	URL(const string &url);
 	~URL();
 
+	static string host_reverse(const string &host);
+
 	void set_url_string(const string &url);
 	string host() const;
 	string path() const;

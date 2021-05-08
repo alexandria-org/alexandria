@@ -1,10 +1,14 @@
 
 #pragma once
 
+#include <aws/core/utils/logging/LogLevel.h>
+#include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <aws/core/client/ClientConfiguration.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 #include <vector>
+
+#include "Profiler.h"
 
 #define CC_ERROR 1
 #define CC_OK 0
@@ -26,3 +30,5 @@ template<class T> void vector_chunk(const std::vector<T> &vec, int chunk_size, s
 		dest.push_back(chunk);
 	}
 }
+
+std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> get_logger_factory();

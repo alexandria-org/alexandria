@@ -27,18 +27,24 @@ class BasicUrlData : public BasicData, public TextBase {
 
 public:
 	BasicUrlData() {};
-	BasicUrlData(const SubSystem *);
+	BasicUrlData(const SubSystem *, int shard, int id);
 	~BasicUrlData();
 
-	string build_index(int shard, int id);
+	string build_index();
 	inline string make_snippet(const string &text_after_h1);
 	void add_to_index(const string &word, const URL &url, const string &title, const string &snippet);
 	inline bool is_in_dictionary(const string &word);
 
 private:
 
-	stringstream m_result;
+	int m_shard;
+	int m_id;
 
-	string get_output_filename(int shard, int id);
+	map<size_t, string> m_index;
+	vector<string> m_keys;
+	size_t m_next_key = 0;
+
+	string get_output_filename();
+	string sort_and_store();
 
 };
