@@ -18,3 +18,10 @@ Aws::S3::S3Client get_s3_client() {
 	auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>("asd");
 	return Aws::S3::S3Client(credentialsProvider, get_s3_config());
 }
+
+std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> get_logger_factory() {
+	return [] {
+		return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
+			"console_logger", Aws::Utils::Logging::LogLevel::Error);
+	};
+}

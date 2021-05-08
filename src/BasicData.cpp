@@ -26,6 +26,25 @@ void BasicData::read_stream(ifstream &stream) {
 	read_data(decompress_stream);
 }
 
+void BasicData::download(const string &bucket, const string &key) {
+
+	Aws::S3::Model::GetObjectRequest request;
+	//cout << "Downloading " << bucket << " key: " << key << endl;
+	request.SetBucket(bucket);
+	request.SetKey(key);
+
+	auto outcome = m_sub_system->s3_client().GetObject(request);
+
+	if (outcome.IsSuccess()) {
+
+		auto &stream = outcome.GetResultWithOwnership().GetBody();
+		read_stream(stream);
+
+	}
+
+}
+
+
 void BasicData::read_data(filtering_istream &decompress_stream) {
 
 	int i = 0;

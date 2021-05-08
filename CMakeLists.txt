@@ -11,16 +11,18 @@ find_package(ZLIB)
 
 include_directories(src/)
 
-add_executable(${PROJECT_NAME} "src/main.cpp" "src/common.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp")
+add_executable(${PROJECT_NAME} "src/main.cpp" "src/common.cpp" "src/entities.cpp" "src/HtmlParser.cpp" "src/Link.cpp" "src/Profiler.cpp")
 add_executable(cc_indexer "src/indexer.cpp" "src/common.cpp" "src/TsvFile.cpp" "src/BasicUrlData.cpp" "src/BasicLinkData.cpp"
-	"src/BasicData.cpp" "src/URL.cpp" "src/Stopwords.cpp" "src/CCIndexer.cpp"  "src/TsvFileS3.cpp" "src/Dictionary.cpp"
-	"src/DictionaryRow.cpp" "src/SubSystem.cpp")
+	"src/BasicData.cpp" "src/URL.cpp" "src/Stopwords.cpp" "src/CCUrlIndexer.cpp" "src/CCLinkIndexer.cpp"  "src/TsvFileS3.cpp" "src/Dictionary.cpp"
+	"src/DictionaryRow.cpp" "src/SubSystem.cpp" "src/Profiler.cpp")
 add_executable(cc_api "src/api.cpp" "src/common.cpp" "src/CCApi.cpp" "src/Stopwords.cpp" "src/SearchResult.cpp"
-	"src/URL.cpp")
+	"src/URL.cpp" "src/Profiler.cpp")
 add_executable(run_tests "tests/test.cpp" "src/common.cpp" "tests/test1.cpp" "tests/test2.cpp" "tests/test3.cpp" "src/entities.cpp" "src/HtmlParser.cpp"
 	"src/Link.cpp" "src/TsvFile.cpp" "src/BasicUrlData.cpp" "src/BasicLinkData.cpp" "src/BasicData.cpp" "src/URL.cpp"
-	"src/Stopwords.cpp" "src/CCIndexer.cpp" "src/TsvFileS3.cpp" "src/Dictionary.cpp" "src/DictionaryRow.cpp"
-	"src/SubSystem.cpp")
+	"src/Stopwords.cpp" "src/CCUrlIndexer.cpp" "src/TsvFileS3.cpp" "src/Dictionary.cpp" "src/DictionaryRow.cpp"
+	"src/SubSystem.cpp" "src/Profiler.cpp")
+
+target_compile_definitions(run_tests PUBLIC CC_TESTING)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	AWS::aws-lambda-runtime 

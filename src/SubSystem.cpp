@@ -12,7 +12,9 @@ SubSystem::SubSystem(const Aws::S3::S3Client &s3_client) {
 
 	dictionary.read_column_into(0, m_words);
 
-	random_shuffle(m_words.begin(), m_words.end());
+	sort(m_words.begin(), m_words.end(), [](const string &a, const string &b) {
+		return a < b;
+	});
 
 	m_s3_client = s3_client;
 

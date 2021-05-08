@@ -8,20 +8,30 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <cmath>
 
+#include "SubSystem.h"
+#include "ThreadPool.h"
 #include "BasicUrlData.h"
 #include "BasicLinkData.h"
 
 using namespace std;
 
-class CCIndexer {
+#define CC_NUM_THREADS_DOWNLOADING 128
+#define CC_NUM_THREADS_UPLOADING 512
+#define CC_NUM_THREADS_INDEXING 32
+
+class CCUrlIndexer {
 
 public:
 
-	CCIndexer(const SubSystem *sub_system);
-	~CCIndexer();
+	CCUrlIndexer(const SubSystem *sub_system);
+	~CCUrlIndexer();
 
-	void run(const string &bucket, const string &key, int id, int shard);
+	static void run_all();
+	static void run_all(size_t limit);
+
+	void download(const string &bucket, const string &key, int id, int shard);
 	void index(const vector<string> &words, const vector<string> &input_files, int shard);
 	void sorter(const vector<string> &words, int shard);
 
@@ -29,9 +39,7 @@ private:
 
 	const SubSystem *m_sub_system;
 
-	BasicUrlData m_url_data;
-	BasicLinkData m_link_data;
-
-	void download_file(const string &bucket, const string &key, BasicData &index);
+	void find_chunk_positions(const vector<vector<string>> &chunks, const vector<string> &input_files,
+		map<size_t, map<string, pair<size_t, size_t>>> &container);
 
 };
