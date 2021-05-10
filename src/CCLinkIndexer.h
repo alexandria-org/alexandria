@@ -17,11 +17,6 @@
 
 using namespace std;
 
-#define CC_NUM_THREADS_DOWNLOADING 128
-#define CC_NUM_THREADS_UPLOADING 512
-#define CC_NUM_THREADS_SORTING 32
-#define CC_NUM_THREADS_INDEXING 32
-
 class CCLinkIndexer : public BasicIndexer {
 
 public:
@@ -29,10 +24,7 @@ public:
 	CCLinkIndexer(const SubSystem *sub_system);
 	~CCLinkIndexer();
 
-	static void run_all();
-	static void run_all(size_t limit);
-
-	void download(const string &bucket, const string &key, int id, int shard);
+	string download(const string &bucket, const string &key, int id, int shard);
 	void sorter(const vector<string> &words);
 
 private:

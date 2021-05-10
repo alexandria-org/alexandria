@@ -37,6 +37,15 @@ sudo mount /dev/nvme5n1 /mnt/5
 sudo mount /dev/nvme6n1 /mnt/6
 sudo mount /dev/nvme7n1 /mnt/7
 
+sudo mkdir /mnt/0/input
+sudo mkdir /mnt/1/input
+sudo mkdir /mnt/2/input
+sudo mkdir /mnt/3/input
+sudo mkdir /mnt/4/input
+sudo mkdir /mnt/5/input
+sudo mkdir /mnt/6/input
+sudo mkdir /mnt/7/input
+
 sudo mkdir /mnt/0/output
 sudo mkdir /mnt/1/output
 sudo mkdir /mnt/2/output
@@ -45,6 +54,15 @@ sudo mkdir /mnt/4/output
 sudo mkdir /mnt/5/output
 sudo mkdir /mnt/6/output
 sudo mkdir /mnt/7/output
+
+sudo mkdir /mnt/0/upload
+sudo mkdir /mnt/1/upload
+sudo mkdir /mnt/2/upload
+sudo mkdir /mnt/3/upload
+sudo mkdir /mnt/4/upload
+sudo mkdir /mnt/5/upload
+sudo mkdir /mnt/6/upload
+sudo mkdir /mnt/7/upload
 
 sudo chown -R ubuntu:ubuntu /mnt
 

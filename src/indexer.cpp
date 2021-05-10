@@ -9,7 +9,7 @@
 
 #include "CCFullTextIndexer.h"
 #include "CCUrlIndexer.h"
-#include "CCLinkIndexer.h"
+#include "CCLinkIndexRunner.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;
@@ -20,7 +20,8 @@ int main(int argc, const char **argv) {
 
 	//CCFullTextIndexer::run_all();
 	//CCUrlIndexer::run_all();
-	CCLinkIndexer::run_all(1);
+	CCLinkIndexRunner indexer;
+	indexer.run_all();
 
 	return 0;
 }
