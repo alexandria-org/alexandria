@@ -7,6 +7,7 @@
 #include <memory>
 #include <unistd.h>
 
+#include "CCFullTextIndexer.h"
 #include "CCUrlIndexer.h"
 #include "CCLinkIndexer.h"
 
@@ -17,8 +18,9 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	CCUrlIndexer::run_all();
-	//CCLinkIndexer::run_all();
+	//CCFullTextIndexer::run_all();
+	//CCUrlIndexer::run_all();
+	CCLinkIndexer::run_all(1);
 
 	return 0;
 }

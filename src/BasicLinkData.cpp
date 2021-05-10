@@ -43,7 +43,7 @@ string BasicLinkData::build_index(int shard, int id) {
 
 		for (const string &word : link_words) {
 			if (is_in_dictionary(word)) {
-				add_to_index(word, from_domain, from_uri, to_domain, to_uri);
+				add_to_index(word, from_domain, from_uri, to_domain, to_uri, link_text);
 				added_words++;
 			} else {
 				not_added_words++;
@@ -67,16 +67,24 @@ string BasicLinkData::build_index(int shard, int id) {
 }
 
 void BasicLinkData::add_to_index(const string &word, const string from_domain, const string &from_uri,
-	const string &to_domain, const string &to_uri) {
+	const string &to_domain, const string &to_uri, const string &link_text) {
 
 	const auto iter = m_sub_system->domain_index()->find(URL::host_reverse(from_domain));
-	if (iter == m_sub_system->domain_index()->end()) return;
 
-	const DictionaryRow row = iter->second;
+	int harmonic;
+	if (iter == m_sub_system->domain_index()->end()) {
+		#ifndef CC_TESTING
+			harmonic = 0;
+		#else
+			harmonic = 0;
+		#endif
+	} else {
+		const DictionaryRow row = iter->second;
+		harmonic = row.get_int(1);
+	}
 
-	const int harmonic = row.get_int(1);
-
-	m_result << word << "\t" << to_domain << "\t" << to_uri << "\t" << harmonic << endl;
+	m_result << word << "\t" << to_domain << "\t" << to_uri << "\t" << from_domain << "\t" << from_uri << "\t"
+		<< harmonic << "\t" << link_text << endl;
 }
 
 inline bool BasicLinkData::is_in_dictionary(const string &word) {

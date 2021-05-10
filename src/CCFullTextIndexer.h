@@ -12,35 +12,31 @@
 
 #include "SubSystem.h"
 #include "ThreadPool.h"
+#include "BasicUrlData.h"
 #include "BasicLinkData.h"
-#include "BasicIndexer.h"
 
 using namespace std;
 
 #define CC_NUM_THREADS_DOWNLOADING 128
 #define CC_NUM_THREADS_UPLOADING 512
-#define CC_NUM_THREADS_SORTING 32
 #define CC_NUM_THREADS_INDEXING 32
 
-class CCLinkIndexer : public BasicIndexer {
+class CCFullTextIndexer {
 
 public:
 
-	CCLinkIndexer(const SubSystem *sub_system);
-	~CCLinkIndexer();
+	CCFullTextIndexer(const SubSystem *sub_system);
+	~CCFullTextIndexer();
 
 	static void run_all();
 	static void run_all(size_t limit);
 
 	void download(const string &bucket, const string &key, int id, int shard);
-	void sorter(const vector<string> &words);
+	void index(const vector<string> &words, const vector<string> &input_files, int shard);
+	void sorter(const vector<string> &words, int shard);
 
 private:
 
 	const SubSystem *m_sub_system;
-
-	BasicLinkData m_link_data;
-
-	void download_file(const string &bucket, const string &key, BasicData &index);
 
 };
