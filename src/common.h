@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <aws/core/Aws.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <aws/core/client/ClientConfiguration.h>
@@ -13,6 +14,8 @@
 #define CC_ERROR 1
 #define CC_OK 0
 
+void init_aws_api();
+void deinit_aws_api();
 Aws::Client::ClientConfiguration get_s3_config();
 Aws::S3::S3Client get_s3_client();
 

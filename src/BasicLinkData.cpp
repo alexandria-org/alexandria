@@ -74,7 +74,8 @@ void BasicLinkData::add_to_index(const string &word, const string from_domain, c
 	int harmonic;
 	if (iter == m_sub_system->domain_index()->end()) {
 		#ifndef CC_TESTING
-			harmonic = 0;
+			return;
+			//harmonic = 0;
 		#else
 			harmonic = 0;
 		#endif
@@ -92,5 +93,5 @@ inline bool BasicLinkData::is_in_dictionary(const string &word) {
 }
 
 string BasicLinkData::get_output_filename(int shard, int id) {
-	return "/mnt/"+to_string(shard)+"/links_"+to_string(id)+".tsv";
+	return "/mnt/"+to_string(shard)+"/input/links_"+to_string(id)+".tsv";
 }

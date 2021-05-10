@@ -1,6 +1,19 @@
 
 #include "common.h"
 
+void init_aws_api() {
+	Aws::SDKOptions options;
+	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Error;
+	options.loggingOptions.logger_create_fn = get_logger_factory();
+
+	Aws::InitAPI(options);
+}
+
+void deinit_aws_api() {
+	Aws::SDKOptions options;
+	Aws::ShutdownAPI(options);
+}
+
 Aws::Client::ClientConfiguration get_s3_config() {
 
 	Aws::Client::ClientConfiguration config;
