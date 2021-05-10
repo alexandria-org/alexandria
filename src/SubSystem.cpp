@@ -18,6 +18,7 @@ SubSystem::SubSystem(const Aws::S3::S3Client &s3_client) {
 
 	m_s3_client = s3_client;
 
+	//TsvFileS3 dictionary(s3_client, "full_text_dictionary.tsv");
 }
 
 SubSystem::~SubSystem() {

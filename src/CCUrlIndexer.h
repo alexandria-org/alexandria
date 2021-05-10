@@ -13,7 +13,7 @@
 #include "SubSystem.h"
 #include "ThreadPool.h"
 #include "BasicUrlData.h"
-#include "BasicLinkData.h"
+#include "BasicIndexer.h"
 
 using namespace std;
 
@@ -21,7 +21,7 @@ using namespace std;
 #define CC_NUM_THREADS_UPLOADING 512
 #define CC_NUM_THREADS_INDEXING 32
 
-class CCUrlIndexer {
+class CCUrlIndexer : public BasicIndexer {
 
 public:
 
@@ -32,7 +32,6 @@ public:
 	static void run_all(size_t limit);
 
 	void download(const string &bucket, const string &key, int id, int shard);
-	void index(const vector<string> &words, const vector<string> &input_files, int shard);
 	void sorter(const vector<string> &words, int shard);
 
 private:

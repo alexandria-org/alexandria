@@ -53,15 +53,23 @@ int main() {
 	});
 
 	string result;
-
+	string full_text_index;
+	uint64_t word_idx = 1ul;
 	for (const auto &iter : vec) {
 		result += iter.first + "\t" + to_string(iter.second) + "\n";
+		full_text_index += iter.first + "\t" + to_string(word_idx) + "\n";
+		word_idx++;
 	}
 
 	ofstream outfile;
 	outfile.open("/host/alexandria.org/main_dictionary.tsv", ios::app);
 	outfile << result;
 	outfile.close();
+
+	ofstream outfile2;
+	outfile2.open("/host/alexandria.org/full_text_index.tsv", ios::app);
+	outfile2 << full_text_index;
+	outfile2.close();
 
 	return 0;
 }
