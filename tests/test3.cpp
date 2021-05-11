@@ -47,7 +47,7 @@ int test3_1(void) {
 int test3_2(void) {
 	int ok = 1;
 
-	CCFullTextIndexer::run_all(1);
+	//CCFullTextIndexer::run_all(1);
 	//CCUrlIndexer::run_all(1);
 
 	TsvFile my_file("tests/data/tsvtest.tsv");
