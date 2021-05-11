@@ -42,9 +42,11 @@ string ApiResponse::json() const {
 	for (const SearchResult &result : m_results) {
 		JsonValue json_result;
 		JsonValue string;
+		JsonValue json_number;
 		json_result.WithObject("url", string.AsString(result.url()));
 		json_result.WithObject("title", string.AsString(clean_string(result.title())));
 		json_result.WithObject("snippet", string.AsString(clean_string(result.snippet())));
+		json_result.WithObject("score", json_number.AsDouble(result.score()));
 		result_array[idx] = json_result;
 		idx++;
 	}
@@ -64,5 +66,5 @@ string ApiResponse::json() const {
 
 	response.WithObject("status", json_string.AsString("success"));
 	response.WithObject("message", message);
-	return response.View().WriteCompact();
+	return response.View().WriteReadable();
 }

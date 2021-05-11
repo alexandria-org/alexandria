@@ -1,20 +1,45 @@
 
 #include "SearchResult.h"
 
-SearchResult::SearchResult(const string line, const vector<string> &words, const string &query) {
+SearchResult::SearchResult(const string &line) {
 	stringstream ss(line);
 
 	string col;
 
-	getline(ss, col, '\t');
-	getline(ss, m_url, '\t');
-	m_url_obj.set_url_string(m_url);
-	getline(ss, col, '\t');
-	m_score = stod(col);
-	getline(ss, m_title, '\t');
-	getline(ss, m_snippet, '\t');
+	size_t pos_start = 0;
+	size_t pos_end = 0;
+	size_t col_num = 0;
+	while (pos_end != string::npos) {
+		pos_end = line.find('\t', pos_start);
+		const size_t len = pos_end - pos_start;
+		if (col_num == 1) {
+			m_url = line.substr(pos_start, len);
+		}
+		if (col_num == 2) {
+			m_centrality = stoi(line.substr(pos_start, len));
+		}
+		if (col_num == 3) {
+			m_title = line.substr(pos_start, len);
+		}
+		if (col_num == 4) {
+			m_snippet = line.substr(pos_start, len);
+		}
 
-	m_score *= score_modifier(words, query);
+		pos_start = pos_end + 1;
+		col_num++;
+	}
+
+	// Remove https?:// from url.
+	size_t protocol_start = m_url.find("//", 0);
+	m_url_clean = m_url.substr(protocol_start + 2);
+	size_t www_start = m_url_clean.find("www.");
+	if (www_start == 0) {
+		m_url_clean = m_url_clean.substr(4);
+	}
+
+	size_t path_start = m_url_clean.find('/');
+	m_path = m_url_clean.substr(path_start);
+	m_host = m_url_clean.substr(0, path_start);
 }
 
 SearchResult::~SearchResult() {
@@ -23,6 +48,14 @@ SearchResult::~SearchResult() {
 
 string SearchResult::url() const {
 	return m_url;
+}
+
+string SearchResult::url_clean() const {
+	return m_url_clean;
+}
+
+string SearchResult::host() const {
+	return m_host;
 }
 
 string SearchResult::title() const {
@@ -37,30 +70,25 @@ double SearchResult::score() const {
 	return m_score;
 }
 
-string SearchResult::get_host() const {
-	return m_url_obj.host();
-}
-
 bool SearchResult::should_include() const {
 	return m_should_include;
 }
 
-double SearchResult::score_modifier(const vector<string> &words, const string &query) {
+void SearchResult::calculate_score(const string &query, const vector<string> &words) {
 
 	double modifier = 1.0;
-	// If path is root
-	if (m_url_obj.path() == "/") {
-		modifier += 1.0;
-	}
+
 	// If we find the whole query in title or in snippet
-	if (lower_case(m_title).find(query) != string::npos || lower_case(m_snippet).find(query) != string::npos) {
-		modifier += 1.0;
+	if (lower_case(m_title).find(query) != string::npos) {
+		modifier *= 1.1;
 	}
+
 	// If the URL length is...
-	if (m_url.length() > 100) {
-		modifier -= 2.0;
-	} else {
-		modifier -= (double)m_url.length() * 0.02;
+	if (m_host.length() > 40) {
+		modifier *= 0.1;
+	}
+	if (m_path.length() > 140) {
+		modifier *= 0.9;
 	}
 
 	// Only include search results where all the words are present.
@@ -71,5 +99,20 @@ double SearchResult::score_modifier(const vector<string> &words, const string &q
 			m_should_include = false;
 		}
 	}
-	return modifier;
+
+	m_score = m_centrality * (1.0 + m_inlink_score) * modifier;
+}
+
+void SearchResult::add_links(const vector<LinkResult> &links) {
+	for (const LinkResult &link : links) {
+		m_inlink_score += 5*(double)link.m_centrality / 100000000.0;
+	}
+	m_inlink_count = links.size();
+}
+
+void SearchResult::add_domain_links(const vector<LinkResult> &links) {
+	for (const LinkResult &link : links) {
+		m_inlink_score += (double)link.m_centrality / 100000000.0;
+	}
+	m_inlink_count = links.size();
 }

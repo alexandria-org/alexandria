@@ -71,14 +71,7 @@ actions.addComponentReducer(component_name, function (state, action) {
 			state = dot.set(state, '_loading_error', "")
 			return dot.set(state, '_loading_results', true)
 		case 'LOAD_SUCCESS':
-			state = dot.set(state, '_search_info', {
-				file_size: action.response.file_size,
-				file_unzipped_size: action.response.file_unzipped_size,
-				download_time: action.response.download_time,
-				parse_time: action.response.parse_time,
-				sort_time: action.response.sort_time,
-				num_lines: action.response.num_lines
-			})
+			state = dot.set(state, '_search_info', action.response.debug)
 			let db_obj = {
 				allIds: [],
 				byId: {}

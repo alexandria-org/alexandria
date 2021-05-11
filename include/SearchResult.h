@@ -6,6 +6,7 @@
 
 #include "URL.h"
 #include "TextBase.h"
+#include "LinkResult.h"
 
 using namespace std;
 
@@ -13,24 +14,38 @@ class SearchResult : public TextBase {
 
 public:
 
-	SearchResult(const string line, const vector<string> &words, const string &query);
+	SearchResult(const string &line);
 	~SearchResult();
 
 	string url() const;
+	string url_clean() const;
+	string host() const;
 	string title() const;
 	string snippet() const;
 	double score() const;
-	string get_host() const;
 	bool should_include() const;
 
+	void calculate_score(const string &query, const vector<string> &words);
+	void add_links(const vector<LinkResult> &links);
+	void add_domain_links(const vector<LinkResult> &links);
+
 private:
-	bool m_should_include;
+	
+	// Score modifiers
+	int m_inlink_count = 0;
+	double m_inlink_score = 0.0;
+	vector<LinkResult> m_links;
+	int m_centrality;
+	size_t m_domains_linking_count;
 	double m_score;
-	string m_url;
-	URL m_url_obj;
+	bool m_should_include;
+
+	// Data
 	string m_title;
 	string m_snippet;
-
-	double score_modifier(const vector<string> &words, const string &query);
+	string m_url;
+	string m_url_clean;
+	string m_path;
+	string m_host;
 
 };

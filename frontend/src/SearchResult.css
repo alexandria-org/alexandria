@@ -41,3 +41,11 @@
 	line-height: 1.58;
 	font-size: 14px;
 }
+
+.search-info {
+	position: fixed;
+	top: 0;
+	right: 0;
+	padding: 5px;
+	background: #ffaaaa;
+}

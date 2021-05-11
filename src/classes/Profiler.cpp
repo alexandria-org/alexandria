@@ -13,15 +13,18 @@ Profiler::~Profiler() {
 	}
 }
 
-void Profiler::stop() {
-	m_has_stopped = true;
+size_t Profiler::get() const {
 	auto timer_elapsed = chrono::high_resolution_clock::now() - m_start_time;
 	auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
-	cout << "Profiler [" << m_name << "] took " << (microseconds/1000) << "ms" << endl;
+
+	return microseconds/1000;
+}
+
+void Profiler::stop() {
+	m_has_stopped = true;
+	cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
 }
 
 void Profiler::print() {
-	auto timer_elapsed = chrono::high_resolution_clock::now() - m_start_time;
-	auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
-	cout << "Profiler [" << m_name << "] took " << (microseconds/1000) << "ms" << endl;
+	cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
 }

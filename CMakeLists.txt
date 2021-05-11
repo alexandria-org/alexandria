@@ -29,7 +29,9 @@ set(SRC_CLASSES
 	"src/classes/SubSystem.cpp"
 	"src/classes/TsvFile.cpp"
 	"src/classes/TsvFileS3.cpp"
+	"src/classes/TsvRow.cpp"
 	"src/classes/URL.cpp"
+	"src/classes/LinkResult.cpp"
 
 	"src/abstract/BasicData.cpp"
 	"src/abstract/BasicIndexer.cpp"
