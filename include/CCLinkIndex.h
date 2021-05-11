@@ -17,12 +17,12 @@
 
 using namespace std;
 
-class CCLinkIndexer : public BasicIndexer {
+class CCLinkIndex : public BasicIndexer {
 
 public:
 
-	CCLinkIndexer(const SubSystem *sub_system);
-	~CCLinkIndexer();
+	CCLinkIndex(const SubSystem *sub_system);
+	~CCLinkIndex();
 
 	string download(const string &bucket, const string &key, int id, int shard);
 	void sorter(const vector<string> &words);

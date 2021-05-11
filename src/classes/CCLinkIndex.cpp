@@ -1,15 +1,15 @@
 
-#include "CCLinkIndexer.h"
+#include "CCLinkIndex.h"
 
-CCLinkIndexer::CCLinkIndexer(const SubSystem *sub_system) :
+CCLinkIndex::CCLinkIndex(const SubSystem *sub_system) :
 m_sub_system(sub_system), m_link_data(sub_system)
 {
 }
 
-CCLinkIndexer::~CCLinkIndexer() {
+CCLinkIndex::~CCLinkIndex() {
 }
 
-string CCLinkIndexer::download(const string &bucket, const string &file, int shard, int id) {
+string CCLinkIndex::download(const string &bucket, const string &file, int shard, int id) {
 
 	string link_key = file;
 	link_key.replace(link_key.find(".warc.gz"), 8, ".links.gz");
@@ -22,7 +22,7 @@ string CCLinkIndexer::download(const string &bucket, const string &file, int sha
 	return m_link_data.build_index(shard, id);
 }
 
-void CCLinkIndexer::sorter(const vector<string> &words) {
+void CCLinkIndex::sorter(const vector<string> &words) {
 
 	// Open all my output files.
 	map<string, ofstream> out_files;
@@ -74,7 +74,7 @@ void CCLinkIndexer::sorter(const vector<string> &words) {
 
 }
 
-void CCLinkIndexer::download_file(const string &bucket, const string &key, BasicData &data) {
+void CCLinkIndex::download_file(const string &bucket, const string &key, BasicData &data) {
 
 	Aws::S3::Model::GetObjectRequest request;
 	cout << "Downloading " << bucket << " key: " << key << endl;

@@ -15,8 +15,8 @@ include_directories(tests/)
 set(SRC_CLASSES
 	"src/classes/CCApi.cpp"
 	"src/classes/CCFullTextIndexer.cpp"
-	"src/classes/CCLinkIndexer.cpp"
-	"src/classes/CCLinkIndexRunner.cpp"
+	"src/classes/CCLinkIndex.cpp"
+	"src/classes/CCIndexRunner.cpp"
 	"src/classes/CCUrlIndexer.cpp"
 	"src/classes/Dictionary.cpp"
 	"src/classes/DictionaryRow.cpp"

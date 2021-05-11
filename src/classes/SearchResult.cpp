@@ -46,20 +46,24 @@ bool SearchResult::should_include() const {
 }
 
 double SearchResult::score_modifier(const vector<string> &words, const string &query) {
-	//if (m_url_obj.path())
+
 	double modifier = 1.0;
+	// If path is root
 	if (m_url_obj.path() == "/") {
 		modifier += 1.0;
 	}
+	// If we find the whole query in title or in snippet
 	if (lower_case(m_title).find(query) != string::npos || lower_case(m_snippet).find(query) != string::npos) {
 		modifier += 1.0;
 	}
+	// If the URL length is...
 	if (m_url.length() > 100) {
 		modifier -= 2.0;
 	} else {
 		modifier -= (double)m_url.length() * 0.02;
 	}
 
+	// Only include search results where all the words are present.
 	m_should_include = true;
 	for (const string &word : words) {
 		if (lower_case(m_title).find(word) == string::npos && lower_case(m_snippet).find(word) == string::npos &&

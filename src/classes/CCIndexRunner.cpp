@@ -1,17 +1,17 @@
 
-#include "CCLinkIndexRunner.h"
+#include "CCIndexRunner.h"
 
-CCLinkIndexRunner::CCLinkIndexRunner() {
+CCIndexRunner::CCIndexRunner() {
 }
 
-CCLinkIndexRunner::~CCLinkIndexRunner() {
+CCIndexRunner::~CCIndexRunner() {
 }
 
-void CCLinkIndexRunner::run_all() {
+void CCIndexRunner::run_all() {
 	run_all(0);
 }
 
-void CCLinkIndexRunner::run_all(size_t limit) {
+void CCIndexRunner::run_all(size_t limit) {
 
 	init_aws_api();
 
@@ -30,7 +30,8 @@ void CCLinkIndexRunner::run_all(size_t limit) {
 
 }
 
-map<int, vector<string>> CCLinkIndexRunner::download_all(size_t limit) {
+map<int, vector<string>> CCIndexRunner::download_all(size_t limit) {
+
 	string warc_paths_url = "crawl-data/CC-MAIN-2021-10/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
@@ -67,12 +68,12 @@ map<int, vector<string>> CCLinkIndexRunner::download_all(size_t limit) {
 	return shard_files;
 }
 
-void CCLinkIndexRunner::index_all(const map<int, vector<string>> &files) {
+void CCIndexRunner::index_all(const map<int, vector<string>> &files) {
 	Profiler split_profiler("Split files");
 
 	vector<thread> threads;
 	for (const auto &iter : files) {
-		thread th (&CCLinkIndexRunner::run_indexer_thread, this, iter.second, iter.first);
+		thread th (&CCIndexRunner::run_indexer_thread, this, iter.second, iter.first);
 		threads.push_back(move(th));
 	}
 
@@ -88,7 +89,7 @@ void CCLinkIndexRunner::index_all(const map<int, vector<string>> &files) {
 	split_profiler.stop();
 }
 
-void CCLinkIndexRunner::sort_all() {
+void CCIndexRunner::sort_all() {
 	Profiler profiler("Sorting");
 	vector<thread> threads;
 	vector<string> words = m_sub_system->words();
@@ -102,7 +103,7 @@ void CCLinkIndexRunner::sort_all() {
 	int id = 0;
 	for (const vector<string> &chunk : chunks) {
 		cout << "Running chunk: " << id << endl;
-		thread th (&CCLinkIndexRunner::run_sorter_thread, this, chunk);
+		thread th (&CCIndexRunner::run_sorter_thread, this, chunk);
 		threads.push_back(move(th));
 		id++;
 	}
@@ -117,7 +118,7 @@ void CCLinkIndexRunner::sort_all() {
 	threads.clear();
 }
 
-void CCLinkIndexRunner::upload_all() {
+void CCIndexRunner::upload_all() {
 	// Uploading
 
 	Profiler profile("Uploading");
@@ -143,29 +144,29 @@ void CCLinkIndexRunner::upload_all() {
 	}
 }
 
-string CCLinkIndexRunner::run_download_thread(const string &warc_path, int shard, int id) {
+string CCIndexRunner::run_download_thread(const string &warc_path, int shard, int id) {
 	const string bucket = "alexandria-cc-output";
-	CCLinkIndexer indexer(m_sub_system);
+	CCLinkIndex indexer(m_sub_system);
 	return indexer.download(bucket, warc_path, shard, id);
 }
 
-void CCLinkIndexRunner::run_indexer_thread(const vector<string> &file_names, int shard) {
+void CCIndexRunner::run_indexer_thread(const vector<string> &file_names, int shard) {
 
-	CCLinkIndexer indexer(m_sub_system);
+	CCLinkIndex indexer(m_sub_system);
 	indexer.index(file_names, shard);
 }
 
-void CCLinkIndexRunner::run_sorter_thread(const vector<string> &chunk) {
+void CCIndexRunner::run_sorter_thread(const vector<string> &chunk) {
 
 	try {
-		CCLinkIndexer indexer(m_sub_system);
+		CCLinkIndex indexer(m_sub_system);
 		indexer.sorter(chunk);
 	} catch (runtime_error &error) {
 		cout << error.what() << endl;
 	}
 }
 
-void CCLinkIndexRunner::upload_results_thread(const string &word, int retries) {
+void CCIndexRunner::upload_results_thread(const string &word, int retries) {
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket("alexandria-index");

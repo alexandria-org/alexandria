@@ -3,7 +3,7 @@
 
 #include "SubSystem.h"
 #include "ThreadPool.h"
-#include "CCLinkIndexer.h"
+#include "CCLinkIndex.h"
 
 using namespace std;
 
@@ -12,12 +12,12 @@ using namespace std;
 #define CC_NUM_THREADS_SORTING 32
 #define CC_NUM_THREADS_INDEXING 32
 
-class CCLinkIndexRunner {
+class CCIndexRunner {
 
 public:
 
-	CCLinkIndexRunner();
-	~CCLinkIndexRunner();
+	CCIndexRunner();
+	~CCIndexRunner();
 
 	void run_all();
 	void run_all(size_t limit);
