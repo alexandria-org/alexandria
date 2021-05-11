@@ -13,6 +13,7 @@ include_directories(include/)
 include_directories(tests/)
 
 set(SRC_CLASSES
+	"src/classes/ApiResponse.cpp"
 	"src/classes/CCApi.cpp"
 	"src/classes/CCFullTextIndexer.cpp"
 	"src/classes/CCLinkIndex.cpp"
@@ -46,6 +47,7 @@ set(SRC_TESTS
 	"tests/test1.cpp"
 	"tests/test2.cpp"
 	"tests/test3.cpp"
+	"tests/test4.cpp"
 )
 
 add_executable(cc_parser 

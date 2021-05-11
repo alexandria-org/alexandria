@@ -1,8 +1,5 @@
 
 #include "CCApi.h"
-#include <aws/core/utils/json/JsonSerializer.h>
-
-using namespace Aws::Utils::Json;
 
 CCApi::CCApi(const Aws::S3::S3Client &s3_client) {
 	m_s3_client = s3_client;
@@ -12,56 +9,24 @@ CCApi::~CCApi() {
 
 }
 
-string CCApi::query(const string &query) {
+ApiResponse CCApi::query(const string &query) {
+
+	ApiResponse response;
 
 	m_query = query;
 	m_words = get_words(query);
 
 	vector<SearchResult> results = get_results();
 
-	JsonValue message("{}");
-	if (!message.WasParseSuccessful()) {
-		return api_failure("Failed to parse input JSON");
-	}
+	response.set_results(results);
+	response.set_debug("file_size", m_file_size);
+	response.set_debug("file_unzipped_size", m_file_unzipped_size);
+	response.set_debug("download_time", m_download_time);
+	response.set_debug("parse_time", m_parse_time);
+	response.set_debug("sort_time", m_sort_time);
+	response.set_debug("num_lines", m_num_lines);
 
-	Aws::Utils::Array<Aws::Utils::Json::JsonValue> result_array(results.size());
-
-	size_t idx = 0;
-	for (const SearchResult &result : results) {
-		JsonValue json_result;
-		JsonValue string;
-		json_result.WithObject("url", string.AsString(result.url()));
-		json_result.WithObject("title", string.AsString(clean_string(result.title())));
-		json_result.WithObject("snippet", string.AsString(clean_string(result.snippet())));
-		result_array[idx] = json_result;
-		idx++;
-	}
-
-	JsonValue json_results, json_number;
-	json_results.AsArray(result_array);
-	message.WithObject("results", json_results);
-
-	// Write some profiling data.
-	message.WithObject("file_size", json_number.AsInteger(m_file_size));
-	message.WithObject("file_unzipped_size", json_number.AsInteger(m_file_unzipped_size));
-	message.WithObject("download_time", json_number.AsInteger(m_download_time));
-	message.WithObject("parse_time", json_number.AsInteger(m_parse_time));
-	message.WithObject("sort_time", json_number.AsInteger(m_sort_time));
-	message.WithObject("num_lines", json_number.AsInteger(m_num_lines));
-
-	JsonValue response, json_string;
-
-	response.WithObject("status", json_string.AsString("success"));
-	response.WithObject("message", message);
-	return response.View().WriteCompact();
-}
-
-string CCApi::api_failure(const string &reason) {
-	JsonValue response, json_string;
-
-	response.WithObject("status", json_string.AsString("error"));
-	response.WithObject("reason", json_string.AsString(reason));
-	return response.View().WriteCompact();
+	return response;
 }
 
 vector<SearchResult> CCApi::get_results() {

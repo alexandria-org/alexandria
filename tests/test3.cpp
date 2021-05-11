@@ -84,18 +84,5 @@ int test3_2(void) {
 int test3_3(void) {
 	int ok = 1;
 
-	Profiler profile_test("Read file to map");
-	ifstream infile("/mnt/1/output_1.tsv");
-	string line;
-	map<string, string> index;
-	size_t total_size = 0;
-	while (getline(infile, line)) {
-		const string word = line.substr(0, line.find("\t"));
-		index[word] += line + "\n";
-		total_size += line.size() + 1;
-	}
-	profile_test.stop();
-
-
 	return ok;
 }

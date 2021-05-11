@@ -64,7 +64,8 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 	auto query = v.GetObject("queryStringParameters").GetString("query");
 
 	CCApi api(client);
-	string response_body = api.query(query);
+	ApiResponse response = api.query(query);
+	string response_body = response.json();
 
 	JsonValue response_json;
 

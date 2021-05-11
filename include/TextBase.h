@@ -19,26 +19,26 @@ class TextBase {
 public:
 
 	// trim from start (in place)
-	inline void ltrim(string &s) {
+	inline void ltrim(string &s) const {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
 			return !isspace(ch) && !ispunct(ch);
 		}));
 	}
 
 	// trim from end (in place)
-	inline void rtrim(string &s) {
+	inline void rtrim(string &s) const {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
 			return !isspace(ch) && !ispunct(ch);
 		}).base(), s.end());
 	}
 
 	// trim (in place)
-	inline void trim(string &s) {
+	inline void trim(string &s) const {
 		ltrim(s);
 		rtrim(s);
 	}
 
-	inline bool is_clean_char(const char *ch, size_t multibyte_len) {
+	inline bool is_clean_char(const char *ch, size_t multibyte_len) const {
 		if (multibyte_len == 1) {
 			return (ch[0] >= 'a' && ch[0] <= 'z') || (ch[0] >= '0' && ch[0] <= '9');
 		} else if (multibyte_len == 2) {
@@ -47,7 +47,7 @@ public:
 		return false;
 	}
 
-	inline string clean_word(const string &s) {
+	inline string clean_word(const string &s) const {
 		string result;
 		const char *str = s.c_str();
 		size_t len = s.size();
@@ -66,7 +66,7 @@ public:
 		return result;
 	}
 
-	inline bool is_clean_word(const string &s) {
+	inline bool is_clean_word(const string &s) const {
 		const char *str = s.c_str();
 		size_t len = s.size();
 		for (size_t i = 0; i < len; ) {
@@ -93,7 +93,7 @@ public:
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 	*/
-	inline vector<string> get_words(const string &str, size_t limit) {
+	inline vector<string> get_words(const string &str, size_t limit) const {
 
 		const string word_boundary = " \t,|!,";
 
@@ -114,13 +114,13 @@ public:
 		return words;
 	}
 
-	inline vector<string> get_words(const string &str) {
+	inline vector<string> get_words(const string &str) const {
 
 		return get_words(str, 0);
 
 	}
 
-	string clean_string(const string &str) {
+	string clean_string(const string &str) const {
 		const auto pos = str.find_last_of(" ");
 		return str.substr(0, pos);
 	}
