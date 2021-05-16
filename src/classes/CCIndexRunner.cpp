@@ -1,17 +1,21 @@
 
 #include "CCIndexRunner.h"
 
-CCIndexRunner::CCIndexRunner() {
+template <class TemplateIndexer>
+CCIndexRunner<TemplateIndexer>::CCIndexRunner() {
 }
 
-CCIndexRunner::~CCIndexRunner() {
+template<class TemplateIndexer>
+CCIndexRunner<TemplateIndexer>::~CCIndexRunner() {
 }
 
-void CCIndexRunner::run_all() {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::run_all() {
 	run_all(0);
 }
 
-void CCIndexRunner::run_all(size_t limit) {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::run_all(size_t limit) {
 
 	init_aws_api();
 
@@ -19,9 +23,14 @@ void CCIndexRunner::run_all(size_t limit) {
 
 	m_sub_system = new SubSystem(s3_client);
 
-	//map<int, vector<string>> downloaded_files = download_all(limit);
-	//index_all(downloaded_files);
-	//sort_all();
+	map<int, vector<string>> downloaded_files = download_all(limit);
+	/*for (const auto &iter : downloaded_files) {
+		for (const string &file_name : iter.second) {
+			cout << "Downloaded file: " << file_name << endl;
+		}
+	}*/
+	index_all(downloaded_files);
+	sort_all();
 	upload_all();
 
 	delete m_sub_system;
@@ -30,7 +39,8 @@ void CCIndexRunner::run_all(size_t limit) {
 
 }
 
-map<int, vector<string>> CCIndexRunner::download_all(size_t limit) {
+template<class TemplateIndexer>
+map<int, vector<string>> CCIndexRunner<TemplateIndexer>::download_all(size_t limit) {
 
 	string warc_paths_url = "crawl-data/CC-MAIN-2021-10/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
@@ -53,8 +63,8 @@ map<int, vector<string>> CCIndexRunner::download_all(size_t limit) {
 				return run_download_thread(warc_path, shard, id);
 			})
 		);
-		
-		string output_file = "/mnt/"+to_string(shard)+"/input/links_"+to_string(id)+".tsv";
+
+		string output_file = TemplateIndexer::get_downloaded_file_name(shard, id);
 		shard_files[shard].push_back(output_file);
 
 		if (limit && id >= limit) break;
@@ -62,13 +72,14 @@ map<int, vector<string>> CCIndexRunner::download_all(size_t limit) {
 	}
 
 	for(auto && result: results) {
-		cout << "Finished downloading: " << result.get() << endl;
+		result.get();
 	}
 
 	return shard_files;
 }
 
-void CCIndexRunner::index_all(const map<int, vector<string>> &files) {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::index_all(const map<int, vector<string>> &files) {
 	Profiler split_profiler("Split files");
 
 	vector<thread> threads;
@@ -89,7 +100,8 @@ void CCIndexRunner::index_all(const map<int, vector<string>> &files) {
 	split_profiler.stop();
 }
 
-void CCIndexRunner::sort_all() {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::sort_all() {
 	Profiler profiler("Sorting");
 	vector<thread> threads;
 	vector<string> words = m_sub_system->words();
@@ -118,7 +130,8 @@ void CCIndexRunner::sort_all() {
 	threads.clear();
 }
 
-void CCIndexRunner::upload_all() {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::upload_all() {
 	// Uploading
 
 	Profiler profile("Uploading");
@@ -132,7 +145,7 @@ void CCIndexRunner::upload_all() {
 
 		results.emplace_back(
 			pool.enqueue([this, word, idx, word_size] {
-				upload_results_thread(word, 3);
+				upload_results_thread(word);
 				return word + " done " + to_string(idx) + " out of " + to_string(word_size);
 			})
 		);
@@ -144,63 +157,39 @@ void CCIndexRunner::upload_all() {
 	}
 }
 
-string CCIndexRunner::run_download_thread(const string &warc_path, int shard, int id) {
+template<class TemplateIndexer>
+string CCIndexRunner<TemplateIndexer>::run_download_thread(const string &warc_path, int shard, int id) {
 	const string bucket = "alexandria-cc-output";
-	CCLinkIndex indexer(m_sub_system);
-	return indexer.download(bucket, warc_path, shard, id);
+	TemplateIndexer indexer(m_sub_system);
+	indexer.download(bucket, warc_path, shard, id);
+	return "";
 }
 
-void CCIndexRunner::run_indexer_thread(const vector<string> &file_names, int shard) {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::run_indexer_thread(const vector<string> &file_names, int shard) {
 
-	CCLinkIndex indexer(m_sub_system);
+	TemplateIndexer indexer(m_sub_system);
 	indexer.index(file_names, shard);
 }
 
-void CCIndexRunner::run_sorter_thread(const vector<string> &chunk) {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::run_sorter_thread(const vector<string> &chunk) {
 
 	try {
-		CCLinkIndex indexer(m_sub_system);
+		TemplateIndexer indexer(m_sub_system);
 		indexer.sorter(chunk);
 	} catch (runtime_error &error) {
 		cout << error.what() << endl;
 	}
 }
 
-void CCIndexRunner::upload_results_thread(const string &word, int retries) {
+template<class TemplateIndexer>
+void CCIndexRunner<TemplateIndexer>::upload_results_thread(const string &word) {
 
-	Aws::S3::Model::PutObjectRequest request;
-	request.SetBucket("alexandria-index");
-	string key = "CC-MAIN-2021-10/index_" + word + ".link.tsv.gz";
-	request.SetKey(key);
-
-	ifstream infile;
-	for (int shard = 0; shard < 8; shard++) {
-		infile.open("/mnt/"+to_string(shard)+"/upload/links_" + word + ".tsv");
-		if (infile.is_open()) {
-			break;
-		}
-	}
-
-	if (!infile.is_open()) {
-		cout << "ERROR could not find output file for word: " << word << endl;
-		return;
-	}
-
-	filtering_istream in;
-	in.push(gzip_compressor());
-	in.push(infile);
-
-	std::shared_ptr<Aws::StringStream> request_body = Aws::MakeShared<Aws::StringStream>("");
-	*request_body << in.rdbuf();
-	request.SetBody(request_body);
-
-	Aws::S3::Model::PutObjectOutcome outcome = m_sub_system->s3_client().PutObject(request);
-	if (!outcome.IsSuccess()) {
-		// Retry.
-		if (retries > 0) {
-			infile.close();
-			cout << "Upload failed, retrying for word: " << word << endl;
-			upload_results_thread(word, retries - 1);
-		}
+	try {
+		TemplateIndexer indexer(m_sub_system);
+		indexer.upload(word, 3);
+	} catch (runtime_error &error) {
+		cout << error.what() << endl;
 	}
 }

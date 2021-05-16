@@ -2,8 +2,8 @@
 #include "BasicUrlData.h"
 
 
-BasicUrlData::BasicUrlData(const SubSystem *sub_system, int shard, int id) :
-	BasicData(sub_system), m_shard(shard), m_id(id)
+BasicUrlData::BasicUrlData(const SubSystem *sub_system) :
+	BasicData(sub_system)
 {
 }
 
@@ -18,7 +18,7 @@ Diskutera med Ivan:
 3. Ska vi plocka både 
 */
 
-string BasicUrlData::build_index() {
+void BasicUrlData::build_index(const string &output_file_name) {
 
 	m_next_key = 0;
 	m_keys.clear();
@@ -59,9 +59,14 @@ string BasicUrlData::build_index() {
 		}
 	}
 
-	string file_name = sort_and_store();
-
-	return file_name;
+	ofstream outfile;
+	outfile.open(output_file_name, ios::trunc);
+	if (outfile.is_open()) {
+		outfile << m_result.str();
+	} else {
+		cout << "Error: " << strerror(errno) << endl;
+		cout << "outfile is not open" << endl;
+	}
 }
 
 string BasicUrlData::build_full_text_index() {
@@ -156,13 +161,7 @@ void BasicUrlData::add_to_index(const string &word, const URL &url, const string
 		return;
 	}
 
-	stringstream ss;
-
-	ss << word << "\t" << url << "\t" << harmonic << "\t" << title << "\t" << snippet << endl;
-
-	m_index[m_next_key] = ss.str();
-	m_keys.push_back(word);
-	m_next_key++;
+	m_result << word << "\t" << url << "\t" << harmonic << "\t" << title << "\t" << snippet << endl;
 }
 
 inline void BasicUrlData::add_to_full_text_index(const string &word, uint64_t id, uint32_t score) {
@@ -173,12 +172,8 @@ inline bool BasicUrlData::is_in_dictionary(const string &word) {
 	return m_sub_system->dictionary()->has_key(word);
 }
 
-string BasicUrlData::get_output_filename() {
-	return "/mnt/"+to_string(m_shard)+"/output_"+to_string(m_id)+".tsv";
-}
-
 string BasicUrlData::sort_and_store() {
-
+	/*
 	vector<size_t> indices;
 	for (size_t index = 0; index < m_keys.size(); index++) {
 		indices.push_back(index);
@@ -202,12 +197,13 @@ string BasicUrlData::sort_and_store() {
 	}
 	outfile.close();
 
-	return file_name;
+	return file_name;*/
+	return "";
 }
 
 string BasicUrlData::store_full_text() {
 
-	ofstream outfile;
+	/*ofstream outfile;
 	string file_name = get_output_filename();
 	outfile.open(file_name, ios::trunc);
 	if (outfile.is_open()) {
@@ -219,5 +215,7 @@ string BasicUrlData::store_full_text() {
 	outfile.close();
 
 	return file_name;
+	*/
+	return "";
 }
 

@@ -54,6 +54,8 @@ private:
 	void parse_search_result(const string &index_name);
 	void parse_link_result(const string &index_name);
 	//vector<SearchResult> handle_index_file(filtering_istream &stream);
+	void sort_results();
+	vector<SearchResult> get_top_results();
 
 	string download_index(const string &index_path);
 

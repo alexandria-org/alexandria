@@ -30,7 +30,8 @@ protected:
 
 	vector<string> m_data;
 	const SubSystem *m_sub_system;
-
+	stringstream m_result;
+	
 	void read_data(filtering_istream &decompress_stream);
 
 };

@@ -79,8 +79,8 @@ void SearchResult::calculate_score(const string &query, const vector<string> &wo
 	double modifier = 1.0;
 
 	// If we find the whole query in title or in snippet
-	if (lower_case(m_title).find(query) != string::npos) {
-		modifier *= 1.1;
+	if (lower_case(m_title).find(query) != string::npos || lower_case(m_snippet).find(query) != string::npos) {
+		modifier += 1.0;
 	}
 
 	// If the URL length is...
@@ -89,6 +89,9 @@ void SearchResult::calculate_score(const string &query, const vector<string> &wo
 	}
 	if (m_path.length() > 140) {
 		modifier *= 0.9;
+	}
+	if (m_path == "/") {
+		modifier += 1.0;
 	}
 
 	// Only include search results where all the words are present.
@@ -100,7 +103,7 @@ void SearchResult::calculate_score(const string &query, const vector<string> &wo
 		}
 	}
 
-	m_score = m_centrality * (1.0 + m_inlink_score) * modifier;
+	m_score = m_centrality * modifier * (1.0 + m_inlink_score / 10.0);
 }
 
 void SearchResult::add_links(const vector<LinkResult> &links) {

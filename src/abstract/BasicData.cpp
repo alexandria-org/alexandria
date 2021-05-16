@@ -29,7 +29,7 @@ void BasicData::read_stream(ifstream &stream) {
 void BasicData::download(const string &bucket, const string &key) {
 
 	Aws::S3::Model::GetObjectRequest request;
-	//cout << "Downloading " << bucket << " key: " << key << endl;
+	cout << "Downloading " << bucket << " key: " << key << endl;
 	request.SetBucket(bucket);
 	request.SetKey(key);
 

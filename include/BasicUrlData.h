@@ -28,10 +28,11 @@ class BasicUrlData : public BasicData, public TextBase {
 
 public:
 	BasicUrlData() {};
-	BasicUrlData(const SubSystem *, int shard, int id);
+	BasicUrlData(const SubSystem *);
 	~BasicUrlData();
 
-	string build_index();
+	void build_index(const string &output_file_name);
+
 	string build_full_text_index();
 	inline string make_snippet(const string &text_after_h1);
 	void add_to_index(const string &word, const URL &url, const string &title, const string &snippet);
@@ -40,15 +41,11 @@ public:
 
 private:
 
-	int m_shard;
-	int m_id;
-
 	stringstream m_full_text_result;
 	map<size_t, string> m_index;
 	vector<string> m_keys;
 	size_t m_next_key = 0;
 
-	string get_output_filename();
 	string sort_and_store();
 	string store_full_text();
 

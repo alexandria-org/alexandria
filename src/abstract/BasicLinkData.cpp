@@ -14,7 +14,7 @@ BasicLinkData::BasicLinkData(const SubSystem *sub_system) :
 BasicLinkData::~BasicLinkData() {
 }
 
-string BasicLinkData::build_index(int shard, int id) {
+void BasicLinkData::build_index(const string &output_file_name) {
 
 	map<string, int> word_counts;
 
@@ -53,17 +53,13 @@ string BasicLinkData::build_index(int shard, int id) {
 	}
 
 	ofstream outfile;
-	string file_name = get_output_filename(shard, id);
-	outfile.open(file_name, ios::trunc);
+	outfile.open(output_file_name, ios::trunc);
 	if (outfile.is_open()) {
 		outfile << m_result.str();
 	} else {
 		cout << "Error: " << strerror(errno) << endl;
 		cout << "outfile is not open" << endl;
 	}
-	outfile.close();
-
-	return file_name;
 }
 
 void BasicLinkData::add_to_index(const string &word, const string from_domain, const string &from_uri,
@@ -90,8 +86,4 @@ void BasicLinkData::add_to_index(const string &word, const string from_domain, c
 
 inline bool BasicLinkData::is_in_dictionary(const string &word) {
 	return m_sub_system->dictionary()->has_key(word);
-}
-
-string BasicLinkData::get_output_filename(int shard, int id) {
-	return "/mnt/"+to_string(shard)+"/input/links_"+to_string(id)+".tsv";
 }

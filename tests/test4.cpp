@@ -17,7 +17,7 @@ int test4_1(void) {
 	Aws::S3::S3Client s3_client = get_s3_client();
 
 	CCApi api(s3_client);
-	ApiResponse response = api.query("låna böcker");
+	ApiResponse response = api.query("låna pengar");
 
 	cout << response.json() << endl;
 

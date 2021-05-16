@@ -1,30 +1,76 @@
 
-#include "CCUrlIndexer.h"
+#include "CCUrlIndex.h"
 
-void run_download_thread(const SubSystem *sub_system, const string &warc_path, int shard, int id) {
-	const string bucket = "alexandria-cc-output";
-	CCUrlIndexer indexer(sub_system);
-	indexer.download(bucket, warc_path, shard, id);
+CCUrlIndex::CCUrlIndex(const SubSystem *sub_system) :
+BasicIndexer(sub_system), m_url_data(sub_system)
+{
 }
 
-void run_indexer_thread(const SubSystem *sub_system, const vector<string> &file_names, int shard) {
+void CCUrlIndex::download(const string &bucket, const string &file, int shard, int id) {
 
-	CCUrlIndexer indexer(sub_system);
-	indexer.index(file_names, shard);
+	string key = file;
+	key.replace(key.find(".warc.gz"), 8, ".gz");
+
+	BasicUrlData url_data(m_sub_system);
+	url_data.download(bucket, key);
+	url_data.build_index(CCUrlIndex::get_downloaded_file_name(shard, id));
 }
 
-void run_sorter_thread(const SubSystem *sub_system, const vector<string> &chunk, int shard) {
+void CCUrlIndex::sorter(const vector<string> &words) {
 
-	try {
-		CCUrlIndexer indexer(sub_system);
-		indexer.sorter(chunk, shard);
-	} catch (runtime_error &error) {
-		cout << error.what() << endl;
+	// Open all my output files.
+	map<string, ofstream> out_files;
+	int target_shard = rand() % 8;
+	for (const string &word : words) {
+
+		vector<string> lines;
+		vector<size_t> indices;
+		vector<double> scores;
+		size_t index = 0;
+		for (int shard = 0; shard < 8; shard++) {
+			string file_name = "/mnt/"+to_string(shard)+"/output/index_" + word + ".tsv";
+			ifstream input_file(file_name);
+
+			if (!input_file.is_open()) {
+				continue;
+			}
+
+			string line;
+			while (getline(input_file, line)) {
+				stringstream ss(line);
+
+				size_t pos = line.find("\t"); // pos = url
+				pos = line.find("\t", pos + 1); // pos = score
+				size_t pos_stop = line.find("\t", pos + 1); // pos = next
+
+				size_t len = pos_stop - pos;
+				const string col = line.substr(pos, len);
+
+				double score = stod(col);
+				scores.push_back(score);
+				indices.push_back(index);
+				lines.push_back(line);
+				index++;
+			}
+			input_file.close();
+		}
+
+		sort(indices.begin(), indices.end(), [&](const size_t& a, const size_t& b) {
+			return (scores[a] > scores[b]);
+		});
+
+		ofstream output_file("/mnt/"+to_string(target_shard)+"/upload/index_" + word + ".tsv", ios::trunc);
+		const size_t max_num_lines = 50000;
+		size_t line_num = 0;
+		for (size_t i : indices) {
+			output_file << lines[i] << endl;
+			line_num++;
+			if (line_num >= max_num_lines) break;
+		}
 	}
 }
 
-void upload_results_thread(SubSystem *sub_system, const string &word, int retries) {
-
+void CCUrlIndex::upload(const string &word, size_t retries) {
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket("alexandria-index");
 	string key = "CC-MAIN-2021-10/index_" + word + ".tsv.gz";
@@ -32,11 +78,12 @@ void upload_results_thread(SubSystem *sub_system, const string &word, int retrie
 
 	ifstream infile;
 	for (int shard = 0; shard < 8; shard++) {
-		infile.open("/mnt/" + to_string(shard) + "/output/index_" + word + ".tsv");
+		infile.open("/mnt/"+to_string(shard)+"/upload/index_" + word + ".tsv");
 		if (infile.is_open()) {
 			break;
 		}
 	}
+
 	if (!infile.is_open()) {
 		cout << "ERROR could not find output file for word: " << word << endl;
 		return;
@@ -50,23 +97,22 @@ void upload_results_thread(SubSystem *sub_system, const string &word, int retrie
 	*request_body << in.rdbuf();
 	request.SetBody(request_body);
 
-	Aws::S3::Model::PutObjectOutcome outcome = sub_system->s3_client().PutObject(request);
+	Aws::S3::Model::PutObjectOutcome outcome = m_sub_system->s3_client().PutObject(request);
 	if (!outcome.IsSuccess()) {
 		// Retry.
 		if (retries > 0) {
+			infile.close();
 			cout << "Upload failed, retrying for word: " << word << endl;
-			upload_results_thread(sub_system, word, retries - 1);
+			upload(word, retries - 1);
 		}
 	}
 }
 
-void CCUrlIndexer::run_all() {
-	run_all(0);
-}
 
-void CCUrlIndexer::run_all(size_t limit) {
+	/*
+void CCUrlIndex::run_all(size_t limit) {
 
-	Profiler total_profiler("CCUrlIndexer total");
+	Profiler total_profiler("CCUrlIndex total");
 
 	vector<thread> threads;
 
@@ -156,7 +202,7 @@ void CCUrlIndexer::run_all(size_t limit) {
 	split_profiler.stop();
 	return;
 
-	/*CCUrlIndexer indexer(sub_system);
+	/*CCUrlIndex indexer(sub_system);
 	map<size_t, map<string, pair<size_t, size_t>>> chunk_positions;
 	indexer.find_chunk_positions(chunks, input_files, chunk_positions);*/
 
@@ -165,7 +211,7 @@ void CCUrlIndexer::run_all(size_t limit) {
 	cout << "interval: [" << interval.first << ", " << interval.second << "]" << endl;
 
 	return;*/
-
+	/*
 	id = 0;
 	for (const vector<string> &chunk : chunks) {
 		size_t idx = 0;
@@ -243,91 +289,5 @@ void CCUrlIndexer::run_all(size_t limit) {
 	delete sub_system;
 
 	Aws::ShutdownAPI(options);
-}
 
-CCUrlIndexer::CCUrlIndexer(const SubSystem *sub_system) :
-m_sub_system(sub_system)
-{
-}
-
-CCUrlIndexer::~CCUrlIndexer() {
-}
-
-void CCUrlIndexer::download(const string &bucket, const string &file, int shard, int id) {
-
-	string key = file;
-	key.replace(key.find(".warc.gz"), 8, ".gz");
-
-	BasicUrlData url_data(m_sub_system, shard, id);
-	url_data.download(bucket, key);
-	url_data.build_index();
-}
-
-void CCUrlIndexer::sorter(const vector<string> &words, int shard) {
-
-	// Open all my output files.
-	map<string, ofstream> out_files;
-	for (const string &word : words) {
-		string file_name = "/mnt/"+to_string(shard)+"/output/index_" + word + ".tsv";
-		ifstream input_file(file_name);
-
-		if (!input_file.is_open()) {
-			throw runtime_error("Could not open file: " + file_name + " error: " + strerror(errno));
-		}
-
-		string line;
-		vector<string> lines;
-		vector<size_t> indices;
-		vector<double> scores;
-		size_t index = 0;
-		while (getline(input_file, line)) {
-			stringstream ss(line);
-			string col;
-			getline(ss, col, '\t'); // word
-			getline(ss, col, '\t'); // url
-			getline(ss, col, '\t'); // score
-			double score = stod(col);
-			scores.push_back(score);
-			indices.push_back(index);
-			lines.push_back(line);
-			index++;
-		}
-		input_file.close();
-
-		sort(indices.begin(), indices.end(), [&](const size_t& a, const size_t& b) {
-			return (scores[a] > scores[b]);
-		});
-
-		ofstream output_file(file_name, ios::trunc);
-		const size_t max_num_lines = 50000;
-		size_t line_num = 0;
-		for (size_t i : indices) {
-			output_file << lines[i] << endl;
-			line_num++;
-			if (line_num >= max_num_lines) break;
-		}
-	}
-}
-
-void CCUrlIndexer::find_chunk_positions(const vector<vector<string>> &chunks, const vector<string> &input_files,
-	map<size_t, map<string, pair<size_t, size_t>>> &container) {
-	size_t num = 0;
-	Profiler find_positions("Find chunk offsets");
-	for (const string &file_name : input_files) {
-		TsvFile tsv_file(file_name);
-		size_t pos_start = 0;
-		size_t chunk_index = 0;
-		for (const vector<string> words : chunks) {	
-			const string last_word = words.back();
-			num++;
-			size_t pos_end = tsv_file.find_next_position(last_word);
-			container[chunk_index][file_name] = make_pair(pos_start, pos_end);
-			pos_start = pos_end;
-			chunk_index++;
-		}
-		cout << file_name << endl;
-		find_positions.print();
-	}
-
-	cout << "Made search " << num << " times" << endl;
-}
+}	*/

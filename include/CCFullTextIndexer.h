@@ -18,7 +18,7 @@
 using namespace std;
 
 #define CC_NUM_THREADS_DOWNLOADING 128
-#define CC_NUM_THREADS_UPLOADING 512
+#define CC_NUM_THREADS_UPLOADING 1024
 #define CC_NUM_THREADS_INDEXING 32
 
 class CCFullTextIndexer {

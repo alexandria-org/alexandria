@@ -290,9 +290,9 @@ void CCFullTextIndexer::download(const string &bucket, const string &file, int s
 	string key = file;
 	key.replace(key.find(".warc.gz"), 8, ".gz");
 
-	BasicUrlData url_data(m_sub_system, shard, id);
+	BasicUrlData url_data(m_sub_system);
 	url_data.download(bucket, key);
-	url_data.build_full_text_index();
+	//url_data.build_full_text_index();
 }
 
 void CCFullTextIndexer::index(const vector<string> &words, const vector<string> &input_files, int shard) {

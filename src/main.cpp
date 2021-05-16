@@ -535,7 +535,7 @@ int main(int argc, const char **argv) {
 		run_lambda_handler();
 	} else {
 		//CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178361510.12/warc/CC-MAIN-20210228145113-20210228175113-00135.warc.gz");
-		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178362513.50/warc/CC-MAIN-20210301121225-20210301151225-00040.warc.gz");
+		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz");
 		string response;
 		for (int retry = 1; retry <= 1; retry++) {
 			if (parser.run(response)) {

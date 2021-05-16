@@ -18,7 +18,7 @@ set(SRC_CLASSES
 	"src/classes/CCFullTextIndexer.cpp"
 	"src/classes/CCLinkIndex.cpp"
 	"src/classes/CCIndexRunner.cpp"
-	"src/classes/CCUrlIndexer.cpp"
+	"src/classes/CCUrlIndex.cpp"
 	"src/classes/Dictionary.cpp"
 	"src/classes/DictionaryRow.cpp"
 	"src/classes/HtmlParser.cpp"

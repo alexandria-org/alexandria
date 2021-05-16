@@ -9,8 +9,9 @@
 #include <vector>
 #include <iostream>
 
-#include "CCUrlIndexer.h"
+#include "CCUrlIndex.h"
 #include "CCFullTextIndexer.h"
+#include "CCIndexRunner.h"
 
 using namespace std;
 
@@ -47,6 +48,8 @@ int test3_1(void) {
 int test3_2(void) {
 	int ok = 1;
 
+	CCIndexRunner<CCUrlIndex> indexer;
+	//indexer.run_all(1);
 	//CCFullTextIndexer::run_all(1);
 	//CCUrlIndexer::run_all(1);
 

@@ -1,6 +1,11 @@
 
 #include "BasicIndexer.h"
 
+BasicIndexer::BasicIndexer(const SubSystem *sub_system)
+: m_sub_system(sub_system)
+{
+}
+
 void BasicIndexer::index(const vector<string> &file_names, int shard) {
 
 	map<string, string> index;
@@ -40,6 +45,28 @@ void BasicIndexer::index(const vector<string> &file_names, int shard) {
 				outfile.close();
 			}
 		}
+	}
+
+}
+
+string BasicIndexer::get_downloaded_file_name(int shard, int id) {
+	return "/mnt/"+to_string(shard)+"/input/downloaded_"+to_string(id)+".tsv";
+}
+
+void BasicIndexer::download_file(const string &bucket, const string &key, BasicData &data) {
+
+	Aws::S3::Model::GetObjectRequest request;
+	cout << "Downloading " << bucket << " key: " << key << endl;
+	request.SetBucket(bucket);
+	request.SetKey(key);
+
+	auto outcome = m_sub_system->s3_client().GetObject(request);
+
+	if (outcome.IsSuccess()) {
+
+		auto &stream = outcome.GetResultWithOwnership().GetBody();
+		data.read_stream(stream);
+
 	}
 
 }

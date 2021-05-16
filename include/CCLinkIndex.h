@@ -22,17 +22,13 @@ class CCLinkIndex : public BasicIndexer {
 public:
 
 	CCLinkIndex(const SubSystem *sub_system);
-	~CCLinkIndex();
 
-	string download(const string &bucket, const string &key, int id, int shard);
+	void download(const string &bucket, const string &file, int shard, int id);
 	void sorter(const vector<string> &words);
+	void upload(const string &word, size_t retries);
 
 private:
 
-	const SubSystem *m_sub_system;
-
 	BasicLinkData m_link_data;
-
-	void download_file(const string &bucket, const string &key, BasicData &index);
 
 };

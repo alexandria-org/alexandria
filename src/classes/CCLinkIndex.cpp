@@ -2,14 +2,11 @@
 #include "CCLinkIndex.h"
 
 CCLinkIndex::CCLinkIndex(const SubSystem *sub_system) :
-m_sub_system(sub_system), m_link_data(sub_system)
+BasicIndexer(sub_system), m_link_data(sub_system)
 {
 }
 
-CCLinkIndex::~CCLinkIndex() {
-}
-
-string CCLinkIndex::download(const string &bucket, const string &file, int shard, int id) {
+void CCLinkIndex::download(const string &bucket, const string &file, int shard, int id) {
 
 	string link_key = file;
 	link_key.replace(link_key.find(".warc.gz"), 8, ".links.gz");
@@ -19,7 +16,8 @@ string CCLinkIndex::download(const string &bucket, const string &file, int shard
 
 	//m_link_data.build_index();
 
-	return m_link_data.build_index(shard, id);
+	const string file_name = CCLinkIndex::get_downloaded_file_name(shard, id);
+	m_link_data.build_index(file_name);
 }
 
 void CCLinkIndex::sorter(const vector<string> &words) {
@@ -48,7 +46,9 @@ void CCLinkIndex::sorter(const vector<string> &words) {
 				pos = line.find("\t", pos + 1); // pos = from domain
 				pos = line.find("\t", pos + 1); // pos = from path
 				pos = line.find("\t", pos + 1); // pos = score
-				const string col = line.substr(pos + 1, line.find("\t", pos + 1));
+				size_t pos_stop = line.find("\t", pos + 1); // pos = next
+				size_t len = pos - pos_stop;
+				const string col = line.substr(pos, len);
 				double score = stod(col);
 				scores.push_back(score);
 				indices.push_back(index);
@@ -63,7 +63,7 @@ void CCLinkIndex::sorter(const vector<string> &words) {
 		});
 
 		ofstream output_file("/mnt/"+to_string(target_shard)+"/upload/links_" + word + ".tsv", ios::trunc);
-		const size_t max_num_lines = 500000;
+		const size_t max_num_lines = 200000;
 		size_t line_num = 0;
 		for (size_t i : indices) {
 			output_file << lines[i] << endl;
@@ -74,20 +74,40 @@ void CCLinkIndex::sorter(const vector<string> &words) {
 
 }
 
-void CCLinkIndex::download_file(const string &bucket, const string &key, BasicData &data) {
-
-	Aws::S3::Model::GetObjectRequest request;
-	cout << "Downloading " << bucket << " key: " << key << endl;
-	request.SetBucket(bucket);
+void CCLinkIndex::upload(const string &word, size_t retries) {
+	Aws::S3::Model::PutObjectRequest request;
+	request.SetBucket("alexandria-index");
+	string key = "CC-MAIN-2021-10/index_" + word + ".link.tsv.gz";
 	request.SetKey(key);
 
-	auto outcome = m_sub_system->s3_client().GetObject(request);
-
-	if (outcome.IsSuccess()) {
-
-		auto &stream = outcome.GetResultWithOwnership().GetBody();
-		data.read_stream(stream);
-
+	ifstream infile;
+	for (int shard = 0; shard < 8; shard++) {
+		infile.open("/mnt/"+to_string(shard)+"/upload/links_" + word + ".tsv");
+		if (infile.is_open()) {
+			break;
+		}
 	}
 
+	if (!infile.is_open()) {
+		cout << "ERROR could not find output file for word: " << word << endl;
+		return;
+	}
+
+	filtering_istream in;
+	in.push(gzip_compressor());
+	in.push(infile);
+
+	std::shared_ptr<Aws::StringStream> request_body = Aws::MakeShared<Aws::StringStream>("");
+	*request_body << in.rdbuf();
+	request.SetBody(request_body);
+
+	Aws::S3::Model::PutObjectOutcome outcome = m_sub_system->s3_client().PutObject(request);
+	if (!outcome.IsSuccess()) {
+		// Retry.
+		if (retries > 0) {
+			infile.close();
+			cout << "Upload failed, retrying for word: " << word << endl;
+			upload(word, retries - 1);
+		}
+	}
 }

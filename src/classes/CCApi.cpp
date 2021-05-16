@@ -38,25 +38,9 @@ vector<SearchResult> CCApi::get_results() {
 
 	m_parse_time = parser_timer.get();
 
-	Profiler sorter_timer("Sorter timer");
-	sort(m_results[m_words[0]].begin(), m_results[m_words[0]].end(), [&](const SearchResult& a, const SearchResult& b) {
-		return (a.score() > b.score());
-	});
+	sort_results();
 
-	map<string, string> host_map;
-	size_t idx = 0;
-	vector<SearchResult> ret;
-	const size_t limit = 10;
-	for (const SearchResult &result : m_results[m_words[0]]) {
-		if (host_map.find(result.host()) == host_map.end()) {
-			host_map[result.host()] = result.host();
-			ret.push_back(result);
-			if (idx >= limit) break;
-			idx++;
-		}
-	}
-
-	m_sort_time = sorter_timer.get();
+	vector<SearchResult> ret = get_top_results();
 
 	return ret;
 }
@@ -78,8 +62,6 @@ void CCApi::download() {
 		links.emplace(make_pair(word, pool.enqueue([this, path] {
 			return download_index(path);
 		})));
-
-		break;
 	}
 
 	Profiler profile("Index Download");
@@ -251,4 +233,55 @@ string CCApi::download_index(const string &index_path) {
 	}
 
 	return "";
+}
+
+void CCApi::sort_results() {
+	Profiler sorter_timer("Sorter timer");
+	for (auto &iter : m_results) {
+		sort(iter.second.begin(), iter.second.end(), [&](const SearchResult& a, const SearchResult& b) {
+			return (a.score() > b.score());
+		});
+	}
+
+	m_sort_time = sorter_timer.get();
+}
+
+vector<SearchResult> CCApi::get_top_results() {
+	const size_t limit = 10;
+
+	vector<SearchResult> top_results;
+
+	// Pick 10 from each result set.
+	for (auto &iter : m_results) {
+		size_t idx = 0;
+		map<string, string> host_map;
+		for (const SearchResult &result : iter.second) {
+			if (host_map.find(result.host()) == host_map.end()) {
+				host_map[result.host()] = result.host();
+				top_results.push_back(result);
+				idx++;
+				if (idx >= limit) break;
+			}
+		}
+	}
+
+	// Sort
+	sort(top_results.begin(), top_results.end(), [&](const SearchResult& a, const SearchResult& b) {
+		return (a.score() > b.score());
+	});
+
+	// Pick 10 from sorted.
+	vector<SearchResult> ret;
+	size_t idx = 0;
+	map<string, string> host_map;
+	for (const SearchResult &result : top_results) {
+		if (host_map.find(result.host()) == host_map.end()) {
+			host_map[result.host()] = result.host();
+			ret.push_back(result);
+			if (idx >= limit) break;
+			idx++;
+		}
+	}
+
+	return ret;
 }

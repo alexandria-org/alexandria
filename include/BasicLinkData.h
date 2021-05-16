@@ -25,16 +25,10 @@ public:
 	BasicLinkData(const SubSystem *);
 	~BasicLinkData();
 
-	string build_index(int shard, int id);
+	void build_index(const string &output_file_name);
 
 	void add_to_index(const string &word, const string from_domain, const string &from_uri,
 		const string &to_domain, const string &to_uri, const string &link_text);
 	inline bool is_in_dictionary(const string &word);
-
-private:
-
-	stringstream m_result;
-
-	string get_output_filename(int shard, int id);
 
 };
