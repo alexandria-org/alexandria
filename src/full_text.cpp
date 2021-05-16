@@ -11,7 +11,7 @@ int main() {
 
 	/*ofstream file("/mnt/0/test.dat", ios::binary | ios::trunc);
 	size_t bytes_written = 0;
-	for (size_t i = 0; i < 10000000; i++) {
+	for (size_t i = 0; i < 100000000; i++) {
 		uint64_t rnd1 = i;
 		uint32_t score = 123;
 		file.write((const char *)&rnd1, sizeof(rnd1));
@@ -22,8 +22,7 @@ int main() {
 
 	cout << "bytes_written: " << bytes_written << endl;
 	
-	return 0;
-	*/	
+	return 0;*/
 	Profiler pf("Total");
 	ifstream file("/mnt/0/test.dat", ios::binary | ios::ate);
 	std::streamsize size = file.tellg();
