@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt-get install libcurl4-openssl-dev
+apt-get install libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev
 
 rel_path=`dirname $0`
 base_path=`realpath $rel_path`
@@ -9,6 +9,16 @@ cd $base_path
 mkdir -p deps
 cd deps
 rm -rf ./*
+
+wget https://zlib.net/zlib-1.2.11.tar.gz
+gunzip zlib-1.2.11.tar.gz
+tar -xvf zlib-1.2.11.tar
+cd zlib-1.2.11
+./configure
+make
+make install
+cd ..
+
 git clone https://github.com/awslabs/aws-lambda-cpp.git
 cd aws-lambda-cpp
 mkdir build
