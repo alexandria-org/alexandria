@@ -9,7 +9,8 @@ using namespace std;
 
 int main() {
 
-	/*ofstream file("/mnt/0/test.dat", ios::binary | ios::trunc);
+	/*
+	ofstream file("/mnt/0/test.dat", ios::binary | ios::trunc);
 	size_t bytes_written = 0;
 	for (size_t i = 0; i < 100000000; i++) {
 		uint64_t rnd1 = i;
