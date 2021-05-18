@@ -24,7 +24,7 @@ int test4_1(void) {
 
 	//LinkResult("col1	col2	col3	col4	col5	col6	col7	col8	col9");
 
-	ApiResponse response2 = api.query("svarta bönor");
+	ApiResponse response2 = api.query("cnn");
 	string response_body = response2.json();
 
 	JsonValue response_json;

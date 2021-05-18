@@ -271,6 +271,9 @@ vector<SearchResult> CCApi::get_top_results() {
 	//const size_t limit2 = 39;
 	//const size_t offset = 39;
 
+	//const size_t limit2 = 72;
+	//const size_t offset = 72;
+
 	const size_t limit2 = 100;
 	const size_t offset = 0;
 

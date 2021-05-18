@@ -48,6 +48,9 @@ string ApiResponse::json() const {
 		JsonValue string;
 		JsonValue json_number;
 
+		//cout << result.title() << endl;
+		//cout << result.snippet() << endl;
+
 		json_result.WithObject("url", string.AsString(result.url()));
 		json_result.WithObject("title", string.AsString(Unicode::encode(result.title())));
 		json_result.WithObject("snippet", string.AsString(Unicode::encode(result.snippet())));

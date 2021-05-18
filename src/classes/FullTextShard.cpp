@@ -13,8 +13,8 @@ File format explained
 
 */
 
-FullTextShard::FullTextShard(size_t shard)
-: m_shard(shard) {
+FullTextShard::FullTextShard(const string &db_name, size_t shard)
+: m_shard(shard), m_db_name(db_name) {
 	m_buffer = new char[m_buffer_len];
 	
 	m_writer.open(filename(), ios::binary | ios::app);
@@ -37,18 +37,19 @@ FullTextShard::~FullTextShard() {
 }
 
 void FullTextShard::add(uint64_t key, uint64_t value, uint32_t score) {
-	auto pos = m_pos.find(key);
-	if (pos == m_pos.end()) {
-		// New key.
-		m_keys.push_back(key);
-		m_num_keys++;
-	}
 	m_cache[key].emplace_back(FullTextResult(value, score));
+	sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
+		return a.m_score > b.m_score;
+	});
 }
 
-vector<FullTextResult> FullTextShard::find(uint64_t key) {
+vector<FullTextResult> FullTextShard::find(uint64_t key) const {
 
 	vector<FullTextResult> cached = find_cached(key);
+	vector<FullTextResult> stored = find_stored(key);
+
+	// Merge.
+	cached.insert(cached.end(), stored.begin(), stored.end());
 
 	return cached;
 }
@@ -57,8 +58,6 @@ void FullTextShard::save_file() {
 
 	read_data_to_cache();
 
-	if (m_keys.size() == 0) return;
-
 	m_writer.open(filename(), ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
 		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
@@ -66,9 +65,16 @@ void FullTextShard::save_file() {
 
 	cout << "Writing shard: " << filename() << " with num keys: " << m_keys.size() << endl;
 
+	m_keys.clear();
+	for (auto &iter : m_cache) {
+		m_keys.push_back(iter.first);
+	}
+	
 	sort(m_keys.begin(), m_keys.end(), [](const size_t a, const size_t b) {
 		return a < b;
 	});
+
+	m_num_keys = m_keys.size();
 
 	m_writer.write((char *)&m_num_keys, 8);
 	m_writer.write((char *)m_keys.data(), m_keys.size() * 8);
@@ -96,6 +102,9 @@ void FullTextShard::save_file() {
 	// Write data.
 	for (uint64_t key : m_keys) {
 		size_t i = 0;
+		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
+			return a.m_score > b.m_score;
+		});
 		for (const FullTextResult &res : m_cache[key]) {
 			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);
 			memcpy(&buffer[i + FULL_TEXT_KEY_LEN], &res.m_score, FULL_TEXT_SCORE_LEN);
@@ -111,17 +120,17 @@ void FullTextShard::save_file() {
 	}
 
 	m_writer.close();
+	m_cache.clear();
+
+	read_file();
+}
+
+void FullTextShard::read_file() {
 
 	m_keys.clear();
 	m_pos.clear();
 	m_len.clear();
 	m_num_keys = 0;
-
-	read_file();
-
-}
-
-void FullTextShard::read_file() {
 
 	char buffer[64];
 
@@ -166,10 +175,26 @@ void FullTextShard::read_file() {
 }
 
 string FullTextShard::filename() const {
-	return "/mnt/fts_" + to_string(m_shard) + ".idx";
+	return "/mnt/fti_" + m_db_name + "_" + to_string(m_shard) + ".idx";
 }
 
-vector<FullTextResult> FullTextShard::find_cached(uint64_t key) {
+size_t FullTextShard::size() const {
+	return m_keys.size();
+}
+
+void FullTextShard::truncate() {
+	m_cache.clear();
+	m_keys.clear();
+	m_num_keys = 0;
+
+	m_writer.open(filename(), ios::trunc);
+	if (!m_writer.is_open()) {
+		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+	}
+	m_writer.close();
+}
+
+vector<FullTextResult> FullTextShard::find_cached(uint64_t key) const {
 	auto cached = m_cache.find(key);
 	if (cached != m_cache.end()) {
 		return cached->second;
@@ -177,7 +202,7 @@ vector<FullTextResult> FullTextShard::find_cached(uint64_t key) {
 	return {};
 }
 
-vector<FullTextResult> FullTextShard::find_stored(uint64_t key) {
+vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
 	auto iter = m_pos.find(key);
 	if (iter == m_pos.end()) {
 		return {};
@@ -186,9 +211,9 @@ vector<FullTextResult> FullTextShard::find_stored(uint64_t key) {
 	vector<FullTextResult> ret;
 
 	size_t pos = iter->second;
-	size_t len = m_len[key];
+	size_t len = m_len.find(key)->second;
 
-	m_reader.seekg(pos, ios::beg);
+	m_reader.seekg(m_data_start + pos, ios::beg);
 
 	size_t read_bytes = 0;
 	while (read_bytes < len) {
@@ -212,6 +237,21 @@ void FullTextShard::read_data_to_cache() {
 	// Read all the data to file.
 
 	m_reader.seekg(m_data_start, ios::beg);
-	
 
+	for (uint64_t key : m_keys) {
+		size_t len = m_len[key];
+		size_t read_bytes = 0;
+		while (read_bytes < len) {
+			size_t read_len = min(m_buffer_len, len);
+			m_reader.read(m_buffer, read_len);
+			read_bytes += read_len;
+
+			size_t num_records = read_len / FULL_TEXT_RECORD_SIZE;
+			for (size_t i = 0; i < num_records; i++) {
+				const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
+				const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
+				m_cache[key].emplace_back(FullTextResult(value, score));
+			}
+		}
+	}
 }

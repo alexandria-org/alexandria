@@ -25,12 +25,15 @@ std::string Unicode::encode(const std::string &str) {
 				last_unicode = i;
 			} else if (IS_UNKNOWN_UTF8_START(cstr[i])) {
 				copy = false;
+			} else if ('\x00' <= cstr[i] && cstr[i] <= '\x1f') {
+				copy = false;
 			}
 		} else if (IS_MULTIBYTE_CODEPOINT(cstr[i])) {
 			utf8_len--;
 		} else {
 			// This unicode character has been terminated too soon.
-			for (size_t j = last_unicode; j < i; j++) {
+			copy = false;
+			for (size_t j = last_unicode; j <= i; j++) {
 				target[j] = '?';
 			}
 			utf8_len = 0;
