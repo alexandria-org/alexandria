@@ -46,7 +46,7 @@ void BasicUrlData::build_index(const string &output_file_name) {
 		string text_after_h1;
 		getline(ss, text_after_h1, '\t');
 
-		vector<string> title_words = get_words(title, 3);
+		vector<string> title_words = get_words_without_stopwords(title, 3);
 
 		for (const string &word : title_words) {
 			if (is_in_dictionary(word)) {
@@ -113,10 +113,10 @@ string BasicUrlData::build_full_text_index() {
 		string text_after_h1;
 		getline(ss, text_after_h1, '\t');
 
-		vector<string> title_words = get_words(title);
-		vector<string> h1_words = get_words(h1);
-		vector<string> meta_words = get_words(meta);
-		vector<string> text_after_h1_words = get_words(text_after_h1);
+		vector<string> title_words = get_words_without_stopwords(title);
+		vector<string> h1_words = get_words_without_stopwords(h1);
+		vector<string> meta_words = get_words_without_stopwords(meta);
+		vector<string> text_after_h1_words = get_words_without_stopwords(text_after_h1);
 
 		for (const string &word : title_words) {
 			add_to_full_text_index(word, id, score);

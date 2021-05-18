@@ -7,6 +7,7 @@
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 
+#include "common.h"
 #include "Stopwords.h"
 
 using namespace std;
@@ -104,7 +105,7 @@ public:
 
 		for (string &word : raw_words) {
 			trim(word);
-			if (is_clean_word(word) && !Stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
+			if (is_clean_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);
 			}
@@ -120,9 +121,34 @@ public:
 
 	}
 
-	string clean_string(const string &str) const {
-		const auto pos = str.find_last_of(" ");
-		return str.substr(0, pos);
+	/*
+		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
+	*/
+	inline vector<string> get_words_without_stopwords(const string &str, size_t limit) const {
+
+		const string word_boundary = " \t,|!,";
+
+		string str_lc = lower_case(str);
+
+		vector<string> raw_words, words;
+		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
+
+		for (string &word : raw_words) {
+			trim(word);
+			if (is_clean_word(word) && !Stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
+					word.size() > 0) {
+				words.push_back(word);
+			}
+			if (limit && words.size() == limit) break;
+		}
+
+		return words;
+	}
+
+	inline vector<string> get_words_without_stopwords(const string &str) const {
+
+		return get_words_without_stopwords(str, 0);
+
 	}
 
 };

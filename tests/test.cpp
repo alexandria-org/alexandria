@@ -3,6 +3,7 @@
 #include "test2.h"
 #include "test3.h"
 #include "test4.h"
+#include "test5.h"
 
 string read_test_file(const string &file_name) {
 	ifstream file("tests/data/" + file_name);
@@ -22,11 +23,12 @@ int main(void) {
 
 	cout << "Running static tests" << endl;
 
-	int numSuites = 4;
+	int numSuites = 5;
 	int numTestsInSuite [] = {
 		3,
 		2,
 		3,
+		1,
 		1
 	};
 
@@ -51,11 +53,16 @@ int main(void) {
 		test4_1
 	};
 
+	int (* testSuite5 [])() = {
+		test5_1
+	};
+
 	int (**testSuites[])() = {
 		testSuite1,
 		testSuite2,
 		testSuite3,
 		testSuite4,
+		testSuite5
 	};
 
 	int allOk = 1;

@@ -247,7 +247,10 @@ void CCApi::sort_results() {
 }
 
 vector<SearchResult> CCApi::get_top_results() {
-	const size_t limit = 10;
+	//const size_t limit = 72;
+	//const size_t offset = 71;
+
+	const size_t limit = 100;
 
 	vector<SearchResult> top_results;
 
@@ -265,6 +268,12 @@ vector<SearchResult> CCApi::get_top_results() {
 		}
 	}
 
+	//const size_t limit2 = 39;
+	//const size_t offset = 39;
+
+	const size_t limit2 = 100;
+	const size_t offset = 0;
+
 	// Sort
 	sort(top_results.begin(), top_results.end(), [&](const SearchResult& a, const SearchResult& b) {
 		return (a.score() > b.score());
@@ -277,8 +286,10 @@ vector<SearchResult> CCApi::get_top_results() {
 	for (const SearchResult &result : top_results) {
 		if (host_map.find(result.host()) == host_map.end()) {
 			host_map[result.host()] = result.host();
-			ret.push_back(result);
-			if (idx >= limit) break;
+			if (idx >= offset) {
+				ret.push_back(result);
+			}
+			if (idx >= limit2) break;
 			idx++;
 		}
 	}

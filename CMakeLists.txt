@@ -32,6 +32,10 @@ set(SRC_CLASSES
 	"src/classes/TsvRow.cpp"
 	"src/classes/URL.cpp"
 	"src/classes/LinkResult.cpp"
+	"src/classes/FullTextIndex.cpp"
+	"src/classes/FullTextShard.cpp"
+	"src/classes/FullTextResult.cpp"
+	"src/classes/Unicode.cpp"
 
 	"src/abstract/BasicData.cpp"
 	"src/abstract/BasicIndexer.cpp"
@@ -50,6 +54,7 @@ set(SRC_TESTS
 	"tests/test2.cpp"
 	"tests/test3.cpp"
 	"tests/test4.cpp"
+	"tests/test5.cpp"
 )
 
 add_executable(cc_parser 
