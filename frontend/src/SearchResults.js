@@ -15,28 +15,29 @@ const component_name = 'SearchResults'
 class SearchResults extends React.Component {
 
 	componentDidMount() {
-		console.log(this.props)
 		if (this.props.query.trim().length > 0) {
 			this.load_search_results()
 		}
 	}
 
 	render() {
-		const {query, search_result_ids, loading, error} = this.props
+		const {query, search_result_ids, loading, error, debug} = this.props
 		return (
 			<div className="search-results">
 				{ loading &&
 					<Loader
 						type="Puff"
-						color="#00BFFF"
-						height={100}
-						width={100}
+						color="#0000ee"
+						height={30}
+						width={30}
 					/>
 				}
 				{ error != '' &&
 					<div className="error">{error}</div>
 				}
-				<SearchInfo />
+				{ debug &&
+					<SearchInfo />
+				}
 				{this.render_search_results()}
 			</div>
 		  );
@@ -120,7 +121,8 @@ function actionLoad(query) {
 /* Connected Props */
 export default ReactRedux.connect(function (state, props) {
 	return {
-		query: state.query || "",
+		query: state.searched_query || "",
+		debug: state.debug || false,
 		loading: state._loading_results || false,
 		error: state._loading_error || '',
 		search_result_ids: Getter.get(state, "search_results").allIds

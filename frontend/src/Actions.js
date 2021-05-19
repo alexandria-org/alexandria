@@ -160,4 +160,9 @@ class Actions {
 
 let url = new URLSearchParams(document.location.search)
 
-export default new Actions({query: url.get("q")})
+export default new Actions({
+	query: url.get("q"),
+	searched_query: url.get("q"),
+	page: url.get("p"),
+	debug: url.get("debug")
+})

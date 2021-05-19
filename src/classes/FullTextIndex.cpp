@@ -34,6 +34,10 @@ void FullTextIndex::add(const string &key, const string &text, uint32_t score) {
 
 }
 
+void FullTextIndex::consume_stream(basic_iostream<char> &stream) {
+	
+}
+
 void FullTextIndex::save() {
 	for (auto shard : m_shards) {
 		shard->save_file();

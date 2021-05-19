@@ -94,11 +94,17 @@ void SearchResult::calculate_score(const string &query, const vector<string> &wo
 		modifier += 1.0;
 	}
 
+	if (m_snippet.size() == 0) {
+		modifier -= 1.0;
+	}
+
 	// Only include search results where all the words are present.
 	m_should_include = true;
+	const string lower_title = lower_case(m_title);
+	const string lower_snippet = lower_case(m_snippet);
 	for (const string &word : words) {
-		if (lower_case(m_title).find(word) == string::npos && lower_case(m_snippet).find(word) == string::npos &&
-			lower_case(m_url).find(word) == string::npos) {
+		if (!(lower_title.find(word) == 0 || lower_title.find(" " + word) != string::npos) &&
+			!(lower_snippet.find(word) == 0 || lower_snippet.find(" " + word) != string::npos)) {
 			m_should_include = false;
 		}
 	}

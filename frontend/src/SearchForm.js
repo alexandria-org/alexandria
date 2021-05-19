@@ -13,7 +13,8 @@ class SearchForm extends React.Component {
 		const {query} = this.props
 		return (
 			<form className="search-form" method="get">
-				<input type="text" name="q" value={query} onChange={this.handle_change} />
+				<input type="text" name="q" value={query} onChange={this.handle_change} autofocus="true"
+					autocapitalize="false" title="Search" aria-label="Search" />
 				<button className="search-box-button" type="submit">Search</button>
 			</form>
 		)
