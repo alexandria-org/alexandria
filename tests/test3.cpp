@@ -12,6 +12,7 @@
 #include "CCUrlIndex.h"
 #include "CCFullTextIndexer.h"
 #include "CCIndexRunner.h"
+#include "CCIndexMerger.h"
 
 using namespace std;
 
@@ -48,7 +49,7 @@ int test3_1(void) {
 int test3_2(void) {
 	int ok = 1;
 
-	CCIndexRunner<CCUrlIndex> indexer;
+	CCIndexRunner<CCUrlIndex> indexer("CC-MAIN-2021-10");
 	//indexer.run_all(1);
 	//CCFullTextIndexer::run_all(1);
 	//CCUrlIndexer::run_all(1);
@@ -86,6 +87,65 @@ int test3_2(void) {
 
 int test3_3(void) {
 	int ok = 1;
+
+	CCIndexMerger merger("CC-MAIN-2021-17", "main");
+	
+	string file1 =
+		"test1\tmerge1\t1\n"
+		"test2\tmerge2\t2";
+	string file2 =
+		"test2\tmerge2\t2\n"
+		"test3\tmerge3\t3";
+	string file23 =
+		"test3\tmerge3\t3\n"
+		"test2\tmerge2\t2\n"
+		"test1\tmerge1\t1";
+	ok = ok && merger.merge_file(file1, file2, {1}, 2, 10) == file23;
+
+	file1 =
+		"test1\tmerge\tcol1\t999999990\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999991\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999992\tsome long metadata\n"
+		"test1\tmerge\tcol4\t999999993\tsome long metadata\n"
+		"test1\tmerge\tcol5\t999999994\tsome long metadata";
+	file2 =
+		"test1\tmerge\tcol1\t999999999\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999998\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999997\tsome long metadata\n"
+		"test1\tmerge\tcol6\t999999996\tsome long metadata\n"
+		"test1\tmerge\tcol7\t999999995\tsome long metadata";
+	file23 =
+		"test1\tmerge\tcol6\t999999996\tsome long metadata\n"
+		"test1\tmerge\tcol7\t999999995\tsome long metadata\n"
+		"test1\tmerge\tcol5\t999999994\tsome long metadata\n"
+		"test1\tmerge\tcol4\t999999993\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999992\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999991\tsome long metadata\n"
+		"test1\tmerge\tcol1\t999999990\tsome long metadata";
+	ok = ok && merger.merge_file(file1, file2, {1,2}, 3, 10) == file23;
+
+	file1 =
+		"test1\tmerge\tcol1\t999999990\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999991\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999992\tsome long metadata\n"
+		"test1\tmerge\tcol4\t999999993\tsome long metadata\n"
+		"test1\tmerge\tcol5\t999999994\tsome long metadata";
+	file2 =
+		"test1\tmerge_asd\tcol1\t999999999\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999998\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999997\tsome long metadata\n"
+		"test1\tmerge\tcol6\t999999996\tsome long metadata\n"
+		"test1\tmerge\tcol7\t999999995\tsome long metadata";
+	file23 =
+		"test1\tmerge_asd\tcol1\t999999999\tsome long metadata\n"
+		"test1\tmerge\tcol6\t999999996\tsome long metadata\n"
+		"test1\tmerge\tcol7\t999999995\tsome long metadata\n"
+		"test1\tmerge\tcol5\t999999994\tsome long metadata\n"
+		"test1\tmerge\tcol4\t999999993\tsome long metadata\n"
+		"test1\tmerge\tcol3\t999999992\tsome long metadata\n"
+		"test1\tmerge\tcol2\t999999991\tsome long metadata\n"
+		"test1\tmerge\tcol1\t999999990\tsome long metadata";
+	ok = ok && merger.merge_file(file1, file2, {1,2}, 3, 10) == file23;
 
 	return ok;
 }

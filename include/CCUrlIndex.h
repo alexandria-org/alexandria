@@ -25,7 +25,7 @@ public:
 
 	void download(const string &bucket, const string &file, int shard, int id);
 	void sorter(const vector<string> &words);
-	void upload(const string &word, size_t retries);
+	void upload(const string &cc_batch, const string &word, size_t retries);
 
 private:
 

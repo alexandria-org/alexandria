@@ -34,8 +34,8 @@ void FullTextIndex::add(const string &key, const string &text, uint32_t score) {
 
 }
 
-void FullTextIndex::consume_stream(basic_iostream<char> &stream) {
-	
+void FullTextIndex::add_stream(basic_iostream<char> &stream, const vector<size_t> &cols,
+	const vector<uint32_t> &scores) {
 }
 
 void FullTextIndex::save() {

@@ -1,10 +1,12 @@
 #!/bin/bash
 
-aws ec2 start-instances --instance-ids i-0fe6ebd3fd03a7009
-aws ec2 wait instance-running --instance-ids i-0fe6ebd3fd03a7009
-aws ec2 wait instance-status-ok --instance-ids i-0fe6ebd3fd03a7009
+INSTANCE_ID=`cat instance.txt`
 
-IP=`aws ec2 describe-instances --query "Reservations[*].Instances[*].[PublicIpAddress]" --instance-ids i-0fe6ebd3fd03a7009 --output=text`
+aws ec2 start-instances --instance-ids $INSTANCE_ID
+aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+
+IP=`aws ec2 describe-instances --query "Reservations[*].Instances[*].[PublicIpAddress]" --instance-ids $INSTANCE_ID --output=text`
 
 ssh -i /home/josef/alexandria-keys.pem -o StrictHostKeyChecking=no ubuntu@$IP << EOF
 

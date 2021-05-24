@@ -74,10 +74,10 @@ void CCLinkIndex::sorter(const vector<string> &words) {
 
 }
 
-void CCLinkIndex::upload(const string &word, size_t retries) {
+void CCLinkIndex::upload(const string &cc_batch, const string &word, size_t retries) {
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket("alexandria-index");
-	string key = "CC-MAIN-2021-10/index_" + word + ".link.tsv.gz";
+	string key = cc_batch + "/index_" + word + ".link.tsv.gz";
 	request.SetKey(key);
 
 	ifstream infile;
@@ -107,7 +107,7 @@ void CCLinkIndex::upload(const string &word, size_t retries) {
 		if (retries > 0) {
 			infile.close();
 			cout << "Upload failed, retrying for word: " << word << endl;
-			upload(word, retries - 1);
+			upload(cc_batch, word, retries - 1);
 		}
 	}
 }

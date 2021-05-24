@@ -37,7 +37,7 @@ private:
 	map<string, map<string, vector<LinkResult>>> m_domain_links;
 
 	vector<string> m_words;
-	const string m_index_base = "CC-MAIN-2021-10";
+	const string m_index_base = "main";
 
 	size_t m_file_size = 0;
 	size_t m_file_unzipped_size = 0;

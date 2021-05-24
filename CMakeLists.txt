@@ -36,6 +36,7 @@ set(SRC_CLASSES
 	"src/classes/FullTextShard.cpp"
 	"src/classes/FullTextResult.cpp"
 	"src/classes/Unicode.cpp"
+	"src/classes/CCIndexMerger.cpp"
 
 	"src/abstract/BasicData.cpp"
 	"src/abstract/BasicIndexer.cpp"

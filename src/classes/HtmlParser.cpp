@@ -19,6 +19,7 @@ void HtmlParser::parse(const string &html) {
 void HtmlParser::parse(const string &html, const string &url) {
 
 	m_should_insert = false;
+	m_should_insert = false;
 
 	parse_url(url, m_host, m_path);
 

@@ -131,13 +131,13 @@ void CCFullTextIndexer::run_all(size_t limit) {
 
 		threads.push_back(move(th));
 
-		if (threads.size() == CC_NUM_THREADS_DOWNLOADING) {
+		/*if (threads.size() == CC_NUM_THREADS_DOWNLOADING) {
 			// join threads.
 			for (thread &_th : threads) {
 				_th.join();
 			}
 			threads.clear();
-		}
+		}*/
 		
 		string output_file = "/mnt/"+to_string(shard)+"/output_"+to_string(id)+".tsv";
 		input_files.push_back(output_file);
@@ -244,7 +244,7 @@ void CCFullTextIndexer::run_all(size_t limit) {
 
 	// Uploading
 	#ifndef CC_TESTING
-
+		/*
 		Profiler upload_profiler("Upload");
 
 		ThreadPool pool(CC_NUM_THREADS_UPLOADING);
@@ -267,7 +267,7 @@ void CCFullTextIndexer::run_all(size_t limit) {
 			cout << result.get() << endl;
 		}
 
-		upload_profiler.stop();
+		upload_profiler.stop();*/
 	#else
 		cout << "test mode, skipping upload" << endl;
 	#endif

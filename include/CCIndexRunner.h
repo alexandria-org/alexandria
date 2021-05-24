@@ -9,7 +9,7 @@
 using namespace std;
 
 #define CC_NUM_THREADS_DOWNLOADING 128
-#define CC_NUM_THREADS_UPLOADING 1024
+#define CC_NUM_THREADS_UPLOADING 10000
 #define CC_NUM_THREADS_SORTING 32
 #define CC_NUM_THREADS_INDEXING 32
 
@@ -18,7 +18,7 @@ class CCIndexRunner {
 
 public:
 
-	CCIndexRunner();
+	CCIndexRunner(const string &cc_batch);
 	~CCIndexRunner();
 
 	void run_all();
@@ -36,6 +36,7 @@ public:
 private:
 
 	SubSystem *m_sub_system;
+	string m_cc_batch;
 
 };
 

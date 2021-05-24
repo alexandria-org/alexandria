@@ -34,7 +34,7 @@ int test4_1(void) {
 	response_json.WithObject("body", JsonValue().AsString(response_body));
 	response_json.WithObject("isBase64Encoded", JsonValue().AsBool(true));
 
-	cout << "invocation_response: " << response_json.View().WriteReadable() << endl;
+	//cout << "invocation_response: " << response_json.View().WriteReadable() << endl;
 
 	Aws::ShutdownAPI(options);
 

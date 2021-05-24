@@ -2,7 +2,9 @@
 #include "CCIndexRunner.h"
 
 template <class TemplateIndexer>
-CCIndexRunner<TemplateIndexer>::CCIndexRunner() {
+CCIndexRunner<TemplateIndexer>::CCIndexRunner(const string &cc_batch)
+: m_cc_batch(cc_batch)
+{
 }
 
 template<class TemplateIndexer>
@@ -42,7 +44,7 @@ void CCIndexRunner<TemplateIndexer>::run_all(size_t limit) {
 template<class TemplateIndexer>
 map<int, vector<string>> CCIndexRunner<TemplateIndexer>::download_all(size_t limit) {
 
-	string warc_paths_url = "crawl-data/CC-MAIN-2021-10/warc.paths.gz";
+	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
 	vector<string> warc_paths;
@@ -188,7 +190,7 @@ void CCIndexRunner<TemplateIndexer>::upload_results_thread(const string &word) {
 
 	try {
 		TemplateIndexer indexer(m_sub_system);
-		indexer.upload(word, 3);
+		indexer.upload(m_cc_batch, word, 3);
 	} catch (runtime_error &error) {
 		cout << error.what() << endl;
 	}

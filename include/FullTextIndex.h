@@ -19,7 +19,7 @@ public:
 	vector<FullTextResult> search(const string &word);
 	void add(const string &key, const string &text);
 	void add(const string &key, const string &text, uint32_t score);
-	void consume_stream(basic_iostream<char> &stream);
+	void add_stream(basic_iostream<char> &stream, const vector<size_t> &cols, const vector<uint32_t> &scores);
 	void save();
 	size_t size() const;
 
