@@ -7,11 +7,10 @@
 #include <memory>
 #include <unistd.h>
 
-#include "CCFullTextIndexer.h"
-#include "CCUrlIndex.h"
-#include "CCIndexRunner.h"
-#include "CCIndexMerger.h"
-#include "CCLinkIndex.h"
+#include "index/CCUrlIndex.h"
+#include "index/CCIndexRunner.h"
+#include "index/CCIndexMerger.h"
+#include "index/CCLinkIndex.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;

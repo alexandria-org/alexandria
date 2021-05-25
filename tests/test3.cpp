@@ -1,18 +1,17 @@
 
 
 #include "test3.h"
-#include "common.h"
-#include "TsvFileS3.h"
-#include "Dictionary.h"
+#include "common/common.h"
+#include "file/TsvFileS3.h"
+#include "common/Dictionary.h"
 #include <unistd.h>
 
 #include <vector>
 #include <iostream>
 
-#include "CCUrlIndex.h"
-#include "CCFullTextIndexer.h"
-#include "CCIndexRunner.h"
-#include "CCIndexMerger.h"
+#include "index/CCUrlIndex.h"
+#include "index/CCIndexRunner.h"
+#include "index/CCIndexMerger.h"
 
 using namespace std;
 
@@ -54,7 +53,7 @@ int test3_2(void) {
 	//CCFullTextIndexer::run_all(1);
 	//CCUrlIndexer::run_all(1);
 
-	TsvFile my_file("tests/data/tsvtest.tsv");
+	TsvFile my_file("../tests/data/tsvtest.tsv");
 
 	ok = ok && my_file.find_first_position("aaa") == 0;
 	ok = ok && my_file.find_first_position("aab") == 126;
@@ -64,7 +63,7 @@ int test3_2(void) {
 	ok = ok && my_file.find_last_position("aab") == 126;
 	ok = ok && my_file.find_last_position("european") == string::npos;
 
-	TsvFile my_file2("tests/data/tsvtest2.tsv");
+	TsvFile my_file2("../tests/data/tsvtest2.tsv");
 
 	ok = ok && my_file2.find_first_position("aaa") == 0;
 	ok = ok && my_file2.find_first_position("aab") > 0;

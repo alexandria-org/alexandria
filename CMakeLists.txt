@@ -9,45 +9,49 @@ find_package(AWSSDK COMPONENTS s3 transfer)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem)
 find_package(ZLIB)
 
-include_directories(include/)
+include_directories(src/)
 include_directories(tests/)
 
 set(SRC_CLASSES
-	"src/classes/ApiResponse.cpp"
-	"src/classes/CCApi.cpp"
-	"src/classes/CCFullTextIndexer.cpp"
-	"src/classes/CCLinkIndex.cpp"
-	"src/classes/CCIndexRunner.cpp"
-	"src/classes/CCUrlIndex.cpp"
-	"src/classes/Dictionary.cpp"
-	"src/classes/DictionaryRow.cpp"
-	"src/classes/HtmlParser.cpp"
-	"src/classes/Link.cpp"
-	"src/classes/Profiler.cpp"
-	"src/classes/SearchResult.cpp"
-	"src/classes/Stopwords.cpp"
-	"src/classes/SubSystem.cpp"
-	"src/classes/TsvFile.cpp"
-	"src/classes/TsvFileS3.cpp"
-	"src/classes/TsvRow.cpp"
-	"src/classes/URL.cpp"
-	"src/classes/LinkResult.cpp"
-	"src/classes/FullTextIndex.cpp"
-	"src/classes/FullTextShard.cpp"
-	"src/classes/FullTextResult.cpp"
-	"src/classes/Unicode.cpp"
-	"src/classes/CCIndexMerger.cpp"
-
 	"src/abstract/BasicData.cpp"
 	"src/abstract/BasicIndexer.cpp"
 	"src/abstract/BasicLinkData.cpp"
 	"src/abstract/BasicUrlData.cpp"
 	"src/abstract/TextBase.cpp"
+	
+	"src/api/ApiResponse.cpp"
+	"src/api/CCApi.cpp"
+	"src/api/Link.cpp"
+	"src/api/LinkResult.cpp"
+	"src/api/SearchResult.cpp"
+
+	"src/file/TsvFile.cpp"
+	"src/file/TsvFileS3.cpp"
+	"src/file/TsvRow.cpp"
+
+	"src/full_text/FullTextIndex.cpp"
+	"src/full_text/FullTextShard.cpp"
+	"src/full_text/FullTextResult.cpp"
+
+	"src/index/CCIndexMerger.cpp"
+	"src/index/CCIndexRunner.cpp"
+	"src/index/CCLinkIndex.cpp"
+	"src/index/CCUrlIndex.cpp"
+	
+	"src/parser/entities.cpp"
+	"src/parser/HtmlParser.cpp"
+	"src/parser/Unicode.cpp"
+	"src/parser/URL.cpp"
+	
+	"src/system/Profiler.cpp"
+	"src/system/SubSystem.cpp"
 )
 
 set(SRC_COMMON
-	"src/common.cpp"
-	"src/entities.cpp"
+	"src/common/common.cpp"
+	"src/common/Dictionary.cpp"
+	"src/common/DictionaryRow.cpp"
+	"src/common/Stopwords.cpp"
 )
 
 set(SRC_TESTS

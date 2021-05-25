@@ -1,9 +1,9 @@
 
 
 #include "test2.h"
-#include "BasicUrlData.h"
-#include "common.h"
-#include "Unicode.h"
+#include "abstract/BasicUrlData.h"
+#include "common/common.h"
+#include "parser/Unicode.h"
 
 #include <vector>
 #include <iostream>

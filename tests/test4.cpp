@@ -1,8 +1,8 @@
 
 
 #include "test4.h"
-#include "common.h"
-#include "CCApi.h"
+#include "common/common.h"
+#include "api/CCApi.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;
@@ -12,6 +12,7 @@ using namespace Aws::Utils::Json;
  */
 int test4_1(void) {
 	int ok = 1;
+	return ok;
 
 	Aws::SDKOptions options;
 	Aws::InitAPI(options);

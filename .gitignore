@@ -3,6 +3,7 @@ deps/*
 tmp/*
 src/*.o
 tests/*.o
+build/*
 response.txt
 cc_parser.zip
 cc_parser
