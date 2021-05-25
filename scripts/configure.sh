@@ -1,5 +1,8 @@
 #!/bin/bash
 
+cd `dirname $0`
+cd ..
+
 apt-get install libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev
 
 rel_path=`dirname $0`

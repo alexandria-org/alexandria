@@ -1,15 +1,21 @@
 #!/bin/bash
 
+cd `dirname $0`
+cd ..
+mkdir -p tmp
+
+cd tmp
 rm warc.paths.gz
 wget https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-04/warc.paths.gz
 gunzip -f warc.paths.gz
+cd ..
 
 numProc=100
 procs=( )
 
 id=1
 
-for key in `awk 'NR >= 1 && NR <= 100000' warc.paths`; do
+for key in `awk 'NR >= 1 && NR <= 100000' tmp/warc.paths`; do
 
 	echo "Starting $key"
 

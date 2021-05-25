@@ -1,5 +1,6 @@
 
 deps/*
+tmp/*
 src/*.o
 tests/*.o
 response.txt
@@ -20,3 +21,5 @@ Makefile
 cmake_install.cmake
 warc.paths
 .vscode
+.gdb_history
+

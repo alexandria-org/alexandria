@@ -1,8 +1,14 @@
 # cc-parser
 
-To create the makefile:
+To build the system:
 ```
-cmake . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
+mkdir build
+cd build
+
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
 or
-cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
+
+make
+make run_tests
 ```

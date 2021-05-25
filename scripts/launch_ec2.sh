@@ -1,5 +1,8 @@
 #!/bin/bash
 
+cd `dirname $0`
+cd ..
+
 INSTANCE_ID=`cat instance.txt`
 
 aws ec2 start-instances --instance-ids $INSTANCE_ID

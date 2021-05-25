@@ -1,0 +1,3 @@
+
+set history save on
+
