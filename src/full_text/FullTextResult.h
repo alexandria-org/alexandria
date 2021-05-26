@@ -13,4 +13,6 @@ public:
 	uint64_t m_value;
 	uint32_t m_score;
 
+	friend bool operator==(const FullTextResult &a, const FullTextResult &b);
+
 };

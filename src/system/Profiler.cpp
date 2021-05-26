@@ -13,11 +13,11 @@ Profiler::~Profiler() {
 	}
 }
 
-size_t Profiler::get() const {
+double Profiler::get() const {
 	auto timer_elapsed = chrono::high_resolution_clock::now() - m_start_time;
 	auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
 
-	return microseconds/1000;
+	return (double)microseconds/1000;
 }
 
 void Profiler::stop() {

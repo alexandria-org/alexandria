@@ -68,7 +68,7 @@ void FullTextShard::save_file() {
 		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 
-	cout << "Writing shard: " << filename() << " with num keys: " << m_keys.size() << endl;
+	cout << "Writing shard: " << filename() << " with num keys: " << m_keys.size() << " with cache: " << m_cache.size() << endl;
 
 	m_keys.clear();
 	for (auto &iter : m_cache) {
@@ -89,6 +89,15 @@ void FullTextShard::save_file() {
 
 	size_t pos = 0;
 	for (uint64_t key : m_keys) {
+
+		// Make elements unique.
+		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
+			return a.m_value < b.m_value;
+		});
+		auto last = unique(m_cache[key].begin(), m_cache[key].end());
+		m_cache[key].erase(last, m_cache[key].end());
+
+		// Store position and length
 		size_t len = m_cache[key].size() * FULL_TEXT_RECORD_LEN;
 		
 		v_pos.push_back(pos);
@@ -107,6 +116,7 @@ void FullTextShard::save_file() {
 	// Write data.
 	for (uint64_t key : m_keys) {
 		size_t i = 0;
+
 		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
 			return a.m_score > b.m_score;
 		});
@@ -183,10 +193,6 @@ string FullTextShard::filename() const {
 	return "/mnt/fti_" + m_db_name + "_" + to_string(m_shard) + ".idx";
 }
 
-size_t FullTextShard::size() const {
-	return m_keys.size();
-}
-
 void FullTextShard::truncate() {
 	m_cache.clear();
 	m_keys.clear();
@@ -197,6 +203,14 @@ void FullTextShard::truncate() {
 		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
+}
+
+size_t FullTextShard::disk_size() const {
+	return m_keys.size();
+}
+
+size_t FullTextShard::cache_size() const {
+	return m_cache.size();
 }
 
 vector<FullTextResult> FullTextShard::find_cached(uint64_t key) const {

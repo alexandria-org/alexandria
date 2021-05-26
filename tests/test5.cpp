@@ -18,8 +18,12 @@ int test5_1(void) {
 
 	std::hash<string> hasher;
 
+	cout << hasher("hej") << endl;
+	cout << hasher("hopp") << endl;
+	cout << hasher("josef") << endl;
+
 	FullTextIndex fti("test_db1");
-	if (fti.size() == 0) {
+	if (fti.disk_size() == 0) {
 		fti.add("http://example.com", "Hej hopp josef");
 	}
 	vector<FullTextResult> result = fti.search_word("hopp");
@@ -98,16 +102,58 @@ int test5_2(void) {
 	vector<FullTextResult> result;
 	FullTextIndex index("test_db_4");
 	Profiler profile("add_stream");
-	index.add_stream(decompress_stream, {1}, {1});
+	index.add_stream(decompress_stream, {1, 2, 3, 4}, {1, 1, 1, 1});
 	profile.stop();
 
 	result = index.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School");
 
+	ok = ok && result.size() > 0 &&
+		result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
+
+	index.save();
+
+	Profiler profile_search_db("search_db");
+	result = index.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School");
+	profile_search_db.stop();
+
 	for (FullTextResult &res : result) {
 		cout << "Result: " << res.m_value << endl;
 	}
+	cout << "hash: " << hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441") << endl;
 
-	ok = ok && result.size() > 0 && result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
+	ok = ok && result.size() > 0 &&
+		result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
+
+	return ok;
+}
+
+int test5_3(void) {
+	int ok = 1;
+
+	map<size_t, vector<uint64_t>> values = {
+		{0, {1, 2, 3}},
+		{1, {3, 4, 5}},
+		{2, {2, 3, 6}}	
+	};
+
+	FullTextIndex index("test_db_5");
+
+	size_t shortest_vector;
+	vector<size_t> result = index.value_intersection(values, shortest_vector);
+	ok = ok && result.size() == 1 && values[shortest_vector][result[0]] == 3;
+
+	values = {
+		{0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		{1, {3, 4, 5, 6, 7}},
+		{2, {2, 3, 6, 7, 8, 9}}	
+	};
+
+	result = index.value_intersection(values, shortest_vector);
+	ok = ok && shortest_vector == 1;
+	ok = ok && result.size() == 3;
+	ok = ok && values[shortest_vector][result[0]] == 3;
+	ok = ok && values[shortest_vector][result[1]] == 6;
+	ok = ok && values[shortest_vector][result[2]] == 7;
 
 	return ok;
 }

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <fstream>
 #include <algorithm>
@@ -31,8 +32,10 @@ public:
 	void read_file();
 
 	string filename() const;
-	size_t size() const;
 	void truncate();
+
+	size_t disk_size() const;
+	size_t cache_size() const;
 
 private:
 
@@ -41,7 +44,8 @@ private:
 	mutable ifstream m_reader;
 	ofstream m_writer;
 
-	map<uint64_t, vector<FullTextResult>> m_cache;
+	unordered_map<uint64_t, vector<FullTextResult>> m_cache;
+	unordered_map<uint64_t, vector<uint64_t>> m_cache2;
 
 	// These variables always represent what is in the file.
 	vector<uint64_t> m_keys;

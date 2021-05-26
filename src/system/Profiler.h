@@ -13,7 +13,7 @@ public:
 	Profiler(const string &name);
 	~Profiler();
 
-	size_t get() const;
+	double get() const;
 	void stop();
 	void print();
 

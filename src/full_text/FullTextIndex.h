@@ -37,14 +37,19 @@ public:
 	void truncate();
 
 	// Getters.
-	size_t size() const;
+	size_t disk_size() const;
+	size_t cache_size() const;
+
+	// Testable private functions.
+	vector<size_t> value_intersection(const map<size_t, vector<uint64_t>> &values_map,
+		size_t &shortest_vector_position) const;
 
 private:
 
 	string m_db_name;
 	hash<string> m_hasher;
 
-	const size_t m_num_shards = 1;
+	const size_t m_num_shards = 10;
 	vector<FullTextShard *> m_shards;
 
 };

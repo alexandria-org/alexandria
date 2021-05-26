@@ -29,7 +29,7 @@ int main(void) {
 		2,
 		3,
 		1,
-		2
+		3
 	};
 
 	int (* testSuite1 [])() = {
@@ -55,7 +55,8 @@ int main(void) {
 
 	int (* testSuite5 [])() = {
 		test5_1,
-		test5_2
+		test5_2,
+		test5_3
 	};
 
 	int (**testSuites[])() = {
