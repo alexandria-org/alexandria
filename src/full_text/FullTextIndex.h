@@ -5,16 +5,23 @@
 #include <vector>
 
 #include "abstract/TextBase.h"
-#include "FullTextShard.h"
+#include "FullTextBucket.h"
 #include "FullTextResult.h"
 
 using namespace std;
+
+#define FT_NUM_BUCKETS 8
+#define FT_NUM_SHARDS 32
+
+class FullTextBucket;
 
 class FullTextIndex : public TextBase {
 
 public:
 	FullTextIndex(const string &name);
 	~FullTextIndex();
+
+	void wait_for_start();
 
 	vector<FullTextResult> search_word(const string &word);
 	vector<FullTextResult> search_phrase(const string &phrase);
@@ -24,14 +31,14 @@ public:
 	void add(const string &key, const string &text, uint32_t score);
 
 	/*
-		Add stream with tab separated data. Cols is a vector of column indices to index and scores are scores for the
-		corresponding column.
+		Add file with tab separated data. If the filename ends with .gz it will be decoded also.
+		Cols is a vector of column indices to index and scores are scores for the corresponding column.
 
 		Example:
-		index.add_stream(stream, {0, 2}, {1, 10});
+		index.add_stream("test_file.tsv.gz", {0, 2}, {1, 10});
 		Adds column 0 and 2 to the index with scores 1 and 10.
 	*/
-	void add_stream(basic_istream<char> &stream, const vector<size_t> &cols, const vector<uint32_t> &scores);
+	void add_file(const string &file_name, const vector<size_t> &cols, const vector<uint32_t> &scores);
 
 	void save();
 	void truncate();
@@ -49,7 +56,10 @@ private:
 	string m_db_name;
 	hash<string> m_hasher;
 
-	const size_t m_num_shards = 10;
-	vector<FullTextShard *> m_shards;
+	vector<FullTextBucket *> m_buckets;
+
+	vector<size_t> shard_ids_for_bucket(size_t bucket_id);
+	FullTextBucket *bucket_for_hash(size_t hash);
+	void sort_results(vector<FullTextResult> &results);
 
 };

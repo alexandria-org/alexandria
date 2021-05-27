@@ -56,6 +56,13 @@ vector<FullTextResult> FullTextShard::find(uint64_t key) const {
 	// Merge.
 	cached.insert(cached.end(), stored.begin(), stored.end());
 
+	// Make elements unique.
+	sort(cached.begin(), cached.end(), [](const FullTextResult &a, const FullTextResult &b) {
+		return a.m_value < b.m_value;
+	});
+	auto last = unique(cached.begin(), cached.end());
+	cached.erase(last, cached.end());
+
 	return cached;
 }
 
@@ -67,8 +74,6 @@ void FullTextShard::save_file() {
 	if (!m_writer.is_open()) {
 		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
-
-	cout << "Writing shard: " << filename() << " with num keys: " << m_keys.size() << " with cache: " << m_cache.size() << endl;
 
 	m_keys.clear();
 	for (auto &iter : m_cache) {
@@ -243,7 +248,7 @@ vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
 		size_t num_records = read_len / FULL_TEXT_RECORD_SIZE;
 		for (size_t i = 0; i < num_records; i++) {
 			const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
-			const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
+			const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE + FULL_TEXT_KEY_LEN]);
 			ret.emplace_back(FullTextResult(value, score));
 		}
 	}
@@ -268,7 +273,7 @@ void FullTextShard::read_data_to_cache() {
 			size_t num_records = read_len / FULL_TEXT_RECORD_SIZE;
 			for (size_t i = 0; i < num_records; i++) {
 				const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
-				const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
+				const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE + FULL_TEXT_KEY_LEN]);
 				m_cache[key].emplace_back(FullTextResult(value, score));
 			}
 		}
