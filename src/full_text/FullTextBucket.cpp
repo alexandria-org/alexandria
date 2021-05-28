@@ -293,12 +293,11 @@ void FullTextBucket::add_data_to_shards(const string &key, const string &text, u
 
 	vector<string> words = get_full_text_words(text);
 	for (const string &word : words) {
-		uint64_t word_hash = m_hasher(word);
-
+		const uint64_t word_hash = m_hasher(word);
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
 		if ((shard_id >= m_first_shard_id) && (shard_id <= m_last_shard_id)) {
-			m_shards[shard_id]->add(key_hash, word_hash, score);
+			m_shards[shard_id]->add(word_hash, key_hash, score);
 		}
 	}
 }

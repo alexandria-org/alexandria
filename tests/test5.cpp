@@ -121,11 +121,6 @@ int test5_2(void) {
 		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School");
 		profile_search_db.stop();
 
-		for (FullTextResult &res : result) {
-			cout << "Result: " << res.m_value << endl;
-		}
-		cout << "hash: " << hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441") << endl;
-
 		ok = ok && result.size() > 0 &&
 			result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
 	}

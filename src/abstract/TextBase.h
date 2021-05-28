@@ -145,7 +145,7 @@ public:
 			
 		}
 
-		return raw_words;
+		return words;
 	}
 
 	inline vector<string> get_full_text_words(const string &str) const {

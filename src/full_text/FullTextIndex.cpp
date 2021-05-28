@@ -94,8 +94,16 @@ void FullTextIndex::add(const string &key, const string &text, uint32_t score) {
 void FullTextIndex::add_file(const string &file_name, const vector<size_t> &cols, const vector<uint32_t> &scores) {
 
 	// Send it to all the buckets.
+	vector<thread> threads;
 	for (FullTextBucket *bucket : m_buckets) {
-		bucket->add_file(file_name, cols, scores);
+		thread th([file_name, cols, scores](FullTextBucket *_bucket) {
+			_bucket->add_file(file_name, cols, scores);
+		}, bucket);
+		threads.push_back(move(th));
+	}
+
+	for (thread &th : threads) {
+		th.join();
 	}
 
 }
