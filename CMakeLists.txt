@@ -34,6 +34,8 @@ set(SRC_CLASSES
 	"src/full_text/FullTextBucket.cpp"
 	"src/full_text/FullTextResult.cpp"
 	"src/full_text/FullTextBucketMessage.cpp"
+	"src/full_text/FullTextIndexer.cpp"
+	"src/full_text/FullTextIndexerRunner.cpp"
 
 	"src/index/CCIndexMerger.cpp"
 	"src/index/CCIndexRunner.cpp"

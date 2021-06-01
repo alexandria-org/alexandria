@@ -23,6 +23,7 @@ class FullTextShard {
 public:
 
 	FullTextShard(const string &db_name, size_t shard);
+	FullTextShard(const string &file_name);
 	~FullTextShard();
 
 	void add(uint64_t key, uint64_t value, uint32_t score);
@@ -30,6 +31,8 @@ public:
 	vector<FullTextResult> find(uint64_t key) const;
 	void save_file();
 	void read_file();
+	void append_precache();
+	void merge_precache();
 
 	string filename() const;
 	void truncate();
@@ -39,7 +42,10 @@ public:
 
 private:
 
+	bool m_precache;
+
 	string m_db_name;
+	string m_filename;
 
 	mutable ifstream m_reader;
 	ofstream m_writer;

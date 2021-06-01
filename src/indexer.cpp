@@ -11,6 +11,7 @@
 #include "index/CCIndexRunner.h"
 #include "index/CCIndexMerger.h"
 #include "index/CCLinkIndex.h"
+#include "full_text/FullTextIndexerRunner.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;
@@ -26,8 +27,11 @@ int main(int argc, const char **argv) {
 	//CCIndexRunner<CCLinkIndex> indexer("CC-MAIN-2021-04");
 	//indexer.run_all();
 
-	CCIndexMerger merger("CC-MAIN-2021-17", "main");
-	merger.run_all();
+	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	indexer.run();
+
+	//CCIndexMerger merger("CC-MAIN-2021-17", "main");
+	//merger.run_all();
 
 	return 0;
 }
