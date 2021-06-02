@@ -1,6 +1,7 @@
 
 #include "FullTextShard.h"
 #include <cstring>
+#include "system/Logger.h"
 
 /*
 File format explained
@@ -21,13 +22,13 @@ FullTextShard::FullTextShard(const string &db_name, size_t shard)
 	
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 
 	read_file();
@@ -60,7 +61,7 @@ void FullTextShard::sort_cache() {
 
 vector<FullTextResult> FullTextShard::find(uint64_t key) const {
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::find on it");
+		throw error("Shard is in precache mode, cannot run ::find on it");
 	}
 
 	vector<FullTextResult> cached = find_cached(key);
@@ -82,14 +83,14 @@ vector<FullTextResult> FullTextShard::find(uint64_t key) const {
 void FullTextShard::save_file() {
 
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::save_file on it");
+		throw error("Shard is in precache mode, cannot run ::save_file on it");
 	}
 
 	read_data_to_cache();
 
 	m_writer.open(filename(), ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 
 	m_keys.clear();
@@ -165,7 +166,7 @@ void FullTextShard::save_file() {
 void FullTextShard::append_precache() {
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " +
+		throw error("Could not open full text shard (" + filename() + "). Error: " +
 			string(strerror(errno)));
 	}
 
@@ -189,7 +190,7 @@ void FullTextShard::merge_precache() {
 	// Read the whole cache.
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	char buffer[64];
@@ -218,19 +219,19 @@ void FullTextShard::merge_precache() {
 	// Tuncate file.
 	m_writer.open(filename(), ios::trunc);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	m_precache = false;
@@ -240,7 +241,7 @@ void FullTextShard::merge_precache() {
 void FullTextShard::read_file() {
 
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::read_cache on it");
+		throw error("Shard is in precache mode, cannot run ::read_cache on it");
 	}
 
 	m_keys.clear();
@@ -264,7 +265,7 @@ void FullTextShard::read_file() {
 	m_num_keys = *((uint64_t *)(&buffer[0]));
 
 	if (m_num_keys > FULL_TEXT_MAX_KEYS) {
-		throw runtime_error("Number of keys in file exceeeds maximum: " + to_string(m_num_keys));
+		throw error("Number of keys in file exceeeds maximum: " + to_string(m_num_keys));
 	}
 
 	char *vector_buffer = new char[m_num_keys * 8];
@@ -297,7 +298,7 @@ string FullTextShard::filename() const {
 void FullTextShard::truncate() {
 
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::truncate on it");
+		throw error("Shard is in precache mode, cannot run ::truncate on it");
 	}
 
 	m_cache.clear();
@@ -306,7 +307,7 @@ void FullTextShard::truncate() {
 
 	m_writer.open(filename(), ios::trunc);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 }
@@ -330,7 +331,7 @@ vector<FullTextResult> FullTextShard::find_cached(uint64_t key) const {
 vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
 
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::find_stored on it");
+		throw error("Shard is in precache mode, cannot run ::find_stored on it");
 	}
 
 	auto iter = m_pos.find(key);
@@ -365,7 +366,7 @@ vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
 void FullTextShard::read_data_to_cache() {
 
 	if (m_precache) {
-		throw runtime_error("Shard is in precache mode, cannot run ::read_data_to_cache on it");
+		throw error("Shard is in precache mode, cannot run ::read_data_to_cache on it");
 	}
 
 	// Read all the data to file.

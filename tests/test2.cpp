@@ -4,6 +4,7 @@
 #include "abstract/BasicUrlData.h"
 #include "common/common.h"
 #include "parser/Unicode.h"
+#include "system/Logger.h"
 
 #include <vector>
 #include <iostream>
@@ -24,6 +25,8 @@ void var_dump(const vector<string> &vec) {
  */
 int test2_1(void) {
 	int ok = 1;
+
+	throw error("Testing error exception");
 
 	BasicUrlData url_data;
 

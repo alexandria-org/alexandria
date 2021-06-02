@@ -9,6 +9,10 @@
 #define LogInfo(msg) Logger::log("info", __FILE__, __LINE__, msg)
 #define LogError(msg) Logger::log("error", __FILE__, __LINE__, msg)
 
+#define error(msg) runtime_error(string(__FILE__) + ":" + to_string(__LINE__) + " " + msg)
+
+class LoggedException
+
 using namespace std;
 
 class Logger {
