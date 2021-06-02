@@ -165,7 +165,8 @@ void FullTextShard::save_file() {
 void FullTextShard::append_precache() {
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " +
+			string(strerror(errno)));
 	}
 
 	for (const auto &iter : m_cache) {
@@ -188,7 +189,7 @@ void FullTextShard::merge_precache() {
 	// Read the whole cache.
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	char buffer[64];
@@ -217,19 +218,19 @@ void FullTextShard::merge_precache() {
 	// Tuncate file.
 	m_writer.open(filename(), ios::trunc);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 	m_writer.close();
 
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw runtime_error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw runtime_error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	m_precache = false;

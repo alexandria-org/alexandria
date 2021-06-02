@@ -13,6 +13,7 @@
 #include "common/common.h"
 #include "api/Link.h"
 #include "abstract/TextBase.h"
+#include "parser/Unicode.h"
 
 using namespace std;
 
@@ -20,7 +21,6 @@ using namespace std;
 #define HTML_PARSER_SHORT_TEXT_LEN 300
 #define HTML_PARSER_CLEANBUF_LEN 1024
 #define HTML_PARSER_ENCODING_BUFFER_LEN 8192
-#define IS_MULTIBYTE_CODEPOINT(ch) ((ch >> 7) && !((ch >> 6) & 0x1))
 
 #define ENC_UTF_8 1
 #define ENC_ISO_8859_1 2
