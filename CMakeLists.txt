@@ -49,6 +49,7 @@ set(SRC_CLASSES
 	
 	"src/system/Profiler.cpp"
 	"src/system/SubSystem.cpp"
+	"src/system/Logger.cpp"
 )
 
 set(SRC_COMMON
