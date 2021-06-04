@@ -27,8 +27,8 @@ public:
 
 	void add(uint64_t key, uint64_t value, uint32_t score);
 	void sort_cache();
-	void append_precache();
-	void merge_precache();
+	void append();
+	void merge(const string &db_name, size_t shard_id);
 
 	string filename() const;
 	void truncate();
@@ -46,5 +46,7 @@ private:
 
 	const size_t m_buffer_len = 1000000*FULL_TEXT_RECORD_SIZE; // 1m elements, each is 12 bytes.
 	char *m_buffer;
+
+	void save_file(const string &db_name, size_t shard_id);
 
 };

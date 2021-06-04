@@ -56,9 +56,9 @@ void FullTextIndexerRunner::run() {
 	// Loop over shards and merge them.
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-		FullTextShard shard(file_name);
+		FullTextShardBuilder shard(file_name);
 
-		shard.merge_precache();
+		shard.merge("main_index", shard_id);
 	}
 
 	deinit_aws_api();

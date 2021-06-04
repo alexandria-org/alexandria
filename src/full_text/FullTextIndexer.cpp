@@ -47,7 +47,7 @@ bool FullTextIndexer::should_write_cache() const {
 
 void FullTextIndexer::write_cache() {
 	for (FullTextShardBuilder *shard : m_shards) {
-		shard->append_precache();
+		shard->append();
 	}
 }
 
