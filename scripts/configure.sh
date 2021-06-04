@@ -3,6 +3,9 @@
 cd `dirname $0`
 cd ..
 
+export CC=/usr/bin/gcc-10
+export CXX=/usr/bin/g++-10
+
 apt-get install libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev
 
 rel_path=`pwd`
