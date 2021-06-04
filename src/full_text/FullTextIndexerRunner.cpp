@@ -29,7 +29,8 @@ void FullTextIndexerRunner::run() {
 	vector<vector<string>> warc_path_chunks;
 	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
 
-	ThreadPool pool(FT_NUM_THREADS_INDEXING);
+	//ThreadPool pool(FT_NUM_THREADS_INDEXING);
+	ThreadPool pool(100);
 	std::vector<std::future<string>> results;
 
 	int id = 1;
@@ -49,6 +50,8 @@ void FullTextIndexerRunner::run() {
 	for(auto && result: results) {
 		result.get();
 	}
+
+	cout << "Done indexing.. Sleeping 100..." << endl;
 
 	// Loop over shards and merge them.
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
@@ -79,6 +82,9 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths)
 			}
 		}
 	}
+	m_write_mutex.lock();
+	indexer.write_cache();
+	m_write_mutex.unlock();
 
 	return "";
 }

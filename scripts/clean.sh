@@ -3,10 +3,10 @@
 cd `dirname $0`
 cd ..
 
-for shard in `ls /mnt`; do
-	rm -r "/mnt/$shard";
-	mkdir "/mnt/$shard";
-	mkdir "/mnt/$shard/input";
-	mkdir "/mnt/$shard/output";
-	mkdir "/mnt/$shard/upload";
+for shard in `cat shards`; do
+	rm -r "$shard";
+	mkdir "$shard";
+	mkdir "$shard/input";
+	mkdir "$shard/output";
+	mkdir "$shard/upload";
 done

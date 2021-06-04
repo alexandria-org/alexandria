@@ -7,6 +7,7 @@
 #include "common/common.h"
 
 #include "FullTextShard.h"
+#include "FullTextShardBuilder.h"
 #include "FullTextIndex.h"
 #include "abstract/TextBase.h"
 
@@ -28,7 +29,7 @@ public:
 private:
 
 	hash<string> m_hasher;
-	vector<FullTextShard *> m_shards;
+	vector<FullTextShardBuilder *> m_shards;
 
 	void add_data_to_shards(const string &key, const string &text, uint32_t score);
 

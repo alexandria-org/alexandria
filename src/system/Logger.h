@@ -9,9 +9,7 @@
 #define LogInfo(msg) Logger::log("info", __FILE__, __LINE__, msg)
 #define LogError(msg) Logger::log("error", __FILE__, __LINE__, msg)
 
-#define error(msg) runtime_error(string(__FILE__) + ":" + to_string(__LINE__) + " " + msg)
-
-class LoggedException
+#define error(msg) LoggedException(msg, string(__FILE__), __LINE__)
 
 using namespace std;
 
@@ -26,7 +24,8 @@ public:
 
 	void verbose(bool verbose);
 	void reopen();
-	string timestamp();
+	string timestamp() const;
+	string format(const string &type, const string &file, int line, const string &message, const string &meta) const;
 	void log_message(const string &type, const string &file, int line, const string &message, const string &meta);
 	void log_string(const string &message);
 
@@ -45,6 +44,24 @@ private:
 	chrono::seconds m_reopen_interval;
 	chrono::system_clock::time_point m_last_reopen;
 	bool m_verbose;
+
+};
+
+class LoggedException : public std::exception {
+
+public:
+	LoggedException(const string &message, const string &file, int line);
+
+	const char *what() const throw () {
+		return m_formatted_message.c_str();
+	}
+
+private:
+
+	string m_formatted_message;
+	string m_file;
+	int m_line;
+	string m_message;
 
 };
 

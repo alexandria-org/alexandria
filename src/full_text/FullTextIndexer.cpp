@@ -5,12 +5,14 @@
 FullTextIndexer::FullTextIndexer() {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-		m_shards.push_back(new FullTextShard(file_name));
+		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
+		shard_builder->truncate();
+		m_shards.push_back(shard_builder);
 	}
 }
 
 FullTextIndexer::~FullTextIndexer() {
-	for (FullTextShard *shard : m_shards) {
+	for (FullTextShardBuilder *shard : m_shards) {
 		delete shard;
 	}
 }
@@ -30,21 +32,21 @@ void FullTextIndexer::add_stream(basic_istream<char> &stream, const vector<size_
 	}
 
 	// sort shards.
-	for (FullTextShard *shard : m_shards) {
+	for (FullTextShardBuilder *shard : m_shards) {
 		shard->sort_cache();
 	}
 }
 
 bool FullTextIndexer::should_write_cache() const {
 	size_t total_size = 0;
-	for (FullTextShard *shard : m_shards) {
+	for (FullTextShardBuilder *shard : m_shards) {
 		total_size += shard->cache_size();
 	}
 	return total_size > FT_INDEXER_MAX_CACHE_SIZE;
 }
 
 void FullTextIndexer::write_cache() {
-	for (FullTextShard *shard : m_shards) {
+	for (FullTextShardBuilder *shard : m_shards) {
 		shard->append_precache();
 	}
 }

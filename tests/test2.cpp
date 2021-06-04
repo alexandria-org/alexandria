@@ -26,8 +26,6 @@ void var_dump(const vector<string> &vec) {
 int test2_1(void) {
 	int ok = 1;
 
-	throw error("Testing error exception");
-
 	BasicUrlData url_data;
 
 	ok = ok && Unicode::encode("hej jag heter josef") == "hej jag heter josef";

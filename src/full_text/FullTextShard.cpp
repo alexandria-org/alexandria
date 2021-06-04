@@ -195,9 +195,17 @@ void FullTextShard::merge_precache() {
 
 	char buffer[64];
 
+	m_reader.seekg(0, ios::end);
+	size_t file_size = m_reader.tellg();
+	m_reader.seekg(0, ios::beg);
+
 	while (!m_reader.eof()) {
 		m_reader.read(buffer, FULL_TEXT_KEY_LEN);
 		uint64_t key = *((uint64_t *)(&buffer[0]));
+
+		if (m_reader.eof()) {
+			break;
+		}
 
 		m_reader.read(buffer, sizeof(size_t));
 		size_t len = *((size_t *)(&buffer[0]));
@@ -211,6 +219,7 @@ void FullTextShard::merge_precache() {
 
 			m_cache[key].emplace_back(FullTextResult(value, score));
 		}
+		if (m_reader.eof()) break;
 	}
 	m_reader.close();
 
@@ -296,10 +305,6 @@ string FullTextShard::filename() const {
 }
 
 void FullTextShard::truncate() {
-
-	if (m_precache) {
-		throw error("Shard is in precache mode, cannot run ::truncate on it");
-	}
 
 	m_cache.clear();
 	m_keys.clear();

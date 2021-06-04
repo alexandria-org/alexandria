@@ -48,7 +48,7 @@ void Logger::reopen() {
 	m_lock.unlock();
 }
 
-string Logger::timestamp() {
+string Logger::timestamp() const {
 	chrono::system_clock::time_point tp = std::chrono::system_clock::now();
 	time_t tt = std::chrono::system_clock::to_time_t(tp);
 	tm gmt{}; gmtime_r(&tt, &gmt);
@@ -59,14 +59,19 @@ string Logger::timestamp() {
 	return buffer;
 }
 
-void Logger::log_message(const string &type, const string &file, int line, const string &message, const string &meta) {
+string Logger::format(const string &type, const string &file, int line, const string &message, const string &meta)
+	const {
 	string output;
 	output.append(timestamp());
 	output.append(" [" + type + "]");
 	output.append(" " + file + ":" + to_string(line));
 	output.append(" " + message);
 	output.append(" " + meta);
-	log_string(output);
+	return output;
+}
+
+void Logger::log_message(const string &type, const string &file, int line, const string &message, const string &meta) {
+	log_string(format(type, file, line, message, meta));
 }
 
 void Logger::log_string(const string &message) {
@@ -86,5 +91,11 @@ void Logger::log(const string &type, const string &file, int line, const string 
 
 void Logger::log(const string &type, const string &file, int line, const string &message, const string &meta) {
 	Logger::instance()->log_message(type, file, line, message, meta);
+}
+
+LoggedException::LoggedException(const string &message, const string &file, int line)
+: m_message(message), m_file(file), m_line(line)
+{
+	m_formatted_message = Logger::instance()->format("EXCEPTION", m_file, m_line, m_message, "");
 }
 
