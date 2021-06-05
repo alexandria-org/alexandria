@@ -7,6 +7,10 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
+#include <stdio.h>
+#include <string.h>
+
+#include "HashTable.h"
 
 using namespace std;
 
@@ -22,10 +26,10 @@ public:
 
 private:
 
-	mutable ifstream m_reader;
-	ofstream m_writer;
-
 	// Maps keys to positions in file.
 	unordered_map<uint64_t, size_t> m_pos;
+	size_t m_shard_id;
+
+	string filename() const;
 
 };

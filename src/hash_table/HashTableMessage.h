@@ -9,6 +9,6 @@ public:
 
 	size_t m_message_type;
 	uint64_t m_key;
-	char data[HT_DATA_LENGTH];
+	char m_data[HT_DATA_LENGTH + 1];
 
 };

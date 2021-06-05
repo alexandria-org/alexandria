@@ -40,6 +40,10 @@ set(SRC_CLASSES
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
 
+	"src/hash_table/HashTable.cpp"
+	"src/hash_table/HashTableBucket.cpp"
+	"src/hash_table/HashTableShard.cpp"
+
 	"src/index/CCIndexMerger.cpp"
 	"src/index/CCIndexRunner.cpp"
 	"src/index/CCLinkIndex.cpp"
@@ -68,6 +72,7 @@ set(SRC_TESTS
 	"tests/test3.cpp"
 	"tests/test4.cpp"
 	"tests/test5.cpp"
+	"tests/test6.cpp"
 )
 
 add_executable(cc_parser 

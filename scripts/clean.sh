@@ -9,4 +9,5 @@ for shard in `cat shards`; do
 	mkdir "$shard/input";
 	mkdir "$shard/output";
 	mkdir "$shard/upload";
+	mkdir "$shard/hash_table";
 done
