@@ -4,7 +4,7 @@
 
 #define HT_PORT_START 20000
 #define HT_NUM_BUCKETS 8
-#define HT_NUM_SHARDS 32
+#define HT_NUM_SHARDS 16384
 #define HT_DATA_LENGTH 2000
 #define HT_KEY_SIZE 8
 #define HT_MESSAGE_ADD 1

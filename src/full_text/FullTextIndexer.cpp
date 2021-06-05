@@ -2,7 +2,8 @@
 #include "FullTextIndexer.h"
 #include <math.h>
 
-FullTextIndexer::FullTextIndexer() {
+FullTextIndexer::FullTextIndexer(HashTable *hash_table) {
+	m_hash_table = hash_table;
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
 		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
@@ -55,8 +56,11 @@ void FullTextIndexer::add_data_to_shards(const string &key, const string &text, 
 
 	uint64_t key_hash = m_hasher(key);
 
+	m_hash_table->add(key_hash, key);
+
 	vector<string> words = get_full_text_words(text);
 	for (const string &word : words) {
+
 		const uint64_t word_hash = m_hasher(word);
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 

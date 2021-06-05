@@ -6,6 +6,7 @@
 #include "common/common.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
+#include "hash_table/HashTable.h"
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
@@ -30,6 +31,7 @@ public:
 
 private:
 
+	HashTable *m_hash_table;
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
 	mutex m_write_mutex;

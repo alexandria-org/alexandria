@@ -10,6 +10,7 @@
 #include "FullTextShardBuilder.h"
 #include "FullTextIndex.h"
 #include "abstract/TextBase.h"
+#include "hash_table/HashTable.h"
 
 using namespace std;
 
@@ -19,7 +20,7 @@ class FullTextIndexer : public TextBase {
 
 public:
 
-	FullTextIndexer();
+	FullTextIndexer(HashTable *hash_table);
 	~FullTextIndexer();
 
 	void add_stream(basic_istream<char> &stream, const vector<size_t> &cols, const vector<uint32_t> &scores);
@@ -28,6 +29,7 @@ public:
 
 private:
 
+	HashTable *m_hash_table;
 	hash<string> m_hasher;
 	vector<FullTextShardBuilder *> m_shards;
 

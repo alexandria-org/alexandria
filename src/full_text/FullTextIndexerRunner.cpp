@@ -7,9 +7,14 @@ FullTextIndexerRunner::FullTextIndexerRunner(const string &cc_batch)
 : m_cc_batch(cc_batch)
 {
 
+	m_hash_table = new HashTable();
+	m_hash_table->wait_for_start();
+
 }
 
 FullTextIndexerRunner::~FullTextIndexerRunner() {
+
+	delete m_hash_table;
 
 }
 
@@ -61,12 +66,21 @@ void FullTextIndexerRunner::run() {
 		shard.merge("main_index", shard_id);
 	}
 
+	// Make searches.
+	FullTextIndex fti("main_index");
+	fti.wait_for_start();
+	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
+
+	for (FullTextResult &res : result) {
+		cout << "found url: " << m_hash_table->find(res.m_value) << endl;
+	}
+
 	deinit_aws_api();
 }
 
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths) {
 
-	FullTextIndexer indexer;
+	FullTextIndexer indexer(m_hash_table);
 	for (const string &raw_warc_path : warc_paths) {
 		stringstream stream;
 

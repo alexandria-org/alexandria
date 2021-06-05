@@ -147,7 +147,7 @@ bool HashTableBucket::read_socket(int socket) {
 
 		size_t str_len = min(result.size(), (size_t)HT_DATA_LENGTH);
 		memcpy(response.m_data, result.c_str(), str_len);
-		result[str_len] = '\0';
+		response.m_data[str_len] = '\0';
 
 	} else if (message.m_message_type == HT_MESSAGE_STOP) {
 		return false;
