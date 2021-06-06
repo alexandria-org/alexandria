@@ -2,8 +2,7 @@
 #include "FullTextIndexer.h"
 #include <math.h>
 
-FullTextIndexer::FullTextIndexer(HashTable *hash_table) {
-	m_hash_table = hash_table;
+FullTextIndexer::FullTextIndexer() {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
 		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
@@ -18,13 +17,17 @@ FullTextIndexer::~FullTextIndexer() {
 	}
 }
 
-void FullTextIndexer::add_stream(basic_istream<char> &stream, const vector<size_t> &cols,
-	const vector<uint32_t> &scores) {
+void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
+	const vector<size_t> &cols, const vector<uint32_t> &scores) {
 
 	string line;
 	while (getline(stream, line)) {
 		vector<string> col_values;
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+		uint64_t key_hash = m_hasher(col_values[0]);
+		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, col_values[0]);
+
 		size_t score_index = 0;
 		for (size_t col_index : cols) {
 			add_data_to_shards(col_values[0], col_values[col_index], scores[score_index]);
@@ -55,8 +58,6 @@ void FullTextIndexer::write_cache() {
 void FullTextIndexer::add_data_to_shards(const string &key, const string &text, uint32_t score) {
 
 	uint64_t key_hash = m_hasher(key);
-
-	m_hash_table->add(key_hash, key);
 
 	vector<string> words = get_full_text_words(text);
 	for (const string &word : words) {

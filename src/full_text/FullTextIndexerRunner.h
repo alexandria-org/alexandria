@@ -31,10 +31,10 @@ public:
 
 private:
 
-	HashTable *m_hash_table;
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
 	mutex m_write_mutex;
+	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 
 	string run_index_thread(const vector<string> &warc_paths);
 	int download_file(const string &bucket, const string &key, stringstream &stream);

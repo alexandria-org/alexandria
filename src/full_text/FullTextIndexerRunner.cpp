@@ -6,15 +6,9 @@
 FullTextIndexerRunner::FullTextIndexerRunner(const string &cc_batch)
 : m_cc_batch(cc_batch)
 {
-
-	m_hash_table = new HashTable();
-	m_hash_table->wait_for_start();
-
 }
 
 FullTextIndexerRunner::~FullTextIndexerRunner() {
-
-	delete m_hash_table;
 
 }
 
@@ -71,16 +65,26 @@ void FullTextIndexerRunner::run() {
 	fti.wait_for_start();
 	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
 
+	HashTable hash_table;
+	hash_table.wait_for_start();
+
+	Profiler find_url_profile("Find url");
 	for (FullTextResult &res : result) {
-		cout << "found url: " << m_hash_table->find(res.m_value) << endl;
+		cout << "found url: " << hash_table.find(res.m_value) << endl;
 	}
+	find_url_profile.stop();
 
 	deinit_aws_api();
 }
 
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths) {
 
-	FullTextIndexer indexer(m_hash_table);
+	vector<HashTableShardBuilder *> shard_builders;
+	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		shard_builders.push_back(new HashTableShardBuilder(i));
+	}
+
+	FullTextIndexer indexer;
 	for (const string &raw_warc_path : warc_paths) {
 		stringstream stream;
 
@@ -88,17 +92,35 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths)
 		warc_path.replace(warc_path.find(".warc.gz"), 8, ".gz");
 
 		if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
-			indexer.add_stream(stream, {1, 2, 3, 4}, {1, 1, 1, 1});
+			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {1, 1, 1, 1});
 			if (indexer.should_write_cache()) {
 				m_write_mutex.lock();
 				indexer.write_cache();
 				m_write_mutex.unlock();
 			}
 		}
+
+		for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+			if (shard_builders[i]->full()) {
+				m_hash_table_mutexes[i].lock();
+				shard_builders[i]->write();
+				m_hash_table_mutexes[i].unlock();
+			}
+		}
 	}
 	m_write_mutex.lock();
 	indexer.write_cache();
 	m_write_mutex.unlock();
+
+	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		m_hash_table_mutexes[i].lock();
+		shard_builders[i]->write();
+		m_hash_table_mutexes[i].unlock();
+	}
+
+	for (HashTableShardBuilder *shard_builder : shard_builders) {
+		delete shard_builder;
+	}
 
 	return "";
 }
