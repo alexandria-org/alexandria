@@ -1,8 +1,8 @@
 
 #include "FullTextBucketMessage.h"
+#include "system/Logger.h"
 
 FullTextBucketMessage::FullTextBucketMessage() {
-	m_did_allocate = false;
 	m_data_size = 0;
 }
 
@@ -14,21 +14,34 @@ FullTextBucketMessage::FullTextBucketMessage(const FullTextBucketMessage &messag
 	m_score = message.m_score;
 
 	m_data_size = message.m_data_size;
-	m_did_allocate = message.m_did_allocate;
-	if (m_did_allocate) {
+	if (m_data_size) {
 		m_data = new char[m_data_size];
 		memcpy(m_data, message.m_data, m_data_size);
 	}
 }
 
+FullTextBucketMessage &FullTextBucketMessage::operator = (const FullTextBucketMessage &message) {
+	m_message_type = message.m_message_type;
+	m_key = message.m_key;
+	m_value = message.m_value;
+	m_score = message.m_score;
+
+	m_data_size = message.m_data_size;
+	if (m_data_size) {
+		m_data = new char[m_data_size];
+		memcpy(m_data, message.m_data, m_data_size);
+	}
+
+	return *this;
+}
+
 FullTextBucketMessage::~FullTextBucketMessage() {
-	if (m_did_allocate) {
+	if (m_data_size) {
 		delete m_data;
 	}
 }
 
 void FullTextBucketMessage::allocate_data() {
-	if (m_did_allocate) return;
 	if (m_data_size) {
 		m_data = new char[m_data_size];
 	}
@@ -41,7 +54,12 @@ char *FullTextBucketMessage::data() {
 vector<FullTextResult> FullTextBucketMessage::result_vector() {
 	vector<FullTextResult> results;
 	for (size_t i = 0; i < m_data_size; i += sizeof(FullTextResult)) {
-		results.push_back(*((FullTextResult *)(m_data + i)));
+		FullTextResult res(*((FullTextResult *)(m_data + i)));
+
+		if (res.m_value == 0) {
+		//	LogInfo("Value is zero no 2!");
+		}
+		results.push_back(res);
 	}
 	return results;
 }
@@ -78,4 +96,18 @@ void FullTextBucketMessage::read_file_data(string &file_name, vector<size_t> &co
 	for (size_t i = 0; i < m_file_scores_len; i += sizeof(uint32_t)) {
 		scores.push_back(*((uint32_t *)(score_data + i)));
 	}
+}
+
+vector<FullTextResult> FullTextBucketMessage::debug() {
+	vector<FullTextResult> results;
+	for (size_t i = 0; i < m_data_size; i += sizeof(FullTextResult)) {
+		FullTextResult res(*((FullTextResult *)(m_data + i)));
+
+		if (res.m_value == 0) {
+			LogInfo("Value is zero no 2!");
+			throw error("Value is zero...");
+		}
+		results.push_back(res);
+	}
+	return results;
 }

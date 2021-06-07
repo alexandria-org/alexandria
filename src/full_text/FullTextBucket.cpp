@@ -1,5 +1,6 @@
 
 #include "FullTextBucket.h"
+#include "system/Logger.h"
 
 
 FullTextBucket::FullTextBucket(const string &db_name, size_t bucket_id, const vector<size_t> &shard_ids)
@@ -47,7 +48,8 @@ vector<FullTextResult> FullTextBucket::find(uint64_t key) {
 	message.m_message_type = FT_MESSAGE_FIND;
 	message.m_key = key;
 	FullTextBucketMessage response = send_message(message);
-	return response.result_vector();
+	vector<FullTextResult> result = response.result_vector();
+	return result;
 }
 
 void FullTextBucket::save_file() {
@@ -166,7 +168,22 @@ FullTextBucketMessage FullTextBucket::send_message(const FullTextBucketMessage &
 	int valread = read(send_socket, &response, sizeof(response));
 	response.allocate_data();
 
-	valread = read(send_socket, response.data(), response.m_data_size);
+	if (response.m_data_size) {
+		int bytes_read = 0;
+		while (bytes_read < response.m_data_size) {
+			int result = read(send_socket, response.data() + bytes_read, response.m_data_size - bytes_read);
+			if (result < 0) {
+				throw error("Could not read from socket");
+			}
+			bytes_read += result;
+		}
+
+		if (response.m_message_type == FT_MESSAGE_FIND) {
+			LogInfo("Received " + to_string(response.m_data_size) + " bytes");
+			LogInfo("read returned " + to_string(bytes_read));
+			response.debug();
+		}
+	}
 
 	close(send_socket);
 
@@ -204,6 +221,7 @@ bool FullTextBucket::read_socket(int socket) {
 
 		response.m_data_size = sizeof(FullTextResult) * results.size();
 		response_data = (char *)results.data();
+
 	} else if (message.m_message_type == FT_MESSAGE_SAVE) {
 		for (auto &iter : m_shards) {
 			iter.second->save_file();
@@ -217,6 +235,9 @@ bool FullTextBucket::read_socket(int socket) {
 	} else if (message.m_message_type == FT_MESSAGE_DISK_SIZE) {
 		response.m_size_response = 0;
 		for (auto &iter : m_shards) {
+			if (iter.second->disk_size() > 0) {
+				cout << "My size is big" << endl;
+			}
 			response.m_size_response += iter.second->disk_size();
 		}
 	} else if (message.m_message_type == FT_MESSAGE_CACHE_SIZE) {
@@ -236,6 +257,15 @@ bool FullTextBucket::read_socket(int socket) {
 	send(socket, &response , sizeof(response), 0);
 
 	if (response_data != NULL) {
+		LogInfo("Sent " + to_string(response.m_data_size) + " bytes");
+		for (size_t i = 0; i < response.m_data_size; i += sizeof(FullTextResult)) {
+			FullTextResult res(*((FullTextResult *)(response_data + i)));
+
+			if (res.m_value == 0) {
+				LogInfo("Value is zero ASD1!");
+				throw error("Value is zero ASD1!");
+			}
+		}
 		send(socket, response_data, response.m_data_size, 0);
 	}
 

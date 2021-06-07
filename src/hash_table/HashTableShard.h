@@ -22,14 +22,16 @@ public:
 	~HashTableShard();
 
 	void add(uint64_t key, const string &value);
-	string find(uint64_t key) const;
+	string find(uint64_t key);
 
 private:
 
 	// Maps keys to positions in file.
 	unordered_map<uint64_t, size_t> m_pos;
 	size_t m_shard_id;
+	bool m_loaded;
 
 	string filename() const;
+	void load();
 
 };

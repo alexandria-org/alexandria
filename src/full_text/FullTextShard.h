@@ -43,9 +43,6 @@ private:
 	string m_db_name;
 	string m_filename;
 
-	mutable ifstream m_reader;
-	ofstream m_writer;
-
 	unordered_map<uint64_t, vector<FullTextResult>> m_cache;
 
 	// These variables always represent what is in the file.
@@ -54,8 +51,11 @@ private:
 	map<uint64_t, size_t> m_len;
 	
 	size_t m_num_keys;
-	size_t m_data_start;
 	size_t m_shard;
+
+	size_t m_data_start;
+	size_t m_pos_start;
+	size_t m_len_start;
 	
 	const size_t m_buffer_len = 1000000*FULL_TEXT_RECORD_SIZE; // 1m elements, each is 12 bytes.
 	char *m_buffer;

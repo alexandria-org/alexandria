@@ -11,7 +11,7 @@
 using namespace std;
 
 #define FT_NUM_BUCKETS 8
-#define FT_NUM_SHARDS 32
+#define FT_NUM_SHARDS 2048
 
 class FullTextBucket;
 

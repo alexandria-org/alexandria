@@ -17,6 +17,8 @@ public:
 	FullTextBucketMessage(const FullTextBucketMessage &message);
 	~FullTextBucketMessage();
 
+	FullTextBucketMessage &operator = (const FullTextBucketMessage &message);
+
 	void allocate_data();
 
 	char *data();
@@ -35,6 +37,8 @@ public:
 	size_t m_filename_len;
 	size_t m_file_cols_len;
 	size_t m_file_scores_len;
+
+	vector<FullTextResult> debug();
 
 private:
 	bool m_did_allocate;

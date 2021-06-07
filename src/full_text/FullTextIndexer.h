@@ -14,13 +14,13 @@
 
 using namespace std;
 
-#define FT_INDEXER_MAX_CACHE_SIZE 1000000
+#define FT_INDEXER_MAX_CACHE_SIZE 1500000
 
 class FullTextIndexer : public TextBase {
 
 public:
 
-	FullTextIndexer();
+	FullTextIndexer(int id);
 	~FullTextIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
@@ -30,6 +30,7 @@ public:
 
 private:
 
+	int m_indexer_id;
 	hash<string> m_hasher;
 	vector<FullTextShardBuilder *> m_shards;
 

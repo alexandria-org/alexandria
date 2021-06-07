@@ -1,8 +1,9 @@
 
 #include "HashTableShardBuilder.h"
+#include "system/Logger.h"
 
 HashTableShardBuilder::HashTableShardBuilder(size_t shard_id)
-: m_shard_id(shard_id)
+: m_shard_id(shard_id), m_cache_limit(50 + rand() % 50)
 {
 
 }
@@ -12,7 +13,7 @@ HashTableShardBuilder::~HashTableShardBuilder() {
 }
 
 bool HashTableShardBuilder::full() const {
-	return m_cache.size() > 100;
+	return m_cache.size() > m_cache_limit;
 }
 
 void HashTableShardBuilder::write() {

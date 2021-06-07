@@ -16,7 +16,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#define FT_NUM_THREADS_INDEXING 10000
+#define FT_NUM_THREADS_INDEXING 8
 
 using namespace std;
 
@@ -36,7 +36,7 @@ private:
 	mutex m_write_mutex;
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 
-	string run_index_thread(const vector<string> &warc_paths);
+	string run_index_thread(const vector<string> &warc_paths, int id);
 	int download_file(const string &bucket, const string &key, stringstream &stream);
 
 };

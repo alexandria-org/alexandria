@@ -1,5 +1,6 @@
 
 #include "HashTable.h"
+#include "system/Logger.h"
 
 HashTable::HashTable() {
 	for (size_t bucket_id = 0; bucket_id < HT_NUM_BUCKETS; bucket_id++) {
@@ -27,7 +28,10 @@ string HashTable::find(uint64_t key) {
 }
 
 void HashTable::wait_for_start() {
-	usleep(500000);
+	LogInfo("Starting hash table...");
+	//usleep(1600000000);
+	usleep(10000000);
+	//usleep(500000);
 }
 
 vector<size_t> HashTable::shard_ids_for_bucket(size_t bucket_id) {

@@ -1,8 +1,11 @@
 
 #include "FullTextIndexer.h"
+#include "system/Logger.h"
 #include <math.h>
 
-FullTextIndexer::FullTextIndexer() {
+FullTextIndexer::FullTextIndexer(int id)
+: m_indexer_id(id)
+{
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
 		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
@@ -46,10 +49,12 @@ bool FullTextIndexer::should_write_cache() const {
 	for (FullTextShardBuilder *shard : m_shards) {
 		total_size += shard->cache_size();
 	}
+	LogInfo("Thread "+to_string(m_indexer_id)+" has size: " + to_string(total_size));
 	return total_size > FT_INDEXER_MAX_CACHE_SIZE;
 }
 
 void FullTextIndexer::write_cache() {
+	LogInfo("Thread "+to_string(m_indexer_id)+" is appending");
 	for (FullTextShardBuilder *shard : m_shards) {
 		shard->append();
 	}

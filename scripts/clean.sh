@@ -3,6 +3,8 @@
 cd `dirname $0`
 cd ..
 
+rm /mnt/fti_*
+
 for shard in `cat shards`; do
 	rm -r "$shard";
 	mkdir "$shard";

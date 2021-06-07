@@ -44,9 +44,6 @@ private:
 
 	unordered_map<uint64_t, vector<FullTextResult>> m_cache;
 
-	const size_t m_buffer_len = 1000000*FULL_TEXT_RECORD_SIZE; // 1m elements, each is 12 bytes.
-	char *m_buffer;
-
 	void save_file(const string &db_name, size_t shard_id);
 
 };

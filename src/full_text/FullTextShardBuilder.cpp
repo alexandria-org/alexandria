@@ -5,14 +5,12 @@
 
 FullTextShardBuilder::FullTextShardBuilder(const string &file_name)
 : m_filename(file_name) {
-	m_buffer = new char[m_buffer_len];
 }
 
 FullTextShardBuilder::~FullTextShardBuilder() {
 	if (m_reader.is_open()) {
 		m_reader.close();
 	}
-	delete m_buffer;
 }
 
 void FullTextShardBuilder::add(uint64_t key, uint64_t value, uint32_t score) {

@@ -2,6 +2,7 @@
 #include "FullTextIndexerRunner.h"
 #include "FullTextIndexer.h"
 #include <math.h>
+#include "system/Logger.h"
 
 FullTextIndexerRunner::FullTextIndexerRunner(const string &cc_batch)
 : m_cc_batch(cc_batch)
@@ -14,7 +15,38 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 
 void FullTextIndexerRunner::run() {
 
-	init_aws_api();
+	// Make searches.
+	FullTextIndex fti("main_index");
+	fti.wait_for_start();
+
+	HashTable hash_table;
+	hash_table.wait_for_start();
+
+	Profiler profiler1("Make Search 1");
+	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
+	profiler1.stop();
+
+	Profiler profiler2("Fetch urls 1");
+	for (FullTextResult &res : result) {
+		cout << "found ID: " << res.m_value << endl;
+		cout << "found url: " << hash_table.find(res.m_value) << endl;
+	}
+	profiler2.stop();
+
+	Profiler profiler3("Make Search 2");
+	result = fti.search_phrase("Rehabilitation Centers Singing River");
+	profiler3.stop();
+
+	Profiler profiler4("Fetch urls 2");
+	for (FullTextResult &res : result) {
+		cout << "found ID: " << res.m_value << endl;
+		cout << "found url: " << hash_table.find(res.m_value) << endl;
+	}
+	profiler4.stop();
+
+	return;
+
+	/*init_aws_api();
 
 	Aws::S3::S3Client s3_client = get_s3_client();
 	m_sub_system = new SubSystem(s3_client);
@@ -22,28 +54,31 @@ void FullTextIndexerRunner::run() {
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
-	vector<string> warc_paths;
-	warc_paths_file.read_column_into(0, warc_paths);
+	vector<string> warc_paths_raw, warc_paths;
+	warc_paths_file.read_column_into(0, warc_paths_raw);
+
+	for (size_t i = 0; i < 10000; i++) {
+		warc_paths.push_back(warc_paths_raw[i]);
+	}
 
 	vector<vector<string>> warc_path_chunks;
 	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
 
-	//ThreadPool pool(FT_NUM_THREADS_INDEXING);
-	ThreadPool pool(100);
+	ThreadPool pool(FT_NUM_THREADS_INDEXING);
 	std::vector<std::future<string>> results;
 
-	int id = 1;
 	map<int, vector<string>> shard_files;
+	int id = 1;
 	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
 
 		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk] {
-				return run_index_thread(warc_paths_chunk);
+			pool.enqueue([this, warc_paths_chunk, id] {
+				return run_index_thread(warc_paths_chunk, id);
 			})
 		);
 
 		id++;
-		break;
+
 	}
 
 	for(auto && result: results) {
@@ -75,16 +110,18 @@ void FullTextIndexerRunner::run() {
 	find_url_profile.stop();
 
 	deinit_aws_api();
+	*/
 }
 
-string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths) {
+string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(i));
 	}
 
-	FullTextIndexer indexer;
+	FullTextIndexer indexer(id);
+	size_t idx = 1;
 	for (const string &raw_warc_path : warc_paths) {
 		stringstream stream;
 
@@ -107,6 +144,10 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths)
 				m_hash_table_mutexes[i].unlock();
 			}
 		}
+
+		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
+
+		idx++;
 	}
 	m_write_mutex.lock();
 	indexer.write_cache();

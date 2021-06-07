@@ -9,7 +9,7 @@ Logger *Logger::instance() {
 }
 
 Logger::Logger() {
-	m_verbose = false;
+	m_verbose = true;
 	m_reopen_interval = std::chrono::seconds(300);
 
 	reopen();

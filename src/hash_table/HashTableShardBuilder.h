@@ -24,6 +24,7 @@ private:
 
 	map<uint64_t, string> m_cache;
 	size_t m_shard_id;
+	const size_t m_cache_limit;
 
 	string filename() const;
 

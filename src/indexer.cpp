@@ -12,6 +12,7 @@
 #include "index/CCIndexMerger.h"
 #include "index/CCLinkIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
+#include "full_text/FullTextResult.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;

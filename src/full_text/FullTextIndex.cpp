@@ -16,7 +16,8 @@ FullTextIndex::~FullTextIndex() {
 }
 
 void FullTextIndex::wait_for_start() {
-	usleep(500000);
+	usleep(90000000);
+	//usleep(500000);
 }
 
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
@@ -47,16 +48,17 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 
 		uint64_t word_hash = m_hasher(word);
 		FullTextBucket *bucket = bucket_for_hash(word_hash);
-		result_map[idx] = bucket->find(word_hash);
+		vector<FullTextResult> results = bucket->find(word_hash);
 
-		sort(result_map[idx].begin(), result_map[idx].end(), [](const FullTextResult &a, const FullTextResult &b) {
+		sort(results.begin(), results.end(), [](const FullTextResult &a, const FullTextResult &b) {
 			return a.m_value < b.m_value;
 		});
 
 		vector<uint64_t> values;
-		for (const FullTextResult &result : result_map[idx]) {
+		for (const FullTextResult &result : results) {
 			values.push_back(result.m_value);
 		}
+		result_map[idx] = results;
 		values_map[idx] = values;
 		idx++;
 	}
