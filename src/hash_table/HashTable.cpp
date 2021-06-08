@@ -29,9 +29,7 @@ string HashTable::find(uint64_t key) {
 
 void HashTable::wait_for_start() {
 	LogInfo("Starting hash table...");
-	//usleep(1600000000);
-	usleep(10000000);
-	//usleep(500000);
+	usleep(1000000);
 }
 
 vector<size_t> HashTable::shard_ids_for_bucket(size_t bucket_id) {

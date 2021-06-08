@@ -7,7 +7,7 @@ FullTextBucketMessage::FullTextBucketMessage() {
 }
 
 FullTextBucketMessage::FullTextBucketMessage(const FullTextBucketMessage &message) {
-	
+
 	m_message_type = message.m_message_type;
 	m_key = message.m_key;
 	m_value = message.m_value;
@@ -54,12 +54,7 @@ char *FullTextBucketMessage::data() {
 vector<FullTextResult> FullTextBucketMessage::result_vector() {
 	vector<FullTextResult> results;
 	for (size_t i = 0; i < m_data_size; i += sizeof(FullTextResult)) {
-		FullTextResult res(*((FullTextResult *)(m_data + i)));
-
-		if (res.m_value == 0) {
-		//	LogInfo("Value is zero no 2!");
-		}
-		results.push_back(res);
+		results.emplace_back(*((FullTextResult *)(m_data + i)));
 	}
 	return results;
 }

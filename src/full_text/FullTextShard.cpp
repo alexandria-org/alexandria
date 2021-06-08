@@ -15,237 +15,18 @@ File format explained
 */
 
 FullTextShard::FullTextShard(const string &db_name, size_t shard)
-: m_shard(shard), m_db_name(db_name) {
+: m_shard(shard), m_db_name(db_name), m_keys_read(false) {
 	m_filename = "/mnt/fti_" + m_db_name + "_" + to_string(m_shard) + ".idx";
 	m_buffer = new char[m_buffer_len];
-	
-	/*m_writer.open(filename(), ios::binary | ios::app);
-	if (!m_writer.is_open()) {
-		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
-	}
-	m_writer.close();
-
-	m_reader.open(filename(), ios::binary);
-	if (!m_reader.is_open()) {
-		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
-	}*/
-
-	read_file();
 }
 
 FullTextShard::~FullTextShard() {
 	delete m_buffer;
 }
 
-void FullTextShard::add(uint64_t key, uint64_t value, uint32_t score) {
-	m_cache[key].emplace_back(FullTextResult(value, score));
-}
+vector<FullTextResult> FullTextShard::find(uint64_t key) {
 
-void FullTextShard::sort_cache() {
-	for (auto &iter : m_cache) {
-		sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_score > b.m_score;
-		});
-	}
-}
-
-vector<FullTextResult> FullTextShard::find(uint64_t key) const {
-
-	vector<FullTextResult> cached = find_cached(key);
-	vector<FullTextResult> stored = find_stored(key);
-
-	// Merge.
-	cached.insert(cached.end(), stored.begin(), stored.end());
-
-	// Make elements unique.
-	sort(cached.begin(), cached.end(), [](const FullTextResult &a, const FullTextResult &b) {
-		return a.m_value < b.m_value;
-	});
-	auto last = unique(cached.begin(), cached.end());
-	cached.erase(last, cached.end());
-
-	return cached;
-}
-
-void FullTextShard::save_file() {
-
-	read_data_to_cache();
-
-	
-	ofstream writer(filename(), ios::binary | ios::trunc);
-	if (!writer.is_open()) {
-		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
-	}
-
-	m_keys.clear();
-	for (auto &iter : m_cache) {
-		m_keys.push_back(iter.first);
-	}
-	
-	sort(m_keys.begin(), m_keys.end(), [](const size_t a, const size_t b) {
-		return a < b;
-	});
-
-	m_num_keys = m_keys.size();
-
-	writer.write((char *)&m_num_keys, 8);
-	writer.write((char *)m_keys.data(), m_keys.size() * 8);
-
-	vector<size_t> v_pos;
-	vector<size_t> v_len;
-
-	size_t pos = 0;
-	for (uint64_t key : m_keys) {
-
-		// Make elements unique.
-		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_value < b.m_value;
-		});
-		auto last = unique(m_cache[key].begin(), m_cache[key].end());
-		m_cache[key].erase(last, m_cache[key].end());
-
-		// Store position and length
-		size_t len = m_cache[key].size() * FULL_TEXT_RECORD_LEN;
-		
-		v_pos.push_back(pos);
-		v_len.push_back(len);
-
-		pos += len;
-	}
-	
-	writer.write((char *)v_pos.data(), m_keys.size() * 8);
-	writer.write((char *)v_len.data(), m_keys.size() * 8);
-
-	const size_t buffer_num_records = 1000;
-	const size_t buffer_len = FULL_TEXT_RECORD_LEN * buffer_num_records;
-	char buffer[buffer_len];
-
-	// Write data.
-	for (uint64_t key : m_keys) {
-		size_t i = 0;
-
-		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_score > b.m_score;
-		});
-		for (const FullTextResult &res : m_cache[key]) {
-			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);
-			memcpy(&buffer[i + FULL_TEXT_KEY_LEN], &res.m_score, FULL_TEXT_SCORE_LEN);
-			i += FULL_TEXT_RECORD_LEN;
-			if (i == buffer_len) {
-				writer.write(buffer, buffer_len);
-				i = 0;
-			}
-		}
-		if (i) {
-			writer.write(buffer, i);
-		}
-	}
-
-	writer.close();
-	m_cache.clear();
-
-	read_file();
-}
-
-void FullTextShard::read_file() {
-
-	m_keys.clear();
-	m_pos.clear();
-	m_len.clear();
-	m_num_keys = 0;
-
-	char buffer[64];
-
-	ifstream reader(filename(), ios::binary);
-
-	if (!reader.is_open()) {
-		m_num_keys = 0;
-		m_data_start = 0;
-		return;
-	}
-
-	reader.seekg(0, ios::end);
-	size_t file_size = reader.tellg();
-	if (file_size == 0) {
-		m_num_keys = 0;
-		m_data_start = 0;
-		return;
-	}
-
-	reader.seekg(0, ios::beg);
-	reader.read(buffer, 8);
-
-	m_num_keys = *((uint64_t *)(&buffer[0]));
-
-	if (m_num_keys > FULL_TEXT_MAX_KEYS) {
-		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
-	}
-
-	char *vector_buffer = new char[m_num_keys * 8];
-
-	// Read positions.
-	m_pos.clear();
-	
-	reader.read(vector_buffer, m_num_keys * 8);
-	for (size_t i = 0; i < m_num_keys; i++) {
-		m_keys.push_back(*((size_t *)(&vector_buffer[i*8])));
-	}
-
-	m_pos_start = reader.tellg();
-
-	reader.read(vector_buffer, m_num_keys * 8);
-	for (size_t i = 0; i < m_num_keys; i++) {
-		//m_pos[m_keys[i]] = *((size_t *)(&vector_buffer[i*8]));
-	}
-
-	m_len_start = reader.tellg();
-
-	reader.read(vector_buffer, m_num_keys * 8);
-	for (size_t i = 0; i < m_num_keys; i++) {
-		//m_len[m_keys[i]] = *((size_t *)(&vector_buffer[i*8]));
-	}
-	delete vector_buffer;
-
-	m_data_start = reader.tellg();
-
-	m_data_start = reader.tellg();
-	//LogInfo("Did read file: " + filename() + " num keys: " + to_string(m_num_keys));
-}
-
-string FullTextShard::filename() const {
-	return m_filename;
-}
-
-void FullTextShard::truncate() {
-
-	m_cache.clear();
-	m_keys.clear();
-	m_num_keys = 0;
-
-	ofstream writer(filename(), ios::trunc);
-	if (!writer.is_open()) {
-		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
-	}
-	writer.close();
-}
-
-size_t FullTextShard::disk_size() const {
-	return m_keys.size();
-}
-
-size_t FullTextShard::cache_size() const {
-	return m_cache.size();
-}
-
-vector<FullTextResult> FullTextShard::find_cached(uint64_t key) const {
-	auto cached = m_cache.find(key);
-	if (cached != m_cache.end()) {
-		return cached->second;
-	}
-	return {};
-}
-
-vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
+	if (!m_keys_read) read_keys();
 
 	vector<FullTextResult> ret;
 
@@ -289,49 +70,62 @@ vector<FullTextResult> FullTextShard::find_stored(uint64_t key) const {
 	return ret;
 }
 
-void FullTextShard::read_data_to_cache() {
+void FullTextShard::read_keys() {
 
-	// Read all the data to file.
+	m_keys_read = true;
+
+	m_keys.clear();
+	m_num_keys = 0;
+
+	char buffer[64];
 
 	ifstream reader(filename(), ios::binary);
 
-	if (m_num_keys) {
-
-		reader.seekg(m_pos_start, ios::beg);
-
-		char *vector_buffer = new char[m_num_keys * 8];
-
-		// Read positions.
-		m_pos.clear();
-
-		reader.read(vector_buffer, m_num_keys * 8);
-		for (size_t i = 0; i < m_num_keys; i++) {
-			m_pos[m_keys[i]] = *((size_t *)(&vector_buffer[i*8]));
-		}
-
-		reader.read(vector_buffer, m_num_keys * 8);
-		for (size_t i = 0; i < m_num_keys; i++) {
-			m_len[m_keys[i]] = *((size_t *)(&vector_buffer[i*8]));
-		}
-		delete vector_buffer;
+	if (!reader.is_open()) {
+		m_num_keys = 0;
+		m_data_start = 0;
+		return;
 	}
 
-	reader.seekg(m_data_start, ios::beg);
-
-	for (uint64_t key : m_keys) {
-		size_t len = m_len[key];
-		size_t read_bytes = 0;
-		while (read_bytes < len) {
-			size_t read_len = min(m_buffer_len, len);
-			reader.read(m_buffer, read_len);
-			read_bytes += read_len;
-
-			size_t num_records = read_len / FULL_TEXT_RECORD_SIZE;
-			for (size_t i = 0; i < num_records; i++) {
-				const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
-				const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE + FULL_TEXT_KEY_LEN]);
-				m_cache[key].emplace_back(FullTextResult(value, score));
-			}
-		}
+	reader.seekg(0, ios::end);
+	size_t file_size = reader.tellg();
+	if (file_size == 0) {
+		m_num_keys = 0;
+		m_data_start = 0;
+		return;
 	}
+
+	reader.seekg(0, ios::beg);
+	reader.read(buffer, 8);
+
+	m_num_keys = *((uint64_t *)(&buffer[0]));
+
+	if (m_num_keys > FULL_TEXT_MAX_KEYS) {
+		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
+	}
+
+	char *vector_buffer = new char[m_num_keys * 8];
+
+	// Read the keys.
+	reader.read(vector_buffer, m_num_keys * 8);
+	for (size_t i = 0; i < m_num_keys; i++) {
+		m_keys.push_back(*((size_t *)(&vector_buffer[i*8])));
+	}
+	delete vector_buffer;
+
+	m_pos_start = reader.tellg();
+
+
+	m_len_start = m_pos_start + m_num_keys * 8;
+	m_data_start = m_len_start + m_num_keys * 8;
+
 }
+
+string FullTextShard::filename() const {
+	return m_filename;
+}
+
+size_t FullTextShard::disk_size() const {
+	return m_keys.size();
+}
+

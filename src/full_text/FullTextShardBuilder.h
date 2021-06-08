@@ -41,6 +41,7 @@ private:
 	string m_filename;
 	mutable ifstream m_reader;
 	ofstream m_writer;
+	const size_t m_max_results = 10000000;
 
 	unordered_map<uint64_t, vector<FullTextResult>> m_cache;
 

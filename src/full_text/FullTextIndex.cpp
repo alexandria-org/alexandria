@@ -16,8 +16,7 @@ FullTextIndex::~FullTextIndex() {
 }
 
 void FullTextIndex::wait_for_start() {
-	usleep(90000000);
-	//usleep(500000);
+	usleep(1000000);
 }
 
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
@@ -39,6 +38,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 	
 	bool first_word = true;
 	size_t idx = 0;
+	double total_time = 0.0;
 	for (const string &word : words) {
 
 		// One word should only be searched once.
@@ -49,6 +49,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 		uint64_t word_hash = m_hasher(word);
 		FullTextBucket *bucket = bucket_for_hash(word_hash);
 		vector<FullTextResult> results = bucket->find(word_hash);
+
+		Profiler profiler1("Sorting results");
 
 		sort(results.begin(), results.end(), [](const FullTextResult &a, const FullTextResult &b) {
 			return a.m_value < b.m_value;
@@ -61,8 +63,11 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 		result_map[idx] = results;
 		values_map[idx] = values;
 		idx++;
+		total_time += profiler1.get();
 	}
+	cout << "Profiler [Sorting results] took " << total_time << "ms" << endl;
 
+	Profiler profiler2("value_intersection");
 	size_t shortest_vector;
 	vector<size_t> result_ids = value_intersection(values_map, shortest_vector);
 
@@ -77,63 +82,10 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 	return result;
 }
 
-void FullTextIndex::add(const string &key, const string &text) {
-	add(key, text, 1);
-}
-
-void FullTextIndex::add(const string &key, const string &text, uint32_t score) {
-	uint64_t key_hash = m_hasher(key);
-
-	vector<string> words = get_full_text_words(text);
-	for (const string &word : words) {
-		uint64_t word_hash = m_hasher(word);
-		FullTextBucket *bucket = bucket_for_hash(word_hash);
-		bucket->add(word_hash, key_hash, score);
-	}
-
-}
-
-void FullTextIndex::add_file(const string &file_name, const vector<size_t> &cols, const vector<uint32_t> &scores) {
-
-	// Send it to all the buckets.
-	vector<thread> threads;
-	for (FullTextBucket *bucket : m_buckets) {
-		thread th([file_name, cols, scores](FullTextBucket *_bucket) {
-			_bucket->add_file(file_name, cols, scores);
-		}, bucket);
-		threads.push_back(move(th));
-	}
-
-	for (thread &th : threads) {
-		th.join();
-	}
-
-}
-
-void FullTextIndex::save() {
-	for (auto bucket : m_buckets) {
-		bucket->save_file();
-	}
-}
-
-void FullTextIndex::truncate() {
-	for (auto bucket : m_buckets) {
-		bucket->truncate();
-	}
-}
-
 size_t FullTextIndex::disk_size() const {
 	size_t size = 0;
 	for (auto bucket : m_buckets) {
 		size += bucket->disk_size();
-	}
-	return size;
-}
-
-size_t FullTextIndex::cache_size() const {
-	size_t size = 0;
-	for (auto bucket : m_buckets) {
-		size += bucket->cache_size();
 	}
 	return size;
 }

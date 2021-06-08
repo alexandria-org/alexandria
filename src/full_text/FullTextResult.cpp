@@ -12,15 +12,19 @@ FullTextResult::FullTextResult(uint64_t value, uint32_t score)
 {
 }
 
-/*FullTextResult::FullTextResult(const FullTextResult &res)
+FullTextResult::FullTextResult(const FullTextResult &res)
 : m_value(res.m_value), m_score(res.m_score)
 {
-	m_value = res.m_value;
-	m_score = res.m_score;
+	//LogInfo("Copy on FullTextResult called");
 }
 
-//FullTextResult& operator=(const FullTextResult& other) 
-*/
+FullTextResult& FullTextResult::operator=(const FullTextResult& other) {
+	m_value = other.m_value;
+	m_score = other.m_score;
+	//LogInfo("Assignemt on FullTextResult called");
+
+	return *this;
+}
 
 bool operator==(const FullTextResult &a, const FullTextResult &b) {
 	return a.m_value == b.m_value;

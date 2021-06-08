@@ -22,6 +22,12 @@ void FullTextShardBuilder::sort_cache() {
 		sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
 			return a.m_score > b.m_score;
 		});
+		vector<FullTextResult> results(iter.second.begin(), iter.second.begin() + m_max_results);
+
+		sort(results.begin(), results.end(), [](const FullTextResult &a, const FullTextResult &b) {
+			return a.m_value < b.m_value;
+		});
+		m_cache[iter.first] = results;
 	}
 }
 

@@ -21,28 +21,6 @@ FullTextBucket::~FullTextBucket() {
 	m_thread->join();
 }
 
-void FullTextBucket::add(uint64_t key, uint64_t value, uint32_t score) {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_ADD;
-	message.m_key = key;
-	message.m_value = value;
-	message.m_score = score;
-	FullTextBucketMessage response = send_message(message);
-}
-
-void FullTextBucket::add_file(const string &file_name, const vector<size_t> &cols, const vector<uint32_t> &scores) {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_ADD_FILE;
-	message.store_file_data(file_name, cols, scores);
-	FullTextBucketMessage response = send_message(message);
-}
-
-void FullTextBucket::sort_cache() {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_SORT;
-	FullTextBucketMessage response = send_message(message);
-}
-
 vector<FullTextResult> FullTextBucket::find(uint64_t key) {
 	FullTextBucketMessage message;
 	message.m_message_type = FT_MESSAGE_FIND;
@@ -52,28 +30,9 @@ vector<FullTextResult> FullTextBucket::find(uint64_t key) {
 	return result;
 }
 
-void FullTextBucket::save_file() {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_SAVE;
-	FullTextBucketMessage response = send_message(message);
-}
-
-void FullTextBucket::truncate() {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_TRUNCATE;
-	FullTextBucketMessage response = send_message(message);
-}
-
 size_t FullTextBucket::disk_size() {
 	FullTextBucketMessage message;
 	message.m_message_type = FT_MESSAGE_DISK_SIZE;
-	FullTextBucketMessage response = send_message(message);
-	return response.m_size_response;
-}
-
-size_t FullTextBucket::cache_size() {
-	FullTextBucketMessage message;
-	message.m_message_type = FT_MESSAGE_CACHE_SIZE;
 	FullTextBucketMessage response = send_message(message);
 	return response.m_size_response;
 }
@@ -209,27 +168,13 @@ bool FullTextBucket::read_socket(int socket) {
 	response.m_message_type = message.m_message_type;
 
 	char *response_data = NULL;
-	if (message.m_message_type == FT_MESSAGE_ADD) {
-		m_shards[message.m_key % FT_NUM_SHARDS]->add(message.m_key, message.m_value, message.m_score);
-	} else if (message.m_message_type == FT_MESSAGE_SORT) {
-		for (auto &iter : m_shards) {
-			iter.second->sort_cache();
-		}
-	} else if (message.m_message_type == FT_MESSAGE_FIND) {
+	if (message.m_message_type == FT_MESSAGE_FIND) {
 
 		results = m_shards[message.m_key % FT_NUM_SHARDS]->find(message.m_key);
 
 		response.m_data_size = sizeof(FullTextResult) * results.size();
 		response_data = (char *)results.data();
 
-	} else if (message.m_message_type == FT_MESSAGE_SAVE) {
-		for (auto &iter : m_shards) {
-			iter.second->save_file();
-		}
-	} else if (message.m_message_type == FT_MESSAGE_TRUNCATE) {
-		for (auto &iter : m_shards) {
-			iter.second->truncate();
-		}
 	} else if (message.m_message_type == FT_MESSAGE_STOP) {
 		return false;
 	} else if (message.m_message_type == FT_MESSAGE_DISK_SIZE) {
@@ -240,17 +185,6 @@ bool FullTextBucket::read_socket(int socket) {
 			}
 			response.m_size_response += iter.second->disk_size();
 		}
-	} else if (message.m_message_type == FT_MESSAGE_CACHE_SIZE) {
-		response.m_size_response = 0;
-		for (auto &iter : m_shards) {
-			response.m_size_response += iter.second->cache_size();
-		}
-	} else if (message.m_message_type == FT_MESSAGE_ADD_FILE) {
-		string file_name;
-		vector<size_t> cols;
-		vector<uint32_t> scores;
-		message.read_file_data(file_name, cols, scores);
-		add_file_to_shards(file_name, cols, scores);
 	}
 	
 	// Send response.
@@ -280,54 +214,6 @@ void FullTextBucket::load_shards() {
 
 void FullTextBucket::close_shards() {
 	for (auto &iter : m_shards) {
-		iter.second->save_file();
 		delete iter.second;
-	}
-}
-
-void FullTextBucket::add_file_to_shards(const string &file_name, const vector<size_t> &cols,
-	const vector<uint32_t> &scores) {
-
-	using namespace boost::iostreams;
-
-	ifstream file(file_name);
-	if (!file.is_open()) {
-		// Handle error here.
-		return;
-	}
-
-	filtering_istream decompress_stream;
-	decompress_stream.push(gzip_decompressor());
-	decompress_stream.push(file);
-
-	string line;
-	while (getline(decompress_stream, line)) {
-		vector<string> col_values;
-		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-		size_t score_index = 0;
-		for (size_t col_index : cols) {
-			add_data_to_shards(col_values[0], col_values[col_index], scores[score_index]);
-			score_index++;
-		}
-	}
-
-	// sort shards.
-	for (auto &iter : m_shards) {
-		iter.second->sort_cache();
-	}
-}
-
-void FullTextBucket::add_data_to_shards(const string &key, const string &text, uint32_t score) {
-
-	uint64_t key_hash = m_hasher(key);
-
-	vector<string> words = get_full_text_words(text);
-	for (const string &word : words) {
-		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
-
-		if ((shard_id >= m_first_shard_id) && (shard_id <= m_last_shard_id)) {
-			m_shards[shard_id]->add(word_hash, key_hash, score);
-		}
 	}
 }

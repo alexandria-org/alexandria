@@ -26,26 +26,7 @@ public:
 	vector<FullTextResult> search_word(const string &word);
 	vector<FullTextResult> search_phrase(const string &phrase);
 
-	// Add single key/value to index.
-	void add(const string &key, const string &text);
-	void add(const string &key, const string &text, uint32_t score);
-
-	/*
-		Add file with tab separated data. If the filename ends with .gz it will be decoded also.
-		Cols is a vector of column indices to index and scores are scores for the corresponding column.
-
-		Example:
-		index.add_stream("test_file.tsv.gz", {0, 2}, {1, 10});
-		Adds column 0 and 2 to the index with scores 1 and 10.
-	*/
-	void add_file(const string &file_name, const vector<size_t> &cols, const vector<uint32_t> &scores);
-
-	void save();
-	void truncate();
-
-	// Getters.
 	size_t disk_size() const;
-	size_t cache_size() const;
 
 	// Testable private functions.
 	vector<size_t> value_intersection(const map<size_t, vector<uint64_t>> &values_map,

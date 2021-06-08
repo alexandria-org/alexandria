@@ -16,7 +16,7 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 void FullTextIndexerRunner::run() {
 
 	// Make searches.
-	FullTextIndex fti("main_index");
+	/*FullTextIndex fti("main_index");
 	fti.wait_for_start();
 
 	HashTable hash_table;
@@ -44,9 +44,9 @@ void FullTextIndexerRunner::run() {
 	}
 	profiler4.stop();
 
-	return;
+	return;*/
 
-	/*init_aws_api();
+	init_aws_api();
 
 	Aws::S3::S3Client s3_client = get_s3_client();
 	m_sub_system = new SubSystem(s3_client);
@@ -95,22 +95,9 @@ void FullTextIndexerRunner::run() {
 		shard.merge("main_index", shard_id);
 	}
 
-	// Make searches.
-	FullTextIndex fti("main_index");
-	fti.wait_for_start();
-	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
-
-	HashTable hash_table;
-	hash_table.wait_for_start();
-
-	Profiler find_url_profile("Find url");
-	for (FullTextResult &res : result) {
-		cout << "found url: " << hash_table.find(res.m_value) << endl;
-	}
-	find_url_profile.stop();
+	LogInfo("Done!");
 
 	deinit_aws_api();
-	*/
 }
 
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
