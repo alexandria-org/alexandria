@@ -11,6 +11,7 @@
 #include "index/CCIndexRunner.h"
 #include "index/CCIndexMerger.h"
 #include "index/CCLinkIndex.h"
+#include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
 #include "full_text/FullTextResult.h"
 #include "system/Profiler.h"
@@ -21,6 +22,25 @@ using namespace Aws::Utils::Json;
 namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
+
+	//FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	//indexer.run();
+	//return 0;
+
+	FullTextIndex fti("main_index");
+	HashTable hash_table;
+	hash_table.wait_for_start();
+
+	Profiler profiler("Total");
+	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
+
+	for (FullTextResult &res : result) {
+		cout << "found ID: " << res.m_value << endl;
+		cout << "found url: " << hash_table.find(res.m_value) << endl;
+	}
+	profiler.stop();
+
+	return 0;
 
 	/*ofstream outfile("/mnt/example.data", ios::binary | ios::trunc);
 
@@ -52,8 +72,8 @@ int main(int argc, const char **argv) {
 	//CCIndexRunner<CCLinkIndex> indexer("CC-MAIN-2021-04");
 	//indexer.run_all();
 
-	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
-	indexer.run();
+	//FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	//indexer.run();
 
 	//CCIndexMerger merger("CC-MAIN-2021-17", "main");
 	//merger.run_all();

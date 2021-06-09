@@ -1,9 +1,9 @@
 
-#include "FullTextBucket.h"
+#include "Server.h"
 #include "system/Logger.h"
 
 
-FullTextBucket::FullTextBucket(const string &db_name, size_t bucket_id, const vector<size_t> &shard_ids)
+Server::Server(const string &db_name, size_t bucket_id, const vector<size_t> &shard_ids)
 : m_db_name(db_name), m_bucket_id(bucket_id), m_shard_ids(shard_ids)
 {
 	
@@ -11,33 +11,33 @@ FullTextBucket::FullTextBucket(const string &db_name, size_t bucket_id, const ve
 	m_last_shard_id = shard_ids.back();
 
 	m_port = FT_PORT_START + bucket_id;
-	m_thread = new thread(&FullTextBucket::run_server, this);
+	m_thread = new thread(&Server::run_server, this);
 }
 
-FullTextBucket::~FullTextBucket() {
-	FullTextBucketMessage message;
+Server::~Server() {
+	ServerMessage message;
 	message.m_message_type = FT_MESSAGE_STOP;
-	FullTextBucketMessage response = send_message(message);
+	ServerMessage response = send_message(message);
 	m_thread->join();
 }
 
-vector<FullTextResult> FullTextBucket::find(uint64_t key) {
-	FullTextBucketMessage message;
+vector<FullTextResult> Server::find(uint64_t key) {
+	ServerMessage message;
 	message.m_message_type = FT_MESSAGE_FIND;
 	message.m_key = key;
-	FullTextBucketMessage response = send_message(message);
+	ServerMessage response = send_message(message);
 	vector<FullTextResult> result = response.result_vector();
 	return result;
 }
 
-size_t FullTextBucket::disk_size() {
-	FullTextBucketMessage message;
+size_t Server::disk_size() {
+	ServerMessage message;
 	message.m_message_type = FT_MESSAGE_DISK_SIZE;
-	FullTextBucketMessage response = send_message(message);
+	ServerMessage response = send_message(message);
 	return response.m_size_response;
 }
 
-void FullTextBucket::run_server() {
+void Server::run_server() {
 
 	load_shards();
 
@@ -85,14 +85,14 @@ void FullTextBucket::run_server() {
 
 	close_shards();
 
-	FullTextBucketMessage response;
+	ServerMessage response;
 	send(new_socket, &response , sizeof(response), 0);
 
 	close(new_socket);
 	close(m_socket);
 }
 
-FullTextBucketMessage FullTextBucket::send_message(const FullTextBucketMessage &message) {
+ServerMessage Server::send_message(const ServerMessage &message) {
 	int send_socket;
 	struct sockaddr_in serv_addr;
 
@@ -123,7 +123,7 @@ FullTextBucketMessage FullTextBucket::send_message(const FullTextBucketMessage &
 	}
 
 	// Read response.
-	FullTextBucketMessage response;
+	ServerMessage response;
 	int valread = read(send_socket, &response, sizeof(response));
 	response.allocate_data();
 
@@ -149,12 +149,12 @@ FullTextBucketMessage FullTextBucket::send_message(const FullTextBucketMessage &
 	return response;
 }
 
-bool FullTextBucket::read_socket(int socket) {
+bool Server::read_socket(int socket) {
 
 	// Receive a message from client
 	// First size_t must contain a size_t containing the size of the message.
 
-	FullTextBucketMessage message;
+	ServerMessage message;
 
 	recv(socket, &message, sizeof(message), 0);
 
@@ -164,7 +164,7 @@ bool FullTextBucket::read_socket(int socket) {
 	}
 
 	vector<FullTextResult> results;
-	FullTextBucketMessage response;
+	ServerMessage response;
 	response.m_message_type = message.m_message_type;
 
 	char *response_data = NULL;
@@ -206,13 +206,13 @@ bool FullTextBucket::read_socket(int socket) {
 	return true;
 }
 
-void FullTextBucket::load_shards() {
+void Server::load_shards() {
 	for (const size_t shard_id : m_shard_ids) {
 		m_shards[shard_id] = new FullTextShard(m_db_name, shard_id);
 	}
 }
 
-void FullTextBucket::close_shards() {
+void Server::close_shards() {
 	for (auto &iter : m_shards) {
 		delete iter.second;
 	}

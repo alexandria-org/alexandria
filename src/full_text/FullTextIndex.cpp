@@ -4,26 +4,21 @@
 FullTextIndex::FullTextIndex(const string &db_name)
 : m_db_name(db_name)
 {
-	for (size_t bucket_id = 0; bucket_id < FT_NUM_BUCKETS; bucket_id++) {
-		m_buckets.push_back(new FullTextBucket(m_db_name, bucket_id, shard_ids_for_bucket(bucket_id)));
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		m_shards.push_back(new FullTextShard(m_db_name, shard_id));
 	}
 }
 
 FullTextIndex::~FullTextIndex() {
-	for (FullTextBucket *bucket : m_buckets) {
-		delete bucket;
+	for (FullTextShard *shard : m_shards) {
+		delete shard;
 	}
-}
-
-void FullTextIndex::wait_for_start() {
-	usleep(1000000);
 }
 
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 	uint64_t word_hash = m_hasher(word);
-	FullTextBucket *bucket = bucket_for_hash(word_hash);
 
-	vector<FullTextResult> results = bucket->find(word_hash);
+	vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash);
 	sort_results(results);
 	return results;
 }
@@ -47,8 +42,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 		searched_words.push_back(word);
 
 		uint64_t word_hash = m_hasher(word);
-		FullTextBucket *bucket = bucket_for_hash(word_hash);
-		vector<FullTextResult> results = bucket->find(word_hash);
+		vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash);
 
 		Profiler profiler1("Sorting results");
 
@@ -84,8 +78,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 
 size_t FullTextIndex::disk_size() const {
 	size_t size = 0;
-	for (auto bucket : m_buckets) {
-		size += bucket->disk_size();
+	for (auto shard : m_shards) {
+		size += shard->disk_size();
 	}
 	return size;
 }
@@ -134,27 +128,6 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, vector<uint64
 	}
 
 	return result_ids;
-}
-
-vector<size_t> FullTextIndex::shard_ids_for_bucket(size_t bucket_id) {
-	const size_t shards_per_bucket = FT_NUM_SHARDS / FT_NUM_BUCKETS;
-
-	const size_t start = bucket_id * shards_per_bucket;
-	const size_t end = start + shards_per_bucket;
-	
-	vector<size_t> shard_ids;
-	for (size_t shard_id = start; shard_id < end; shard_id++) {
-		shard_ids.push_back(shard_id);
-	}
-
-	return shard_ids;
-}
-
-FullTextBucket *FullTextIndex::bucket_for_hash(size_t hash) {
-	const size_t shards_per_bucket = FT_NUM_SHARDS / FT_NUM_BUCKETS;
-	size_t shard_id = hash % FT_NUM_SHARDS;
-	size_t bucket_id = shard_id / shards_per_bucket;
-	return m_buckets[bucket_id];
 }
 
 void FullTextIndex::sort_results(vector<FullTextResult> &results) {

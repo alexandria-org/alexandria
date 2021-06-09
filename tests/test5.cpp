@@ -20,7 +20,6 @@ int test5_1(void) {
 		builder.add(hasher())
 
 		FullTextIndex fti("test_db1");
-		fti.wait_for_start();
 		if (fti.disk_size() == 0) {
 			fti.add("http://example.com", "Hej hopp josef");
 		}
@@ -33,7 +32,6 @@ int test5_1(void) {
 
 	{
 		FullTextIndex fti("test_db_2");
-		fti.wait_for_start();
 		fti.add("http://example.com", "Hej hopp josef");
 		fti.add("http://example2.com", "jag heter test");
 		fti.add("http://example3.com", "ett två åäö jag testar");
@@ -54,7 +52,6 @@ int test5_1(void) {
 
 	{
 		FullTextIndex fti("test_db_2");
-		fti.wait_for_start();
 
 		vector<FullTextResult> result = fti.search_word("josef");
 		ok = ok && result.size() == 1;
@@ -72,7 +69,6 @@ int test5_1(void) {
 
 	{
 		FullTextIndex fti("test_db_3");
-		fti.wait_for_start();
 
 		fti.add("http://example.com", "hej hopp josef", 1);
 		fti.add("http://example2.com", "hej jag heter test", 2);
@@ -88,7 +84,6 @@ int test5_1(void) {
 
 	{
 		FullTextIndex fti("test_db_3");
-		fti.wait_for_start();
 
 		vector<FullTextResult> result = fti.search_word("hej");
 		ok = ok && result.size() == 3;
@@ -112,7 +107,6 @@ int test5_2(void) {
 	vector<FullTextResult> result;
 	{
 		FullTextIndex fti("test_db_4");
-		fti.wait_for_start();
 
 		Profiler profile("add_file");
 		fti.add_file("../tests/data/cc_index1.gz", {1, 2, 3, 4}, {1, 1, 1, 1});
@@ -148,7 +142,6 @@ int test5_3(void) {
 
 	{
 		FullTextIndex fti("test_db_5");
-		fti.wait_for_start();
 
 		size_t shortest_vector;
 		vector<size_t> result = fti.value_intersection(values, shortest_vector);

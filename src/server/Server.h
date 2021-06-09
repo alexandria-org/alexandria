@@ -21,7 +21,7 @@
 #include "FullTextIndex.h"
 #include "FullTextResult.h"
 #include "FullTextShard.h"
-#include "FullTextBucketMessage.h"
+#include "ServerMessage.h"
 
 
 #define FT_PORT_START 8090
@@ -31,12 +31,12 @@
 
 using namespace std;
 
-class FullTextBucket : public TextBase {
+class Server : public TextBase {
 
 public:
 
-	FullTextBucket(const string &db_name, size_t bucket_id, const vector<size_t> &shard_ids);
-	~FullTextBucket();
+	Server(const string &db_name, size_t bucket_id, const vector<size_t> &shard_ids);
+	~Server();
 
 	vector<FullTextResult> find(uint64_t key);
 
@@ -60,7 +60,7 @@ private:
 	size_t m_last_shard_id;
 
 	void run_server();
-	FullTextBucketMessage send_message(const FullTextBucketMessage &message);
+	ServerMessage send_message(const ServerMessage &message);
 	bool read_socket(int socket);
 	void load_shards();
 	void close_shards();
