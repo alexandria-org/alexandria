@@ -17,13 +17,10 @@
 #include <map>
 
 #include "HashTableShard.h"
-#include "HashTableMessage.h"
-#include "HashTableBucket.h"
 
 using namespace std;
 
-class HashTableMessage;
-class HashTableBucket;
+class HashTableShard;
 
 class HashTable {
 
@@ -34,13 +31,9 @@ public:
 
 	void add(uint64_t key, const string &value);
 	string find(uint64_t key);
-	void wait_for_start();
 
 private:
 
-	vector<HashTableBucket *> m_buckets;
-
-	vector<size_t> shard_ids_for_bucket(size_t bucket_id);
-	HashTableBucket *bucket_for_hash(uint64_t hash);
+	vector<HashTableShard *> m_shards;
 
 };

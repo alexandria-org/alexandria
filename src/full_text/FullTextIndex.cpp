@@ -44,11 +44,13 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 		uint64_t word_hash = m_hasher(word);
 		vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash);
 
-		Profiler profiler1("Sorting results");
+		for (size_t i = 1; i < results.size(); i++) {
+			if (results[i].m_value < results[i-1].m_value) {
+				cout << "RESULTS ARE NOT ORDERED" << endl;
+			}
+		}
 
-		sort(results.begin(), results.end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_value < b.m_value;
-		});
+		Profiler profiler1("Accumuating all results");
 
 		vector<uint64_t> values;
 		for (const FullTextResult &result : results) {

@@ -41,7 +41,6 @@ set(SRC_CLASSES
 	"src/full_text/FullTextIndexerRunner.cpp"
 
 	"src/hash_table/HashTable.cpp"
-	"src/hash_table/HashTableBucket.cpp"
 	"src/hash_table/HashTableShard.cpp"
 	"src/hash_table/HashTableShardBuilder.cpp"
 

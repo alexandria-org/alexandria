@@ -23,13 +23,12 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	//FullTextIndexerRunner indexer("CC-MAIN-2021-17");
-	//indexer.run();
-	//return 0;
+	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	indexer.run();
+	return 0;
 
 	FullTextIndex fti("main_index");
 	HashTable hash_table;
-	hash_table.wait_for_start();
 
 	Profiler profiler("Total");
 	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
@@ -39,6 +38,16 @@ int main(int argc, const char **argv) {
 		cout << "found url: " << hash_table.find(res.m_value) << endl;
 	}
 	profiler.stop();
+
+
+	Profiler profiler2("Total");
+	vector<FullTextResult> result2 = fti.search_phrase("Rehabilitation Centers Singing River");
+
+	for (FullTextResult &res : result2) {
+		cout << "found ID: " << res.m_value << endl;
+		cout << "found url: " << hash_table.find(res.m_value) << endl;
+	}
+	profiler2.stop();
 
 	return 0;
 
