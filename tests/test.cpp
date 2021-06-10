@@ -28,7 +28,7 @@ int main(void) {
 	int numTestsInSuite [] = {
 		3,
 		2,
-		3,
+		4,
 		1,
 		3,
 		1
@@ -48,7 +48,8 @@ int main(void) {
 	int (* testSuite3 [])() = {
 		test3_1,
 		test3_2,
-		test3_3
+		test3_3,
+		test3_4
 	};
 
 	int (* testSuite4 [])() = {

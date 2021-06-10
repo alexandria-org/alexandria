@@ -14,11 +14,6 @@
 #define CC_ERROR 1
 #define CC_OK 0
 
-void init_aws_api();
-void deinit_aws_api();
-Aws::Client::ClientConfiguration get_s3_config();
-Aws::S3::S3Client get_s3_client();
-
 template<class T> void vector_chunk(const std::vector<T> &vec, int chunk_size, std::vector<std::vector<T>> &dest);
 template<class T> void vector_chunk(const std::vector<T> &vec, int chunk_size, std::vector<std::vector<T>> &dest) {
 	std::vector<T> chunk;

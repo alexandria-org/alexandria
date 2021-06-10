@@ -3,6 +3,7 @@
 #include "test4.h"
 #include "common/common.h"
 #include "api/CCApi.h"
+#include "system/SubSystem.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;
@@ -14,11 +15,9 @@ int test4_1(void) {
 	int ok = 1;
 	return ok;
 
-	Aws::SDKOptions options;
-	Aws::InitAPI(options);
-	Aws::S3::S3Client s3_client = get_s3_client();
+	SubSystem *ss = new SubSystem();
 
-	CCApi api(s3_client);
+	CCApi api(ss->s3_client());
 	//ApiResponse response = api.query("låna pengar");
 
 	//cout << response.json() << endl;
@@ -37,7 +36,7 @@ int test4_1(void) {
 
 	//cout << "invocation_response: " << response_json.View().WriteReadable() << endl;
 
-	Aws::ShutdownAPI(options);
+	delete ss;
 
 	return ok;
 }

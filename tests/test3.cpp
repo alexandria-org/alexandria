@@ -21,12 +21,9 @@ using namespace std;
 int test3_1(void) {
 	int ok = 1;
 
-	Aws::SDKOptions options;
-	Aws::InitAPI(options);
-	Aws::S3::S3Client s3_client = get_s3_client();
+	SubSystem *ss = new SubSystem();
 
-
-	TsvFileS3 s3_file(s3_client, "dictionary.tsv");
+	TsvFileS3 s3_file(ss->s3_client(), "dictionary.tsv");
 
 	vector<string> container1;
 
@@ -34,13 +31,13 @@ int test3_1(void) {
 
 	ok = ok && container1[0] == "archives";
 
-	TsvFileS3 test_file2(s3_client, "domain_info.tsv");
+	TsvFileS3 test_file2(ss->s3_client(), "domain_info.tsv");
 
 	Dictionary dict2(test_file2);
 
 	ok = ok && dict2.find("com.rockonrr")->second.get_int(1) == 14275445;
 
-	Aws::ShutdownAPI(options);
+	delete ss;
 
 	return ok;
 }
@@ -145,6 +142,17 @@ int test3_3(void) {
 		"test1\tmerge\tcol2\t999999991\tsome long metadata\n"
 		"test1\tmerge\tcol1\t999999990\tsome long metadata";
 	ok = ok && merger.merge_file(file1, file2, {1,2}, 3, 10) == file23;
+
+	return ok;
+}
+
+int test3_4(void) {
+	int ok = 1;
+
+	SubSystem *sub_system = new SubSystem();
+
+	sub_system->upload_from_string("alexandria-index", "example.txt", "Hej hopp");
+	ok = ok && sub_system->download_to_string("alexandria-index", "example.txt") == "Hej hopp";
 
 	return ok;
 }

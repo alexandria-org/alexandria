@@ -8,8 +8,15 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 #include "file/TsvFileS3.h"
 #include "common/Dictionary.h"
+
+using namespace boost::iostreams;
+using namespace std;
 
 class SubSystem {
 
@@ -24,11 +31,22 @@ public:
 	const vector<string> words() const;
 	const Aws::S3::S3Client s3_client() const;
 
+	string download_to_string(const string &bucket, const string &key) const;
+
+	void upload_from_string(const string &bucket, const string &key, const string &data) const;
+	void upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream) const;
+	void upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream,
+		size_t retries) const;
+
 private:
 	Dictionary *m_domain_index;
 	Dictionary *m_dictionary;
 	Dictionary *m_full_text_dictionary;
-	Aws::S3::S3Client m_s3_client;
+	Aws::S3::S3Client *m_s3_client;
 	vector<string> m_words;
+
+	void init_aws_api();
+	void deinit_aws_api();
+	Aws::Client::ClientConfiguration get_s3_config();
 
 };
