@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "system/SubSystem.h"
 #include "abstract/TextBase.h"
 #include "FullTextShard.h"
 #include "FullTextResult.h"
@@ -25,6 +26,9 @@ public:
 	vector<FullTextResult> search_phrase(const string &phrase);
 
 	size_t disk_size() const;
+
+	void download(const SubSystem *sub_system);
+	void upload(const SubSystem *sub_system);
 
 	// Testable private functions.
 	vector<size_t> value_intersection(const map<size_t, vector<uint64_t>> &values_map,

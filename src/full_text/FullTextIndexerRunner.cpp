@@ -7,10 +7,11 @@
 FullTextIndexerRunner::FullTextIndexerRunner(const string &cc_batch)
 : m_cc_batch(cc_batch)
 {
+	m_sub_system = new SubSystem();
 }
 
 FullTextIndexerRunner::~FullTextIndexerRunner() {
-
+	delete m_sub_system;
 }
 
 void FullTextIndexerRunner::run() {
@@ -45,11 +46,6 @@ void FullTextIndexerRunner::run() {
 	profiler4.stop();
 
 	return;*/
-
-	init_aws_api();
-
-	Aws::S3::S3Client s3_client = get_s3_client();
-	m_sub_system = new SubSystem(s3_client);
 
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
@@ -97,7 +93,6 @@ void FullTextIndexerRunner::run() {
 
 	LogInfo("Done!");
 
-	deinit_aws_api();
 }
 
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {

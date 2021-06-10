@@ -86,6 +86,14 @@ size_t FullTextIndex::disk_size() const {
 	return size;
 }
 
+void FullTextIndex::upload(const SubSystem *sub_system) {
+
+}
+
+void FullTextIndex::download(const SubSystem *sub_system) {
+
+}
+
 vector<size_t> FullTextIndex::value_intersection(const map<size_t, vector<uint64_t>> &values_map,
 	size_t &shortest_vector_position) const {
 	
@@ -137,3 +145,4 @@ void FullTextIndex::sort_results(vector<FullTextResult> &results) {
 		return a.m_score > b.m_score;
 	});
 }
+

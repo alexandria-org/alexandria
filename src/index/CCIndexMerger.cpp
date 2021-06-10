@@ -15,11 +15,7 @@ void CCIndexMerger::run_all() {
 
 void CCIndexMerger::run_all(size_t limit) {
 
-	init_aws_api();
-
-	Aws::S3::S3Client s3_client = get_s3_client();
-
-	m_sub_system = new SubSystem(s3_client);
+	m_sub_system = new SubSystem();
 
 	//run_merge_thread("låna");
 
@@ -43,9 +39,6 @@ void CCIndexMerger::run_all(size_t limit) {
 	}
 
 	delete m_sub_system;
-
-	deinit_aws_api();
-
 }
 
 void CCIndexMerger::run_merge_thread(const string &word) {

@@ -2,6 +2,10 @@
 #pragma once
 
 #include <aws/core/Aws.h>
+#include <aws/core/utils/logging/LogLevel.h>
+#include <aws/core/utils/logging/ConsoleLogSystem.h>
+#include <aws/core/client/ClientConfiguration.h>
+#include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 
 #include "file/TsvFileS3.h"
@@ -11,7 +15,7 @@ class SubSystem {
 
 public:
 
-	SubSystem(const Aws::S3::S3Client &s3_client);
+	SubSystem();
 	~SubSystem();
 
 	const Dictionary *domain_index() const;

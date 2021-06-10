@@ -1,12 +1,14 @@
 
 #include "SubSystem.h"
 
-SubSystem::SubSystem(const Aws::S3::S3Client &s3_client) {
+SubSystem::SubSystem() {
+	init_aws_api();
+	m_s3_client = get_s3_client();
 
-	TsvFileS3 domain_index(s3_client, "domain_info.tsv");
+	TsvFileS3 domain_index(m_s3_client, "domain_info.tsv");
 	m_domain_index = new Dictionary(domain_index);
 
-	TsvFileS3 dictionary(s3_client, "dictionary.tsv");
+	TsvFileS3 dictionary(m_s3_client, "dictionary.tsv");
 
 	m_dictionary = new Dictionary(dictionary);
 
@@ -15,15 +17,13 @@ SubSystem::SubSystem(const Aws::S3::S3Client &s3_client) {
 	sort(m_words.begin(), m_words.end(), [](const string &a, const string &b) {
 		return a < b;
 	});
-
-	m_s3_client = s3_client;
-
-	//TsvFileS3 dictionary(s3_client, "full_text_dictionary.tsv");
 }
 
 SubSystem::~SubSystem() {
 	delete m_dictionary;
 	delete m_domain_index;
+
+	deinit_aws_api();
 }
 
 const Dictionary *SubSystem::domain_index() const {
