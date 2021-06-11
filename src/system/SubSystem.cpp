@@ -108,16 +108,14 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 }
 
 void SubSystem::init_aws_api() {
-	cout << "Initializing AWS API" << endl;
 	Aws::SDKOptions options;
-	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Error;
+	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Off;
 	options.loggingOptions.logger_create_fn = get_logger_factory();
 
 	Aws::InitAPI(options);
 }
 
 void SubSystem::deinit_aws_api() {
-	cout << "Destroying AWS API" << endl;
 	Aws::SDKOptions options;
 	Aws::ShutdownAPI(options);
 }

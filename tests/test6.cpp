@@ -19,11 +19,11 @@ int test6_1(void) {
 	hash_table.add(123, "testing");
 	ok = ok && hash_table.find(123) == "testing";
 
-	for (size_t i = 200; i < 1000; i++) {
+	for (size_t i = 200; i < 210; i++) {
 		hash_table.add(i, "testing" + to_string(i));
 	}
 
-	for (size_t i = 200; i < 1000; i++) {
+	for (size_t i = 200; i < 210; i++) {
 		ok = ok && (hash_table.find(i) == "testing" + to_string(i));
 	}
 
