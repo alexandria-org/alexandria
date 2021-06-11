@@ -87,11 +87,39 @@ size_t FullTextIndex::disk_size() const {
 }
 
 void FullTextIndex::upload(const SubSystem *sub_system) {
+	const size_t num_threads_uploading = 100;
+	ThreadPool pool(num_threads_uploading);
+	std::vector<std::future<void>> results;
 
+	for (auto shard : m_shards) {
+		results.emplace_back(
+			pool.enqueue([this, sub_system, shard] {
+				run_upload_thread(sub_system, shard);
+			})
+		);
+	}
+
+	for(auto && result: results) {
+		result.get();
+	}
 }
 
 void FullTextIndex::download(const SubSystem *sub_system) {
+	const size_t num_threads_downloading = 100;
+	ThreadPool pool(num_threads_downloading);
+	std::vector<std::future<void>> results;
 
+	for (auto shard : m_shards) {
+		results.emplace_back(
+			pool.enqueue([this, sub_system, shard] {
+				run_download_thread(sub_system, shard);
+			})
+		);
+	}
+
+	for(auto && result: results) {
+		result.get();
+	}
 }
 
 vector<size_t> FullTextIndex::value_intersection(const map<size_t, vector<uint64_t>> &values_map,
@@ -146,3 +174,18 @@ void FullTextIndex::sort_results(vector<FullTextResult> &results) {
 	});
 }
 
+void FullTextIndex::run_upload_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+	ifstream infile(shard->filename());
+	if (infile.is_open()) {
+		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
+		sub_system->upload_from_stream("alexandria-index", key, infile);
+	}
+}
+
+void FullTextIndex::run_download_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+	ofstream outfile(shard->filename(), ios::binary | ios::trunc);
+	if (outfile.is_open()) {
+		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
+		sub_system->download_to_stream("alexandria-index", key, outfile);
+	}
+}

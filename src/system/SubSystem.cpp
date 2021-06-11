@@ -2,15 +2,19 @@
 #include "SubSystem.h"
 
 SubSystem::SubSystem() {
+	cout << "init aws api" << endl;
 	init_aws_api();
+	cout << "done" << endl;
 
 	setenv("AWS_EC2_METADATA_DISABLED", "true", 1);
 	auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>("asd");
 	m_s3_client = new Aws::S3::S3Client(credentialsProvider, get_s3_config());
 
+	cout << "download domain_info.tsv" << endl;
 	TsvFileS3 domain_index(*m_s3_client, "domain_info.tsv");
 	m_domain_index = new Dictionary(domain_index);
 
+	cout << "download dictionary.tsv" << endl;
 	TsvFileS3 dictionary(*m_s3_client, "dictionary.tsv");
 
 	m_dictionary = new Dictionary(dictionary);

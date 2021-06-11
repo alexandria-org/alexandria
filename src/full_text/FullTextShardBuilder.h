@@ -15,6 +15,7 @@
 #define FULL_TEXT_KEY_LEN 8
 #define FULL_TEXT_RECORD_LEN 12
 #define FULL_TEXT_SCORE_LEN 4
+#define FT_INDEXER_MAX_CACHE_SIZE 1000
 
 using namespace std;
 
@@ -27,6 +28,7 @@ public:
 
 	void add(uint64_t key, uint64_t value, uint32_t score);
 	void sort_cache();
+	bool full() const;
 	void append();
 	void merge(const string &db_name, size_t shard_id);
 

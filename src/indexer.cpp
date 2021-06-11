@@ -23,12 +23,15 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
 	indexer.run();
-	return 0;
+	return 0;*/
 
 	FullTextIndex fti("main_index");
-	HashTable hash_table;
+	fti.download();
+	HashTable hash_table("main_index");
+	hash_table.download();
+	return 0;
 
 	Profiler profiler("Total");
 	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");

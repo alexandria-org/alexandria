@@ -69,6 +69,24 @@ sudo mkdir /mnt/5/upload
 sudo mkdir /mnt/6/upload
 sudo mkdir /mnt/7/upload
 
+sudo mkdir /mnt/0/hash_table
+sudo mkdir /mnt/1/hash_table
+sudo mkdir /mnt/2/hash_table
+sudo mkdir /mnt/3/hash_table
+sudo mkdir /mnt/4/hash_table
+sudo mkdir /mnt/5/hash_table
+sudo mkdir /mnt/6/hash_table
+sudo mkdir /mnt/7/hash_table
+
+sudo mkdir /mnt/0/full_text
+sudo mkdir /mnt/1/full_text
+sudo mkdir /mnt/2/full_text
+sudo mkdir /mnt/3/full_text
+sudo mkdir /mnt/4/full_text
+sudo mkdir /mnt/5/full_text
+sudo mkdir /mnt/6/full_text
+sudo mkdir /mnt/7/full_text
+
 sudo chown -R ubuntu:ubuntu /mnt
 
 aws s3 cp s3://alexandria-database/domain_info.tsv /mnt/0/

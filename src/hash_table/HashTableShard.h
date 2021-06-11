@@ -24,6 +24,10 @@ public:
 	void add(uint64_t key, const string &value);
 	string find(uint64_t key);
 
+	string filename_data() const;
+	string filename_pos() const;
+	size_t shard_id() const;
+
 private:
 
 	// Maps keys to positions in file.
@@ -31,7 +35,6 @@ private:
 	size_t m_shard_id;
 	bool m_loaded;
 
-	string filename() const;
 	void load();
 
 };

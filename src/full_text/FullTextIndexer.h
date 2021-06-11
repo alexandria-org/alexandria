@@ -4,6 +4,7 @@
 #include <iostream>
 #include <istream>
 #include <vector>
+#include <mutex>
 #include "common/common.h"
 
 #include "FullTextShard.h"
@@ -14,8 +15,6 @@
 
 using namespace std;
 
-#define FT_INDEXER_MAX_CACHE_SIZE 1500000
-
 class FullTextIndexer : public TextBase {
 
 public:
@@ -25,8 +24,8 @@ public:
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
 		const vector<size_t> &cols, const vector<uint32_t> &scores);
-	bool should_write_cache() const;
-	void write_cache();
+	void write_cache(mutex *write_mutexes);
+	void flush_cache(mutex *write_mutexes);
 
 private:
 

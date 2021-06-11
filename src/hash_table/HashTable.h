@@ -17,6 +17,8 @@
 #include <map>
 
 #include "HashTableShard.h"
+#include "system/SubSystem.h"
+#include "system/ThreadPool.h"
 
 using namespace std;
 
@@ -26,14 +28,21 @@ class HashTable {
 
 public:
 
-	HashTable();
+	HashTable(const string &db_name);
 	~HashTable();
 
 	void add(uint64_t key, const string &value);
 	string find(uint64_t key);
 
+	void upload(const SubSystem *sub_system);
+	void download(const SubSystem *sub_system);
+
 private:
 
 	vector<HashTableShard *> m_shards;
+	string m_db_name;
+
+	void run_upload_thread(const SubSystem *sub_system, const HashTableShard *shard);
+	void run_download_thread(const SubSystem *sub_system, const HashTableShard *shard);
 
 };

@@ -32,6 +32,10 @@ void FullTextShardBuilder::sort_cache() {
 	}
 }
 
+bool FullTextShardBuilder::full() const {
+	return cache_size() > FT_INDEXER_MAX_CACHE_SIZE;
+}
+
 void FullTextShardBuilder::append() {
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
@@ -103,7 +107,7 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 
 	vector<uint64_t> keys;
 
-	const string filename = "/mnt/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
+	const string filename = "/mnt/"+to_string(shard_id % 8)+"/full_text/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
 
 	m_writer.open(filename, ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {

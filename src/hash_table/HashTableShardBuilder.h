@@ -26,6 +26,7 @@ private:
 	size_t m_shard_id;
 	const size_t m_cache_limit;
 
-	string filename() const;
+	string filename_data() const;
+	string filename_pos() const;
 
 };

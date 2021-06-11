@@ -30,6 +30,7 @@ public:
 	void read_keys();
 
 	string filename() const;
+	size_t shard_id() const;
 
 	size_t disk_size() const;
 	size_t cache_size() const;
@@ -38,6 +39,7 @@ private:
 
 	string m_db_name;
 	string m_filename;
+	size_t m_shard_id;
 
 	// These variables always represent what is in the file.
 	vector<uint64_t> m_keys;
@@ -45,7 +47,6 @@ private:
 	bool m_keys_read;
 	
 	size_t m_num_keys;
-	size_t m_shard;
 
 	size_t m_data_start;
 	size_t m_pos_start;

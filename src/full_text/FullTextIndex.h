@@ -8,6 +8,7 @@
 #include "abstract/TextBase.h"
 #include "FullTextShard.h"
 #include "FullTextResult.h"
+#include "system/ThreadPool.h"
 
 using namespace std;
 
@@ -42,5 +43,7 @@ private:
 	vector<FullTextShard *> m_shards;
 
 	void sort_results(vector<FullTextResult> &results);
+	void run_upload_thread(const SubSystem *sub_system, const FullTextShard *shard);
+	void run_download_thread(const SubSystem *sub_system, const FullTextShard *shard);
 
 };

@@ -44,19 +44,27 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 	}
 }
 
-bool FullTextIndexer::should_write_cache() const {
-	size_t total_size = 0;
+void FullTextIndexer::write_cache(mutex *write_mutexes) {
+	size_t idx = 0;
 	for (FullTextShardBuilder *shard : m_shards) {
-		total_size += shard->cache_size();
+		if (shard->full()) {
+			write_mutexes[idx].lock();
+			shard->append();
+			write_mutexes[idx].unlock();
+		}
+
+		idx++;
 	}
-	LogInfo("Thread "+to_string(m_indexer_id)+" has size: " + to_string(total_size));
-	return total_size > FT_INDEXER_MAX_CACHE_SIZE;
 }
 
-void FullTextIndexer::write_cache() {
-	LogInfo("Thread "+to_string(m_indexer_id)+" is appending");
+void FullTextIndexer::flush_cache(mutex *write_mutexes) {
+	size_t idx = 0;
 	for (FullTextShardBuilder *shard : m_shards) {
+		write_mutexes[idx].lock();
 		shard->append();
+		write_mutexes[idx].unlock();
+
+		idx++;
 	}
 }
 

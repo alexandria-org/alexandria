@@ -15,8 +15,8 @@ File format explained
 */
 
 FullTextShard::FullTextShard(const string &db_name, size_t shard)
-: m_shard(shard), m_db_name(db_name), m_keys_read(false) {
-	m_filename = "/mnt/fti_" + m_db_name + "_" + to_string(m_shard) + ".idx";
+: m_shard_id(shard), m_db_name(db_name), m_keys_read(false) {
+	m_filename = "/mnt/"+to_string(m_shard_id % 8)+"/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 	m_buffer = new char[m_buffer_len];
 }
 
@@ -123,6 +123,10 @@ void FullTextShard::read_keys() {
 
 string FullTextShard::filename() const {
 	return m_filename;
+}
+
+size_t FullTextShard::shard_id() const {
+	return m_shard_id;
 }
 
 size_t FullTextShard::disk_size() const {
