@@ -151,8 +151,27 @@ int test3_4(void) {
 
 	SubSystem *sub_system = new SubSystem();
 
-	sub_system->upload_from_string("alexandria-index", "example.txt", "Hej hopp");
-	ok = ok && sub_system->download_to_string("alexandria-index", "example.txt") == "Hej hopp";
+	sub_system->upload_from_string("alexandria-index", "example.txt.gz", "Hej hopp");
+	ok = ok && sub_system->download_to_string("alexandria-index", "example.txt.gz") == "Hej hopp";
+
+	ofstream outfile("/mnt/example.txt", ios::trunc);
+	outfile << "Testing with stream";
+	outfile.close();
+
+	ifstream infile("/mnt/example.txt");
+	sub_system->upload_from_stream("alexandria-index", "example.txt.gz", infile);
+	infile.close();
+
+	outfile.open("/mnt/example2.txt", ios::trunc);
+	sub_system->download_to_stream("alexandria-index", "example.txt.gz", outfile);
+	outfile.close();
+
+	infile.open("/mnt/example2.txt");
+	ok = ok && infile.is_open();
+
+	string line;
+	getline(infile, line);
+	ok = ok && line == "Testing with stream";
 
 	return ok;
 }

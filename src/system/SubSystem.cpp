@@ -49,7 +49,6 @@ const Aws::S3::S3Client SubSystem::s3_client() const {
 
 string SubSystem::download_to_string(const string &bucket, const string &key) const {
 
-
 	Aws::S3::Model::GetObjectRequest request;
 	cout << "Downloading " << bucket << " key: " << key << endl;
 	request.SetBucket(bucket);
@@ -71,6 +70,34 @@ string SubSystem::download_to_string(const string &bucket, const string &key) co
 	return ret;
 }
 
+bool SubSystem::download_to_stream(const string &bucket, const string &key, ofstream &output_stream) const {
+
+	Aws::S3::Model::GetObjectRequest request;
+	cout << "Downloading " << bucket << " key: " << key << endl;
+	request.SetBucket(bucket);
+	request.SetKey(key);
+
+	auto outcome = m_s3_client->GetObject(request);
+
+	string ret;
+	if (outcome.IsSuccess()) {
+
+		auto &stream = outcome.GetResultWithOwnership().GetBody();
+
+		filtering_istream decompress_stream;
+		decompress_stream.push(gzip_decompressor());
+		decompress_stream.push(stream);
+
+		output_stream << decompress_stream.rdbuf();
+
+		return true;
+	} else {
+		cout << "NON SUCCESS" << endl;
+	}
+
+	return false;
+}
+
 void SubSystem::upload_from_string(const string &bucket, const string &key, const string &data) const {
 	stringstream infile(data);
 
@@ -81,12 +108,22 @@ void SubSystem::upload_from_string(const string &bucket, const string &key, cons
 	upload_from_stream(bucket, key, in);
 }
 
+void SubSystem::upload_from_stream(const string &bucket, const string &key, ifstream &file_stream) const {
+	filtering_istream in;
+	in.push(gzip_compressor());
+	in.push(file_stream);
+
+	upload_from_stream(bucket, key, in, 3);
+}
+
 void SubSystem::upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream) const {
 	upload_from_stream(bucket, key, compress_stream, 3);
 }
 
 void SubSystem::upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream,
 	size_t retries) const {
+
+	cout << "Uploading " << bucket << " key: " << key << endl;
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket(bucket);

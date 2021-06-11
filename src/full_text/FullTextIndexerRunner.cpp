@@ -53,7 +53,7 @@ void FullTextIndexerRunner::run() {
 	vector<string> warc_paths_raw, warc_paths;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	for (size_t i = 0; i < 10000; i++) {
+	for (size_t i = 0; i < 10; i++) {
 		warc_paths.push_back(warc_paths_raw[i]);
 	}
 
