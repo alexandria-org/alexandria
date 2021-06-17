@@ -34,9 +34,11 @@ private:
 
 	// Maps keys to positions in file.
 	unordered_map<uint64_t, pair<size_t, size_t>> m_pos;
+	map<uint64_t, size_t> m_sort_pos;
 	size_t m_shard_id;
 	bool m_loaded;
 
+	void sort();
 	void load();
 
 };
