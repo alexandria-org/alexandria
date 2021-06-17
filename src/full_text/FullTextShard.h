@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include "FullTextResult.h"
+#include "FullTextResultSet.h"
 
 #define FULL_TEXT_RECORD_SIZE 12
 #define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
@@ -26,7 +27,7 @@ public:
 	FullTextShard(const string &db_name, size_t shard);
 	~FullTextShard();
 
-	vector<FullTextResult> find(uint64_t key);
+	void find(uint64_t key, FullTextResultSet *result_set);
 	void read_keys();
 
 	string filename() const;

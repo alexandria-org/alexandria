@@ -18,9 +18,9 @@ FullTextIndex::~FullTextIndex() {
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 	uint64_t word_hash = m_hasher(word);
 
-	vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash);
-	sort_results(results);
-	return results;
+	//vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+	//sort_results(results);
+	return {};
 }
 
 vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
@@ -28,8 +28,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 	vector<string> words = get_full_text_words(phrase);
 
 	vector<string> searched_words;
-	map<size_t, vector<FullTextResult>> result_map;
-	map<size_t, vector<uint64_t>> values_map;
+	map<size_t, FullTextResultSet *> result_map;
 	
 	bool first_word = true;
 	size_t idx = 0;
@@ -42,38 +41,35 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 		searched_words.push_back(word);
 
 		uint64_t word_hash = m_hasher(word);
-		vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash);
+		Profiler profiler0("->find: " + word);
+		FullTextResultSet *results = new FullTextResultSet();
+		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+		profiler0.stop();
 
-		for (size_t i = 1; i < results.size(); i++) {
-			if (results[i].m_value < results[i-1].m_value) {
-				cout << "RESULTS ARE NOT ORDERED" << endl;
-			}
-		}
+		Profiler profiler1("Accumuating "+to_string(results->len())+" results for: " + word);
 
-		Profiler profiler1("Accumuating all results");
-
-		vector<uint64_t> values;
-		for (const FullTextResult &result : results) {
-			values.push_back(result.m_value);
-		}
 		result_map[idx] = results;
-		values_map[idx] = values;
 		idx++;
 		total_time += profiler1.get();
 	}
-	cout << "Profiler [Sorting results] took " << total_time << "ms" << endl;
 
 	Profiler profiler2("value_intersection");
 	size_t shortest_vector;
-	vector<size_t> result_ids = value_intersection(values_map, shortest_vector);
+	vector<size_t> result_ids = value_intersection(result_map, shortest_vector);
 
 	vector<FullTextResult> result;
 
+	FullTextResultSet *shortest = result_map[shortest_vector];
+	uint64_t *value_arr = shortest->value_pointer();
+	uint32_t *score_arr = shortest->score_pointer();
 	for (size_t result_id : result_ids) {
-		result.push_back(result_map[shortest_vector][result_id]);
+		result.emplace_back(FullTextResult(value_arr[result_id], score_arr[result_id]));
 	}
+	profiler2.stop();
 
+	Profiler profiler3("sorting results");
 	sort_results(result);
+	profiler3.stop();
 
 	return result;
 }
@@ -122,39 +118,43 @@ void FullTextIndex::download(const SubSystem *sub_system) {
 	}
 }
 
-vector<size_t> FullTextIndex::value_intersection(const map<size_t, vector<uint64_t>> &values_map,
+vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet *> &values_map,
 	size_t &shortest_vector_position) const {
+	Profiler value_intersection("FullTextIndex::value_intersection");
 	
 	if (values_map.size() == 0) return {};
 
 	shortest_vector_position = 0;
 	size_t shortest_len = SIZE_MAX;
 	for (auto &iter : values_map) {
-		if (shortest_len > iter.second.size()) {
-			shortest_len = iter.second.size();
+		if (shortest_len > iter.second->len()) {
+			shortest_len = iter.second->len();
 			shortest_vector_position = iter.first;
 		}
 	}
 
 	vector<size_t> positions(values_map.size(), 0);
 	vector<size_t> result_ids;
+
+	auto value_iter = values_map.find(shortest_vector_position);
+	uint64_t *value_ptr = value_iter->second->value_pointer();
+
 	while (positions[shortest_vector_position] < shortest_len) {
 
 		bool all_equal = true;
-
-		auto value_iter = values_map.find(shortest_vector_position);
-
-		uint64_t value = value_iter->second.at(positions[shortest_vector_position]);
+		uint64_t value = value_ptr[positions[shortest_vector_position]];
 
 		for (auto &iter : values_map) {
+			const uint64_t *val_arr = iter.second->value_pointer();
+			const size_t len = iter.second->len();
 			size_t *pos = &(positions[iter.first]);
-			while (value > iter.second[*pos] && *pos < iter.second.size()) {
+			while (value > val_arr[*pos] && *pos < len) {
 				(*pos)++;
 			}
-			if (value < iter.second[*pos] && *pos < iter.second.size()) {
+			if (value < val_arr[*pos] && *pos < len) {
 				all_equal = false;
 			}
-			if (*pos >= iter.second.size()) {
+			if (*pos >= len) {
 				all_equal = false;
 			}
 		}

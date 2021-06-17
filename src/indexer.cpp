@@ -27,30 +27,40 @@ int main(int argc, const char **argv) {
 	indexer.run();
 	return 0;*/
 
-	FullTextIndex fti("main_index");
-	fti.download();
+	//SubSystem *sub_system = new SubSystem();
+
 	HashTable hash_table("main_index");
-	hash_table.download();
-	return 0;
+	FullTextIndex fti("main_index");
+	//fti.download(sub_system);
+	//hash_table.download(sub_system);
 
-	Profiler profiler("Total");
-	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
+	//delete sub_system;
+	//return 0;
 
-	for (FullTextResult &res : result) {
-		cout << "found ID: " << res.m_value << endl;
-		cout << "found url: " << hash_table.find(res.m_value) << endl;
+	string query = "";
+	while (query != "quit") {
+		cout << "query> ";
+		getline(cin, query);
+
+		if (query == "quit") break;
+
+		Profiler profiler2("Total");
+		Profiler profiler3("FTI");
+		vector<FullTextResult> result2 = fti.search_phrase(query);
+		profiler3.stop();
+
+		Profiler profiler4("HT");
+		size_t idx = 0;
+		for (FullTextResult &res : result2) {
+			cout << "found ID: " << res.m_value << endl;
+			cout << "found url: " << hash_table.find(res.m_value) << endl;
+			idx++;
+			if (idx >= 10) break;
+		}
+		profiler4.stop();
+		profiler2.stop();
+		cout << "Found a total of: " << result2.size() << " urls and fetched " << idx << " of them" << endl;
 	}
-	profiler.stop();
-
-
-	Profiler profiler2("Total");
-	vector<FullTextResult> result2 = fti.search_phrase("Rehabilitation Centers Singing River");
-
-	for (FullTextResult &res : result2) {
-		cout << "found ID: " << res.m_value << endl;
-		cout << "found url: " << hash_table.find(res.m_value) << endl;
-	}
-	profiler2.stop();
 
 	return 0;
 

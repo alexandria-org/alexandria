@@ -85,9 +85,9 @@ void HashTable::run_download_thread(const SubSystem *sub_system, const HashTable
 	}
 
 	ofstream outfile_pos(shard->filename_pos(), ios::binary | ios::trunc);
-	if (outfile_data.is_open()) {
+	if (outfile_pos.is_open()) {
 		const string key = "hash_table/" + m_db_name + "/" + to_string(shard->shard_id()) + ".pos.gz";
-		sub_system->download_to_stream("alexandria-index", key, outfile_data);
+		sub_system->download_to_stream("alexandria-index", key, outfile_pos);
 	}
 }
 

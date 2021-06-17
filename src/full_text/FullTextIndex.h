@@ -32,7 +32,7 @@ public:
 	void upload(const SubSystem *sub_system);
 
 	// Testable private functions.
-	vector<size_t> value_intersection(const map<size_t, vector<uint64_t>> &values_map,
+	vector<size_t> value_intersection(const map<size_t, FullTextResultSet *> &values_map,
 		size_t &shortest_vector_position) const;
 
 private:

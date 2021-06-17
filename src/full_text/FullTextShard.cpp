@@ -2,6 +2,7 @@
 #include "FullTextShard.h"
 #include <cstring>
 #include "system/Logger.h"
+#include "system/Profiler.h"
 
 /*
 File format explained
@@ -24,16 +25,16 @@ FullTextShard::~FullTextShard() {
 	delete m_buffer;
 }
 
-vector<FullTextResult> FullTextShard::find(uint64_t key) {
+void FullTextShard::find(uint64_t key, FullTextResultSet *result_set) {
 
 	if (!m_keys_read) read_keys();
 
-	vector<FullTextResult> ret;
+	Profiler pf("FullTextShard::find");
 
 	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
 
 	if (iter == m_keys.end() || *iter > key) {
-		return {};
+		return;
 	}
 
 	size_t key_pos = iter - m_keys.begin();
@@ -53,21 +54,28 @@ vector<FullTextResult> FullTextShard::find(uint64_t key) {
 
 	reader.seekg(m_data_start + pos, ios::beg);
 
+	const size_t num_records = len / FULL_TEXT_RECORD_SIZE;
+
+	result_set->allocate(num_records);
+
+	uint64_t *value_res = result_set->value_pointer();
+	uint32_t *score_res = result_set->score_pointer();
+
 	size_t read_bytes = 0;
+	size_t kk = 0;
+	Profiler pf2("FullTextShard::find ads");
 	while (read_bytes < len) {
 		size_t read_len = min(m_buffer_len, len);
 		reader.read(m_buffer, read_len);
 		read_bytes += read_len;
 
-		size_t num_records = read_len / FULL_TEXT_RECORD_SIZE;
-		for (size_t i = 0; i < num_records; i++) {
-			const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
-			const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE + FULL_TEXT_KEY_LEN]);
-			ret.emplace_back(FullTextResult(value, score));
+		size_t num_records_read = read_len / FULL_TEXT_RECORD_SIZE;
+		for (size_t i = 0; i < num_records_read; i++) {
+			value_res[kk] = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE]);
+			score_res[kk] = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_SIZE + FULL_TEXT_KEY_LEN]);
+			kk++;
 		}
 	}
-
-	return ret;
 }
 
 void FullTextShard::read_keys() {

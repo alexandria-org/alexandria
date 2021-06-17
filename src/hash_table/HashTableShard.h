@@ -30,8 +30,10 @@ public:
 
 private:
 
+	const int m_significant = 12;
+
 	// Maps keys to positions in file.
-	unordered_map<uint64_t, size_t> m_pos;
+	unordered_map<uint64_t, pair<size_t, size_t>> m_pos;
 	size_t m_shard_id;
 	bool m_loaded;
 
