@@ -27,15 +27,15 @@ int main(int argc, const char **argv) {
 	indexer.run();
 	return 0;*/
 
-	//SubSystem *sub_system = new SubSystem();
+	SubSystem *sub_system = new SubSystem();
 
 	HashTable hash_table("main_index");
 	FullTextIndex fti("main_index");
-	//fti.download(sub_system);
-	//hash_table.download(sub_system);
+	hash_table.download(sub_system);
+	fti.download(sub_system);
 
-	//delete sub_system;
-	//return 0;
+	delete sub_system;
+	return 0;
 
 	string query = "";
 	while (query != "quit") {

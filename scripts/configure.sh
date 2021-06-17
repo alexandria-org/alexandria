@@ -6,7 +6,7 @@ cd ..
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
 
-sudo apt-get install libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev
+sudo apt-get install make cmake gcc-10 g++-10 libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev
 
 rel_path=`pwd`
 base_path=`realpath $rel_path`
