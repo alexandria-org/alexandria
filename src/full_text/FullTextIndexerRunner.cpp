@@ -16,77 +16,41 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 
 void FullTextIndexerRunner::run() {
 
-	// Make searches.
-	/*FullTextIndex fti("main_index");
-	fti.wait_for_start();
-
-	HashTable hash_table;
-	hash_table.wait_for_start();
-
-	Profiler profiler1("Make Search 1");
-	vector<FullTextResult> result = fti.search_phrase("Rehabilitation Centers Singing River");
-	profiler1.stop();
-
-	Profiler profiler2("Fetch urls 1");
-	for (FullTextResult &res : result) {
-		cout << "found ID: " << res.m_value << endl;
-		cout << "found url: " << hash_table.find(res.m_value) << endl;
-	}
-	profiler2.stop();
-
-	Profiler profiler3("Make Search 2");
-	result = fti.search_phrase("Rehabilitation Centers Singing River");
-	profiler3.stop();
-
-	Profiler profiler4("Fetch urls 2");
-	for (FullTextResult &res : result) {
-		cout << "found ID: " << res.m_value << endl;
-		cout << "found url: " << hash_table.find(res.m_value) << endl;
-	}
-	profiler4.stop();
-
-	return;*/
-
-	cout << "here1" << endl;
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
-	if (0) {
-		vector<string> warc_paths_raw, warc_paths;
-		warc_paths_file.read_column_into(0, warc_paths_raw);
-		cout << "here2" << endl;
+	vector<string> warc_paths_raw, warc_paths;
+	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-		size_t num = 0;
-		for (const string &path : warc_paths_raw) {
-			warc_paths.push_back(path);
-			num++;
-			//if (num > 10) break;
-		}
-		cout << "here3" << endl;
+	size_t num = 0;
+	for (const string &path : warc_paths_raw) {
+		warc_paths.push_back(path);
+		num++;
+		//if (num > 10) break;
+	}
 
-		vector<vector<string>> warc_path_chunks;
-		vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
+	vector<vector<string>> warc_path_chunks;
+	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
 
-		ThreadPool pool(FT_NUM_THREADS_INDEXING);
-		std::vector<std::future<string>> results;
+	ThreadPool pool(FT_NUM_THREADS_INDEXING);
+	std::vector<std::future<string>> results;
 
-		map<int, vector<string>> shard_files;
-		int id = 1;
-		for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+	map<int, vector<string>> shard_files;
+	int id = 1;
+	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
 
-			results.emplace_back(
-				pool.enqueue([this, warc_paths_chunk, id] {
-					return run_index_thread(warc_paths_chunk, id);
-				})
-			);
+		results.emplace_back(
+			pool.enqueue([this, warc_paths_chunk, id] {
+				return run_index_thread(warc_paths_chunk, id);
+			})
+		);
 
-			id++;
+		id++;
 
-		}
+	}
 
-		for(auto && result: results) {
-			result.get();
-		}
+	for(auto && result: results) {
+		result.get();
 	}
 
 	cout << "Done indexing.. Sleeping 100..." << endl;
@@ -108,6 +72,12 @@ void FullTextIndexerRunner::run() {
 		result.get();
 	}
 
+	// Loop over hash table shards and merge them.
+	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+		HashTableShard *shard = new HashTableShard(shard_id);
+		shard->sort();
+	}
+
 	LogInfo("Done! Uploading.");
 
 	FullTextIndex fti("main_index");
@@ -125,7 +95,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		shard_builders.push_back(new HashTableShardBuilder(i));
 	}
 
-	FullTextIndexer indexer(id);
+	FullTextIndexer indexer(id, m_sub_system);
 	size_t idx = 1;
 	for (const string &raw_warc_path : warc_paths) {
 		stringstream stream;

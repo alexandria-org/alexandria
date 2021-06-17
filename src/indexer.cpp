@@ -23,9 +23,9 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
 	indexer.run();
-	return 0;*/
+	return 0;
 
 	//SubSystem *sub_system = new SubSystem();
 
@@ -43,23 +43,25 @@ int main(int argc, const char **argv) {
 		getline(cin, query);
 
 		if (query == "quit") break;
+		if (query == "") continue;
 
 		Profiler profiler2("Total");
 		Profiler profiler3("FTI");
-		vector<FullTextResult> result2 = fti.search_phrase(query);
+		size_t total;
+		vector<FullTextResult> result2 = fti.search_phrase(query, 1000, total);
 		profiler3.stop();
 
 		Profiler profiler4("HT");
 		size_t idx = 0;
 		for (FullTextResult &res : result2) {
-			cout << "found ID: " << res.m_value << endl;
-			cout << "found url: " << hash_table.find(res.m_value) << endl;
+			string url = hash_table.find(res.m_value);
+			cout << "found ID: " << res.m_value << " score (" << res.m_score << ")" << endl;
+			cout << "found url: " << url << endl;
 			idx++;
-			if (idx >= 1000) break;
 		}
 		profiler4.stop();
 		profiler2.stop();
-		cout << "Found a total of: " << result2.size() << " urls and fetched " << idx << " of them" << endl;
+		cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
 	}
 
 	return 0;

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <boost/algorithm/string/join.hpp>
 #include "common/common.h"
+#include "system/SubSystem.h"
 
 #include "abstract/TextBase.h"
 
@@ -21,6 +22,7 @@ public:
 	void set_url_string(const string &url);
 	string host() const;
 	string path() const;
+	int harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
 
 	friend istream &operator >>(istream &ss, URL &url);

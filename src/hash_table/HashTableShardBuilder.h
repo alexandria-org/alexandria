@@ -17,6 +17,7 @@ public:
 
 	bool full() const;
 	void write();
+	void sort();
 
 	void add(uint64_t key, const string &value);
 

@@ -23,7 +23,9 @@ vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 	return {};
 }
 
-vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
+vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int limit, size_t &total_found) {
+
+	total_found = 0;
 
 	vector<string> words = get_full_text_words(phrase);
 
@@ -60,16 +62,36 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase) {
 	vector<FullTextResult> result;
 
 	FullTextResultSet *shortest = result_map[shortest_vector];
+	vector<uint32_t> score_vector;
 	uint64_t *value_arr = shortest->value_pointer();
 	uint32_t *score_arr = shortest->score_pointer();
 	for (size_t result_id : result_ids) {
 		result.emplace_back(FullTextResult(value_arr[result_id], score_arr[result_id]));
+		score_vector.push_back(score_arr[result_id]);
 	}
 	profiler2.stop();
 
+	total_found = score_vector.size();
+
 	Profiler profiler3("sorting results");
+	if (result.size() > limit) {
+		nth_element(score_vector.begin(), score_vector.begin() + (limit - 1), score_vector.end());
+		const uint32_t nth = score_vector[limit - 1];
+
+		vector<FullTextResult> top_result;
+		for (const FullTextResult &res : result) {
+			if (res.m_score >= nth) {
+				top_result.push_back(res);
+				if (top_result.size() >= limit) break;
+			}
+		}
+
+		sort_results(top_result);
+
+		return top_result;
+	}
+
 	sort_results(result);
-	profiler3.stop();
 
 	return result;
 }

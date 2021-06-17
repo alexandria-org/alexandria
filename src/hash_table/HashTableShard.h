@@ -23,6 +23,7 @@ public:
 
 	void add(uint64_t key, const string &value);
 	string find(uint64_t key);
+	void sort();
 
 	string filename_data() const;
 	string filename_pos() const;
@@ -38,7 +39,6 @@ private:
 	size_t m_shard_id;
 	bool m_loaded;
 
-	void sort();
 	void load();
 
 };

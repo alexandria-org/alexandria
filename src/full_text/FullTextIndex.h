@@ -24,7 +24,7 @@ public:
 	~FullTextIndex();
 
 	vector<FullTextResult> search_word(const string &word);
-	vector<FullTextResult> search_phrase(const string &phrase);
+	vector<FullTextResult> search_phrase(const string &phrase, int limit, size_t &total_found);
 
 	size_t disk_size() const;
 

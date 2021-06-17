@@ -6,7 +6,6 @@ HashTableShard::HashTableShard(size_t shard_id)
 : m_shard_id(shard_id), m_loaded(false)
 {
 	load();
-	//sort();
 }
 
 HashTableShard::~HashTableShard() {
@@ -126,7 +125,6 @@ void HashTableShard::sort() {
 	m_sort_pos.clear();
 
 	LogInfo("Sorted shard " + to_string(m_shard_id));
-	//exit(0);
 
 }
 
@@ -167,23 +165,6 @@ void HashTableShard::load() {
 		idx++;
 	}
 
-	/*for (const auto &iter : m_pos) {
-		cout << "first: " << iter.first << " second.first: " << iter.second.first << " second.second: " << iter.second.second << endl;
-	}*/
-
-	//exit(0);
-
-	// Store the position file again but sorted.
-	/*ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
-	for (const auto &iter : m_pos) {
-		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
-		outfile_pos.write((char *)&iter.second, sizeof(size_t));
-	}
-	outfile_pos.close();
-	m_pos.clear();*/
-
 	LogInfo("Loaded shard " + to_string(m_shard_id));
-	//cout << "find on 4162737955575775232: " << find(4162737955575775232ull) << endl;
-	//exit(0);
 }
 

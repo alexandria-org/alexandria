@@ -40,6 +40,21 @@ string URL::path() const {
 	return m_path;
 }
 
+int URL::harmonic(const SubSystem *sub_system) const {
+
+	const auto iter = sub_system->domain_index()->find(host_reverse());
+
+	int harmonic;
+	if (iter == sub_system->domain_index()->end()) {
+		harmonic = 0;
+	} else {
+		const DictionaryRow row = iter->second;
+		harmonic = row.get_int(1);
+	}
+
+	return harmonic;
+}
+
 istream &operator >>(istream &ss, URL &url) {
 	ss >> (url.m_url_string);
 	url.m_status = url.parse();

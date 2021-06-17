@@ -40,6 +40,10 @@ void HashTableShardBuilder::write() {
 	m_cache.clear();
 }
 
+void HashTableShardBuilder::sort() {
+
+}
+
 void HashTableShardBuilder::add(uint64_t key, const string &value) {
 	m_cache[key] = value;
 }
