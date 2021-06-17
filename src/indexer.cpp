@@ -27,15 +27,15 @@ int main(int argc, const char **argv) {
 	indexer.run();
 	return 0;*/
 
-	SubSystem *sub_system = new SubSystem();
+	//SubSystem *sub_system = new SubSystem();
 
 	HashTable hash_table("main_index");
 	FullTextIndex fti("main_index");
-	hash_table.download(sub_system);
-	fti.download(sub_system);
+	//hash_table.download(sub_system);
+	//fti.download(sub_system);
 
-	delete sub_system;
-	return 0;
+	//delete sub_system;
+	//return 0;
 
 	string query = "";
 	while (query != "quit") {
@@ -55,7 +55,7 @@ int main(int argc, const char **argv) {
 			cout << "found ID: " << res.m_value << endl;
 			cout << "found url: " << hash_table.find(res.m_value) << endl;
 			idx++;
-			if (idx >= 10) break;
+			if (idx >= 1000) break;
 		}
 		profiler4.stop();
 		profiler2.stop();

@@ -5,8 +5,8 @@
 HashTableShard::HashTableShard(size_t shard_id)
 : m_shard_id(shard_id), m_loaded(false)
 {
-	//load();
-	sort();
+	load();
+	//sort();
 }
 
 HashTableShard::~HashTableShard() {
@@ -126,7 +126,7 @@ void HashTableShard::sort() {
 	m_sort_pos.clear();
 
 	LogInfo("Sorted shard " + to_string(m_shard_id));
-	exit(0);
+	//exit(0);
 
 }
 
