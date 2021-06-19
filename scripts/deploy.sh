@@ -19,7 +19,7 @@ make aws-lambda-package-cc_indexer
 
 IP=`aws ec2 describe-instances --query "Reservations[*].Instances[*].[PublicIpAddress]" --instance-ids $INSTANCE_ID --output=text`
 
-scp -i /home/josef/alexandria-keys.pem ./cc_indexer.zip ubuntu@$IP:/home/ubuntu/
-ssh -i /home/josef/alexandria-keys.pem ubuntu@$IP 'unzip -o cc_indexer.zip'
+scp -i ~/alexandria-keys.pem ./cc_indexer.zip ubuntu@$IP:/home/ubuntu/
+ssh -i ~/alexandria-keys.pem ubuntu@$IP 'unzip -o cc_indexer.zip'
 
 #sudo shutdown -h now

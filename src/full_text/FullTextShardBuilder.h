@@ -15,7 +15,7 @@
 #define FULL_TEXT_KEY_LEN 8
 #define FULL_TEXT_RECORD_LEN 12
 #define FULL_TEXT_SCORE_LEN 4
-#define FT_INDEXER_MAX_CACHE_SIZE 1000
+#define FT_INDEXER_MAX_CACHE_SIZE 500
 
 using namespace std;
 
@@ -45,7 +45,7 @@ private:
 	ofstream m_writer;
 	const size_t m_max_results = 10000000;
 
-	unordered_map<uint64_t, vector<FullTextResult>> m_cache;
+	map<uint64_t, vector<FullTextResult>> m_cache;
 
 	void save_file(const string &db_name, size_t shard_id);
 

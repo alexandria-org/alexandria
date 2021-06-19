@@ -13,7 +13,7 @@
 using namespace std;
 
 #define FT_NUM_BUCKETS 8
-#define FT_NUM_SHARDS 2048
+#define FT_NUM_SHARDS 8192
 
 class FullTextShard;
 

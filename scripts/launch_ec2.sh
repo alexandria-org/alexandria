@@ -11,7 +11,7 @@ aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
 
 IP=`aws ec2 describe-instances --query "Reservations[*].Instances[*].[PublicIpAddress]" --instance-ids $INSTANCE_ID --output=text`
 
-ssh -i /home/josef/alexandria-keys.pem -o StrictHostKeyChecking=no ubuntu@$IP << EOF
+ssh -i ~/alexandria-keys.pem -o StrictHostKeyChecking=no ubuntu@$IP << EOF
 
 sudo mkfs -t xfs /dev/nvme0n1
 sudo mkfs -t xfs /dev/nvme1n1
@@ -93,5 +93,5 @@ aws s3 cp s3://alexandria-database/domain_info.tsv /mnt/0/
 
 EOF
 
-echo "ssh -i /home/josef/alexandria-keys.pem -o StrictHostKeyChecking=no ubuntu@$IP"
+echo "ssh -i ~/alexandria-keys.pem -o StrictHostKeyChecking=no ubuntu@$IP"
 

@@ -53,29 +53,41 @@ void FullTextIndexerRunner::run() {
 		result.get();
 	}
 
-	cout << "Done indexing.. Sleeping 100..." << endl;
+	LogInfo("Done indexing.. Sleeping 100...");
+
+	const size_t merge_batch_size = 500;
 
 	ThreadPool merge_pool(FT_NUM_THREADS_MERGING);
 	std::vector<std::future<string>> merge_results;
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
 
-		merge_results.emplace_back(
-			merge_pool.enqueue([this, shard_id] {
-				return run_merge_thread(shard_id);
-			})
-		);
+		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+
+			merge_results.emplace_back(
+				merge_pool.enqueue([this, shard_id] {
+					return run_merge_thread(shard_id);
+				})
+			);
+
+			shard_id++;
+
+		}
+
+		for (auto && result: merge_results) {
+			result.get();
+		}
+		merge_results.clear();
 	}
 
-	for (auto && result: merge_results) {
-		result.get();
-	}
+	LogInfo("Done merging. Starting sort.");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
 		HashTableShard *shard = new HashTableShard(shard_id);
 		shard->sort();
+		delete shard;
 	}
 
 	LogInfo("Done! Uploading.");
@@ -140,6 +152,8 @@ string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
 	FullTextShardBuilder shard(file_name);
 
 	shard.merge("main_index", shard_id);
+
+	LogInfo("Merged shard " + to_string(shard_id));
 
 	return file_name;
 }
