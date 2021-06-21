@@ -9,7 +9,6 @@ FullTextIndexer::FullTextIndexer(int id, const SubSystem *sub_system)
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
 		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
-		shard_builder->truncate();
 		m_shards.push_back(shard_builder);
 	}
 }

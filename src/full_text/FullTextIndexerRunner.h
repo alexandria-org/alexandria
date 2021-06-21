@@ -30,6 +30,11 @@ public:
 	~FullTextIndexerRunner();
 
 	void run();
+	void merge();
+	void sort();
+	void upload();
+	void index_text(const string &text);
+	void index_warc_path(const string warc_path);
 
 private:
 
@@ -41,5 +46,6 @@ private:
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	int download_file(const string &bucket, const string &key, stringstream &stream);
+	void truncate();
 
 };

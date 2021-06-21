@@ -16,6 +16,8 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 
 void FullTextIndexerRunner::run() {
 
+	truncate();
+
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
@@ -26,7 +28,7 @@ void FullTextIndexerRunner::run() {
 	for (const string &path : warc_paths_raw) {
 		warc_paths.push_back(path);
 		num++;
-		//if (num > 10) break;
+		if (num >= 1000) break;
 	}
 
 	vector<vector<string>> warc_path_chunks;
@@ -53,7 +55,14 @@ void FullTextIndexerRunner::run() {
 		result.get();
 	}
 
-	LogInfo("Done indexing.. Sleeping 100...");
+	merge();
+	sort();
+	upload();
+
+}
+
+void FullTextIndexerRunner::merge() {
+	LogInfo("Merging...");
 
 	const size_t merge_batch_size = 500;
 
@@ -80,8 +89,10 @@ void FullTextIndexerRunner::run() {
 		}
 		merge_results.clear();
 	}
+}
 
-	LogInfo("Done merging. Starting sort.");
+void FullTextIndexerRunner::sort() {
+	LogInfo("Sorting...");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
@@ -89,14 +100,47 @@ void FullTextIndexerRunner::run() {
 		shard->sort();
 		delete shard;
 	}
+}
 
-	LogInfo("Done! Uploading.");
+void FullTextIndexerRunner::upload() {
+	LogInfo("Uploading...");
 
 	FullTextIndex fti("main_index");
 	fti.upload(m_sub_system);
 
 	HashTable hash_table("main_index");
 	hash_table.upload(m_sub_system);
+}
+
+void FullTextIndexerRunner::index_text(const string &text) {
+
+	vector<HashTableShardBuilder *> shard_builders;
+	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		shard_builders.push_back(new HashTableShardBuilder(i));
+	}
+
+	stringstream ss(text);
+
+	FullTextIndexer indexer(1, m_sub_system);
+	indexer.add_stream(shard_builders, ss, {1, 2, 3, 4}, {1, 1, 1, 1});
+	indexer.write_cache(m_full_text_mutexes);
+	indexer.flush_cache(m_full_text_mutexes);
+}
+
+void FullTextIndexerRunner::index_warc_path(const string warc_path) {
+
+	vector<HashTableShardBuilder *> shard_builders;
+	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		shard_builders.push_back(new HashTableShardBuilder(i));
+	}
+
+	stringstream stream;
+	FullTextIndexer indexer(1, m_sub_system);
+	if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
+		indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {1, 1, 1, 1});
+		indexer.write_cache(m_full_text_mutexes);
+		indexer.flush_cache(m_full_text_mutexes);
+	}
 
 }
 
@@ -153,7 +197,7 @@ string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
 
 	shard.merge("main_index", shard_id);
 
-	LogInfo("Merged shard " + to_string(shard_id));
+	//LogInfo("Merged shard " + to_string(shard_id));
 
 	return file_name;
 }
@@ -181,4 +225,13 @@ int FullTextIndexerRunner::download_file(const string &bucket, const string &key
 	}
 
 	return 1;
+}
+
+void FullTextIndexerRunner::truncate() {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
+		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
+		shard_builder->truncate();
+		delete shard_builder;
+	}
 }

@@ -55,6 +55,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 		uint64_t word_hash = m_hasher(word);
 		Profiler profiler0("->find: " + word);
 		FullTextResultSet *results = new FullTextResultSet();
+		cout << word_hash % FT_NUM_SHARDS << endl;
+		exit(0);
 		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
 

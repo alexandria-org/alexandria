@@ -2,7 +2,7 @@
 #include "FullTextResultSet.h"
 
 FullTextResultSet::FullTextResultSet()
-: m_len(0)
+: m_len(0), m_has_allocated(false)
 {
 
 }
@@ -20,10 +20,12 @@ size_t FullTextResultSet::len() const {
 
 void FullTextResultSet::allocate(size_t len) {
 
-	m_value_pointer = new uint64_t[len];
-	m_score_pointer = new uint32_t[len];
-	m_has_allocated = true;
-	m_len = len;
+	if (len > 0) {
+		m_value_pointer = new uint64_t[len];
+		m_score_pointer = new uint32_t[len];
+		m_has_allocated = true;
+		m_len = len;
+	}
 
 }
 
