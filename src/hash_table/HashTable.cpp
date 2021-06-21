@@ -5,9 +5,14 @@
 HashTable::HashTable(const string &db_name)
 : m_db_name(db_name)
 {
+	size_t num_items = 0;
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		m_shards.push_back(new HashTableShard(shard_id));
+		auto shard = new HashTableShard(shard_id);
+		num_items += shard->size();
+		m_shards.push_back(shard);
 	}
+
+	cout << "HashTable contains " << num_items << " (" << ((double)num_items/1000000000) << "b) urls" << endl;
 }
 
 HashTable::~HashTable() {

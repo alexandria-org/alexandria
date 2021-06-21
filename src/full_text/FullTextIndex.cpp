@@ -1,5 +1,6 @@
 
 #include "FullTextIndex.h"
+#include "system/Logger.h"
 
 FullTextIndex::FullTextIndex(const string &db_name)
 : m_db_name(db_name)
@@ -18,9 +19,18 @@ FullTextIndex::~FullTextIndex() {
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 	uint64_t word_hash = m_hasher(word);
 
-	//vector<FullTextResult> results = m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
-	//sort_results(results);
-	return {};
+	FullTextResultSet *results = new FullTextResultSet();
+	m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+	LogInfo("Searched for " + word + " and found " + to_string(results->len()) + " results");
+
+	vector<FullTextResult> ret;
+	auto values = results->value_pointer();
+	auto scores = results->score_pointer();
+	for (size_t i = 0; i < results->len(); i++) {
+		ret.push_back(FullTextResult(values[i], scores[i]));
+	}
+	delete results;
+	return ret;
 }
 
 vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int limit, size_t &total_found) {

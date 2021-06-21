@@ -12,6 +12,7 @@
 #include "index/CCIndexMerger.h"
 #include "index/CCLinkIndex.h"
 #include "full_text/FullTextIndex.h"
+#include "full_text/FullTextIndexer.h"
 #include "full_text/FullTextIndexerRunner.h"
 #include "full_text/FullTextResult.h"
 #include "system/Profiler.h"
@@ -23,19 +24,41 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
 	indexer.run();
-	return 0;
+	return 0;*/
 
 	//SubSystem *sub_system = new SubSystem();
 
 	HashTable hash_table("main_index");
 	FullTextIndex fti("main_index");
-	//hash_table.download(sub_system);
-	//fti.download(sub_system);
+	/*hash_table.download(sub_system);
+	fti.download(sub_system);
 
-	//delete sub_system;
-	//return 0;
+	delete sub_system;
+	return 0;*/
+
+	/*SubSystem *sub_system = new SubSystem();
+	hash<string> hasher;
+	const uint64_t hashed_url = hasher("http://aciedd.org/fixing-solar-panels/");
+	FullTextIndexer indexer(1, sub_system);
+	vector<string> words = indexer.get_full_text_words("If you live in an region that receives");
+	for (auto word : words) {
+		vector<FullTextResult> result2 = fti.search_word(word);
+		bool did_find = false;
+		for (auto res : result2) {
+			if (res.m_value == hashed_url) {
+				did_find = true;
+				break;
+			}
+		}
+		if (did_find) {
+			cout << "found url for: " << word << endl;
+		} else {
+			cout << "NOT found url for: " << word << endl;
+		}
+	}
+	return 0;*/
 
 	string query = "";
 	while (query != "quit") {
@@ -62,6 +85,14 @@ int main(int argc, const char **argv) {
 		profiler4.stop();
 		profiler2.stop();
 		cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
+		cout << "Top 10 URLs:" << endl;
+		idx = 0;
+		for (FullTextResult &res : result2) {
+			string url = hash_table.find(res.m_value);
+			cout << "[" << res.m_score << "] " << url << endl;
+			if (idx >= 10) break;
+			idx++;
+		}
 	}
 
 	return 0;

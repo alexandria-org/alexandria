@@ -3,7 +3,7 @@
 #include "system/Logger.h"
 
 HashTableShard::HashTableShard(size_t shard_id)
-: m_shard_id(shard_id), m_loaded(false)
+: m_shard_id(shard_id), m_loaded(false), m_size(0)
 {
 	load();
 }
@@ -33,7 +33,6 @@ void HashTableShard::add(uint64_t key, const string &value) {
 }
 
 string HashTableShard::find(uint64_t key) {
-	Profiler pf1("HashTableShard::find1");
 	const uint64_t key_significant = key >> (64-m_significant);
 	auto iter = m_pos.find(key_significant);
 	if (iter == m_pos.end()) return "";
@@ -64,8 +63,6 @@ string HashTableShard::find(uint64_t key) {
 		}
 	}
 	if (pos == string::npos) return "";
-	Profiler pf2("HashTableShard::find2");
-
 
 	ifstream infile(filename_data(), ios::binary);
 	infile.seekg(pos, ios::beg);
@@ -73,9 +70,7 @@ string HashTableShard::find(uint64_t key) {
 	const size_t buffer_len = HT_DATA_LENGTH + HT_KEY_SIZE;
 	char buffer[buffer_len];
 
-	Profiler pf3("HashTableShard::find3");
 	infile.read(buffer, buffer_len);
-	pf3.stop();
 	return string((char *)&buffer[HT_KEY_SIZE]);
 }
 
@@ -91,6 +86,10 @@ string HashTableShard::filename_pos() const {
 
 size_t HashTableShard::shard_id() const {
 	return m_shard_id;
+}
+
+size_t HashTableShard::size() const {
+	return m_size;
 }
 
 void HashTableShard::sort() {
@@ -154,6 +153,8 @@ void HashTableShard::load() {
 		} while (!infile.eof());
 	}
 	infile.close();
+
+	m_size = keys.size();
 
 	size_t idx = 0;
 	for (uint64_t key : keys) {

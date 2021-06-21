@@ -161,9 +161,6 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 	for (uint64_t key : keys) {
 		size_t i = 0;
 
-		/*sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_score > b.m_score;
-		});*/
 		for (const FullTextResult &res : m_cache[key]) {
 			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);
 			memcpy(&buffer[i + FULL_TEXT_KEY_LEN], &res.m_score, FULL_TEXT_SCORE_LEN);
