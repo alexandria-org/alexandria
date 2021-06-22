@@ -1,4 +1,7 @@
-# cc-parser
+# Alexandria.org
+
+## Documentation
+1. [Index file format (.fti)](/documentation/index_file_format.md)
 
 ## How to build and deploy
 1. Configure the system
