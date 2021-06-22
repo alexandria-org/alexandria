@@ -28,6 +28,7 @@ void FullTextIndexerRunner::run() {
 	for (const string &path : warc_paths_raw) {
 		warc_paths.push_back(path);
 		num++;
+		//if (num >= 10000) break;
 		if (num >= 1000) break;
 	}
 
@@ -55,9 +56,16 @@ void FullTextIndexerRunner::run() {
 		result.get();
 	}
 
+	hash<string> hasher;
+	const size_t shard_id = hasher("the") % FT_NUM_SHARDS;
+	const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
+	FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
+	shard_builder->count_keys(hasher("the"));
+	delete shard_builder;
+
 	merge();
 	sort();
-	upload();
+	//upload();
 
 }
 

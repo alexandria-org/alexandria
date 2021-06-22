@@ -123,7 +123,7 @@ void HashTableShard::sort() {
 	outfile_pos.close();
 	m_sort_pos.clear();
 
-	LogInfo("Sorted shard " + to_string(m_shard_id));
+	//LogInfo("Sorted shard " + to_string(m_shard_id));
 
 }
 
@@ -166,6 +166,6 @@ void HashTableShard::load() {
 		idx++;
 	}
 
-	LogInfo("Loaded shard " + to_string(m_shard_id));
+	//LogInfo("Loaded shard " + to_string(m_shard_id));
 }
 

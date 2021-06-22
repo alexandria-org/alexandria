@@ -1,5 +1,6 @@
 
 #include "FullTextShardBuilder.h"
+#include "FullTextIndex.h"
 #include <cstring>
 #include "system/Logger.h"
 
@@ -19,16 +20,26 @@ void FullTextShardBuilder::add(uint64_t key, uint64_t value, uint32_t score) {
 
 void FullTextShardBuilder::sort_cache() {
 	for (auto &iter : m_cache) {
+		// Make elements unique.
 		sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_score > b.m_score;
-		});
-		size_t max_items = min(m_max_results, iter.second.size());
-		vector<FullTextResult> results(iter.second.begin(), iter.second.begin() + max_items);
-
-		sort(results.begin(), results.end(), [](const FullTextResult &a, const FullTextResult &b) {
 			return a.m_value < b.m_value;
 		});
-		m_cache[iter.first] = results;
+		auto last = unique(iter.second.begin(), iter.second.end());
+		iter.second.erase(last, iter.second.end());
+
+		// Cap at m_max_results
+		if (iter.second.size() > m_max_results) {
+			sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
+				return a.m_score > b.m_score;
+			});
+			iter.second.resize(m_max_results);
+
+			// Order by value again.
+			sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
+				return a.m_value < b.m_value;
+			});
+		}
+
 	}
 }
 
@@ -96,6 +107,11 @@ void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
 	}
 	m_reader.close();
 
+	hash<string> hasher;
+	if (shard_id == hasher("the") % FT_NUM_SHARDS) {
+		cout << "FOUND: " << m_cache[hasher("the")].size() << " keys" << endl;
+	}
+
 	sort_cache();
 
 	save_file(db_name, shard_id);
@@ -134,13 +150,6 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 	size_t pos = 0;
 	for (uint64_t key : keys) {
 
-		// Make elements unique.
-		sort(m_cache[key].begin(), m_cache[key].end(), [](const FullTextResult &a, const FullTextResult &b) {
-			return a.m_value < b.m_value;
-		});
-		auto last = unique(m_cache[key].begin(), m_cache[key].end());
-		m_cache[key].erase(last, m_cache[key].end());
-
 		// Store position and length
 		size_t len = m_cache[key].size() * FULL_TEXT_RECORD_LEN;
 		
@@ -158,8 +167,13 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 	char buffer[buffer_len];
 
 	// Write data.
+	hash<string> hasher;
 	for (uint64_t key : keys) {
 		size_t i = 0;
+
+		if (key == hasher("the")) {
+			cout << "Adding: " << m_cache[hasher("the")].size() << " keys" << endl;
+		}
 
 		for (const FullTextResult &res : m_cache[key]) {
 			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);
@@ -209,5 +223,49 @@ size_t FullTextShardBuilder::disk_size() const {
 
 size_t FullTextShardBuilder::cache_size() const {
 	return m_cache.size();
+}
+
+size_t FullTextShardBuilder::count_keys(uint64_t for_key) const {
+	m_reader.open(filename(), ios::binary);
+	if (!m_reader.is_open()) {
+		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+	}
+
+	char buffer[64];
+
+	m_reader.seekg(0, ios::end);
+	size_t file_size = m_reader.tellg();
+	m_reader.seekg(0, ios::beg);
+
+	size_t num_found = 0;
+	while (!m_reader.eof()) {
+		m_reader.read(buffer, FULL_TEXT_KEY_LEN);
+		uint64_t key = *((uint64_t *)(&buffer[0]));
+
+		if (m_reader.eof()) {
+			break;
+		}
+
+		m_reader.read(buffer, sizeof(size_t));
+		size_t len = *((size_t *)(&buffer[0]));
+
+		for (size_t i = 0; i < len; i++) {
+			m_reader.read(buffer, FULL_TEXT_KEY_LEN);
+			uint64_t value = *((uint64_t *)(&buffer[0]));
+
+			m_reader.read(buffer, FULL_TEXT_SCORE_LEN);
+			uint32_t score = *((uint32_t *)(&buffer[0]));
+
+			if (key == for_key) {
+				num_found++;
+			}
+		}
+		if (m_reader.eof()) break;
+	}
+	m_reader.close();
+
+	cout << "NUM FOUND: " << num_found << endl;
+
+	return num_found;
 }
 

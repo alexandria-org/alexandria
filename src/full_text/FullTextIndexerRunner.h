@@ -18,6 +18,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #define FT_NUM_THREADS_INDEXING 128
+//#define FT_NUM_THREADS_INDEXING 16
 #define FT_NUM_THREADS_MERGING 64
 
 using namespace std;

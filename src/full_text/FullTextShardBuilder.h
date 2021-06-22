@@ -38,6 +38,8 @@ public:
 	size_t disk_size() const;
 	size_t cache_size() const;
 
+	size_t count_keys(uint64_t for_key) const;
+
 private:
 
 	string m_filename;
