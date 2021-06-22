@@ -20,6 +20,13 @@ double Profiler::get() const {
 	return (double)microseconds/1000;
 }
 
+double Profiler::get_micro() const {
+	auto timer_elapsed = chrono::high_resolution_clock::now() - m_start_time;
+	auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
+
+	return (double)microseconds;
+}
+
 void Profiler::stop() {
 	m_has_stopped = true;
 	cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
@@ -28,3 +35,4 @@ void Profiler::stop() {
 void Profiler::print() {
 	cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
 }
+

@@ -14,6 +14,7 @@ public:
 	~Profiler();
 
 	double get() const;
+	double get_micro() const;
 	void stop();
 	void print();
 

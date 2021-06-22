@@ -28,6 +28,64 @@ int main(int argc, const char **argv) {
 	indexer.run();
 	return 0;*/
 
+	ifstream infile("/root/CC-MAIN-20210423161713-20210423191713-00094");
+
+	if (infile.is_open()) {
+
+		string data;
+		size_t sum_compressed = 0;
+		size_t sum_uncompressed = 0;
+		size_t sum_decompress_time = 0;
+		size_t sum = 0;
+		while (getline(infile, data)) {
+
+			stringstream ss(data);
+
+			filtering_istream compress_stream;
+			compress_stream.push(gzip_compressor(gzip_params(gzip::best_compression)));
+			compress_stream.push(ss);
+
+			stringstream res;
+			res << compress_stream.rdbuf();
+
+			string compressed = res.str();
+
+			if (compressed.size() > 1500) {
+				cout << data << endl;
+				cout << "uncompressed size: " << data.size() << endl;
+				cout << "compressed size: " << compressed.size() << endl;
+			}
+
+			Profiler decompress_profile("Uncompress time");
+			stringstream ss2(compressed);
+
+			filtering_istream decompress_stream;
+			decompress_stream.push(gzip_compressor());
+			decompress_stream.push(ss2);
+
+			stringstream res2;
+			res2 << decompress_stream.rdbuf();
+
+			string decompressed = res2.str();
+
+			sum_decompress_time += decompress_profile.get_micro();
+			decompress_profile.stop();
+
+			sum_compressed += compressed.size();
+			sum_uncompressed += data.size();
+
+			sum++;
+		}
+
+		cout << "average compressed: " << ((double)sum_compressed/sum) << endl;
+		cout << "average uncompressed: " << ((double)sum_uncompressed/sum) << endl;
+		cout << "average time to decompress: " << ((double)sum_decompress_time/sum) << " microseconds" << endl;
+
+	}
+
+	return 0;
+
+
 	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
 	//indexer.index_text("http://aciedd.org/fixing-solar-panels/	Fixing Solar Panels ‚Äì blog	blog		Menu Home Search for: Posted in General Fixing Solar Panels Author: Holly Montgomery Published Date: December 24, 2020 Leave a Comment on Fixing Solar Panels Complement your renewable power project with Perfection fashionable solar panel assistance structures. If you live in an region that receives a lot of snow in the winter, becoming able to easily sweep the snow off of your solar panels is a major comfort. If your solar panel contractor advises you that horizontal solar panels are the greatest selection for your solar wants, you do not need to have a particular inverter. The Solar PV panels are then clamped to the rails, keeping the panels really close to the roof to decrease wind loading. For 1 point, solar panels require to face either south or west to get direct sunlight. Once you have bought your solar panel you will need to have to determine on a safe fixing method, our extensive variety of permanent and non permane");
 	indexer.index_warc_path("/crawl-data/CC-MAIN-2021-17/segments/1618039596883.98/warc/CC-MAIN-20210423161713-20210423191713-00094.gz");
