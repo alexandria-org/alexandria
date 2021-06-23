@@ -10,4 +10,4 @@
 ```
 Data records are structured like this:
 8 bytes total number of results
-len(k) * (8 bytes unsigned long URL id, 4 bytes unsigned integer score, 2 bytes position in word sequence)
+len(k) * (8 bytes unsigned long URL id, 4 bytes unsigned integer score)
