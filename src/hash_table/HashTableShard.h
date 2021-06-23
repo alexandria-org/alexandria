@@ -18,10 +18,9 @@ class HashTableShard {
 
 public:
 
-	HashTableShard(size_t shard_id);
+	HashTableShard(const string &db_name, size_t shard_id);
 	~HashTableShard();
 
-	void add(uint64_t key, const string &value);
 	string find(uint64_t key);
 	void sort();
 
@@ -37,6 +36,7 @@ private:
 	// Maps keys to positions in file.
 	unordered_map<uint64_t, pair<size_t, size_t>> m_pos;
 	map<uint64_t, size_t> m_sort_pos;
+	const string m_db_name;
 	size_t m_shard_id;
 	size_t m_size;
 	bool m_loaded;

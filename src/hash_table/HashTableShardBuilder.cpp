@@ -2,9 +2,8 @@
 #include "HashTableShardBuilder.h"
 #include "system/Logger.h"
 
-HashTableShardBuilder::HashTableShardBuilder(size_t shard_id)
-//: m_shard_id(shard_id), m_cache_limit(50 + rand() % 50)
-: m_shard_id(shard_id), m_cache_limit(150 + rand() % 50)
+HashTableShardBuilder::HashTableShardBuilder(const string &db_name, size_t shard_id)
+: m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(150 + rand() % 50)
 {
 
 }
@@ -40,6 +39,11 @@ void HashTableShardBuilder::write() {
 	m_cache.clear();
 }
 
+void HashTableShardBuilder::truncate() {
+	ofstream outfile(filename_data(), ios::binary | ios::trunc);
+	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
+}
+
 void HashTableShardBuilder::sort() {
 
 }
@@ -50,11 +54,11 @@ void HashTableShardBuilder::add(uint64_t key, const string &value) {
 
 string HashTableShardBuilder::filename_data() const {
 	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + to_string(m_shard_id) + ".data";
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
 }
 
 string HashTableShardBuilder::filename_pos() const {
 	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + to_string(m_shard_id) + ".pos";
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
 }
 

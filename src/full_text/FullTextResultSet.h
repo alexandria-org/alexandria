@@ -14,9 +14,11 @@ public:
 	~FullTextResultSet();
 
 	size_t len() const;
+	size_t total_num_results() const;
 	void allocate(size_t len);
 	uint64_t *value_pointer();
 	uint32_t *score_pointer();
+	void set_total_num_results(size_t total_num_results);
 
 private:
 
@@ -24,5 +26,6 @@ private:
 	uint32_t *m_score_pointer;
 	bool m_has_allocated;
 	size_t m_len;
+	size_t m_total_num_results;
 
 };

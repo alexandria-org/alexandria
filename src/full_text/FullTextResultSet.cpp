@@ -18,6 +18,10 @@ size_t FullTextResultSet::len() const {
 	return m_len;
 }
 
+size_t FullTextResultSet::total_num_results() const {
+	return m_total_num_results;
+}
+
 void FullTextResultSet::allocate(size_t len) {
 
 	if (len > 0) {
@@ -35,5 +39,9 @@ uint64_t *FullTextResultSet::value_pointer() {
 
 uint32_t *FullTextResultSet::score_pointer() {
 	return m_score_pointer;
+}
+
+void FullTextResultSet::set_total_num_results(size_t total_num_results) {
+	m_total_num_results = total_num_results;
 }
 

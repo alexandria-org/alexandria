@@ -32,6 +32,7 @@ public:
 	~HashTable();
 
 	void add(uint64_t key, const string &value);
+	void truncate();
 	string find(uint64_t key);
 
 	void upload(const SubSystem *sub_system);
@@ -40,7 +41,7 @@ public:
 private:
 
 	vector<HashTableShard *> m_shards;
-	string m_db_name;
+	const string m_db_name;
 
 	void run_upload_thread(const SubSystem *sub_system, const HashTableShard *shard);
 	void run_download_thread(const SubSystem *sub_system, const HashTableShard *shard);

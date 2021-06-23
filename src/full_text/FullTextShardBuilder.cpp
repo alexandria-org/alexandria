@@ -27,6 +27,8 @@ void FullTextShardBuilder::sort_cache() {
 		auto last = unique(iter.second.begin(), iter.second.end());
 		iter.second.erase(last, iter.second.end());
 
+		m_total_results[iter.first] = iter.second.size();
+
 		// Cap at m_max_results
 		if (iter.second.size() > m_max_results) {
 			sort(iter.second.begin(), iter.second.end(), [](const FullTextResult &a, const FullTextResult &b) {
@@ -71,6 +73,7 @@ void FullTextShardBuilder::append() {
 
 void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
 	m_cache.clear();
+	m_total_results.clear();
 	// Read the whole cache.
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
@@ -174,6 +177,8 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 		if (key == hasher("the")) {
 			cout << "Adding: " << m_cache[hasher("the")].size() << " keys" << endl;
 		}
+
+		m_writer.write((char *)&(m_total_results[key]), sizeof(size_t));
 
 		for (const FullTextResult &res : m_cache[key]) {
 			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);

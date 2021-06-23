@@ -4,7 +4,7 @@ set(CMAKE_C_COMPILER /usr/bin/gcc-10)
 set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O3 -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 project(cc_parser LANGUAGES CXX)
 
 find_package(aws-lambda-runtime REQUIRED)

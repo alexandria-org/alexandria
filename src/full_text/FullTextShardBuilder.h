@@ -48,6 +48,7 @@ private:
 	const size_t m_max_results = 10000000;
 
 	map<uint64_t, vector<FullTextResult>> m_cache;
+	map<uint64_t, size_t> m_total_results;
 
 	void save_file(const string &db_name, size_t shard_id);
 

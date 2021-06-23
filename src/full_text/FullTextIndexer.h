@@ -26,6 +26,8 @@ public:
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
 		const vector<size_t> &cols, const vector<uint32_t> &scores);
+	void add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
+		uint32_t score);
 	void write_cache(mutex *write_mutexes);
 	void flush_cache(mutex *write_mutexes);
 

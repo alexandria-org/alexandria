@@ -46,6 +46,20 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 	}
 }
 
+void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
+		uint32_t score) {
+
+	uint64_t key_hash = m_hasher(key);
+	shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, key);
+
+	add_data_to_shards(key, text, score);
+
+	// sort shards.
+	for (FullTextShardBuilder *shard : m_shards) {
+		shard->sort_cache();
+	}
+}
+
 void FullTextIndexer::write_cache(mutex *write_mutexes) {
 	size_t idx = 0;
 	for (FullTextShardBuilder *shard : m_shards) {

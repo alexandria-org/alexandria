@@ -1,5 +1,6 @@
 
 #include "HashTable.h"
+#include "HashTableShardBuilder.h"
 #include "system/Logger.h"
 
 HashTable::HashTable(const string &db_name)
@@ -7,7 +8,7 @@ HashTable::HashTable(const string &db_name)
 {
 	size_t num_items = 0;
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		auto shard = new HashTableShard(shard_id);
+		auto shard = new HashTableShard(m_db_name, shard_id);
 		num_items += shard->size();
 		m_shards.push_back(shard);
 	}
@@ -24,8 +25,20 @@ HashTable::~HashTable() {
 
 void HashTable::add(uint64_t key, const string &value) {
 
-	m_shards[key % HT_NUM_SHARDS]->add(key, value);
+	const size_t shard_id = key % HT_NUM_SHARDS;
+	HashTableShardBuilder builder(m_db_name, shard_id);
 
+	builder.add(key, value);
+
+	builder.write();
+
+}
+
+void HashTable::truncate() {
+	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+		HashTableShardBuilder builder(m_db_name, shard_id);
+		builder.truncate();
+	}
 }
 
 string HashTable::find(uint64_t key) {

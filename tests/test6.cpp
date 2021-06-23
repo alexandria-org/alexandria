@@ -11,21 +11,43 @@ using namespace std;
 int test6_1(void) {
 	int ok = 1;
 
-	HashTable hash_table("main_index");
-	hash_table.add(123, "hejsan");
-
-	ok = ok && hash_table.find(123) == "hejsan";
-	ok = ok && hash_table.find(1234) == "";
-
-	hash_table.add(123, "testing");
-	ok = ok && hash_table.find(123) == "testing";
-
-	for (size_t i = 200; i < 210; i++) {
-		hash_table.add(i, "testing" + to_string(i));
+	{
+		HashTable hash_table("test_index");
+		hash_table.truncate();
+		hash_table.add(123, "hejsan");
 	}
 
-	for (size_t i = 200; i < 210; i++) {
-		ok = ok && (hash_table.find(i) == "testing" + to_string(i));
+	{
+		HashTable hash_table("test_index");
+		ok = ok && hash_table.find(123) == "hejsan";
+		ok = ok && hash_table.find(1234) == "";
+	}
+
+	{
+		HashTable hash_table("test_index");
+		hash_table.truncate();
+		hash_table.add(123, "testing");
+	}
+
+	{
+		HashTable hash_table("test_index");
+		ok = ok && hash_table.find(123) == "testing";
+	}
+
+	{
+		HashTable hash_table("test_index");
+		hash_table.truncate();
+
+		for (size_t i = 200; i < 210; i++) {
+			hash_table.add(i, "testing" + to_string(i));
+		}
+	}
+
+	{
+		HashTable hash_table("test_index");
+		for (size_t i = 200; i < 210; i++) {
+			ok = ok && (hash_table.find(i) == "testing" + to_string(i));
+		}
 	}
 
 	return ok;

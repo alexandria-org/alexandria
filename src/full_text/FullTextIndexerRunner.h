@@ -27,7 +27,7 @@ class FullTextIndexerRunner {
 
 public:
 
-	FullTextIndexerRunner(const string &cc_batch);
+	FullTextIndexerRunner(const string &db_name, const string &cc_batch);
 	~FullTextIndexerRunner();
 
 	void run();
@@ -35,18 +35,20 @@ public:
 	void sort();
 	void upload();
 	void index_text(const string &text);
+	void index_text(const string &key, const string &text, uint32_t score);
 	void index_warc_path(const string warc_path);
+	void truncate();
 
 private:
 
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
+	const string m_db_name;
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 	mutex m_full_text_mutexes[FT_NUM_SHARDS];
 
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	int download_file(const string &bucket, const string &key, stringstream &stream);
-	void truncate();
 
 };

@@ -54,6 +54,11 @@ void FullTextShard::find(uint64_t key, FullTextResultSet *result_set) {
 
 	reader.seekg(m_data_start + pos, ios::beg);
 
+	// Read total number of results.
+	size_t total_num_results;
+	reader.read((char *)&total_num_results, sizeof(size_t));
+	result_set->set_total_num_results(total_num_results);
+
 	const size_t num_records = len / FULL_TEXT_RECORD_SIZE;
 
 	result_set->allocate(num_records);

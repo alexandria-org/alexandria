@@ -2,34 +2,14 @@
 #include "HashTableShard.h"
 #include "system/Logger.h"
 
-HashTableShard::HashTableShard(size_t shard_id)
-: m_shard_id(shard_id), m_loaded(false), m_size(0)
+HashTableShard::HashTableShard(const string &db_name, size_t shard_id)
+: m_db_name(db_name), m_shard_id(shard_id), m_loaded(false), m_size(0)
 {
 	load();
 }
 
 HashTableShard::~HashTableShard() {
 
-}
-
-void HashTableShard::add(uint64_t key, const string &value) {
-	/*
-	ofstream outfile(filename_data(), ios::binary | ios::app);
-	const size_t cur_pos = (size_t)outfile.tellp();
-	outfile.write((char *)&key, HT_KEY_SIZE);
-
-	size_t data_len = min(value.size(), (size_t)HT_DATA_LENGTH);
-	char buffer[HT_DATA_LENGTH];
-	memset(buffer, '\0', HT_DATA_LENGTH);
-	memcpy(buffer, value.c_str(), data_len);
-
-	outfile.write(buffer, HT_DATA_LENGTH);
-	m_pos[key] = cur_pos;
-
-	ofstream outfile_pos(filename_pos(), ios::binary | ios::app);
-	outfile_pos.write((char *)&key, HT_KEY_SIZE);
-	outfile_pos.write((char *)&cur_pos, sizeof(size_t));
-	*/
 }
 
 string HashTableShard::find(uint64_t key) {
@@ -76,12 +56,12 @@ string HashTableShard::find(uint64_t key) {
 
 string HashTableShard::filename_data() const {
 	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + to_string(m_shard_id) + ".data";
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
 }
 
 string HashTableShard::filename_pos() const {
 	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + to_string(m_shard_id) + ".pos";
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
 }
 
 size_t HashTableShard::shard_id() const {

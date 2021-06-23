@@ -30,6 +30,9 @@ vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 		ret.push_back(FullTextResult(values[i], scores[i]));
 	}
 	delete results;
+
+	sort_results(ret);
+
 	return ret;
 }
 

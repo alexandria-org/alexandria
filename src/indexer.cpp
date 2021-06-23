@@ -24,7 +24,7 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 	indexer.run();
 	return 0;*/
 
@@ -86,7 +86,7 @@ int main(int argc, const char **argv) {
 	return 0;
 
 
-	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 	//indexer.index_text("http://aciedd.org/fixing-solar-panels/	Fixing Solar Panels ‚Äì blog	blog		Menu Home Search for: Posted in General Fixing Solar Panels Author: Holly Montgomery Published Date: December 24, 2020 Leave a Comment on Fixing Solar Panels Complement your renewable power project with Perfection fashionable solar panel assistance structures. If you live in an region that receives a lot of snow in the winter, becoming able to easily sweep the snow off of your solar panels is a major comfort. If your solar panel contractor advises you that horizontal solar panels are the greatest selection for your solar wants, you do not need to have a particular inverter. The Solar PV panels are then clamped to the rails, keeping the panels really close to the roof to decrease wind loading. For 1 point, solar panels require to face either south or west to get direct sunlight. Once you have bought your solar panel you will need to have to determine on a safe fixing method, our extensive variety of permanent and non permane");
 	indexer.index_warc_path("/crawl-data/CC-MAIN-2021-17/segments/1618039596883.98/warc/CC-MAIN-20210423161713-20210423191713-00094.gz");
 	indexer.merge();
@@ -104,7 +104,7 @@ int main(int argc, const char **argv) {
 	}
 	return 0;*/
 
-	/*FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 	indexer.run();
 	return 0;*/
 
@@ -207,7 +207,7 @@ int main(int argc, const char **argv) {
 	//CCIndexRunner<CCLinkIndex> indexer("CC-MAIN-2021-04");
 	//indexer.run_all();
 
-	//FullTextIndexerRunner indexer("CC-MAIN-2021-17");
+	//FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 	//indexer.run();
 
 	//CCIndexMerger merger("CC-MAIN-2021-17", "main");
