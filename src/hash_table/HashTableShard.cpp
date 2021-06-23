@@ -47,11 +47,29 @@ string HashTableShard::find(uint64_t key) {
 	ifstream infile(filename_data(), ios::binary);
 	infile.seekg(pos, ios::beg);
 
-	const size_t buffer_len = HT_DATA_LENGTH + HT_KEY_SIZE;
-	char buffer[buffer_len];
+	// Read key
+	uint64_t read_key;
+	infile.read((char *)&read_key, sizeof(uint64_t));
 
-	infile.read(buffer, buffer_len);
-	return string((char *)&buffer[HT_KEY_SIZE]);
+	// Read data length.
+	size_t data_len;
+	infile.read((char *)&data_len, sizeof(size_t));
+
+	char *buffer = new char[data_len];
+
+	infile.read(buffer, data_len);
+	stringstream ss(string(buffer, data_len));
+
+	filtering_istream decompress_stream;
+	decompress_stream.push(gzip_decompressor());
+	decompress_stream.push(ss);
+
+	stringstream decompressed;
+	decompressed << decompress_stream.rdbuf();
+
+	delete buffer;
+
+	return decompressed.str();
 }
 
 string HashTableShard::filename_data() const {

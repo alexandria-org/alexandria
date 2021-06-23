@@ -56,17 +56,20 @@ int test6_1(void) {
 int test6_2(void) {
 	int ok = 1;
 
-	/*SubSystem *sub_system = new SubSystem();
+	/* Test to add and retrieve large objects. */
 
-	FullTextIndex fti("main_index");
-	fti.upload(sub_system);
-	fti.download(sub_system);
+	{
+		HashTable hash_table("test_index");
+		hash_table.truncate();
 
-	HashTable hash_table("main_index");
-	hash_table.upload(sub_system);
-	hash_table.download(sub_system);
+		string long_data(10000, 'a');
+		hash_table.add(1337, long_data);
+	}
 
-	delete sub_system;*/
+	{
+		HashTable hash_table("test_index");
+		ok = ok && hash_table.find(1337) == string(10000, 'a');
+	}
 
 	return ok;
 }

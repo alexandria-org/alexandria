@@ -22,18 +22,29 @@ void HashTableShardBuilder::write() {
 
 	size_t last_pos = outfile.tellp();
 
-	char buffer[HT_DATA_LENGTH];
 	for (const auto &iter : m_cache) {
 		outfile.write((char *)&iter.first, HT_KEY_SIZE);
 
-		size_t data_len = min(iter.second.size(), (size_t)HT_DATA_LENGTH);
-		memset(buffer, '\0', HT_DATA_LENGTH);
-		memcpy(buffer, iter.second.c_str(), data_len);
-		outfile.write(buffer, HT_DATA_LENGTH);
+		// Compress data
+		stringstream ss(iter.second);
+
+		filtering_istream compress_stream;
+		compress_stream.push(gzip_compressor());
+		compress_stream.push(ss);
+
+		stringstream compressed;
+		compressed << compress_stream.rdbuf();
+
+		string compressed_string(compressed.str());
+
+		const size_t data_len = compressed_string.size();
+		outfile.write((char *)&data_len, sizeof(size_t));
+
+		outfile.write(compressed_string.c_str(), data_len);
 
 		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
 		outfile_pos.write((char *)&last_pos, sizeof(size_t));
-		last_pos += HT_DATA_LENGTH + HT_KEY_SIZE;
+		last_pos += data_len + HT_KEY_SIZE + sizeof(size_t);
 	}
 
 	m_cache.clear();

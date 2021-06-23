@@ -2,14 +2,9 @@
 
 #pragma once
 
-#define HT_PORT_START 20000
 #define HT_NUM_BUCKETS 8
 #define HT_NUM_SHARDS 16384
-#define HT_DATA_LENGTH 1500
 #define HT_KEY_SIZE 8
-#define HT_MESSAGE_ADD 1
-#define HT_MESSAGE_FIND 2
-#define HT_MESSAGE_STOP 3
 
 #include <iostream>
 #include <thread>
