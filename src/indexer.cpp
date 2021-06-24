@@ -39,8 +39,7 @@ int main(int argc, const char **argv) {
 		string query = "";
 		while (query != "quit") {
 			cout << "query> ";
-			//getline(cin, query);
-			query = "test";
+			getline(cin, query);
 
 			if (query == "quit") break;
 			if (query == "") continue;
@@ -71,7 +70,6 @@ int main(int argc, const char **argv) {
 				if (idx >= 10) break;
 				idx++;
 			}
-			break;
 		}
 
 		return 0;

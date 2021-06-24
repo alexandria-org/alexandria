@@ -33,6 +33,9 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		uint64_t key_hash = m_hasher(col_values[0]);
 		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, col_values[0]);
 
+		const string site_colon = "site:" + url.host() + " site:www." + url.host(); 
+		add_data_to_shards(col_values[0], site_colon, harmonic);
+
 		size_t score_index = 0;
 		for (size_t col_index : cols) {
 			add_data_to_shards(col_values[0], col_values[col_index], scores[score_index]*harmonic);
