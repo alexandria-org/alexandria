@@ -159,7 +159,7 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 		v_pos.push_back(pos);
 		v_len.push_back(len);
 
-		pos += len;
+		pos += len + sizeof(size_t);
 	}
 	
 	m_writer.write((char *)v_pos.data(), keys.size() * 8);

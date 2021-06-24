@@ -29,7 +29,7 @@ void FullTextIndexerRunner::run() {
 		warc_paths.push_back(path);
 		num++;
 		//if (num >= 10000) break;
-		if (num >= 1000) break;
+		if (num >= 10) break;
 	}
 
 	vector<vector<string>> warc_path_chunks;
@@ -172,6 +172,9 @@ void FullTextIndexerRunner::truncate() {
 		shard_builder->truncate();
 		delete shard_builder;
 	}
+
+	HashTable hash_table("main_index");
+	hash_table.truncate();
 }
 
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {

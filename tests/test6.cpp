@@ -32,20 +32,31 @@ int test6_1(void) {
 	{
 		HashTable hash_table("test_index");
 		ok = ok && hash_table.find(123) == "testing";
+		ok = ok && hash_table.find(123) == "testing";
 	}
 
 	{
 		HashTable hash_table("test_index");
 		hash_table.truncate();
 
-		for (size_t i = 200; i < 210; i++) {
+		for (size_t i = 20000; i < 20010; i++) {
 			hash_table.add(i, "testing" + to_string(i));
 		}
+
+		for (size_t i = 1; i < 20000; i++) {
+			hash_table.add(i, "testing" + to_string(i));
+		}
+
+		for (size_t i = 30000; i < 40000; i++) {
+			hash_table.add(i, "testing" + to_string(i));
+		}
+
+		hash_table.sort();
 	}
 
 	{
 		HashTable hash_table("test_index");
-		for (size_t i = 200; i < 210; i++) {
+		for (size_t i = 20000; i < 20010; i++) {
 			ok = ok && (hash_table.find(i) == "testing" + to_string(i));
 		}
 	}
@@ -68,6 +79,8 @@ int test6_2(void) {
 
 	{
 		HashTable hash_table("test_index");
+		ok = ok && hash_table.find(1337) == string(10000, 'a');
+		ok = ok && hash_table.find(1337) == string(10000, 'a');
 		ok = ok && hash_table.find(1337) == string(10000, 'a');
 	}
 

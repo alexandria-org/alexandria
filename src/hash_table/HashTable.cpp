@@ -81,6 +81,13 @@ void HashTable::download(const SubSystem *sub_system) {
 	}
 }
 
+void HashTable::sort() {
+
+	for (HashTableShard *shard : m_shards) {
+		shard->sort();
+	}
+}
+
 void HashTable::run_upload_thread(const SubSystem *sub_system, const HashTableShard *shard) {
 	ifstream infile_data(shard->filename_data());
 	if (infile_data.is_open()) {

@@ -127,6 +127,9 @@ void HashTableShard::sort() {
 
 
 void HashTableShard::load() {
+	if (m_shard_id == 13381) {
+		cout << "asd" << endl;
+	}
 	m_loaded = true;
 	ifstream infile(filename_pos(), ios::binary);
 	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);

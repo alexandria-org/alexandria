@@ -32,6 +32,7 @@ public:
 
 	void upload(const SubSystem *sub_system);
 	void download(const SubSystem *sub_system);
+	void sort();
 
 private:
 

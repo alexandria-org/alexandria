@@ -24,10 +24,73 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
-	indexer.run();
-	return 0;*/
+	if (argc == 1) {
+		FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
+		indexer.run();
+		return 0;
+	}
 
+	const string arg(argv[1]);
+
+	if (arg == "query") {
+		HashTable hash_table("main_index");
+		FullTextIndex fti("main_index");
+
+		string query = "";
+		while (query != "quit") {
+			cout << "query> ";
+			//getline(cin, query);
+			query = "test";
+
+			if (query == "quit") break;
+			if (query == "") continue;
+
+			Profiler profiler2("Total");
+			Profiler profiler3("FTI");
+			size_t total;
+			vector<FullTextResult> result2 = fti.search_phrase(query, 1000, total);
+			profiler3.stop();
+
+			Profiler profiler4("HT");
+			size_t idx = 0;
+			for (FullTextResult &res : result2) {
+				cout << res.m_value << endl;
+				string url = hash_table.find(res.m_value);
+				cout << "found ID: " << res.m_value << " score (" << res.m_score << ")" << endl;
+				cout << "found url: " << url << endl;
+				idx++;
+			}
+			profiler4.stop();
+			profiler2.stop();
+			cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
+			cout << "Top 10 URLs:" << endl;
+			idx = 0;
+			for (FullTextResult &res : result2) {
+				string url = hash_table.find(res.m_value);
+				cout << "[" << res.m_score << "] " << url << endl;
+				if (idx >= 10) break;
+				idx++;
+			}
+			break;
+		}
+
+		return 0;
+	}
+
+	if (arg == "download") {
+		SubSystem *sub_system = new SubSystem();
+		HashTable hash_table("main_index");
+		FullTextIndex fti("main_index");
+		hash_table.download(sub_system);
+		fti.download(sub_system);
+
+		delete sub_system;
+		return 0;
+	}
+
+	return 0;
+
+	/*
 	ifstream infile("/root/CC-MAIN-20210423161713-20210423191713-00094");
 
 	if (infile.is_open()) {
@@ -85,6 +148,8 @@ int main(int argc, const char **argv) {
 
 	return 0;
 
+	*/
+
 
 	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 	//indexer.index_text("http://aciedd.org/fixing-solar-panels/	Fixing Solar Panels ‚Äì blog	blog		Menu Home Search for: Posted in General Fixing Solar Panels Author: Holly Montgomery Published Date: December 24, 2020 Leave a Comment on Fixing Solar Panels Complement your renewable power project with Perfection fashionable solar panel assistance structures. If you live in an region that receives a lot of snow in the winter, becoming able to easily sweep the snow off of your solar panels is a major comfort. If your solar panel contractor advises you that horizontal solar panels are the greatest selection for your solar wants, you do not need to have a particular inverter. The Solar PV panels are then clamped to the rails, keeping the panels really close to the roof to decrease wind loading. For 1 point, solar panels require to face either south or west to get direct sunlight. Once you have bought your solar panel you will need to have to determine on a safe fixing method, our extensive variety of permanent and non permane");
@@ -104,78 +169,7 @@ int main(int argc, const char **argv) {
 	}
 	return 0;*/
 
-	/*FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
-	indexer.run();
-	return 0;*/
-
 	//SubSystem *sub_system = new SubSystem();
-
-	HashTable hash_table("main_index");
-	FullTextIndex fti("main_index");
-	/*hash_table.download(sub_system);
-	fti.download(sub_system);
-
-	delete sub_system;
-	return 0;*/
-
-	/*SubSystem *sub_system = new SubSystem();
-	hash<string> hasher;
-	const uint64_t hashed_url = hasher("http://aciedd.org/fixing-solar-panels/");
-	FullTextIndexer indexer(1, sub_system);
-	vector<string> words = indexer.get_full_text_words("If you live in an region that receives");
-	for (auto word : words) {
-		vector<FullTextResult> result2 = fti.search_word(word);
-		bool did_find = false;
-		for (auto res : result2) {
-			if (res.m_value == hashed_url) {
-				did_find = true;
-				break;
-			}
-		}
-		if (did_find) {
-			cout << "found url for: " << word << endl;
-		} else {
-			cout << "NOT found url for: " << word << endl;
-		}
-	}
-	return 0;*/
-
-	string query = "";
-	while (query != "quit") {
-		cout << "query> ";
-		getline(cin, query);
-
-		if (query == "quit") break;
-		if (query == "") continue;
-
-		Profiler profiler2("Total");
-		Profiler profiler3("FTI");
-		size_t total;
-		vector<FullTextResult> result2 = fti.search_phrase(query, 1000, total);
-		profiler3.stop();
-
-		Profiler profiler4("HT");
-		size_t idx = 0;
-		for (FullTextResult &res : result2) {
-			string url = hash_table.find(res.m_value);
-			cout << "found ID: " << res.m_value << " score (" << res.m_score << ")" << endl;
-			cout << "found url: " << url << endl;
-			idx++;
-		}
-		profiler4.stop();
-		profiler2.stop();
-		cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
-		cout << "Top 10 URLs:" << endl;
-		idx = 0;
-		for (FullTextResult &res : result2) {
-			string url = hash_table.find(res.m_value);
-			cout << "[" << res.m_score << "] " << url << endl;
-			if (idx >= 10) break;
-			idx++;
-		}
-	}
-
-	return 0;
 
 	/*ofstream outfile("/mnt/example.data", ios::binary | ios::trunc);
 
