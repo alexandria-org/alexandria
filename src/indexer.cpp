@@ -75,6 +75,54 @@ int main(int argc, const char **argv) {
 		return 0;
 	}
 
+	if (arg == "test") {
+
+		const string input_query = "the";
+		HashTable hash_table("main_index");
+		FullTextIndex fti("main_index");
+
+		string query = "";
+		while (query != "quit") {
+			cout << "query> ";
+
+			query = input_query;
+
+			if (query == "quit") break;
+			if (query == "") continue;
+
+			Profiler profiler2("Total");
+			Profiler profiler3("FTI");
+			size_t total;
+			vector<FullTextResult> result2 = fti.search_phrase(query, 1000, total);
+			profiler3.stop();
+
+			Profiler profiler4("HT");
+			size_t idx = 0;
+			for (FullTextResult &res : result2) {
+				cout << res.m_value << endl;
+				string url = hash_table.find(res.m_value);
+				cout << "found ID: " << res.m_value << " score (" << res.m_score << ")" << endl;
+				cout << "found url: " << url << endl;
+				idx++;
+			}
+			profiler4.stop();
+			profiler2.stop();
+			cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
+			cout << "Top 10 URLs:" << endl;
+			idx = 0;
+			for (FullTextResult &res : result2) {
+				string url = hash_table.find(res.m_value);
+				cout << "[" << res.m_score << "] " << url << endl;
+				if (idx >= 10) break;
+				idx++;
+			}
+
+			break;
+		}
+
+		return 0;
+	}
+
 	if (arg == "download") {
 		SubSystem *sub_system = new SubSystem();
 		HashTable hash_table("main_index");

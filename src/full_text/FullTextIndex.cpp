@@ -44,6 +44,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 	vector<string> searched_words;
 	map<size_t, FullTextResultSet *> result_map;
+	map<size_t, FullTextResultSet *> or_result_map;
 	
 	bool first_word = true;
 	size_t idx = 0;
@@ -64,9 +65,23 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 		Profiler profiler1("Accumuating "+to_string(results->len())+" results for: " + word);
 
-		result_map[idx] = results;
+		if (results->total_num_results() > results->len()) {
+			or_result_map[idx] = results;
+		} else {
+			result_map[idx] = results;
+		}
 		idx++;
 		total_time += profiler1.get();
+	}
+
+	if (result_map.size() == 0) {
+		result_map = or_result_map;
+		for (auto &iter : or_result_map) {
+			if (iter.second->total_num_results() > total_found) {
+				total_found = iter.second->total_num_results();
+			}
+		}
+		or_result_map.clear();
 	}
 
 	Profiler profiler2("value_intersection");
@@ -85,7 +100,16 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 	}
 	profiler2.stop();
 
-	total_found = score_vector.size();
+	if (total_found == 0) {
+		total_found = score_vector.size();
+	}
+
+	for (auto &iter : result_map) {
+		delete iter.second;
+	}
+	for (auto &iter : or_result_map) {
+		delete iter.second;
+	}
 
 	Profiler profiler3("sorting results");
 	if (result.size() > limit) {
