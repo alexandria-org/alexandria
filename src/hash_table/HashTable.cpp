@@ -13,7 +13,7 @@ HashTable::HashTable(const string &db_name)
 		m_shards.push_back(shard);
 	}
 
-	cout << "HashTable contains " << num_items << " (" << ((double)num_items/1000000000) << "b) urls" << endl;
+	LogInfo("HashTable contains " + to_string(num_items) + " (" + to_string((double)num_items/1000000000) + "b) urls");
 }
 
 HashTable::~HashTable() {

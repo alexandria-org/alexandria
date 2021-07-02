@@ -7,7 +7,6 @@
 #include <map>
 
 #include <fstream>
-#include <functional>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -19,8 +18,8 @@
 #include "file/TsvFile.h"
 #include "system/SubSystem.h"
 
-using namespace boost::iostreams;
 using namespace std;
+using namespace boost::iostreams;
 
 #define CC_HARMONIC_LIMIT 0
 

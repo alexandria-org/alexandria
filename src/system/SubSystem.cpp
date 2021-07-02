@@ -1,20 +1,20 @@
 
 #include "SubSystem.h"
+#include "Logger.h"
 
 SubSystem::SubSystem() {
-	cout << "init aws api" << endl;
+
 	init_aws_api();
-	cout << "done" << endl;
 
 	setenv("AWS_EC2_METADATA_DISABLED", "true", 1);
 	auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>("asd");
 	m_s3_client = new Aws::S3::S3Client(credentialsProvider, get_s3_config());
 
-	cout << "download domain_info.tsv" << endl;
+	LogInfo("download domain_info.tsv");
 	TsvFileS3 domain_index(*m_s3_client, "domain_info.tsv");
 	m_domain_index = new Dictionary(domain_index);
 
-	cout << "download dictionary.tsv" << endl;
+	LogInfo("download dictionary.tsv");
 	TsvFileS3 dictionary(*m_s3_client, "dictionary.tsv");
 
 	m_dictionary = new Dictionary(dictionary);
@@ -31,7 +31,7 @@ SubSystem::~SubSystem() {
 	delete m_domain_index;
 	delete m_s3_client;
 
-	deinit_aws_api();
+	//deinit_aws_api();
 }
 
 const Dictionary *SubSystem::domain_index() const {
@@ -54,7 +54,7 @@ const Aws::S3::S3Client SubSystem::s3_client() const {
 string SubSystem::download_to_string(const string &bucket, const string &key) const {
 
 	Aws::S3::Model::GetObjectRequest request;
-	cout << "Downloading " << bucket << " key: " << key << endl;
+	LogInfo("Downloading " + bucket + " key: " + key);
 	request.SetBucket(bucket);
 	request.SetKey(key);
 
@@ -77,7 +77,7 @@ string SubSystem::download_to_string(const string &bucket, const string &key) co
 bool SubSystem::download_to_stream(const string &bucket, const string &key, ofstream &output_stream) const {
 
 	Aws::S3::Model::GetObjectRequest request;
-	cout << "Downloading " << bucket << " key: " << key << endl;
+	LogInfo("Downloading " + bucket + " key: " + key);
 	request.SetBucket(bucket);
 	request.SetKey(key);
 
@@ -96,7 +96,7 @@ bool SubSystem::download_to_stream(const string &bucket, const string &key, ofst
 
 		return true;
 	} else {
-		cout << "NON SUCCESS" << endl;
+		LogInfo("NON SUCCESS");
 	}
 
 	return false;
@@ -127,7 +127,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 void SubSystem::upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream,
 	size_t retries) const {
 
-	cout << "Uploading " << bucket << " key: " << key << endl;
+	LogInfo("Uploading " + bucket + " key: " + key);
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket(bucket);
@@ -141,7 +141,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 	if (!outcome.IsSuccess()) {
 		// Retry.
 		if (retries > 0) {
-			cout << "Upload failed, retrying for word: " << key << endl;
+			LogInfo("Upload failed, retrying for word: " + key);
 			compress_stream.seekg(0);
 			upload_from_stream(bucket, key, compress_stream, retries - 1);
 		}
@@ -149,6 +149,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 }
 
 void SubSystem::init_aws_api() {
+	LogInfo("init aws api");
 	Aws::SDKOptions options;
 	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Off;
 	options.loggingOptions.logger_create_fn = get_logger_factory();

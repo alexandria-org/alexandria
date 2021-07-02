@@ -1,7 +1,7 @@
 
-#include "LinkResult.h"
+#include "LinkSearchResult.h"
 
-LinkResult::LinkResult(const string &line) {
+LinkSearchResult::LinkSearchResult(const string &line) {
 	stringstream ss(line);
 
 	string col;
@@ -36,38 +36,38 @@ LinkResult::LinkResult(const string &line) {
 	//m_score *= score_modifier(words, query);
 }
 
-LinkResult::~LinkResult() {
+LinkSearchResult::~LinkSearchResult() {
 
 }
 
-string LinkResult::url() const {
+string LinkSearchResult::url() const {
 	return m_url;
 }
 
-string LinkResult::link_text() const {
+string LinkSearchResult::link_text() const {
 	return m_link_text;
 }
 
-string LinkResult::snippet() const {
+string LinkSearchResult::snippet() const {
 	return m_snippet;
 }
 
-double LinkResult::score() const {
+double LinkSearchResult::score() const {
 	return m_score;
 }
 
-string LinkResult::get_host() const {
+string LinkSearchResult::get_host() const {
 	return m_url_obj.host();
 }
 
-bool LinkResult::should_include() const {
+bool LinkSearchResult::should_include() const {
 	return m_should_include;
 }
 
-int LinkResult::centrality() const {
+int LinkSearchResult::centrality() const {
 	return m_centrality;
 }
 
-bool LinkResult::match(const string &query) const {
+bool LinkSearchResult::match(const string &query) const {
 	return lower_case(m_link_text).find(query) != string::npos;
 }

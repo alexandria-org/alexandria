@@ -13,7 +13,7 @@
 
 using namespace std;
 
-#define CC_MAX_WORD_LEN 30
+#define CC_MAX_WORD_LEN 50
 #define IS_MULTIBYTE(ch) ((ch >> 7) && !((ch >> 6) & 0x1))
 
 class TextBase {

@@ -8,14 +8,10 @@
 #include <fstream>
 #include <algorithm>
 
+#include "FullTextIndex.h"
 #include "FullTextResult.h"
-
-#define FULL_TEXT_RECORD_SIZE 12
-#define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
-#define FULL_TEXT_KEY_LEN 8
-#define FULL_TEXT_RECORD_LEN 12
-#define FULL_TEXT_SCORE_LEN 4
-#define FT_INDEXER_MAX_CACHE_SIZE 500
+#include "FullTextAdjustment.h"
+#include "parser/URL.h"
 
 using namespace std;
 
@@ -31,8 +27,11 @@ public:
 	bool full() const;
 	void append();
 	void merge(const string &db_name, size_t shard_id);
+	void apply_adjustment(const string &db_name, size_t shard_id,
+		const unordered_map<uint64_t, uint64_t> &url_domain_map, FullTextAdjustment &adjustments);
 
 	string filename() const;
+	string target_filename(const string &db_name, size_t shard_id) const;
 	void truncate();
 
 	size_t disk_size() const;
@@ -46,6 +45,10 @@ private:
 	mutable ifstream m_reader;
 	ofstream m_writer;
 	const size_t m_max_results = 10000000;
+
+	const size_t m_max_num_keys = 10000000;
+	const size_t m_buffer_len = m_max_num_keys*FULL_TEXT_RECORD_LEN; // 1m elements, each is 12 bytes.
+	char *m_buffer;
 
 	map<uint64_t, vector<FullTextResult>> m_cache;
 	map<uint64_t, size_t> m_total_results;

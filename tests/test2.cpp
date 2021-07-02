@@ -39,7 +39,7 @@ int test2_1(void) {
 	vector<string> words = url_data.get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\
 		jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih");
 
-	ok = ok && words.size() == 7;
+	ok = ok && words.size() == 8;
 	ok = ok && words[0] == "hej";
 	ok = ok && words[1] == "asd";
 	ok = ok && words[2] == "asd";
@@ -47,6 +47,7 @@ int test2_1(void) {
 	ok = ok && words[4] == "heter";
 	ok = ok && words[5] == "josef";
 	ok = ok && words[6] == "cullhed";
+	ok = ok && words[7] == "jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih";
 
 	return ok;
 }

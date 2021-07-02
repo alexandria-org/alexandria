@@ -1,6 +1,7 @@
 
 
 #include "test5.h"
+#include "parser/URL.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
 
@@ -12,19 +13,18 @@ using namespace std;
 int test5_1(void) {
 	int ok = 1;
 
-	std::hash<string> hasher;
-
 	{
 
 		FullTextIndexerRunner indexer("test_db1", "CC-MAIN-2021-17");
 		indexer.truncate();
 		indexer.index_text("http://aciedd.org/fixing-solar-panels/	Fixing Solar Panels ‚Äì blog	blog		Menu Home Search for: Posted in General Fixing Solar Panels Author: Holly Montgomery Published Date: December 24, 2020 Leave a Comment on Fixing Solar Panels Complement your renewable power project with Perfection fashionable solar panel assistance structures. If you live in an region that receives a lot of snow in the winter, becoming able to easily sweep the snow off of your solar panels is a major comfort. If your solar panel contractor advises you that horizontal solar panels are the greatest selection for your solar wants, you do not need to have a particular inverter. The Solar PV panels are then clamped to the rails, keeping the panels really close to the roof to decrease wind loading. For 1 point, solar panels require to face either south or west to get direct sunlight. Once you have bought your solar panel you will need to have to determine on a safe fixing method, our extensive variety of permanent and non permane");
 		indexer.merge();
+		indexer.sort();
 
 		FullTextIndex fti("test_db1");
 		vector<FullTextResult> result = fti.search_word("permanent");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://aciedd.org/fixing-solar-panels/");
+		ok = ok && result[0].m_value == URL("http://aciedd.org/fixing-solar-panels/").hash();
 	}
 
 	{
@@ -35,20 +35,21 @@ int test5_1(void) {
 		indexer.index_text("http://example2.com	title	h1	meta	jag heter test");
 		indexer.index_text("http://example3.com	title	h1	meta	ett två åäö jag testar");
 		indexer.merge();
+		indexer.sort();
 
 		FullTextIndex fti("test_db2");
 
 		vector<FullTextResult> result = fti.search_word("josef");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://example.com");
+		ok = ok && result[0].m_value == URL("http://example.com").hash();
 
 		result = fti.search_word("åäö");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://example3.com");
+		ok = ok && result[0].m_value == URL("http://example3.com").hash();
 
 		result = fti.search_word("testar");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://example3.com");
+		ok = ok && result[0].m_value == URL("http://example3.com").hash();
 	}
 
 	{
@@ -56,11 +57,11 @@ int test5_1(void) {
 
 		vector<FullTextResult> result = fti.search_word("josef");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://example.com");
+		ok = ok && result[0].m_value == URL("http://example.com").hash();
 
 		result = fti.search_word("åäö");
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_value == hasher("http://example3.com");
+		ok = ok && result[0].m_value == URL("http://example3.com").hash();
 
 		result = fti.search_word("jag");
 		ok = ok && result.size() == 2;
@@ -73,14 +74,15 @@ int test5_1(void) {
 		indexer.index_text("http://example2.com", "hej jag heter test", 2);
 		indexer.index_text("http://example3.com", "hej ett två åäö jag", 3);
 		indexer.merge();
+		indexer.sort();
 
 		FullTextIndex fti("test_db3");
 
 		vector<FullTextResult> result = fti.search_word("hej");
 		ok = ok && result.size() == 3;
-		ok = ok && result[0].m_value == hasher("http://example3.com");
-		ok = ok && result[1].m_value == hasher("http://example2.com");
-		ok = ok && result[2].m_value == hasher("http://example.com");
+		ok = ok && result[0].m_value == URL("http://example3.com").hash();
+		ok = ok && result[1].m_value == URL("http://example2.com").hash();
+		ok = ok && result[2].m_value == URL("http://example.com").hash();
 	}
 
 	{
@@ -88,9 +90,9 @@ int test5_1(void) {
 
 		vector<FullTextResult> result = fti.search_word("hej");
 		ok = ok && result.size() == 3;
-		ok = ok && result[0].m_value == hasher("http://example3.com");
-		ok = ok && result[1].m_value == hasher("http://example2.com");
-		ok = ok && result[2].m_value == hasher("http://example.com");
+		ok = ok && result[0].m_value == URL("http://example3.com").hash();
+		ok = ok && result[1].m_value == URL("http://example2.com").hash();
+		ok = ok && result[2].m_value == URL("http://example.com").hash();
 	}
 
 	return ok;
@@ -98,8 +100,6 @@ int test5_1(void) {
 
 int test5_2(void) {
 	int ok = 1;
-
-	std::hash<string> hasher;
 
 	/*
 

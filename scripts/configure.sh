@@ -21,7 +21,7 @@ gunzip zlib-1.2.11.tar.gz
 tar -xvf zlib-1.2.11.tar
 cd zlib-1.2.11
 ./configure
-make
+make -j8
 make install
 cd ..
 
@@ -30,17 +30,18 @@ cd aws-lambda-cpp
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../out -DCPP_STANDARD=17
-make && make install
+make -j8 && make install
 
 cd $base_path
 cd deps
 
 git clone https://github.com/aws/aws-sdk-cpp.git
 cd aws-sdk-cpp
+git checkout tags/1.9.47
 git submodule update --init --recursive
 mkdir build
 cd build
 cmake .. -DBUILD_ONLY="s3;transfer" -DBUILD_SHARED_LIBS=OFF -DENABLE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../out -DENABLE_TESTING=OFF -DBUILD_DEPS=ON -DCPP_STANDARD=17 -DAWS_LIBCRYPTO_LOG_RESOLVE=0
-make
+make -j8
 make install
 

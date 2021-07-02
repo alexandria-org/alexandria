@@ -9,26 +9,27 @@
 #include <algorithm>
 #include <cstring>
 
-#include "FullTextIndex.h"
-#include "FullTextResult.h"
-#include "FullTextResultSet.h"
+#include "LinkIndex.h"
+#include "LinkResult.h"
+#include "LinkResultSet.h"
 
 using namespace std;
 
-class FullTextShard {
+class LinkShard {
 
 public:
 
-	FullTextShard(const string &db_name, size_t shard);
-	~FullTextShard();
+	LinkShard(const string &db_name, size_t shard);
+	~LinkShard();
 
-	void find(uint64_t key, FullTextResultSet *result_set);
+	void find(uint64_t key, LinkResultSet *result_set);
 	void read_keys();
 
 	string filename() const;
 	size_t shard_id() const;
 
 	size_t disk_size() const;
+	size_t cache_size() const;
 
 private:
 
@@ -48,7 +49,7 @@ private:
 	size_t m_len_start;
 	
 	const size_t m_max_num_keys = 10000000;
-	const size_t m_buffer_len = m_max_num_keys*FULL_TEXT_RECORD_LEN; // 1m elements, each is 12 bytes.
+	const size_t m_buffer_len = m_max_num_keys*LI_RECORD_LEN; // 1m elements, each is 12 bytes.
 	char *m_buffer;
 
 };

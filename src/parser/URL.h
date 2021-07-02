@@ -2,6 +2,7 @@
 #pragma once
 
 #include <iostream>
+#include <functional>
 #include <boost/algorithm/string/join.hpp>
 #include "common/common.h"
 #include "system/SubSystem.h"
@@ -15,11 +16,16 @@ class URL : public TextBase {
 public:
 	URL();
 	URL(const string &url);
+	URL(const string &host, const string &path);
 	~URL();
 
 	static string host_reverse(const string &host);
 
 	void set_url_string(const string &url);
+	string str() const;
+	uint64_t hash() const;
+	uint64_t host_hash() const;
+	uint64_t link_hash(const URL &target_url) const;
 	string host() const;
 	string path() const;
 	int harmonic(const SubSystem *sub_system) const;
@@ -30,6 +36,7 @@ public:
 
 private:
 
+	std::hash<std::string> m_hasher;
 	string m_url_string;
 	string m_host;
 	string m_host_reverse;

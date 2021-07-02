@@ -11,11 +11,17 @@
 #include "index/CCIndexRunner.h"
 #include "index/CCIndexMerger.h"
 #include "index/CCLinkIndex.h"
+#include "system/Profiler.h"
+
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
 #include "full_text/FullTextIndexerRunner.h"
 #include "full_text/FullTextResult.h"
-#include "system/Profiler.h"
+
+#include "link_index/LinkIndex.h"
+#include "link_index/LinkIndexer.h"
+#include "link_index/LinkIndexerRunner.h"
+#include "link_index/LinkResult.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;
@@ -31,6 +37,59 @@ int main(int argc, const char **argv) {
 	}
 
 	const string arg(argv[1]);
+
+	if (arg == "link") {
+		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
+		indexer.run();
+		return 0;
+	}
+
+	if (arg == "query_link") {
+		HashTable hash_table("link_index");
+		LinkIndex li("link_index");
+
+		string query = "";
+		while (query != "quit") {
+			cout << "query> ";
+			//getline(cin, query);
+
+			query = "link:users.lawschoolnumbers.com";
+
+			if (query == "quit") break;
+			if (query == "") continue;
+
+			Profiler profiler2("Total");
+			Profiler profiler3("FTI");
+			size_t total;
+			vector<LinkResult> result2 = li.search_phrase(query, 1000, total);
+			profiler3.stop();
+
+			Profiler profiler4("HT");
+			size_t idx = 0;
+			for (LinkResult &res : result2) {
+				cout << res.m_link_hash << endl;
+				string url = hash_table.find(res.m_link_hash);
+				cout << "found ID: " << res.m_link_hash << " score (" << res.m_score << ")" << endl;
+				cout << "found url: " << url << endl;
+				idx++;
+			}
+			profiler4.stop();
+			profiler2.stop();
+			cout << "Found a total of: " << total << " urls and fetched " << idx << " of them" << endl;
+			cout << "Top 10 URLs:" << endl;
+			idx = 0;
+			for (LinkResult &res : result2) {
+				string url = hash_table.find(res.m_link_hash);
+				cout << "[" << res.m_score << "] " << url << endl;
+				if (idx >= 10) break;
+				idx++;
+			}
+
+			break;
+		}
+
+		return 0;
+	}
 
 	if (arg == "query") {
 		HashTable hash_table("main_index");

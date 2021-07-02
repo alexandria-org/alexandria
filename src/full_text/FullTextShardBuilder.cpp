@@ -6,12 +6,14 @@
 
 FullTextShardBuilder::FullTextShardBuilder(const string &file_name)
 : m_filename(file_name) {
+	m_buffer = new char[m_buffer_len];
 }
 
 FullTextShardBuilder::~FullTextShardBuilder() {
 	if (m_reader.is_open()) {
 		m_reader.close();
 	}
+	delete m_buffer;
 }
 
 void FullTextShardBuilder::add(uint64_t key, uint64_t value, uint32_t score) {
@@ -110,11 +112,6 @@ void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
 	}
 	m_reader.close();
 
-	hash<string> hasher;
-	if (shard_id == hasher("the") % FT_NUM_SHARDS) {
-		cout << "FOUND: " << m_cache[hasher("the")].size() << " keys" << endl;
-	}
-
 	sort_cache();
 
 	save_file(db_name, shard_id);
@@ -122,11 +119,121 @@ void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
 	truncate();
 }
 
+void FullTextShardBuilder::apply_adjustment(const string &db_name, size_t shard_id,
+		const unordered_map<uint64_t, uint64_t> &url_domain_map, FullTextAdjustment &adjustments) {
+
+	hash<string> thasher;
+
+	Profiler pf("FullTextShardBuilder::adjust_score_for_domain_link");
+
+	ifstream reader(target_filename(db_name, shard_id), ios::binary);
+	ofstream writer(target_filename(db_name, shard_id), ios::in | ios::out | ios::binary);
+
+	char buffer[64];
+
+	reader.seekg(0, ios::beg);
+	reader.read(buffer, 8);
+
+	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
+
+	char *vector_buffer = new char[num_keys * 8];
+
+	// Read the keys.
+	reader.read(vector_buffer, num_keys * 8);
+	vector<uint64_t> keys;
+	for (size_t i = 0; i < num_keys; i++) {
+		keys.push_back(*((uint64_t *)(&vector_buffer[i*8])));
+	}
+
+	vector<size_t> positions;
+	size_t pos_start = reader.tellg();
+	reader.read(vector_buffer, num_keys * 8);
+	for (size_t i = 0; i < num_keys; i++) {
+		positions.push_back(*((size_t *)(&vector_buffer[i*8])));
+	}
+
+	vector<size_t> lens;
+	size_t len_start = reader.tellg();
+	reader.read(vector_buffer, num_keys * 8);
+	for (size_t i = 0; i < num_keys; i++) {
+		lens.push_back(*((size_t *)(&vector_buffer[i*8])));
+	}
+	delete vector_buffer;
+
+	size_t data_start = len_start + num_keys * 8;
+
+	reader.seekg(data_start, ios::beg);
+
+	size_t domhash = thasher("users.lawschoolnumbers.com");
+
+	Profiler pf2("FullTextShardBuilder::adjust_score_for_domain_link final loop");
+
+	auto host_adjustments = adjustments.host_adjustments();
+	
+	for (size_t key_num = 0; key_num < keys.size(); key_num++) {
+		const uint64_t key = keys[key_num];
+		const size_t pos = positions[key_num];
+		const size_t len = lens[key_num];
+
+		if (host_adjustments.count(key) > 0) {
+
+			// We have adjustments for this key.
+			reader.seekg(data_start + pos, ios::beg);
+
+			// Read total number of results.
+			size_t total_num_results;
+			reader.read((char *)&total_num_results, sizeof(size_t));
+
+			const size_t num_records = len / FULL_TEXT_RECORD_LEN;
+
+			size_t read_bytes = 0;
+			while (read_bytes < len) {
+				size_t read_len = min(m_buffer_len, len);
+				size_t read_start = reader.tellg();
+				reader.read(m_buffer, read_len);
+				read_bytes += read_len;
+
+				size_t num_records_read = read_len / FULL_TEXT_RECORD_LEN;
+				bool did_change = false;
+				for (size_t i = 0; i < num_records_read; i++) {
+					const uint64_t url_hash = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN]);
+					const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
+
+					auto url_domain_iter = url_domain_map.find(url_hash);
+					if (url_domain_iter == url_domain_map.end()) {
+						throw error("Could not find url in url_domain_map");
+					}
+
+					auto find_iter = host_adjustments.find(key);
+					uint32_t new_score = score;
+					for (const auto &iter : find_iter->second) {
+						if (url_domain_iter->second == iter.first) {
+							// Adjust score.
+							new_score += 1000*iter.second.size();
+						}
+					}
+					if (score != new_score) {
+						did_change = true;
+						memcpy(&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN], &new_score, sizeof(uint32_t));
+					}
+				}
+
+				if (did_change) {
+					writer.seekp(read_start, ios::beg);
+					writer.write(m_buffer, read_len);
+				}
+			}
+		}
+	}
+
+	writer.close();
+}
+
 void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 
 	vector<uint64_t> keys;
 
-	const string filename = "/mnt/"+to_string(shard_id % 8)+"/full_text/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
+	const string filename = target_filename(db_name, shard_id);
 
 	m_writer.open(filename, ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
@@ -174,10 +281,6 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 	for (uint64_t key : keys) {
 		size_t i = 0;
 
-		if (key == hasher("the")) {
-			cout << "Adding: " << m_cache[hasher("the")].size() << " keys" << endl;
-		}
-
 		m_writer.write((char *)&(m_total_results[key]), sizeof(size_t));
 
 		for (const FullTextResult &res : m_cache[key]) {
@@ -200,6 +303,10 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 
 string FullTextShardBuilder::filename() const {
 	return m_filename;
+}
+
+string FullTextShardBuilder::target_filename(const string &db_name, size_t shard_id) const {
+	return "/mnt/"+to_string(shard_id % 8)+"/full_text/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
 }
 
 void FullTextShardBuilder::truncate() {
@@ -268,8 +375,6 @@ size_t FullTextShardBuilder::count_keys(uint64_t for_key) const {
 		if (m_reader.eof()) break;
 	}
 	m_reader.close();
-
-	cout << "NUM FOUND: " << num_found << endl;
 
 	return num_found;
 }

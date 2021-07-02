@@ -1,52 +1,31 @@
 
-#include "FullTextIndex.h"
+#include "LinkIndex.h"
 #include "system/Logger.h"
 
-FullTextIndex::FullTextIndex(const string &db_name)
+LinkIndex::LinkIndex(const string &db_name)
 : m_db_name(db_name)
 {
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		m_shards.push_back(new FullTextShard(m_db_name, shard_id));
+	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
+		m_shards.push_back(new LinkShard(m_db_name, shard_id));
 	}
-	read_url_to_domain();
 }
 
-FullTextIndex::~FullTextIndex() {
-	for (FullTextShard *shard : m_shards) {
+LinkIndex::~LinkIndex() {
+	for (LinkShard *shard : m_shards) {
 		delete shard;
 	}
 }
 
-vector<FullTextResult> FullTextIndex::search_word(const string &word) {
-	uint64_t word_hash = m_hasher(word);
-
-	FullTextResultSet *results = new FullTextResultSet();
-	m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
-	LogInfo("Searched for " + word + " and found " + to_string(results->len()) + " results");
-
-	vector<FullTextResult> ret;
-	auto values = results->value_pointer();
-	auto scores = results->score_pointer();
-	for (size_t i = 0; i < results->len(); i++) {
-		ret.push_back(FullTextResult(values[i], scores[i]));
-	}
-	delete results;
-
-	sort_results(ret);
-
-	return ret;
-}
-
-vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int limit, size_t &total_found) {
+vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, size_t &total_found) {
 
 	total_found = 0;
 
 	vector<string> words = get_full_text_words(phrase);
 
 	vector<string> searched_words;
-	map<size_t, FullTextResultSet *> result_map;
-	map<size_t, FullTextResultSet *> or_result_map;
-	
+	map<size_t, LinkResultSet *> result_map;
+	map<size_t, LinkResultSet *> or_result_map;
+
 	size_t idx = 0;
 	double total_time = 0.0;
 	for (const string &word : words) {
@@ -58,9 +37,9 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 		uint64_t word_hash = m_hasher(word);
 		Profiler profiler0("->find: " + word);
-		FullTextResultSet *results = new FullTextResultSet();
+		LinkResultSet *results = new LinkResultSet();
 
-		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+		m_shards[word_hash % LI_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
 
 		Profiler profiler1("Accumuating "+to_string(results->len())+" results for: " + word);
@@ -88,14 +67,21 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 	size_t shortest_vector;
 	vector<size_t> result_ids = value_intersection(result_map, shortest_vector);
 
-	vector<FullTextResult> result;
+	vector<LinkResult> result;
 
-	FullTextResultSet *shortest = result_map[shortest_vector];
+	LinkResultSet *shortest = result_map[shortest_vector];
 	vector<uint32_t> score_vector;
-	uint64_t *value_arr = shortest->value_pointer();
+	uint64_t *link_hash_arr = shortest->link_hash_pointer();
+	uint64_t *source_arr = shortest->source_pointer();
+	uint64_t *target_arr = shortest->target_pointer();
+	uint64_t *source_domain_arr = shortest->source_domain_pointer();
+	uint64_t *target_domain_arr = shortest->target_domain_pointer();
 	uint32_t *score_arr = shortest->score_pointer();
 	for (size_t result_id : result_ids) {
-		result.emplace_back(FullTextResult(value_arr[result_id], score_arr[result_id]));
+
+		result.emplace_back(LinkResult(link_hash_arr[result_id], source_arr[result_id], target_arr[result_id],
+			source_domain_arr[result_id], target_domain_arr[result_id], score_arr[result_id]));
+
 		score_vector.push_back(score_arr[result_id]);
 	}
 	profiler2.stop();
@@ -116,8 +102,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 		nth_element(score_vector.begin(), score_vector.begin() + (limit - 1), score_vector.end());
 		const uint32_t nth = score_vector[limit - 1];
 
-		vector<FullTextResult> top_result;
-		for (const FullTextResult &res : result) {
+		vector<LinkResult> top_result;
+		for (const LinkResult &res : result) {
 			if (res.m_score >= nth) {
 				top_result.push_back(res);
 				if (top_result.size() >= limit) break;
@@ -134,7 +120,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 	return result;
 }
 
-size_t FullTextIndex::disk_size() const {
+size_t LinkIndex::disk_size() const {
 	size_t size = 0;
 	for (auto shard : m_shards) {
 		size += shard->disk_size();
@@ -142,7 +128,7 @@ size_t FullTextIndex::disk_size() const {
 	return size;
 }
 
-void FullTextIndex::upload(const SubSystem *sub_system) {
+void LinkIndex::upload(const SubSystem *sub_system) {
 	const size_t num_threads_uploading = 100;
 	ThreadPool pool(num_threads_uploading);
 	std::vector<std::future<void>> results;
@@ -160,7 +146,7 @@ void FullTextIndex::upload(const SubSystem *sub_system) {
 	}
 }
 
-void FullTextIndex::download(const SubSystem *sub_system) {
+void LinkIndex::download(const SubSystem *sub_system) {
 	const size_t num_threads_downloading = 100;
 	ThreadPool pool(num_threads_downloading);
 	std::vector<std::future<void>> results;
@@ -178,9 +164,9 @@ void FullTextIndex::download(const SubSystem *sub_system) {
 	}
 }
 
-vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet *> &values_map,
+vector<size_t> LinkIndex::value_intersection(const map<size_t, LinkResultSet *> &values_map,
 	size_t &shortest_vector_position) const {
-	Profiler value_intersection("FullTextIndex::value_intersection");
+	Profiler value_intersection("LinkIndex::value_intersection");
 	
 	if (values_map.size() == 0) return {};
 
@@ -197,21 +183,21 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 	vector<size_t> result_ids;
 
 	auto value_iter = values_map.find(shortest_vector_position);
-	uint64_t *value_ptr = value_iter->second->value_pointer();
+	uint64_t *link_hash_ptr = value_iter->second->link_hash_pointer();
 
 	while (positions[shortest_vector_position] < shortest_len) {
 
 		bool all_equal = true;
-		uint64_t value = value_ptr[positions[shortest_vector_position]];
+		uint64_t link_hash = link_hash_ptr[positions[shortest_vector_position]];
 
 		for (auto &iter : values_map) {
-			const uint64_t *val_arr = iter.second->value_pointer();
+			const uint64_t *val_arr = iter.second->link_hash_pointer();
 			const size_t len = iter.second->len();
 			size_t *pos = &(positions[iter.first]);
-			while (value > val_arr[*pos] && *pos < len) {
+			while (link_hash > val_arr[*pos] && *pos < len) {
 				(*pos)++;
 			}
-			if (value < val_arr[*pos] && *pos < len) {
+			if (link_hash < val_arr[*pos] && *pos < len) {
 				all_equal = false;
 			}
 			if (*pos >= len) {
@@ -228,53 +214,24 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 	return result_ids;
 }
 
-void FullTextIndex::sort_results(vector<FullTextResult> &results) {
-	sort(results.begin(), results.end(), [](const FullTextResult a, const FullTextResult b) {
+void LinkIndex::sort_results(vector<LinkResult> &results) {
+	sort(results.begin(), results.end(), [](const LinkResult a, const LinkResult b) {
 		return a.m_score > b.m_score;
 	});
 }
 
-void FullTextIndex::run_upload_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+void LinkIndex::run_upload_thread(const SubSystem *sub_system, const LinkShard *shard) {
 	ifstream infile(shard->filename());
 	if (infile.is_open()) {
-		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
+		const string key = "link_index/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
 		sub_system->upload_from_stream("alexandria-index", key, infile);
 	}
 }
 
-void FullTextIndex::run_download_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+void LinkIndex::run_download_thread(const SubSystem *sub_system, const LinkShard *shard) {
 	ofstream outfile(shard->filename(), ios::binary | ios::trunc);
 	if (outfile.is_open()) {
-		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
+		const string key = "link_index/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
 		sub_system->download_to_stream("alexandria-index", key, outfile);
-	}
-}
-
-void FullTextIndex::read_url_to_domain() {
-	for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-		const string file_name = "/mnt/"+(to_string(bucket_id))+"/full_text/url_to_domain_"+m_db_name+".fti";
-
-		ifstream infile(file_name, ios::binary);
-		if (infile.is_open()) {
-
-			char buffer[8];
-
-			do {
-
-				infile.read(buffer, sizeof(uint64_t));
-				if (infile.eof()) break;
-
-				uint64_t url_hash = *((uint64_t *)buffer);
-
-				infile.read(buffer, sizeof(uint64_t));
-				uint64_t domain_hash = *((uint64_t *)buffer);
-
-				m_url_to_domain[url_hash] = domain_hash;
-				m_domains[domain_hash]++;
-
-			} while (!infile.eof());
-
-			infile.close();
-		}
 	}
 }

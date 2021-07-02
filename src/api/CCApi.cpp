@@ -110,7 +110,7 @@ void CCApi::parse_link_result(const string &word) {
 	set<string> deduplicate;
 	while (getline(ss, line)) {
 		m_num_lines++;
-		LinkResult link(line);
+		LinkSearchResult link(line);
 		if (link.match(m_query) && link.centrality() >= 0) {
 			string key = link.m_target_host + link.m_target_path + link.m_source_host;
 			if (deduplicate.find(key) == deduplicate.end()) {

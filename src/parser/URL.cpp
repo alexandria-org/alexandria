@@ -19,6 +19,13 @@ URL::URL(const string &url) :
 	m_status = parse();
 }
 
+URL::URL(const string &host, const string &path) :
+	m_url_string("http://" + host + path), m_host(host), m_path(path)
+{
+	m_host_reverse = URL::host_reverse(m_host);
+	m_status = CC_OK;
+}
+
 URL::~URL() {
 
 }
@@ -26,6 +33,22 @@ URL::~URL() {
 void URL::set_url_string(const string &url) {
 	m_url_string = url;
 	m_status = parse();
+}
+
+string URL::str() const {
+	return m_url_string;
+}
+
+uint64_t URL::hash() const {
+	return m_hasher(m_host + m_path);
+}
+
+uint64_t URL::host_hash() const {
+	return m_hasher(m_host);
+}
+
+uint64_t URL::link_hash(const URL &target_url) const {
+	return m_hasher(str() + " to " + target_url.str());
 }
 
 string URL::host() const {

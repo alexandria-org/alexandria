@@ -9,12 +9,12 @@
 
 using namespace std;
 
-class LinkResult : public TextBase {
+class LinkSearchResult : public TextBase {
 
 public:
 
-	LinkResult(const string &line);
-	~LinkResult();
+	LinkSearchResult(const string &line);
+	~LinkSearchResult();
 
 	string url() const;
 	string link_text() const;

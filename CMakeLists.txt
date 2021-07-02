@@ -25,7 +25,7 @@ set(SRC_CLASSES
 	"src/api/ApiResponse.cpp"
 	"src/api/CCApi.cpp"
 	"src/api/Link.cpp"
-	"src/api/LinkResult.cpp"
+	"src/api/LinkSearchResult.cpp"
 	"src/api/SearchResult.cpp"
 
 	"src/file/TsvFile.cpp"
@@ -40,6 +40,15 @@ set(SRC_CLASSES
 	"src/full_text/FullTextBucketMessage.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
+	"src/full_text/FullTextAdjustment.cpp"
+
+	"src/link_index/LinkIndex.cpp"
+	"src/link_index/LinkShard.cpp"
+	"src/link_index/LinkShardBuilder.cpp"
+	"src/link_index/LinkResult.cpp"
+	"src/link_index/LinkResultSet.cpp"
+	"src/link_index/LinkIndexer.cpp"
+	"src/link_index/LinkIndexerRunner.cpp"
 
 	"src/hash_table/HashTable.cpp"
 	"src/hash_table/HashTableShard.cpp"

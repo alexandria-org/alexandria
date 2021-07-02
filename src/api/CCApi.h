@@ -10,7 +10,7 @@
 #include "ApiResponse.h"
 #include "abstract/TextBase.h"
 #include "SearchResult.h"
-#include "LinkResult.h"
+#include "LinkSearchResult.h"
 #include "system/ThreadPool.h"
 #include "file/TsvRow.h"
 
@@ -33,8 +33,8 @@ private:
 	map<string, string> m_results_string;
 	map<string, string> m_links_string;
 	map<string, vector<SearchResult>> m_results;
-	map<string, map<string, vector<LinkResult>>> m_links;
-	map<string, map<string, vector<LinkResult>>> m_domain_links;
+	map<string, map<string, vector<LinkSearchResult>>> m_links;
+	map<string, map<string, vector<LinkSearchResult>>> m_domain_links;
 
 	vector<string> m_words;
 	const string m_index_base = "main";

@@ -20,9 +20,16 @@ string read_test_file(const string &file_name) {
 	return "";
 }
 
-int main(void) {
+int main(int argc, const char **argv) {
 
 	cout << "Running static tests" << endl;
+
+	string run_tests = "all";
+	size_t run_one = 0;
+	if (argc > 1) {
+		run_tests = "one";
+		run_one = atoi(argv[1]);
+	}
 
 	int numSuites = 6;
 	int numTestsInSuite [] = {
@@ -31,7 +38,7 @@ int main(void) {
 		4,
 		1,
 		3,
-		2
+		3
 	};
 
 	int (* testSuite1 [])() = {
@@ -64,7 +71,8 @@ int main(void) {
 
 	int (* testSuite6 [])() = {
 		test6_1,
-		test6_2
+		test6_2,
+		test6_3
 	};
 
 	int (**testSuites[])() = {
@@ -78,6 +86,10 @@ int main(void) {
 
 	int allOk = 1;
 	for (int i = 0; i < numSuites; i++) {
+
+		if (run_tests == "one") {
+			if (i != run_one - 1) continue;
+		}
 
 		int numTests = numTestsInSuite[i];
 		cout << "Running suite test" << (i + 1) << ".h" <<  endl;

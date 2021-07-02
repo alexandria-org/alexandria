@@ -112,15 +112,15 @@ void SearchResult::calculate_score(const string &query, const vector<string> &wo
 	m_score = m_centrality * modifier * (1.0 + m_inlink_score / 10.0);
 }
 
-void SearchResult::add_links(const vector<LinkResult> &links) {
-	for (const LinkResult &link : links) {
+void SearchResult::add_links(const vector<LinkSearchResult> &links) {
+	for (const LinkSearchResult &link : links) {
 		m_inlink_score += 5*(double)link.m_centrality / 100000000.0;
 	}
 	m_inlink_count = links.size();
 }
 
-void SearchResult::add_domain_links(const vector<LinkResult> &links) {
-	for (const LinkResult &link : links) {
+void SearchResult::add_domain_links(const vector<LinkSearchResult> &links) {
+	for (const LinkSearchResult &link : links) {
 		m_inlink_score += (double)link.m_centrality / 100000000.0;
 	}
 	m_inlink_count = links.size();

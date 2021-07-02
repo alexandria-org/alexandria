@@ -8,6 +8,7 @@
 #include "system/ThreadPool.h"
 #include "hash_table/HashTable.h"
 #include "full_text/FullTextIndex.h"
+#include "LinkIndex.h"
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
@@ -17,39 +18,35 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-//#define FT_NUM_THREADS_INDEXING 128
-#define FT_NUM_THREADS_INDEXING 16
-#define FT_NUM_THREADS_MERGING 64
+//#define LI_NUM_THREADS_INDEXING 128
+#define LI_NUM_THREADS_INDEXING 16
+#define LI_NUM_THREADS_MERGING 64
 
 using namespace std;
 
-class FullTextIndexerRunner {
+class LinkIndexerRunner {
 
 public:
 
-	FullTextIndexerRunner(const string &db_name, const string &cc_batch);
-	~FullTextIndexerRunner();
+	LinkIndexerRunner(const string &db_name, const string &cc_batch, const string &fti_name);
+	~LinkIndexerRunner();
 
 	void run();
-	void run_link();
 	void merge();
 	void sort();
 	void upload();
-	void index_text(const string &text);
-	void index_text(const string &key, const string &text, uint32_t score);
-	void index_warc_path(const string warc_path);
-	void index_stream(ifstream &infile);
 	void truncate();
+	void index_stream(ifstream &infile);
 
 private:
 
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
 	const string m_db_name;
-
+	const string m_fti_name;
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 	mutex m_full_text_mutexes[FT_NUM_SHARDS];
-	mutex m_write_url_to_domain_mutex;
+	mutex m_link_mutexes[LI_NUM_SHARDS];
 
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);

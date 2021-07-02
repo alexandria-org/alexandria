@@ -6,7 +6,7 @@
 
 #include "parser/URL.h"
 #include "abstract/TextBase.h"
-#include "LinkResult.h"
+#include "LinkSearchResult.h"
 
 using namespace std;
 
@@ -26,15 +26,15 @@ public:
 	bool should_include() const;
 
 	void calculate_score(const string &query, const vector<string> &words);
-	void add_links(const vector<LinkResult> &links);
-	void add_domain_links(const vector<LinkResult> &links);
+	void add_links(const vector<LinkSearchResult> &links);
+	void add_domain_links(const vector<LinkSearchResult> &links);
 
 private:
 	
 	// Score modifiers
 	int m_inlink_count = 0;
 	double m_inlink_score = 0.0;
-	vector<LinkResult> m_links;
+	vector<LinkSearchResult> m_links;
 	int m_centrality;
 	size_t m_domains_linking_count;
 	double m_score;
