@@ -14,3 +14,6 @@ R(L1, L2) =
 (H(D1) - H(D2))/10 if H(D1) - H(D2) < 10 000 000
 1 000 000 otherwise
 ```
+
+![Figure 1](https://github.com/joscul/alexandria/blob/master/documentation/images/figure_1.png?raw=true)
+
