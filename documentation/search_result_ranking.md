@@ -18,3 +18,6 @@ R(L1, L2) =
 
 ![Figure 1](https://github.com/joscul/alexandria/raw/main/documentation/images/figure_1.png)
 
+So if you get 1000 links from a domain with the same harmonic centrality (HC) as you have you get a 1M (1 000 000) boost. But if
+a domain with harmonic centality has a HC of 10M and the linking domain has a HC of 10M you get a boost of 1M for one single link.
+
