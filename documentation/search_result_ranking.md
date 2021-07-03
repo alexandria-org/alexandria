@@ -1,3 +1,4 @@
+
 # Search Result Ranking
 The base of our search result ranking is the harmonic centrality of a domain H(d).
 
@@ -9,11 +10,11 @@ Where SUM(w, R(L1, L2)) is the sum of the inlinks to the domain with a link text
 The ranking function R(L1, L2) gives a score for links from domain 1 to domain 2 depends on the difference in harmonic centrality of domain 1 and domain 2.
 
 ```
-R(L1, L2) = 
+R(L1, L2) =
 1000 if H(D1) <= H(D2)
 (H(D1) - H(D2))/10 if H(D1) - H(D2) < 10 000 000
 1 000 000 otherwise
 ```
 
-![Figure 1](https://github.com/joscul/alexandria/blob/master/documentation/images/figure_1.png?raw=true)
+![Figure 1](https://github.com/joscul/alexandria/raw/main/documentation/images/figure_1.png)
 
