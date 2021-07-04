@@ -15,6 +15,7 @@
 #include "abstract/TextBase.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
+#include "link_index/Link.h"
 
 using namespace std;
 
@@ -34,7 +35,9 @@ public:
 	void flush_cache(mutex *write_mutexes);
 	void read_url_to_domain();
 	void write_url_to_domain();
-	void adjust_score_for_domain_link(uint64_t word_hash, const URL &source_url, const URL &target_url, int harmonic);
+	void add_domain_link(uint64_t word_hash, const struct Link &link);
+	void add_url_link(uint64_t word_hash, const struct Link &link);
+
 	void write_adjustments_cache(mutex *write_mutexes);
 	void flush_adjustments_cache(mutex *write_mutexes);
 
@@ -59,7 +62,8 @@ private:
 	unordered_map<uint64_t, uint64_t> m_url_to_domain;
 	unordered_map<uint64_t, size_t> m_domains;
 
-	map<size_t, FullTextAdjustment> m_adjustments;
+	vector<DomainAdjustment *> m_domain_adjustments;
+	vector<URLAdjustment *> m_url_adjustments;
 	const size_t m_adjustment_cache_limit = 100000;
 
 	void add_data_to_shards(const uint64_t &key_hash, const string &text, uint32_t score);

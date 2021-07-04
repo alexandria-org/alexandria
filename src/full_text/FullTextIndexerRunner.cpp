@@ -212,8 +212,7 @@ void FullTextIndexerRunner::index_stream(ifstream &infile) {
 
 void FullTextIndexerRunner::truncate() {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
+		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(m_db_name, shard_id);
 		shard_builder->truncate();
 		delete shard_builder;
 	}
@@ -280,14 +279,11 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 }
 
 string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
-	const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-	FullTextShardBuilder shard(file_name);
 
-	shard.merge(m_db_name, shard_id);
+	FullTextShardBuilder shard(m_db_name, shard_id);
+	shard.merge();
 
-	//LogInfo("Merged shard " + to_string(shard_id));
-
-	return file_name;
+	return "";
 }
 
 int FullTextIndexerRunner::download_file(const string &bucket, const string &key, stringstream &stream) {

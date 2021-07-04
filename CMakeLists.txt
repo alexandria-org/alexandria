@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_C_COMPILER /usr/bin/gcc-10)
 set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 project(cc_parser LANGUAGES CXX)
@@ -40,7 +40,8 @@ set(SRC_CLASSES
 	"src/full_text/FullTextBucketMessage.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
-	"src/full_text/FullTextAdjustment.cpp"
+	"src/full_text/DomainAdjustment.cpp"
+	"src/full_text/URLAdjustment.cpp"
 
 	"src/link_index/LinkIndex.cpp"
 	"src/link_index/LinkShard.cpp"

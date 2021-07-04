@@ -7,15 +7,23 @@ FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem 
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(file_name);
+		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(db_name, shard_id);
 		m_shards.push_back(shard_builder);
+
+		m_domain_adjustments.push_back(new DomainAdjustment(&m_url_to_domain));
+		m_url_adjustments.push_back(new URLAdjustment());
 	}
 }
 
 FullTextIndexer::~FullTextIndexer() {
 	for (FullTextShardBuilder *shard : m_shards) {
 		delete shard;
+	}
+	for (DomainAdjustment *adjustment : m_domain_adjustments) {
+		delete adjustment;
+	}
+	for (URLAdjustment *adjustment : m_url_adjustments) {
+		delete adjustment;
 	}
 }
 
@@ -162,18 +170,22 @@ void FullTextIndexer::write_url_to_domain() {
 	outfile.close();
 }
 
-void FullTextIndexer::adjust_score_for_domain_link(uint64_t word_hash, const URL &source_url, const URL &target_url,
-	int harmonic) {
+void FullTextIndexer::add_domain_link(uint64_t word_hash, const struct Link &link) {
 	const size_t shard_id = word_hash % FT_NUM_SHARDS;
-	m_adjustments[shard_id].add_host_adjustment(word_hash, source_url.hash(), target_url.host_hash(), harmonic);
+	m_domain_adjustments[shard_id]->add(word_hash, link);
+}
+
+void FullTextIndexer::add_url_link(uint64_t word_hash, const struct Link &link) {
+	const size_t shard_id = word_hash % FT_NUM_SHARDS;
+	m_url_adjustments[shard_id]->add(word_hash, link);
 }
 
 void FullTextIndexer::write_adjustments_cache(mutex *write_mutexes) {
 
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		if (m_adjustments[shard_id].count() >= m_adjustment_cache_limit) {
+		if (m_domain_adjustments[shard_id]->count() >= m_adjustment_cache_limit) {
 			write_mutexes[shard_id].lock();
-			m_shards[shard_id]->apply_adjustment(m_db_name, shard_id, m_url_to_domain, m_adjustments[shard_id]);
+			m_shards[shard_id]->apply_domain_adjustment(*m_domain_adjustments[shard_id]);
 			write_mutexes[shard_id].unlock();
 		}
 	}
@@ -182,9 +194,9 @@ void FullTextIndexer::write_adjustments_cache(mutex *write_mutexes) {
 void FullTextIndexer::flush_adjustments_cache(mutex *write_mutexes) {
 
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		if (m_adjustments[shard_id].count() > 0) {
+		if (m_domain_adjustments[shard_id]->count() > 0) {
 			write_mutexes[shard_id].lock();
-			m_shards[shard_id]->apply_adjustment(m_db_name, shard_id, m_url_to_domain, m_adjustments[shard_id]);
+			m_shards[shard_id]->apply_domain_adjustment(*m_domain_adjustments[shard_id]);
 			write_mutexes[shard_id].unlock();
 		}
 	}

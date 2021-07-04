@@ -31,14 +31,27 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 		int source_harmonic = source_url.harmonic(m_sub_system);
 
 		URL target_url(col_values[2], col_values[3]);
+		int target_harmonic = target_url.harmonic(m_sub_system);
+
+		const string link_text = col_values[4];
+
+		const struct Link link{
+			.source_url = source_url,
+			.target_url = target_url,
+			.target_host_hash = target_url.host_hash(),
+			.source_harmonic = source_harmonic,
+			.target_harmonic = target_harmonic
+		};
 
 		if (m_ft_indexer->has_domain(target_url.host_hash())) {
-			adjust_score_for_domain_link(col_values[4], source_url, target_url, source_harmonic);
+			adjust_score_for_domain_link(col_values[4], link);
 		}
 
 		if (m_ft_indexer->has_key(target_url.hash())) {
 
 			uint64_t link_hash = source_url.link_hash(target_url);
+
+			adjust_score_for_url_link(col_values[4], link);
 
 			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + col_values[4]);
 
@@ -94,13 +107,22 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	}
 }
 
-void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const URL &source_url, const URL &target_url,
-	int source_harmonic) {
+void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const struct Link &link) {
 	
 	vector<string> words = get_full_text_words(link_text);
 
 	for (const string &word : words) {
 		const uint64_t word_hash = m_hasher(word);
-		m_ft_indexer->adjust_score_for_domain_link(word_hash, source_url, target_url, source_harmonic);
+		m_ft_indexer->add_domain_link(word_hash, link);
+	}
+}
+
+void LinkIndexer::adjust_score_for_url_link(const string &link_text, const struct Link &link) {
+	
+	vector<string> words = get_full_text_words(link_text);
+
+	for (const string &word : words) {
+		const uint64_t word_hash = m_hasher(word);
+		m_ft_indexer->add_url_link(word_hash, link);
 	}
 }

@@ -4,8 +4,8 @@
 #include <cstring>
 #include "system/Logger.h"
 
-FullTextShardBuilder::FullTextShardBuilder(const string &file_name)
-: m_filename(file_name) {
+FullTextShardBuilder::FullTextShardBuilder(const string &db_name, size_t shard_id)
+: m_db_name(db_name), m_shard_id(shard_id) {
 	m_buffer = new char[m_buffer_len];
 }
 
@@ -73,7 +73,7 @@ void FullTextShardBuilder::append() {
 	m_cache.clear();
 }
 
-void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
+void FullTextShardBuilder::merge() {
 	m_cache.clear();
 	m_total_results.clear();
 	// Read the whole cache.
@@ -114,20 +114,24 @@ void FullTextShardBuilder::merge(const string &db_name, size_t shard_id) {
 
 	sort_cache();
 
-	save_file(db_name, shard_id);
+	save_file();
 
 	truncate();
 }
 
-void FullTextShardBuilder::apply_adjustment(const string &db_name, size_t shard_id,
-		const unordered_map<uint64_t, uint64_t> &url_domain_map, FullTextAdjustment &adjustments) {
+void FullTextShardBuilder::apply_url_adjustment(URLAdjustment &adjustments) {
+}
+
+void FullTextShardBuilder::apply_domain_adjustment(DomainAdjustment &adjustments) {
+
+	const auto url_domain_map = adjustments.url_to_domain();
 
 	hash<string> thasher;
 
 	Profiler pf("FullTextShardBuilder::adjust_score_for_domain_link");
 
-	ifstream reader(target_filename(db_name, shard_id), ios::binary);
-	ofstream writer(target_filename(db_name, shard_id), ios::in | ios::out | ios::binary);
+	ifstream reader(target_filename(), ios::binary);
+	ofstream writer(target_filename(), ios::in | ios::out | ios::binary);
 
 	char buffer[64];
 
@@ -199,8 +203,8 @@ void FullTextShardBuilder::apply_adjustment(const string &db_name, size_t shard_
 					const uint64_t url_hash = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN]);
 					const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
 
-					auto url_domain_iter = url_domain_map.find(url_hash);
-					if (url_domain_iter == url_domain_map.end()) {
+					auto url_domain_iter = url_domain_map->find(url_hash);
+					if (url_domain_iter == url_domain_map->end()) {
 						throw error("Could not find url in url_domain_map");
 					}
 
@@ -229,11 +233,11 @@ void FullTextShardBuilder::apply_adjustment(const string &db_name, size_t shard_
 	writer.close();
 }
 
-void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
+void FullTextShardBuilder::save_file() {
 
 	vector<uint64_t> keys;
 
-	const string filename = target_filename(db_name, shard_id);
+	const string filename = target_filename();
 
 	m_writer.open(filename, ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
@@ -302,11 +306,16 @@ void FullTextShardBuilder::save_file(const string &db_name, size_t shard_id) {
 }
 
 string FullTextShardBuilder::filename() const {
-	return m_filename;
+	return "/mnt/" + (to_string(m_shard_id % 8)) + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
+		".fti";
 }
 
-string FullTextShardBuilder::target_filename(const string &db_name, size_t shard_id) const {
-	return "/mnt/"+to_string(shard_id % 8)+"/full_text/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
+string FullTextShardBuilder::target_filename() const {
+	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
+}
+
+string FullTextShardBuilder::adjustment_filename() const {
+	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".adj";
 }
 
 void FullTextShardBuilder::truncate() {

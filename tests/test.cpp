@@ -38,7 +38,7 @@ int main(int argc, const char **argv) {
 		4,
 		1,
 		3,
-		3
+		5
 	};
 
 	int (* testSuite1 [])() = {
@@ -72,7 +72,9 @@ int main(int argc, const char **argv) {
 	int (* testSuite6 [])() = {
 		test6_1,
 		test6_2,
-		test6_3
+		test6_3,
+		test6_4,
+		test6_5
 	};
 
 	int (**testSuites[])() = {
