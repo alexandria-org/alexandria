@@ -13,6 +13,7 @@ HashTableShard::~HashTableShard() {
 }
 
 string HashTableShard::find(uint64_t key) {
+
 	const uint64_t key_significant = key >> (64-m_significant);
 	auto iter = m_pos.find(key_significant);
 	if (iter == m_pos.end()) return "";

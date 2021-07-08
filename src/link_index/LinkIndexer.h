@@ -22,7 +22,7 @@ class LinkIndexer : public TextBase {
 
 public:
 
-	LinkIndexer(int id, const SubSystem *sub_system, FullTextIndexer *ft_indexer);
+	LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, FullTextIndexer *ft_indexer);
 	~LinkIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
@@ -31,6 +31,7 @@ public:
 
 private:
 
+	const string m_db_name;
 	const SubSystem *m_sub_system;
 	FullTextIndexer *m_ft_indexer;
 	int m_indexer_id;

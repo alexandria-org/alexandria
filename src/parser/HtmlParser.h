@@ -11,7 +11,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "common/common.h"
-#include "api/Link.h"
+#include "api/ApiLink.h"
 #include "abstract/TextBase.h"
 #include "parser/Unicode.h"
 
@@ -42,7 +42,7 @@ public:
 	string meta();
 	string h1();
 	string text();
-	vector<Link> links();
+	vector<ApiLink> links();
 	bool should_insert();
 
 	// Return top level domain
@@ -52,7 +52,7 @@ public:
 
 private:
 
-	vector<Link> m_links;
+	vector<ApiLink> m_links;
 	vector<pair<int, int>> m_invisible_pos;
 
 	char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];

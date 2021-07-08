@@ -4,8 +4,8 @@
 #include <cstring>
 #include "system/Logger.h"
 
-LinkShardBuilder::LinkShardBuilder(const string &file_name)
-: m_filename(file_name) {
+LinkShardBuilder::LinkShardBuilder(const string &db_name, size_t shard_id)
+: m_db_name(db_name), m_shard_id(shard_id) {
 }
 
 LinkShardBuilder::~LinkShardBuilder() {
@@ -75,7 +75,7 @@ void LinkShardBuilder::append() {
 	m_cache.clear();
 }
 
-void LinkShardBuilder::merge(const string &db_name, size_t shard_id) {
+void LinkShardBuilder::merge() {
 	m_cache.clear();
 	m_total_results.clear();
 	// Read the whole cache.
@@ -128,16 +128,16 @@ void LinkShardBuilder::merge(const string &db_name, size_t shard_id) {
 
 	sort_cache();
 
-	save_file(db_name, shard_id);
+	save_file();
 
 	truncate();
 }
 
-void LinkShardBuilder::save_file(const string &db_name, size_t shard_id) {
+void LinkShardBuilder::save_file() {
 
 	vector<uint64_t> keys;
 
-	const string filename = "/mnt/"+to_string(shard_id % 8)+"/full_text/fti_" + db_name + "_" + to_string(shard_id) + ".idx";
+	const string filename = target_filename();
 
 	m_writer.open(filename, ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
@@ -210,7 +210,11 @@ void LinkShardBuilder::save_file(const string &db_name, size_t shard_id) {
 }
 
 string LinkShardBuilder::filename() const {
-	return m_filename;
+	return "/mnt/"+(to_string(m_shard_id % 8))+"/output/precache_" + to_string(m_shard_id) + ".fti";
+}
+
+string LinkShardBuilder::target_filename() const {
+	return "/mnt/"+to_string(m_shard_id % 8)+"/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 }
 
 void LinkShardBuilder::truncate() {

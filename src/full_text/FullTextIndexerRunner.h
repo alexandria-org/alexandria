@@ -18,8 +18,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 //#define FT_NUM_THREADS_INDEXING 128
-#define FT_NUM_THREADS_INDEXING 16
-#define FT_NUM_THREADS_MERGING 64
 
 using namespace std;
 
@@ -51,6 +49,9 @@ private:
 	mutex m_full_text_mutexes[FT_NUM_SHARDS];
 	mutex m_write_url_to_domain_mutex;
 
+	bool m_run_merge_large;
+
+	string run_merge_large_thread();
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);

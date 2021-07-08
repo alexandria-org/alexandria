@@ -8,7 +8,7 @@ FullTextIndex::FullTextIndex(const string &db_name)
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		m_shards.push_back(new FullTextShard(m_db_name, shard_id));
 	}
-	read_url_to_domain();
+	//read_url_to_domain();
 }
 
 FullTextIndex::~FullTextIndex() {

@@ -30,6 +30,12 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
+	/*FullTextShardBuilder shard("main_index", 2166);
+	shard.merge();
+	return 0;*/
+
+	cout << "FT_INDEXER_CACHE_BYTES_PER_SHARD: " << FT_INDEXER_CACHE_BYTES_PER_SHARD << endl;
+
 	if (argc == 1) {
 		FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 		indexer.run();

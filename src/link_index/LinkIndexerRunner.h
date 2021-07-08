@@ -8,6 +8,7 @@
 #include "system/ThreadPool.h"
 #include "hash_table/HashTable.h"
 #include "full_text/FullTextIndex.h"
+#include "full_text/FullTextIndexer.h"
 #include "LinkIndex.h"
 
 #include <aws/core/Aws.h>
@@ -33,6 +34,7 @@ public:
 
 	void run();
 	void merge();
+	void merge_adjustments();
 	void sort();
 	void upload();
 	void truncate();
@@ -51,6 +53,7 @@ private:
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
+	string run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id);
 	int download_file(const string &bucket, const string &key, stringstream &stream);
 
 };

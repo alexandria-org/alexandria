@@ -3,13 +3,12 @@
 #include "system/Logger.h"
 #include <math.h>
 
-LinkIndexer::LinkIndexer(int id, const SubSystem *sub_system, FullTextIndexer *ft_indexer)
-: m_indexer_id(id), m_sub_system(sub_system)
+LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, FullTextIndexer *ft_indexer)
+: m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_ft_indexer = ft_indexer;
 	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
-		const string file_name = "/mnt/"+(to_string(shard_id % 8))+"/output/precache_" + to_string(shard_id) + ".fti";
-		LinkShardBuilder *shard_builder = new LinkShardBuilder(file_name);
+		LinkShardBuilder *shard_builder = new LinkShardBuilder(m_db_name, shard_id);
 		m_shards.push_back(shard_builder);
 	}
 }
@@ -35,7 +34,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 		const string link_text = col_values[4];
 
-		const struct Link link{
+		const Link link{
 			.source_url = source_url,
 			.target_url = target_url,
 			.target_host_hash = target_url.host_hash(),

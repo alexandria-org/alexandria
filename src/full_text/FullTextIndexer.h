@@ -11,6 +11,7 @@
 #include "FullTextShard.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndex.h"
+#include "AdjustmentList.h"
 #include "parser/URL.h"
 #include "abstract/TextBase.h"
 #include "system/SubSystem.h"
@@ -18,6 +19,8 @@
 #include "link_index/Link.h"
 
 using namespace std;
+
+class FullTextShardBuilder;
 
 class FullTextIndexer : public TextBase {
 
@@ -31,7 +34,8 @@ public:
 	void add_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
 	void add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
 		uint32_t score);
-	void write_cache(mutex *write_mutexes);
+	size_t write_cache(mutex *write_mutexes);
+	size_t write_large(mutex *write_mutexes);
 	void flush_cache(mutex *write_mutexes);
 	void read_url_to_domain();
 	void write_url_to_domain();
@@ -62,8 +66,7 @@ private:
 	unordered_map<uint64_t, uint64_t> m_url_to_domain;
 	unordered_map<uint64_t, size_t> m_domains;
 
-	vector<DomainAdjustment *> m_domain_adjustments;
-	vector<URLAdjustment *> m_url_adjustments;
+	vector<AdjustmentList *> m_adjustments;
 	const size_t m_adjustment_cache_limit = 100000;
 
 	void add_data_to_shards(const uint64_t &key_hash, const string &text, uint32_t score);

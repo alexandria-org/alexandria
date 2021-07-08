@@ -24,7 +24,7 @@ set(SRC_CLASSES
 	
 	"src/api/ApiResponse.cpp"
 	"src/api/CCApi.cpp"
-	"src/api/Link.cpp"
+	"src/api/ApiLink.cpp"
 	"src/api/LinkSearchResult.cpp"
 	"src/api/SearchResult.cpp"
 
@@ -40,8 +40,7 @@ set(SRC_CLASSES
 	"src/full_text/FullTextBucketMessage.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
-	"src/full_text/DomainAdjustment.cpp"
-	"src/full_text/URLAdjustment.cpp"
+	"src/full_text/AdjustmentList.cpp"
 
 	"src/link_index/LinkIndex.cpp"
 	"src/link_index/LinkShard.cpp"

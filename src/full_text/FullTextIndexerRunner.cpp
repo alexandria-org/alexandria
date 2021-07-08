@@ -24,39 +24,48 @@ void FullTextIndexerRunner::run() {
 	vector<string> warc_paths_raw, warc_paths;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	size_t num = 0;
-	for (const string &path : warc_paths_raw) {
-		warc_paths.push_back(path);
-		num++;
-		//if (num >= 10000) break;
-		if (num >= 100) break;
+	const size_t limit = 25000;
+
+	while (warc_paths_raw.size() > 0) {
+
+		vector<string> warc_paths;
+		size_t num = 0;
+		while (warc_paths.size() < limit && warc_paths_raw.size() > 0) {
+			warc_paths.push_back(warc_paths_raw.back());
+			warc_paths_raw.pop_back();
+			num++;
+			//if (num >= 10000) break;
+			//if (num >= 5000) break;
+			//if (num >= 48) break;
+		}
+
+		vector<vector<string>> warc_path_chunks;
+		vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
+
+		ThreadPool pool(FT_NUM_THREADS_INDEXING);
+		std::vector<std::future<string>> results;
+
+		map<int, vector<string>> shard_files;
+		int id = 1;
+		for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+
+			results.emplace_back(
+				pool.enqueue([this, warc_paths_chunk, id] {
+					return run_index_thread(warc_paths_chunk, id);
+				})
+			);
+
+			id++;
+
+		}
+
+		for(auto && result: results) {
+			result.get();
+		}
+
+		merge();
 	}
 
-	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
-
-	ThreadPool pool(FT_NUM_THREADS_INDEXING);
-	std::vector<std::future<string>> results;
-
-	map<int, vector<string>> shard_files;
-	int id = 1;
-	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
-
-		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk, id] {
-				return run_index_thread(warc_paths_chunk, id);
-			})
-		);
-
-		id++;
-
-	}
-
-	for(auto && result: results) {
-		result.get();
-	}
-
-	merge();
 	sort();
 	//upload();
 
@@ -64,6 +73,7 @@ void FullTextIndexerRunner::run() {
 
 void FullTextIndexerRunner::merge() {
 	LogInfo("Merging...");
+	Profiler profiler("Merging");
 
 	const size_t merge_batch_size = 500;
 
@@ -94,6 +104,7 @@ void FullTextIndexerRunner::merge() {
 
 void FullTextIndexerRunner::sort() {
 	LogInfo("Sorting...");
+	Profiler profiler("Sorting");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
@@ -227,6 +238,18 @@ void FullTextIndexerRunner::truncate() {
 	hash_table.truncate();
 }
 
+string FullTextIndexerRunner::run_merge_large_thread() {
+
+	FullTextIndexer indexer(1, m_db_name, m_sub_system);
+
+	while (m_run_merge_large) {
+		cout << "merged " << indexer.write_large(m_full_text_mutexes) << " large files" << endl;
+		sleep(1);
+	}
+
+	return "done";
+}
+
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
 
 	vector<HashTableShardBuilder *> shard_builders;
@@ -244,7 +267,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 
 		if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
 			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {1, 1, 1, 1});
-			indexer.write_cache(m_full_text_mutexes);
+			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << FT_NUM_SHARDS << " shards" << endl;
 		}
 
 		for (size_t i = 0; i < HT_NUM_SHARDS; i++) {

@@ -41,7 +41,7 @@ int test1_2(void) {
 	int ok = 1;
 
 	string html;
-	vector<Link> links;
+	vector<ApiLink> links;
 
 	string test2_html = read_test_file("test2.html");
 
