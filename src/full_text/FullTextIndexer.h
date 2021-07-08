@@ -55,6 +55,10 @@ public:
 		return iter->second > 0;
 	}
 
+	const unordered_map<uint64_t, uint64_t> *url_to_domain() const {
+		return &m_url_to_domain;
+	}
+
 private:
 
 	const SubSystem *m_sub_system;

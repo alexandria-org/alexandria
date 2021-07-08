@@ -10,6 +10,7 @@ struct Adjustment {
 	uint64_t word_hash;
 	uint64_t key_hash;
 	uint32_t score;
+	uint32_t domain_harmonic;
 	
 };
 

@@ -100,7 +100,7 @@ void LinkIndexerRunner::merge_adjustments() {
 
 	const size_t merge_batch_size = 500;
 
-	ThreadPool merge_pool(20);
+	ThreadPool merge_pool(1);
 	std::vector<std::future<string>> merge_results;
 
 	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system);

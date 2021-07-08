@@ -46,6 +46,7 @@ private:
 	size_t m_data_start;
 	size_t m_pos_start;
 	size_t m_len_start;
+	size_t m_total_start;
 	
 	const size_t m_max_num_keys = 10000000;
 	const size_t m_buffer_len = m_max_num_keys*FULL_TEXT_RECORD_LEN; // 1m elements, each is 12 bytes.

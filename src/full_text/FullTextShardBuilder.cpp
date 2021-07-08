@@ -121,7 +121,7 @@ void FullTextShardBuilder::merge() {
 
 	save_file();
 
-	truncate();
+	truncate_cache_files();
 }
 
 bool FullTextShardBuilder::should_merge() {
@@ -151,33 +151,77 @@ void FullTextShardBuilder::add_adjustments(const AdjustmentList &adjustments) {
 }
 
 void FullTextShardBuilder::merge_adjustments(const FullTextIndexer *indexer) {
+
+	if (m_shard_id == 5772) {
+		cout << "asd" << endl;
+	}
+
 	// Read everything to cache.
 	read_data_to_cache();
 
-	Profiler profile("FullTextShardBuilder::merge_adjustments");
 	// Allocate buffer.
 	const size_t buffer_size = 10000;
 	char *buffer = new char[buffer_size * sizeof(struct Adjustment)];
 
-	// Read url adjustments.
-	/*
-	ifstream reader(url_adjustment_filename(), ios::binary);
-	while (!reader.eof()) {
-		reader.read(buffer, buffer_size);
-		const size_t read_bytes = reader.gcount();
+	// Apply url adjustments.
+	{
+		ifstream reader(url_adjustment_filename(), ios::binary);
+		while (!reader.eof()) {
+			reader.read(buffer, buffer_size);
+			const size_t read_bytes = reader.gcount();
 
-		for (size_t i = 0; i < read_bytes; i += sizeof(struct Adjustment)) {
-			struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
-			//m_cache[adjustment->word_hash]
+			for (size_t i = 0; i < read_bytes; i += sizeof(struct Adjustment)) {
+				struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
+				auto end = m_cache[adjustment->word_hash].end();
+				auto iter = lower_bound(m_cache[adjustment->word_hash].begin(), end,
+					adjustment->key_hash);
+				if (iter == end || (*iter).m_value != adjustment->key_hash) {
+					// Add the item.
+					cout << "adding url to shard: " << target_filename() << endl;
+					m_cache[adjustment->word_hash].push_back(FullTextResult(adjustment->key_hash,
+						adjustment->domain_harmonic + adjustment->score));
+					sort(m_cache[adjustment->word_hash].begin(), m_cache[adjustment->word_hash].end());
+				} else {
+					cout << "updating url to shard: " << target_filename() << endl;
+					(*iter).m_score += adjustment->score;
+				}
+			}
 		}
-	}*/
+	}
+
+	// Apply domain adjustments.
+	{
+		const unordered_map<uint64_t, uint64_t> *url_to_domain = indexer->url_to_domain();
+		ifstream reader(domain_adjustment_filename(), ios::binary);
+		while (!reader.eof()) {
+			reader.read(buffer, buffer_size);
+			const size_t read_bytes = reader.gcount();
+
+			for (size_t i = 0; i < read_bytes; i += sizeof(struct Adjustment)) {
+				struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
+
+				for (auto &iter : m_cache[adjustment->word_hash]) {
+					auto find_iter = url_to_domain->find(iter.m_value);
+					if (find_iter != url_to_domain->end() && find_iter->second == adjustment->key_hash) {
+						iter.m_score += adjustment->score;
+						cout << "updating domain to shard: " << target_filename() << endl;
+					}
+				}
+			}
+		}
+	}
+
+	delete buffer;
+
+	sort_cache();
+	save_file();
+	truncate_cache_files();
 }
 
 void FullTextShardBuilder::read_data_to_cache() {
 
-	Profiler profile("FullTextShardBuilder::read_data_to_cache");
-
 	m_cache.clear();
+	m_total_results.clear();
 
 	ifstream reader(target_filename(), ios::binary);
 
@@ -223,6 +267,13 @@ void FullTextShardBuilder::read_data_to_cache() {
 		size_t len = *((size_t *)(&vector_buffer[i*8]));
 		lens.push_back(len);
 		data_size += len;
+	}
+
+	// Read the totals.
+	reader.read(vector_buffer, num_keys * 8);
+	for (size_t i = 0; i < num_keys; i++) {
+		size_t total = *((size_t *)(&vector_buffer[i*8]));
+		m_total_results[keys[i]] = total;
 	}
 	delete vector_buffer;
 
@@ -285,6 +336,7 @@ void FullTextShardBuilder::save_file() {
 
 	vector<size_t> v_pos;
 	vector<size_t> v_len;
+	vector<size_t> v_tot;
 
 	size_t pos = 0;
 	for (uint64_t key : keys) {
@@ -294,12 +346,14 @@ void FullTextShardBuilder::save_file() {
 		
 		v_pos.push_back(pos);
 		v_len.push_back(len);
+		v_tot.push_back(m_total_results[key]);
 
 		pos += len + sizeof(size_t);
 	}
 	
 	m_writer.write((char *)v_pos.data(), keys.size() * 8);
 	m_writer.write((char *)v_len.data(), keys.size() * 8);
+	m_writer.write((char *)v_tot.data(), keys.size() * 8);
 
 	const size_t buffer_num_records = 1000;
 	const size_t buffer_len = FULL_TEXT_RECORD_LEN * buffer_num_records;
@@ -309,8 +363,6 @@ void FullTextShardBuilder::save_file() {
 	hash<string> hasher;
 	for (uint64_t key : keys) {
 		size_t i = 0;
-
-		m_writer.write((char *)&(m_total_results[key]), sizeof(size_t));
 
 		for (const FullTextResult &res : m_cache[key]) {
 			memcpy(&buffer[i], &res.m_value, FULL_TEXT_KEY_LEN);
@@ -347,7 +399,33 @@ string FullTextShardBuilder::url_adjustment_filename() const {
 	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".adj_url";
 }
 
+/*
+	Deletes ALL data from this shard.
+*/
 void FullTextShardBuilder::truncate() {
+
+	m_cache.clear();
+
+	m_writer.open(filename(), ios::trunc);
+	if (!m_writer.is_open()) {
+		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
+	}
+	m_writer.close();
+
+	ofstream domain_writer(domain_adjustment_filename(), ios::trunc);
+	domain_writer.close();
+
+	ofstream url_writer(url_adjustment_filename(), ios::trunc);
+	url_writer.close();
+
+	ofstream target_writer(target_filename(), ios::trunc);
+	target_writer.close();
+}
+
+/*
+	Deletes all data from caches.
+*/
+void FullTextShardBuilder::truncate_cache_files() {
 
 	m_cache.clear();
 

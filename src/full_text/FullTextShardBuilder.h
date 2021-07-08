@@ -47,6 +47,7 @@ public:
 	string domain_adjustment_filename() const;
 	string url_adjustment_filename() const;
 	void truncate();
+	void truncate_cache_files();
 
 	size_t disk_size() const;
 	size_t cache_size() const;

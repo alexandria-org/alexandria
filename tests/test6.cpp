@@ -16,6 +16,21 @@ int test6_1(void) {
 	int ok = 1;
 
 	{
+
+		vector<FullTextResult> vec;
+		vec.push_back(FullTextResult(1, 1));
+		vec.push_back(FullTextResult(2, 1));
+		vec.push_back(FullTextResult(5, 1));
+		vec.push_back(FullTextResult(10, 1));
+
+		auto iter = lower_bound(vec.begin(), vec.end(), 5);
+		if (iter == vec.end() || (*iter).m_value != 5) {
+			ok = 0;
+		}
+
+	}
+
+	{
 		HashTable hash_table("test_index");
 		hash_table.truncate();
 		hash_table.add(123, "hejsan");
@@ -110,24 +125,27 @@ int test6_3(void) {
 		FullTextIndex fti(ft_db_name);
 
 		size_t total;
-		vector<FullTextResult> result = fti.search_phrase("quick brown fox", 1000, total);
+		vector<FullTextResult> result = fti.search_phrase("fox", 1000, total);
 
 		ok = ok && total == 1;
 		ok = ok && result.size() == 1;
 		ok = ok && result[0].m_score == 0;
-		ok = ok && (hash_table.find(result[0].m_value) == "http://url1.com");
+
+		string result_string = hash_table.find(result[0].m_value);
+		ok = ok && (result_string.find("http://url1.com") == 0);
 	}
 
 	// Add links
-	LinkIndexerRunner link_indexer(li_db_name, "CC-MAIN-2021-17", ft_db_name);
-	link_indexer.truncate();
-
-	ifstream infile2("../tests/data/test6_2_li.txt");
-	link_indexer.index_stream(infile2);
-	link_indexer.merge();
-	link_indexer.sort();
-
 	{
+		LinkIndexerRunner link_indexer(li_db_name, "CC-MAIN-2021-17", ft_db_name);
+		link_indexer.truncate();
+
+		ifstream infile2("../tests/data/test6_2_li.txt");
+		link_indexer.index_stream(infile2);
+		link_indexer.merge();
+		link_indexer.merge_adjustments();
+		link_indexer.sort();
+
 		HashTable hash_table(ft_db_name);
 		FullTextIndex fti(ft_db_name);
 
@@ -138,17 +156,27 @@ int test6_3(void) {
 			ok = ok && total == 1;
 			ok = ok && result.size() == 1;
 			ok = ok && result[0].m_score == 1000;
-			ok = ok && (hash_table.find(result[0].m_value) == "http://url1.com");
+			ok = ok && (hash_table.find(result[0].m_value).find("http://url1.com") == 0);
 		}
 
 		{
+
+			LinkIndexerRunner link_indexer(li_db_name, "CC-MAIN-2021-17", ft_db_name);
+			link_indexer.truncate();
+
+			ifstream infile2("../tests/data/test6_2_li2.txt");
+			link_indexer.index_stream(infile2);
+			link_indexer.merge();
+			link_indexer.merge_adjustments();
+			link_indexer.sort();
+
 			size_t total;
 			vector<FullTextResult> result = fti.search_phrase("josef", 1000, total);
 
 			ok = ok && total == 1;
 			ok = ok && result.size() == 1;
 			ok = ok && result[0].m_score == 2000;
-			ok = ok && (hash_table.find(result[0].m_value) == "http://url2.com/sub_page");
+			ok = ok && (hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0);
 		}
 	}
 
@@ -179,7 +207,7 @@ int test6_4(void) {
 		assert(total == 1);
 		assert(result.size() == 1);
 		assert(result[0].m_score == 0);
-		assert(hash_table.find(result[0].m_value) == "http://url1.com");
+		assert(hash_table.find(result[0].m_value).find("http://url1.com") == 0);
 	}
 
 	// Add links
@@ -202,7 +230,7 @@ int test6_4(void) {
 			assert(total == 1);
 			assert(result.size() == 1);
 			assert(result[0].m_score == 1000);
-			assert(hash_table.find(result[0].m_value) == "http://url1.com");
+			assert(hash_table.find(result[0].m_value).find("http://url1.com") == 0);
 		}
 
 		{
@@ -212,7 +240,7 @@ int test6_4(void) {
 			assert(total == 1);
 			assert(result.size() == 1);
 			assert(result[0].m_score == 1000);
-			assert(hash_table.find(result[0].m_value) == "http://url2.com/sub_page");
+			assert(hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0);
 		}
 	}
 
@@ -243,7 +271,7 @@ int test6_5(void) {
 		assert(total == 1);
 		assert(result.size() == 1);
 		assert(result[0].m_score == 0);
-		assert(hash_table.find(result[0].m_value) == "http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm");
+		assert(hash_table.find(result[0].m_value).find("http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm") == 0);
 	}
 
 	// Add links
@@ -266,7 +294,7 @@ int test6_5(void) {
 			assert(total == 1);
 			assert(result.size() == 1);
 			assert(result[0].m_score == 1000);
-			assert(hash_table.find(result[0].m_value) == "http://www.omnible.se");
+			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0);
 		}
 
 		{
@@ -276,7 +304,7 @@ int test6_5(void) {
 			assert(total == 1);
 			assert(result.size() == 1);
 			assert(result[0].m_score == 1000);
-			assert(hash_table.find(result[0].m_value) == "http://www.omnible.se");
+			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0);
 		}
 	}
 

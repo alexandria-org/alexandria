@@ -17,5 +17,15 @@ public:
 	FullTextResult& operator=(const FullTextResult& other);
 
 	friend bool operator==(const FullTextResult &a, const FullTextResult &b);
+	friend bool operator==(const FullTextResult &a, uint64_t b);
+	friend bool operator==(uint64_t b, const FullTextResult &a);
+
+	friend bool operator<(const FullTextResult &a, const FullTextResult &b);
+	friend bool operator<(const FullTextResult &a, uint64_t b);
+	friend bool operator<(uint64_t b, const FullTextResult &a);
+
+	friend bool operator>(const FullTextResult &a, const FullTextResult &b);
+	friend bool operator>(const FullTextResult &a, uint64_t b);
+	friend bool operator>(uint64_t b, const FullTextResult &a);
 
 };

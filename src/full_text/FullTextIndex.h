@@ -35,15 +35,6 @@ public:
 	vector<FullTextResult> search_phrase(const string &phrase, int limit, size_t &total_found);
 
 	size_t disk_size() const;
-	bool has_key(uint64_t key) const {
-		return m_url_to_domain.count(key) > 0;
-	}
-
-	bool has_domain(uint64_t domain_hash) const {
-		auto iter = m_domains.find(domain_hash);
-		if (iter == m_domains.end()) return false;
-		return iter->second > 0;
-	}
 
 	void download(const SubSystem *sub_system);
 	void upload(const SubSystem *sub_system);
@@ -57,14 +48,10 @@ private:
 	string m_db_name;
 	hash<string> m_hasher;
 
-	unordered_map<uint64_t, uint64_t> m_url_to_domain;
-	unordered_map<uint64_t, size_t> m_domains;
-
 	vector<FullTextShard *> m_shards;
 
 	void sort_results(vector<FullTextResult> &results);
 	void run_upload_thread(const SubSystem *sub_system, const FullTextShard *shard);
 	void run_download_thread(const SubSystem *sub_system, const FullTextShard *shard);
-	void read_url_to_domain();
 
 };

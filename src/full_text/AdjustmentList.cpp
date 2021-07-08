@@ -2,7 +2,7 @@
 #include "AdjustmentList.h"
 
 size_t AdjustmentList::count() const {
-	return m_links.size();
+	return m_links.size() + m_domain_links.size();
 }
 
 void AdjustmentList::add_domain_link(uint64_t word_hash, const struct Link &link) {
@@ -21,8 +21,9 @@ vector<struct Adjustment> AdjustmentList::data() const {
 			ret.emplace_back(Adjustment{
 				.type = URL_ADJUSTMENT,
 				.word_hash = iter.first,
-				.key_hash = iter2.second.target_host_hash,
-				.score = link_score(iter2.second)
+				.key_hash = iter2.second.target_url.hash(),
+				.score = link_score(iter2.second),
+				.domain_harmonic = (uint32_t)iter2.second.target_harmonic
 			});
 		}
 	}
@@ -33,7 +34,8 @@ vector<struct Adjustment> AdjustmentList::data() const {
 				.type = DOMAIN_ADJUSTMENT,
 				.word_hash = iter.first,
 				.key_hash = iter2.second.target_host_hash,
-				.score = link_score(iter2.second)
+				.score = link_score(iter2.second),
+				.domain_harmonic = (uint32_t)iter2.second.target_harmonic
 			});
 		}
 	}

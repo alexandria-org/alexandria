@@ -8,7 +8,6 @@ FullTextIndex::FullTextIndex(const string &db_name)
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		m_shards.push_back(new FullTextShard(m_db_name, shard_id));
 	}
-	//read_url_to_domain();
 }
 
 FullTextIndex::~FullTextIndex() {
@@ -250,31 +249,3 @@ void FullTextIndex::run_download_thread(const SubSystem *sub_system, const FullT
 	}
 }
 
-void FullTextIndex::read_url_to_domain() {
-	for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-		const string file_name = "/mnt/"+(to_string(bucket_id))+"/full_text/url_to_domain_"+m_db_name+".fti";
-
-		ifstream infile(file_name, ios::binary);
-		if (infile.is_open()) {
-
-			char buffer[8];
-
-			do {
-
-				infile.read(buffer, sizeof(uint64_t));
-				if (infile.eof()) break;
-
-				uint64_t url_hash = *((uint64_t *)buffer);
-
-				infile.read(buffer, sizeof(uint64_t));
-				uint64_t domain_hash = *((uint64_t *)buffer);
-
-				m_url_to_domain[url_hash] = domain_hash;
-				m_domains[domain_hash]++;
-
-			} while (!infile.eof());
-
-			infile.close();
-		}
-	}
-}

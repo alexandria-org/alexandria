@@ -52,12 +52,12 @@ void FullTextShard::find(uint64_t key, FullTextResultSet *result_set) {
 	reader.read(buffer, 8);
 	size_t len = *((size_t *)(&buffer[0]));
 
-	reader.seekg(m_data_start + pos, ios::beg);
-
-	// Read total number of results.
-	size_t total_num_results;
-	reader.read((char *)&total_num_results, sizeof(size_t));
+	reader.seekg(m_total_start + key_pos * 8, ios::beg);
+	reader.read(buffer, 8);
+	size_t total_num_results = *((size_t *)(&buffer[0]));
 	result_set->set_total_num_results(total_num_results);
+
+	reader.seekg(m_data_start + pos, ios::beg);
 
 	const size_t num_records = len / FULL_TEXT_RECORD_LEN;
 
@@ -130,7 +130,8 @@ void FullTextShard::read_keys() {
 
 
 	m_len_start = m_pos_start + m_num_keys * 8;
-	m_data_start = m_len_start + m_num_keys * 8;
+	m_total_start = m_len_start + m_num_keys * 8;
+	m_data_start = m_total_start + m_num_keys * 8;
 
 }
 

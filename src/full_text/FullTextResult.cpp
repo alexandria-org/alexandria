@@ -29,3 +29,35 @@ FullTextResult& FullTextResult::operator=(const FullTextResult& other) {
 bool operator==(const FullTextResult &a, const FullTextResult &b) {
 	return a.m_value == b.m_value;
 }
+
+bool operator==(const FullTextResult &a, uint64_t b) {
+	return a.m_value == b;
+}
+
+bool operator==(uint64_t b, const FullTextResult &a) {
+	return a.m_value == b;
+}
+
+bool operator<(const FullTextResult &a, const FullTextResult &b) {
+	return a.m_value < b.m_value;
+}
+
+bool operator<(const FullTextResult &a, uint64_t b) {
+	return a.m_value < b;
+}
+
+bool operator<(uint64_t b, const FullTextResult &a) {
+	return a.m_value < b;
+}
+
+bool operator>(const FullTextResult &a, const FullTextResult &b) {
+	return a.m_value > b.m_value;
+}
+
+bool operator>(const FullTextResult &a, uint64_t b) {
+	return a.m_value > b;
+}
+
+bool operator>(uint64_t b, const FullTextResult &a) {
+	return a.m_value > b;
+}
