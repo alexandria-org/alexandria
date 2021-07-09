@@ -22,8 +22,6 @@ string read_test_file(const string &file_name) {
 
 int main(int argc, const char **argv) {
 
-	cout << "Running static tests" << endl;
-
 	string run_tests = "all";
 	size_t run_one = 0;
 	if (argc > 1) {
@@ -87,6 +85,7 @@ int main(int argc, const char **argv) {
 	};
 
 	int allOk = 1;
+	string test_report = "Alexandria.org test report\n";
 	for (int i = 0; i < numSuites; i++) {
 
 		if (run_tests == "one") {
@@ -94,26 +93,28 @@ int main(int argc, const char **argv) {
 		}
 
 		int numTests = numTestsInSuite[i];
-		cout << "Running suite test" << (i + 1) << ".h" <<  endl;
+		test_report += "Running suite test" + to_string(i + 1) + ".h\n";
 		int suiteOk = 1;
 		for (int j = 0; j < numTests; j++) {
 			int ok = testSuites[i][j]();
 			if (ok) {
-				cout << "\ttest" << (i + 1) << "_" << (j + 1) << " passed" << endl;
+				test_report += "\ttest" + to_string(i + 1) + "_" + to_string(j + 1) + " passed\n";
 			} else {
-				cout << "\ttest" << (i + 1) << "_" << (j + 1) << " failed" << endl;
+				test_report += "\ttest" + to_string(i + 1) + "_" + to_string(j + 1) + " failed\n";
 			}
 			suiteOk = suiteOk && ok;
 		}
-		cout << endl;
+		test_report += "\n";
 		allOk = allOk && suiteOk;
 	}
 
 	if (allOk) {
-		cout << "All tests passed" << endl;
+		test_report += "All tests passed\n";
 	} else {
-		cout << "ERROR Tests failed" << endl;
+		test_report += "ERROR Tests failed\n";
 	}
+
+	cout << test_report << endl;
 
 	return 0;
 }

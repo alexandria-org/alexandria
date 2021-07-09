@@ -85,17 +85,16 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 	Profiler profiler2("value_intersection");
 	size_t shortest_vector;
-	vector<size_t> result_ids = value_intersection(result_map, shortest_vector);
+	vector<uint32_t> score_vector;
+	vector<size_t> result_ids = value_intersection(result_map, shortest_vector, score_vector);
 
 	vector<FullTextResult> result;
 
 	FullTextResultSet *shortest = result_map[shortest_vector];
-	vector<uint32_t> score_vector;
 	uint64_t *value_arr = shortest->value_pointer();
-	uint32_t *score_arr = shortest->score_pointer();
-	for (size_t result_id : result_ids) {
-		result.emplace_back(FullTextResult(value_arr[result_id], score_arr[result_id]));
-		score_vector.push_back(score_arr[result_id]);
+	for (size_t i = 0; i < result_ids.size(); i++) {
+		result.emplace_back(FullTextResult(value_arr[result_ids[i]], score_vector[i]));
+		idx++;
 	}
 	profiler2.stop();
 
@@ -178,7 +177,7 @@ void FullTextIndex::download(const SubSystem *sub_system) {
 }
 
 vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet *> &values_map,
-	size_t &shortest_vector_position) const {
+	size_t &shortest_vector_position, vector<uint32_t> &scores) const {
 	Profiler value_intersection("FullTextIndex::value_intersection");
 	
 	if (values_map.size() == 0) return {};
@@ -203,12 +202,17 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 		bool all_equal = true;
 		uint64_t value = value_ptr[positions[shortest_vector_position]];
 
+		uint32_t score_sum = 0;
 		for (auto &iter : values_map) {
 			const uint64_t *val_arr = iter.second->value_pointer();
+			const uint32_t *score_arr = iter.second->score_pointer();
 			const size_t len = iter.second->len();
 			size_t *pos = &(positions[iter.first]);
 			while (value > val_arr[*pos] && *pos < len) {
 				(*pos)++;
+			}
+			if (value == val_arr[*pos] && *pos < len) {
+				score_sum += score_arr[*pos];
 			}
 			if (value < val_arr[*pos] && *pos < len) {
 				all_equal = false;
@@ -218,6 +222,7 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 			}
 		}
 		if (all_equal) {
+			scores.push_back(score_sum);
 			result_ids.push_back(positions[shortest_vector_position]);
 		}
 

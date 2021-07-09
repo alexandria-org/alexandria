@@ -348,7 +348,7 @@ void FullTextShardBuilder::save_file() {
 		v_len.push_back(len);
 		v_tot.push_back(m_total_results[key]);
 
-		pos += len + sizeof(size_t);
+		pos += len;
 	}
 	
 	m_writer.write((char *)v_pos.data(), keys.size() * 8);

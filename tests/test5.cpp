@@ -101,31 +101,59 @@ int test5_1(void) {
 int test5_2(void) {
 	int ok = 1;
 
-	/*
+	const string ft_db_name = "test_db_4";
+
+	FullTextIndexerRunner indexer(ft_db_name, "CC-MAIN-2021-17");
+	indexer.truncate();
+
+	ifstream infile("../tests/data/cc_index1");
+	indexer.index_stream(infile);
+	indexer.merge();
+	indexer.sort();
+
+	hash<string> hasher;
 
 	vector<FullTextResult> result;
 	{
-		FullTextIndex fti("test_db_4");
+		FullTextIndex fti(ft_db_name);
 
-		Profiler profile("add_file");
-		fti.add_file("../tests/data/cc_index1.gz", {1, 2, 3, 4}, {1, 1, 1, 1});
-		profile.stop();
-
-		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School");
+		size_t total;
+		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School", 1000, total);
 
 		ok = ok && result.size() > 0 &&
-			result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
+			result[0].m_value == URL("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441").hash();
 
-		fti.save();
-
-		Profiler profile_search_db("search_db");
-		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School");
-		profile_search_db.stop();
+		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School", 1000, total);
 
 		ok = ok && result.size() > 0 &&
-			result[0].m_value == hasher("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441");
+			result[0].m_value == URL("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441").hash();
+
+
+		result = fti.search_phrase("An Ode to Power", 1000, total);
+		ok = ok && result.size() > 0;
+
+		bool contains_url = false;
+		for (const FullTextResult &res : result) {
+			if (res.m_value == URL("http://aminorconsideration.org/apt-pupil-an-ode-to-power/").hash()) {
+				contains_url = true;
+				break;
+			}
+		}
+		ok = ok && contains_url;
+
+		result = fti.search_phrase("Todos Fallado debatir pasado febrero", 1000, total);
+		ok = ok && result.size() > 0;
+
+		contains_url = false;
+		for (const FullTextResult &res : result) {
+			if (res.m_value == URL("http://artesacro.org/Noticia.asp?idreg=47157").hash()) {
+				contains_url = true;
+				break;
+			}
+		}
+		ok = ok && contains_url;
+
 	}
-	*/
 
 	return ok;
 }
@@ -143,7 +171,8 @@ int test5_3(void) {
 		FullTextIndex fti("test_db_5");
 
 		size_t shortest_vector;
-		vector<size_t> result = fti.value_intersection(values, shortest_vector);
+		vector<uint32_t> scores;
+		vector<size_t> result = fti.value_intersection(values, shortest_vector, scores);
 		ok = ok && result.size() == 1 && values[shortest_vector][result[0]] == 3;
 
 		values = {
@@ -152,7 +181,7 @@ int test5_3(void) {
 			{2, {2, 3, 6, 7, 8, 9}}	
 		};
 
-		result = fti.value_intersection(values, shortest_vector);
+		result = fti.value_intersection(values, shortest_vector, scores);
 		ok = ok && shortest_vector == 1;
 		ok = ok && result.size() == 3;
 		ok = ok && values[shortest_vector][result[0]] == 3;

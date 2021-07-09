@@ -214,9 +214,10 @@ int test6_4(void) {
 	LinkIndexerRunner link_indexer(li_db_name, "CC-MAIN-2021-17", ft_db_name);
 	link_indexer.truncate();
 
-	ifstream infile2("../tests/data/test6_2_li.txt");
+	ifstream infile2("../tests/data/test6_4_li.txt");
 	link_indexer.index_stream(infile2);
 	link_indexer.merge();
+	link_indexer.merge_adjustments();
 	link_indexer.sort();
 
 	{
@@ -229,7 +230,7 @@ int test6_4(void) {
 
 			assert(total == 1);
 			assert(result.size() == 1);
-			assert(result[0].m_score == 1000);
+			assert(result[0].m_score == 2000);
 			assert(hash_table.find(result[0].m_value).find("http://url1.com") == 0);
 		}
 
@@ -239,7 +240,7 @@ int test6_4(void) {
 
 			assert(total == 1);
 			assert(result.size() == 1);
-			assert(result[0].m_score == 1000);
+			assert(result[0].m_score == 2000);
 			assert(hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0);
 		}
 	}
@@ -271,7 +272,8 @@ int test6_5(void) {
 		assert(total == 1);
 		assert(result.size() == 1);
 		assert(result[0].m_score == 0);
-		assert(hash_table.find(result[0].m_value).find("http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm") == 0);
+		assert(hash_table.find(result[0].m_value)
+			.find("http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm") == 0);
 	}
 
 	// Add links
@@ -281,6 +283,7 @@ int test6_5(void) {
 	ifstream infile2("../tests/data/test6_3_li.txt");
 	link_indexer.index_stream(infile2);
 	link_indexer.merge();
+	link_indexer.merge_adjustments();
 	link_indexer.sort();
 
 	{
@@ -305,6 +308,16 @@ int test6_5(void) {
 			assert(result.size() == 1);
 			assert(result[0].m_score == 1000);
 			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0);
+		}
+
+		{
+			size_t total;
+			vector<FullTextResult> result = fti.search_phrase("Bokrecension", 1000, total);
+
+			assert(total == 1);
+			assert(result.size() == 1);
+			assert(result[0].m_score == 2000);
+			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se/749827359873598734") == 0);
 		}
 	}
 

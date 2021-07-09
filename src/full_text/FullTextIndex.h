@@ -41,7 +41,7 @@ public:
 
 	// Testable private functions.
 	vector<size_t> value_intersection(const map<size_t, FullTextResultSet *> &values_map,
-		size_t &shortest_vector_position) const;
+		size_t &shortest_vector_position, vector<uint32_t> &scores) const;
 	
 private:
 
