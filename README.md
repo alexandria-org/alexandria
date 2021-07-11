@@ -3,6 +3,7 @@
 ## Documentation
 1. [Index file format (.fti)](/documentation/index_file_format.md)
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
+3. [API Response format](/documentation/api_response_format.md)
 
 ## How to build and deploy
 1. Configure the system
