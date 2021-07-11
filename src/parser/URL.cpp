@@ -2,13 +2,6 @@
 #include "URL.h"
 #include <curl/curl.h>
 
-string URL::host_reverse(const string &host) {
-	vector<string> parts;
-	boost::split(parts, host, boost::is_any_of("."));
-	reverse(parts.begin(), parts.end());
-	return boost::algorithm::join(parts, ".");
-}
-
 URL::URL() {
 	m_status = CC_OK;
 }
@@ -63,6 +56,21 @@ string URL::path() const {
 	return m_path;
 }
 
+map<string, string> URL::query() const {
+	map<string, string> ret;
+	vector<string> parts;
+	boost::split(parts, m_query, boost::is_any_of("&"));
+	for (const string &part : parts) {
+		vector<string> pair;
+		boost::split(pair, part, boost::is_any_of("="));
+		if (pair.size() > 1) {
+			ret[pair[0]] = unescape(pair[1]);
+		}
+	}
+
+	return ret;
+}
+
 int URL::harmonic(const SubSystem *sub_system) const {
 
 	const auto iter = sub_system->domain_index()->find(host_reverse());
@@ -76,6 +84,35 @@ int URL::harmonic(const SubSystem *sub_system) const {
 	}
 
 	return harmonic;
+}
+
+string URL::host_reverse(const string &host) {
+	vector<string> parts;
+	boost::split(parts, host, boost::is_any_of("."));
+	reverse(parts.begin(), parts.end());
+	return boost::algorithm::join(parts, ".");
+}
+
+string URL::unescape(const string &str) const {
+	const size_t len = str.size();
+	const char *cstr = str.c_str();
+	char *ret = new char[len + 1];
+	size_t j = 0;
+	for (size_t i = 0; i < len; i++) {
+		if (cstr[i] == '%' && i < len - 2) {
+			ret[j++] = (char)stoi(string(&cstr[i + 1], 2), NULL, 16);
+			i += 2;
+		} else {
+			ret[j++] = cstr[i];
+		}
+	}
+	ret[j] = '\0';
+
+	string ret_str(ret);
+
+	delete ret;
+
+	return ret_str;
 }
 
 istream &operator >>(istream &ss, URL &url) {
@@ -118,7 +155,8 @@ int URL::parse() {
 	char *cquery;
 	uc = curl_url_get(h, CURLUPART_QUERY, &cquery, 0);
 	if (!uc) {
-		m_path += "?" + string(cquery);
+		m_query = cquery;
+		m_path += "?" + m_query;
 		curl_free(cquery);
 	}
 

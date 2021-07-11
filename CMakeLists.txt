@@ -7,10 +7,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 project(cc_parser LANGUAGES CXX)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 find_package(aws-lambda-runtime REQUIRED)
 find_package(AWSSDK COMPONENTS s3 transfer)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem)
 find_package(ZLIB)
+find_package(fcgi)
 
 include_directories(src/)
 include_directories(tests/)
@@ -23,10 +26,8 @@ set(SRC_CLASSES
 	"src/abstract/TextBase.cpp"
 	
 	"src/api/ApiResponse.cpp"
-	"src/api/CCApi.cpp"
 	"src/api/ApiLink.cpp"
-	"src/api/LinkSearchResult.cpp"
-	"src/api/SearchResult.cpp"
+	"src/api/ResultWithSnippet.cpp"
 
 	"src/file/TsvFile.cpp"
 	"src/file/TsvFileS3.cpp"
@@ -58,6 +59,8 @@ set(SRC_CLASSES
 	"src/index/CCIndexRunner.cpp"
 	"src/index/CCLinkIndex.cpp"
 	"src/index/CCUrlIndex.cpp"
+
+	"src/post_processor/PostProcessor.cpp"
 	
 	"src/parser/entities.cpp"
 	"src/parser/HtmlParser.cpp"
@@ -95,11 +98,6 @@ add_executable(cc_indexer
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
-add_executable(cc_api
-	"src/api.cpp"
-	${SRC_CLASSES}
-	${SRC_COMMON}
-)
 add_executable(cc_full_text
 	"src/full_text.cpp"
 	${SRC_CLASSES}
@@ -110,6 +108,11 @@ add_executable(run_tests
 	${SRC_CLASSES}
 	${SRC_COMMON}
 	${SRC_TESTS}
+)
+add_executable(server
+	"src/server.cpp"
+	${SRC_CLASSES}
+	${SRC_COMMON}
 )
 
 target_compile_definitions(run_tests PUBLIC CC_TESTING)
@@ -123,14 +126,15 @@ target_link_libraries(cc_indexer PUBLIC
 target_link_libraries(cc_full_text PUBLIC
 	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-target_link_libraries(cc_api PUBLIC
-	AWS::aws-lambda-runtime 
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(run_tests PUBLIC
 	AWS::aws-lambda-runtime 
+	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+target_link_libraries(server PUBLIC
+	AWS::aws-lambda-runtime 
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 
 aws_lambda_package_target(${PROJECT_NAME})
 aws_lambda_package_target(cc_indexer)
-aws_lambda_package_target(cc_api)
 

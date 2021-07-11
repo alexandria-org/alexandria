@@ -3,7 +3,7 @@
 #include "system/Logger.h"
 
 HashTableShardBuilder::HashTableShardBuilder(const string &db_name, size_t shard_id)
-: m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(50 + rand() % 25)
+: m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(25 + rand() % 10)
 {
 
 }

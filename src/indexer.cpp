@@ -50,6 +50,18 @@ int main(int argc, const char **argv) {
 		return 0;
 	}
 
+	if (arg == "upload") {
+		SubSystem *sub_system = new SubSystem();
+		HashTable hash_table("main_index");
+		FullTextIndex fti("main_index");
+		hash_table.upload(sub_system);
+		fti.upload(sub_system);
+
+		delete sub_system;
+
+		return 0;
+	}
+
 	if (arg == "query_link") {
 		HashTable hash_table("link_index");
 		LinkIndex li("link_index");

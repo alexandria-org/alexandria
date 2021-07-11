@@ -3,37 +3,21 @@
 
 #include <iostream>
 #include <vector>
-#include <map>
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/GetObjectRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
-#include <aws/core/utils/json/JsonSerializer.h>
 
-#include "SearchResult.h"
-#include "abstract/TextBase.h"
+#include "api/ResultWithSnippet.h"
 
 using namespace std;
 
-class ApiResponse : public TextBase {
+class ApiResponse {
 
 public:
-	ApiResponse();
+	ApiResponse(vector<ResultWithSnippet> &results, size_t total_found);
 	~ApiResponse();
 
-	void set_results(vector<SearchResult> &results);
-	void set_debug(const string &variable_name, size_t value);
-	void set_failure(const string &reason);
-
-	vector<SearchResult> results() const;
-	string status() const;
-	string json() const;
+	friend ostream &operator<<(ostream &os, const ApiResponse &api_response);
 
 private:
 
-	vector<SearchResult> m_results;
-	map<string, size_t> m_debug_variables;
-	string m_status;
-	string m_failure_reason;
+	string m_response;
 
 };

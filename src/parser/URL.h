@@ -28,8 +28,10 @@ public:
 	uint64_t link_hash(const URL &target_url) const;
 	string host() const;
 	string path() const;
+	map<string, string> query() const;
 	int harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
+	string unescape(const string &str) const;
 
 	friend istream &operator >>(istream &ss, URL &url);
 	friend ostream &operator <<(ostream& os, const URL& url);
@@ -41,6 +43,7 @@ private:
 	string m_host;
 	string m_host_reverse;
 	string m_path;
+	string m_query;
 	int m_status;
 
 	int parse();
