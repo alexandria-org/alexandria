@@ -39,8 +39,8 @@ public:
 	void flush_cache(mutex *write_mutexes);
 	void read_url_to_domain();
 	void write_url_to_domain();
-	void add_domain_link(uint64_t word_hash, const struct Link &link);
-	void add_url_link(uint64_t word_hash, const struct Link &link);
+	void add_domain_link(uint64_t word_hash, const Link &link);
+	void add_url_link(uint64_t word_hash, const Link &link);
 
 	void write_adjustments_cache(mutex *write_mutexes);
 	void flush_adjustments_cache(mutex *write_mutexes);

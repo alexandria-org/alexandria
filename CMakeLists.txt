@@ -43,6 +43,7 @@ set(SRC_CLASSES
 	"src/full_text/FullTextIndexerRunner.cpp"
 	"src/full_text/AdjustmentList.cpp"
 
+	"src/link_index/Link.cpp"
 	"src/link_index/LinkIndex.cpp"
 	"src/link_index/LinkShard.cpp"
 	"src/link_index/LinkShardBuilder.cpp"

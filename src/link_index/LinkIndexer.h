@@ -40,7 +40,7 @@ private:
 
 	void add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		uint32_t score);
-	void adjust_score_for_domain_link(const string &link_text, const struct Link &link);
-	void adjust_score_for_url_link(const string &link_text, const struct Link &link);
+	void adjust_score_for_domain_link(const string &link_text, const Link &link);
+	void adjust_score_for_url_link(const string &link_text, const Link &link);
 
 };

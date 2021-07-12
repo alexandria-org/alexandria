@@ -34,13 +34,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 		const string link_text = col_values[4];
 
-		const Link link{
-			.source_url = source_url,
-			.target_url = target_url,
-			.target_host_hash = target_url.host_hash(),
-			.source_harmonic = source_harmonic,
-			.target_harmonic = target_harmonic
-		};
+		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
 		if (m_ft_indexer->has_domain(target_url.host_hash())) {
 			adjust_score_for_domain_link(col_values[4], link);
@@ -106,7 +100,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	}
 }
 
-void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const struct Link &link) {
+void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const Link &link) {
 	
 	vector<string> words = get_full_text_words(link_text);
 
@@ -116,7 +110,7 @@ void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const st
 	}
 }
 
-void LinkIndexer::adjust_score_for_url_link(const string &link_text, const struct Link &link) {
+void LinkIndexer::adjust_score_for_url_link(const string &link_text, const Link &link) {
 	
 	vector<string> words = get_full_text_words(link_text);
 

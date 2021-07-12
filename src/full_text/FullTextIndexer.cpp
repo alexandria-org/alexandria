@@ -187,12 +187,12 @@ void FullTextIndexer::write_url_to_domain() {
 	outfile.close();
 }
 
-void FullTextIndexer::add_domain_link(uint64_t word_hash, const struct Link &link) {
+void FullTextIndexer::add_domain_link(uint64_t word_hash, const Link &link) {
 	const size_t shard_id = word_hash % FT_NUM_SHARDS;
 	m_adjustments[shard_id]->add_domain_link(word_hash, link);
 }
 
-void FullTextIndexer::add_url_link(uint64_t word_hash, const struct Link &link) {
+void FullTextIndexer::add_url_link(uint64_t word_hash, const Link &link) {
 	const size_t shard_id = word_hash % FT_NUM_SHARDS;
 	m_adjustments[shard_id]->add_link(word_hash, link);
 }
