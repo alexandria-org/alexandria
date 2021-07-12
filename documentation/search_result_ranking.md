@@ -19,3 +19,4 @@ rank(link_source, link_target) = max(harmonic(domain(link_source)) - harmonic(do
 ```
 
 ![link rank formula](https://github.com/joscul/alexandria/raw/main/documentation/images/figure_1.png)
+Link value for links to target domain with harmonic centrality 0.2
