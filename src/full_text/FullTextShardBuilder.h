@@ -22,7 +22,7 @@ struct ShardInput {
 
 	uint64_t key;
 	uint64_t value;
-	uint32_t score;
+	float score;
 
 };
 
@@ -33,7 +33,7 @@ public:
 	FullTextShardBuilder(const string &db_name, size_t shard_id);
 	~FullTextShardBuilder();
 
-	void add(uint64_t key, uint64_t value, uint32_t score);
+	void add(uint64_t key, uint64_t value, float score);
 	void sort_cache();
 	bool full() const;
 	void append();

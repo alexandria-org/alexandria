@@ -24,7 +24,7 @@ FullTextIndexer::~FullTextIndexer() {
 }
 
 void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-	const vector<size_t> &cols, const vector<uint32_t> &scores) {
+	const vector<size_t> &cols, const vector<float> &scores) {
 
 	string line;
 	while (getline(stream, line)) {
@@ -32,7 +32,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 		URL url(col_values[0]);
-		int harmonic = url.harmonic(m_sub_system);
+		float harmonic = url.harmonic(m_sub_system);
 
 		m_url_to_domain[url.hash()] = url.host_hash();
 
@@ -59,7 +59,7 @@ void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_bui
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 		URL source_url(col_values[0], col_values[1]);
-		int source_harmonic = source_url.harmonic(m_sub_system);
+		float source_harmonic = source_url.harmonic(m_sub_system);
 
 		URL target_url(col_values[2], col_values[3]);
 
@@ -79,7 +79,7 @@ void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_bui
 }
 
 void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
-		uint32_t score) {
+		float score) {
 
 	uint64_t key_hash = URL(key).hash();
 	shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, key);
@@ -219,7 +219,7 @@ void FullTextIndexer::flush_adjustments_cache(mutex *write_mutexes) {
 	}
 }
 
-void FullTextIndexer::add_data_to_shards(const uint64_t &key_hash, const string &text, uint32_t score) {
+void FullTextIndexer::add_data_to_shards(const uint64_t &key_hash, const string &text, float score) {
 
 	vector<string> words = get_full_text_words(text);
 	for (const string &word : words) {

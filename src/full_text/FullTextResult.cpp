@@ -7,7 +7,7 @@ FullTextResult::FullTextResult()
 {
 }
 
-FullTextResult::FullTextResult(uint64_t value, uint32_t score)
+FullTextResult::FullTextResult(uint64_t value, float score)
 : m_value(value), m_score(score)
 {
 }

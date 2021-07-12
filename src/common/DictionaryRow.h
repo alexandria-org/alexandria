@@ -20,6 +20,7 @@ public:
 	~DictionaryRow();
 
 	int get_int(int column) const;
+	float get_float(int column) const;
 	double get_double(int column) const;
 
 private:

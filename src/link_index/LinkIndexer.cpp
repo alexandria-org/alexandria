@@ -27,10 +27,10 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 		URL source_url(col_values[0], col_values[1]);
-		int source_harmonic = source_url.harmonic(m_sub_system);
+		float source_harmonic = source_url.harmonic(m_sub_system);
 
 		URL target_url(col_values[2], col_values[3]);
-		int target_harmonic = target_url.harmonic(m_sub_system);
+		float target_harmonic = target_url.harmonic(m_sub_system);
 
 		const string link_text = col_values[4];
 
@@ -87,7 +87,7 @@ void LinkIndexer::flush_cache(mutex *write_mutexes) {
 }
 
 void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
-	const string &link_text, uint32_t score) {
+	const string &link_text, float score) {
 
 	vector<string> words = get_full_text_words(link_text);
 	for (const string &word : words) {

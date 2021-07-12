@@ -25,6 +25,10 @@ int DictionaryRow::get_int(int column) const {
 	return (int)m_columns[column];
 }
 
+float DictionaryRow::get_float(int column) const {
+	return (float)m_columns[column];
+}
+
 double DictionaryRow::get_double(int column) const {
 	return m_columns[column];
 }

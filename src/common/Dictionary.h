@@ -23,6 +23,7 @@ public:
 	unordered_map<size_t, DictionaryRow>::const_iterator end() const;
 
 	bool has_key(const string &key) const;
+	size_t size() const { return m_rows.size(); }
 
 private:
 

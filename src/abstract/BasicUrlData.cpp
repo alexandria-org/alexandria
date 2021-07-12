@@ -88,11 +88,11 @@ string BasicUrlData::build_full_text_index() {
 		URL url(col);
 
 		uint64_t id = hasher(col);
-		uint32_t score = 0;
+		float score = 0.0f;
 
 		const auto iter = m_sub_system->domain_index()->find(url.host_reverse());
 
-		int harmonic;
+		float harmonic;
 		if (iter == m_sub_system->domain_index()->end()) {
 			#ifndef CC_TESTING
 				continue;
@@ -101,7 +101,7 @@ string BasicUrlData::build_full_text_index() {
 			#endif
 		} else {
 			const DictionaryRow row = iter->second;
-			score = (uint32_t)row.get_int(1);
+			score = (float)row.get_float(1);
 		}
 
 		string title;
@@ -145,16 +145,16 @@ void BasicUrlData::add_to_index(const string &word, const URL &url, const string
 
 	const auto iter = m_sub_system->domain_index()->find(url.host_reverse());
 
-	int harmonic;
+	float harmonic;
 	if (iter == m_sub_system->domain_index()->end()) {
 		#ifndef CC_TESTING
 			return;
 		#else
-			harmonic = 0;
+			harmonic = 0.0f;
 		#endif
 	} else {
 		const DictionaryRow row = iter->second;
-		harmonic = row.get_int(1);
+		harmonic = row.get_float(1);
 	}
 
 	if (harmonic < CC_HARMONIC_LIMIT) {
@@ -164,7 +164,7 @@ void BasicUrlData::add_to_index(const string &word, const URL &url, const string
 	m_result << word << "\t" << url << "\t" << harmonic << "\t" << title << "\t" << snippet << endl;
 }
 
-inline void BasicUrlData::add_to_full_text_index(const string &word, uint64_t id, uint32_t score) {
+inline void BasicUrlData::add_to_full_text_index(const string &word, uint64_t id, float score) {
 	m_full_text_result << word << "\t" << id << "\t" << score << endl;
 }
 

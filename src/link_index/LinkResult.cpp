@@ -8,7 +8,7 @@ LinkResult::LinkResult()
 }
 
 LinkResult::LinkResult(uint64_t link_hash, uint64_t source, uint64_t target, uint64_t source_domain,
-	uint64_t target_domain, uint32_t score)
+	uint64_t target_domain, float score)
 : m_link_hash(link_hash), m_source(source), m_target(target), m_source_domain(source_domain),
 	m_target_domain(target_domain), m_score(score)
 {

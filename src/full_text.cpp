@@ -14,7 +14,7 @@ int main() {
 	size_t bytes_written = 0;
 	for (size_t i = 0; i < 100000000; i++) {
 		uint64_t rnd1 = i;
-		uint32_t score = 123;
+		float score = 123;
 		file.write((const char *)&rnd1, sizeof(rnd1));
 		file.write((const char *)&score, sizeof(score));
 		bytes_written += sizeof(rnd1) + sizeof(score);
@@ -33,7 +33,7 @@ int main() {
 	if (file.read(buffer.data(), size)) {
 		for (size_t i = 0; i < 10000000; i++) {
 			const uint64_t *rnd1 = (const uint64_t *)&buffer[i * 12];
-			const uint32_t *score = (const uint32_t *)&buffer[i * 12 + 8];
+			const float *score = (const float *)&buffer[i * 12 + 8];
 			//cout << *rnd1 << " " << *score << endl;
 		}
 	}

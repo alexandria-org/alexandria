@@ -9,8 +9,8 @@ struct Adjustment {
 	unsigned char type;
 	uint64_t word_hash;
 	uint64_t key_hash;
-	uint32_t score;
-	uint32_t domain_harmonic;
+	float score;
+	float domain_harmonic;
 	
 };
 

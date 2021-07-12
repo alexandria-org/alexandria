@@ -21,7 +21,7 @@ public:
 	~LinkShardBuilder();
 
 	void add(uint64_t word_key, uint64_t link_hash, uint64_t source, uint64_t target, uint64_t source_domain,
-		uint64_t target_domain, uint32_t score);
+		uint64_t target_domain, float score);
 	void sort_cache();
 	bool full() const;
 	void append();

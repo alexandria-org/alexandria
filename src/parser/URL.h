@@ -29,7 +29,7 @@ public:
 	string host() const;
 	string path() const;
 	map<string, string> query() const;
-	int harmonic(const SubSystem *sub_system) const;
+	float harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
 	string unescape(const string &str) const;
 

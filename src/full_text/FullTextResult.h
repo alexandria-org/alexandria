@@ -8,11 +8,11 @@ class FullTextResult {
 public:
 
 	FullTextResult();
-	FullTextResult(uint64_t key, uint32_t score);
+	FullTextResult(uint64_t key, float score);
 	FullTextResult(const FullTextResult &res);
 
 	uint64_t m_value;
-	uint32_t m_score;
+	float m_score;
 
 	FullTextResult& operator=(const FullTextResult& other);
 

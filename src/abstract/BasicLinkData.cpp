@@ -67,17 +67,17 @@ void BasicLinkData::add_to_index(const string &word, const string from_domain, c
 
 	const auto iter = m_sub_system->domain_index()->find(URL::host_reverse(from_domain));
 
-	int harmonic;
+	float harmonic;
 	if (iter == m_sub_system->domain_index()->end()) {
 		#ifndef CC_TESTING
 			return;
 			//harmonic = 0;
 		#else
-			harmonic = 0;
+			harmonic = 0.0f;
 		#endif
 	} else {
 		const DictionaryRow row = iter->second;
-		harmonic = row.get_int(1);
+		harmonic = row.get_float(1);
 	}
 
 	m_result << word << "\t" << to_domain << "\t" << to_uri << "\t" << from_domain << "\t" << from_uri << "\t"

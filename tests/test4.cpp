@@ -14,29 +14,4 @@ using namespace Aws::Utils::Json;
 int test4_1(void) {
 	int ok = 1;
 	return ok;
-
-	SubSystem *ss = new SubSystem();
-
-	CCApi api(ss->s3_client());
-	//ApiResponse response = api.query("låna pengar");
-
-	//cout << response.json() << endl;
-
-	//LinkResult("col1	col2	col3	col4	col5	col6	col7	col8	col9");
-
-	ApiResponse response2 = api.query("cnn");
-	string response_body = response2.json();
-
-	JsonValue response_json;
-
-	response_json.WithObject("statusCode", JsonValue().AsInteger(200));
-	response_json.WithObject("headers", JsonValue().WithObject("Access-Control-Allow-Origin", JsonValue().AsString("*")));
-	response_json.WithObject("body", JsonValue().AsString(response_body));
-	response_json.WithObject("isBase64Encoded", JsonValue().AsBool(true));
-
-	//cout << "invocation_response: " << response_json.View().WriteReadable() << endl;
-
-	delete ss;
-
-	return ok;
 }

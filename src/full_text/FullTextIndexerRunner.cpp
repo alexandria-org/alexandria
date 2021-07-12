@@ -149,7 +149,7 @@ void FullTextIndexerRunner::index_text(const string &text) {
 	}
 }
 
-void FullTextIndexerRunner::index_text(const string &key, const string &text, uint32_t score) {
+void FullTextIndexerRunner::index_text(const string &key, const string &text, float score) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {

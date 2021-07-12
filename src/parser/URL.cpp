@@ -71,16 +71,16 @@ map<string, string> URL::query() const {
 	return ret;
 }
 
-int URL::harmonic(const SubSystem *sub_system) const {
+float URL::harmonic(const SubSystem *sub_system) const {
 
 	const auto iter = sub_system->domain_index()->find(host_reverse());
 
-	int harmonic;
+	float harmonic;
 	if (iter == sub_system->domain_index()->end()) {
-		harmonic = 0;
+		harmonic = 0.0f;
 	} else {
 		const DictionaryRow row = iter->second;
-		harmonic = row.get_int(1);
+		harmonic = row.get_float(1);
 	}
 
 	return harmonic;

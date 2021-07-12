@@ -34,7 +34,7 @@ public:
 	void sort();
 	void upload();
 	void index_text(const string &text);
-	void index_text(const string &key, const string &text, uint32_t score);
+	void index_text(const string &key, const string &text, float score);
 	void index_warc_path(const string warc_path);
 	void index_stream(ifstream &infile);
 	void truncate();

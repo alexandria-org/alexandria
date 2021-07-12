@@ -70,13 +70,13 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 	vector<LinkResult> result;
 
 	LinkResultSet *shortest = result_map[shortest_vector];
-	vector<uint32_t> score_vector;
+	vector<float> score_vector;
 	uint64_t *link_hash_arr = shortest->link_hash_pointer();
 	uint64_t *source_arr = shortest->source_pointer();
 	uint64_t *target_arr = shortest->target_pointer();
 	uint64_t *source_domain_arr = shortest->source_domain_pointer();
 	uint64_t *target_domain_arr = shortest->target_domain_pointer();
-	uint32_t *score_arr = shortest->score_pointer();
+	float *score_arr = shortest->score_pointer();
 	for (size_t result_id : result_ids) {
 
 		result.emplace_back(LinkResult(link_hash_arr[result_id], source_arr[result_id], target_arr[result_id],
@@ -100,7 +100,7 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 	Profiler profiler3("sorting results");
 	if (result.size() > limit) {
 		nth_element(score_vector.begin(), score_vector.begin() + (limit - 1), score_vector.end());
-		const uint32_t nth = score_vector[limit - 1];
+		const float nth = score_vector[limit - 1];
 
 		vector<LinkResult> top_result;
 		for (const LinkResult &res : result) {

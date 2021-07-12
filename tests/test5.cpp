@@ -171,7 +171,7 @@ int test5_3(void) {
 		FullTextIndex fti("test_db_5");
 
 		size_t shortest_vector;
-		vector<uint32_t> scores;
+		vector<float> scores;
 		vector<size_t> result = fti.value_intersection(values, shortest_vector, scores);
 		ok = ok && result.size() == 1 && values[shortest_vector][result[0]] == 3;
 

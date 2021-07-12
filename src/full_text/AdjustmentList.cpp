@@ -23,7 +23,7 @@ vector<struct Adjustment> AdjustmentList::data() const {
 				.word_hash = iter.first,
 				.key_hash = iter2.second.target_url().hash(),
 				.score = iter2.second.url_score(),
-				.domain_harmonic = (uint32_t)iter2.second.target_harmonic()
+				.domain_harmonic = iter2.second.target_harmonic()
 			});
 		}
 	}
@@ -35,7 +35,7 @@ vector<struct Adjustment> AdjustmentList::data() const {
 				.word_hash = iter.first,
 				.key_hash = iter2.second.target_host_hash(),
 				.score = iter2.second.domain_score(),
-				.domain_harmonic = (uint32_t)iter2.second.target_harmonic()
+				.domain_harmonic = iter2.second.target_harmonic()
 			});
 		}
 	}

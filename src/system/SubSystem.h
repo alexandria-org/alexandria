@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <iomanip>
 #include <aws/core/Aws.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
@@ -11,6 +12,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "file/TsvFileS3.h"
 #include "common/Dictionary.h"

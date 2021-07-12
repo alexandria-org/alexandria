@@ -34,7 +34,7 @@ void LinkResultSet::allocate(size_t len) {
 		m_target_pointer = new uint64_t[len];
 		m_source_domain_pointer = new uint64_t[len];
 		m_target_domain_pointer = new uint64_t[len];
-		m_score_pointer = new uint32_t[len];
+		m_score_pointer = new float[len];
 		m_has_allocated = true;
 		m_len = len;
 	}
@@ -61,7 +61,7 @@ uint64_t *LinkResultSet::target_domain_pointer() {
 	return m_target_domain_pointer;
 }
 
-uint32_t *LinkResultSet::score_pointer() {
+float *LinkResultSet::score_pointer() {
 	return m_score_pointer;
 }
 

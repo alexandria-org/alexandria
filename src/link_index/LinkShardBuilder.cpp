@@ -15,7 +15,7 @@ LinkShardBuilder::~LinkShardBuilder() {
 }
 
 void LinkShardBuilder::add(uint64_t word_key, uint64_t link_hash, uint64_t source, uint64_t target,
-	uint64_t source_domain, uint64_t target_domain, uint32_t score) {
+	uint64_t source_domain, uint64_t target_domain, float score) {
 	m_cache[word_key].emplace_back(LinkResult(link_hash, source, target, source_domain, target_domain, score));
 }
 
@@ -118,7 +118,7 @@ void LinkShardBuilder::merge() {
 			uint64_t target_domain = *((uint64_t *)(&buffer[0]));
 
 			m_reader.read(buffer, LI_SCORE_LEN);
-			uint32_t score = *((uint32_t *)(&buffer[0]));
+			float score = *((float *)(&buffer[0]));
 
 			m_cache[key].emplace_back(LinkResult(link_hash, source, target, source_domain, target_domain, score));
 		}
@@ -274,7 +274,7 @@ size_t LinkShardBuilder::count_keys(uint64_t for_key) const {
 			uint64_t value = *((uint64_t *)(&buffer[0]));
 
 			m_reader.read(buffer, LI_SCORE_LEN);
-			uint32_t score = *((uint32_t *)(&buffer[0]));
+			float score = *((float *)(&buffer[0]));
 
 			if (key == for_key) {
 				num_found++;

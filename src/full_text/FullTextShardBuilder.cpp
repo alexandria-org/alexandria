@@ -19,7 +19,7 @@ FullTextShardBuilder::~FullTextShardBuilder() {
 	}
 }
 
-void FullTextShardBuilder::add(uint64_t key, uint64_t value, uint32_t score) {
+void FullTextShardBuilder::add(uint64_t key, uint64_t value, float score) {
 	struct ShardInput *input = m_input.back();
 	input[m_input_position] = ShardInput{.key = key, .value = value, .score = score};
 	m_input_position++;
@@ -298,7 +298,7 @@ void FullTextShardBuilder::read_data_to_cache() {
 			}
 			
 			const uint64_t value = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN]);
-			const uint32_t score = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
+			const float score = *((float *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
 			m_cache[keys[key_id]].emplace_back(FullTextResult(value, score));
 
 			key_data_len--;
@@ -488,7 +488,7 @@ size_t FullTextShardBuilder::count_keys(uint64_t for_key) const {
 			uint64_t value = *((uint64_t *)(&buffer[0]));
 
 			m_reader.read(buffer, FULL_TEXT_SCORE_LEN);
-			uint32_t score = *((uint32_t *)(&buffer[0]));
+			float score = *((float *)(&buffer[0]));
 
 			if (key == for_key) {
 				num_found++;

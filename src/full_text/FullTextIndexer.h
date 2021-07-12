@@ -30,10 +30,10 @@ public:
 	~FullTextIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-		const vector<size_t> &cols, const vector<uint32_t> &scores);
+		const vector<size_t> &cols, const vector<float> &scores);
 	void add_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
 	void add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
-		uint32_t score);
+		float score);
 	size_t write_cache(mutex *write_mutexes);
 	size_t write_large(mutex *write_mutexes);
 	void flush_cache(mutex *write_mutexes);
@@ -73,6 +73,6 @@ private:
 	vector<AdjustmentList *> m_adjustments;
 	const size_t m_adjustment_cache_limit = 100000;
 
-	void add_data_to_shards(const uint64_t &key_hash, const string &text, uint32_t score);
+	void add_data_to_shards(const uint64_t &key_hash, const string &text, float score);
 
 };

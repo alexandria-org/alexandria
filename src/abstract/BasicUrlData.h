@@ -35,7 +35,7 @@ public:
 	string build_full_text_index();
 	inline string make_snippet(const string &text_after_h1);
 	void add_to_index(const string &word, const URL &url, const string &title, const string &snippet);
-	inline void add_to_full_text_index(const string &word, uint64_t id, uint32_t score);
+	inline void add_to_full_text_index(const string &word, uint64_t id, float score);
 	inline bool is_in_dictionary(const string &word);
 
 private:

@@ -21,7 +21,7 @@ private:
 	URL m_url;
 	string m_title;
 	string m_snippet;
-	uint32_t m_score;
+	float m_score;
 
 	string make_snippet(const string &text) const;
 

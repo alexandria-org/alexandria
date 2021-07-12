@@ -38,7 +38,6 @@ set(SRC_CLASSES
 	"src/full_text/FullTextShardBuilder.cpp"
 	"src/full_text/FullTextResult.cpp"
 	"src/full_text/FullTextResultSet.cpp"
-	"src/full_text/FullTextBucketMessage.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
 	"src/full_text/AdjustmentList.cpp"

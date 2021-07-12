@@ -30,6 +30,15 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
+	SubSystem *sub_system = new SubSystem();
+
+	URL url("https://www.google.com");
+	cout << "google.com harmonic: " << fixed << setprecision(20) << url.harmonic(sub_system) << endl;
+
+	delete sub_system;
+
+	return 0;
+
 	/*FullTextShardBuilder shard("main_index", 2166);
 	shard.merge();
 	return 0;*/
@@ -300,7 +309,7 @@ int main(int argc, const char **argv) {
 	char *buffer = new char[num_elems * 12];
 	for (size_t i = 0; i < num_elems; i++) {
 		uint64_t value = rand();
-		uint32_t score = rand() % 10;
+		float score = rand() % 10;
 		memcpy(&buffer[i*12], &value, sizeof(value));
 		memcpy(&buffer[i*12 + 8], &score, sizeof(score));
 	}

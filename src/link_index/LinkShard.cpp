@@ -68,7 +68,7 @@ void LinkShard::find(uint64_t key, LinkResultSet *result_set) {
 	uint64_t *target_res = result_set->target_pointer();
 	uint64_t *source_domain_res = result_set->source_domain_pointer();
 	uint64_t *target_domain_res = result_set->target_domain_pointer();
-	uint32_t *score_res = result_set->score_pointer();
+	float *score_res = result_set->score_pointer();
 
 	size_t read_bytes = 0;
 	size_t kk = 0;
@@ -85,7 +85,7 @@ void LinkShard::find(uint64_t key, LinkResultSet *result_set) {
 			target_res[kk] = *((uint64_t *)&m_buffer[i*LI_RECORD_LEN + LI_KEY_LEN * 2]);
 			source_domain_res[kk] = *((uint64_t *)&m_buffer[i*LI_RECORD_LEN + LI_KEY_LEN * 3]);
 			target_domain_res[kk] = *((uint64_t *)&m_buffer[i*LI_RECORD_LEN + LI_KEY_LEN * 4]);
-			score_res[kk] = *((uint32_t *)&m_buffer[i*LI_RECORD_LEN + LI_KEY_LEN * 5]);
+			score_res[kk] = *((float *)&m_buffer[i*LI_RECORD_LEN + LI_KEY_LEN * 5]);
 			kk++;
 		}
 	}

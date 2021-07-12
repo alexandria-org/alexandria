@@ -64,7 +64,7 @@ void FullTextShard::find(uint64_t key, FullTextResultSet *result_set) {
 	result_set->allocate(num_records);
 
 	uint64_t *value_res = result_set->value_pointer();
-	uint32_t *score_res = result_set->score_pointer();
+	float *score_res = result_set->score_pointer();
 
 	size_t read_bytes = 0;
 	size_t kk = 0;
@@ -77,7 +77,7 @@ void FullTextShard::find(uint64_t key, FullTextResultSet *result_set) {
 		size_t num_records_read = read_len / FULL_TEXT_RECORD_LEN;
 		for (size_t i = 0; i < num_records_read; i++) {
 			value_res[kk] = *((uint64_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN]);
-			score_res[kk] = *((uint32_t *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
+			score_res[kk] = *((float *)&m_buffer[i*FULL_TEXT_RECORD_LEN + FULL_TEXT_KEY_LEN]);
 			kk++;
 		}
 	}
