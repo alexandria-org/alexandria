@@ -10,4 +10,4 @@
 
 ```
 Data records are structured like this:
-len(k) * (8 bytes unsigned long URL id, 4 bytes unsigned integer score)
+len(k) * (8 bytes unsigned long URL id, 4 bytes single precision float score)
