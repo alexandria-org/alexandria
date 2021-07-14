@@ -1,8 +1,15 @@
 
 import matplotlib.pyplot as plt
 
-plt.plot([-1000000, 0, 10000000, 11000000], [1000, 1000, 10000000, 10000000])
-plt.axis([-1000000, 11000000, -1000000, 11000000])
-plt.ylabel('R(L1, L2)')
-plt.xlabel('H(D1) - H(D2)')
+def rank(x):
+	return max(x - 0.2, 0.2/100.0)
+
+plt.plot([0.0, 0.1, 0.2, 0.3], [rank(0.0), rank(0.1), rank(0.2), rank(0.3)])
+plt.ylabel('rank(link_source, link_target)')
+plt.xlabel('harmonic(domain(link_source))')
+
+plt.annotate('minimum value for link = 0.002', xy=(0.05, 0.002), xytext=(0.1, 0.04),
+arrowprops=dict(facecolor='black', shrink=0.05),
+)
+
 plt.show()
