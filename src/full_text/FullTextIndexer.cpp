@@ -3,9 +3,10 @@
 #include "system/Logger.h"
 #include <math.h>
 
-FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system)
+FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
+	m_url_to_domain = url_to_domain;
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(db_name, shard_id);
 		m_shards.push_back(shard_builder);
@@ -27,6 +28,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 	const vector<size_t> &cols, const vector<float> &scores) {
 
 	string line;
+	map<uint64_t, float> word_map;
 	while (getline(stream, line)) {
 		vector<string> col_values;
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -34,7 +36,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		URL url(col_values[0]);
 		float harmonic = url.harmonic(m_sub_system);
 
-		m_url_to_domain[url.hash()] = url.host_hash();
+		m_url_to_domain->add_url(url.hash(), url.host_hash());
 
 		uint64_t key_hash = url.hash();
 		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, line);
@@ -44,9 +46,15 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 
 		size_t score_index = 0;
 		for (size_t col_index : cols) {
-			add_data_to_shards(url.hash(), col_values[col_index], scores[score_index]*harmonic);
+			add_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
 			score_index++;
 		}
+		for (const auto &iter : word_map) {
+			const uint64_t word_hash = iter.first;
+			const size_t shard_id = word_hash % FT_NUM_SHARDS;
+			m_shards[shard_id]->add(word_hash, key_hash, iter.second);
+		}
+		word_map.clear();
 	}
 
 }
@@ -142,49 +150,11 @@ void FullTextIndexer::flush_cache(mutex *write_mutexes) {
 }
 
 void FullTextIndexer::read_url_to_domain() {
-	for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-		const string file_name = "/mnt/"+(to_string(bucket_id))+"/full_text/url_to_domain_"+m_db_name+".fti";
-
-		ifstream infile(file_name, ios::binary);
-		if (infile.is_open()) {
-
-			char buffer[8];
-
-			do {
-
-				infile.read(buffer, sizeof(uint64_t));
-				if (infile.eof()) break;
-
-				uint64_t url_hash = *((uint64_t *)buffer);
-
-				infile.read(buffer, sizeof(uint64_t));
-				uint64_t domain_hash = *((uint64_t *)buffer);
-
-				m_url_to_domain[url_hash] = domain_hash;
-				m_domains[domain_hash]++;
-
-			} while (!infile.eof());
-
-			infile.close();
-		}
-	}
+	m_url_to_domain->read();
 }
 
 void FullTextIndexer::write_url_to_domain() {
-
-	const string file_name = "/mnt/"+(to_string(m_indexer_id % 8))+"/full_text/url_to_domain_"+m_db_name+".fti";
-
-	ofstream outfile(file_name, ios::binary | ios::app);
-	if (!outfile.is_open()) {
-		throw error("Could not open url_to_domain file");
-	}
-
-	for (const auto &iter : m_url_to_domain) {
-		outfile.write((const char *)&(iter.first), sizeof(uint64_t));
-		outfile.write((const char *)&(iter.second), sizeof(uint64_t));
-	}
-
-	outfile.close();
+	m_url_to_domain->write(m_indexer_id);
 }
 
 void FullTextIndexer::add_domain_link(uint64_t word_hash, const Link &link) {
@@ -215,6 +185,19 @@ void FullTextIndexer::flush_adjustments_cache(mutex *write_mutexes) {
 			write_mutexes[shard_id].lock();
 			m_shards[shard_id]->add_adjustments(*m_adjustments[shard_id]);
 			write_mutexes[shard_id].unlock();
+		}
+	}
+}
+
+void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
+
+	vector<string> words = get_full_text_words(text);
+	map<uint64_t, uint64_t> uniq;
+	for (const string &word : words) {
+		const uint64_t word_hash = m_hasher(word);
+		if (uniq.find(word_hash) == uniq.end()) {
+			word_map[word_hash] += score;
+			uniq[word_hash] = word_hash;
 		}
 	}
 }

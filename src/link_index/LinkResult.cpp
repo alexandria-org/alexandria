@@ -14,6 +14,18 @@ LinkResult::LinkResult(uint64_t link_hash, uint64_t source, uint64_t target, uin
 {
 }
 
+LinkResult::LinkResult(const LinkShardInput &input)
+: m_link_hash(input.link_hash), m_source(input.source_hash), m_target(input.target), m_source_domain(input.source_domain), m_target_domain(input.target_domain), m_score(input.score)
+{
+
+}
+
+LinkResult::LinkResult(const LinkShardInput *input)
+: m_link_hash(input->link_hash), m_source(input->source_hash), m_target(input->target), m_source_domain(input->source_domain), m_target_domain(input->target_domain), m_score(input->score)
+{
+
+}
+
 bool operator==(const LinkResult &a, const LinkResult &b) {
 	return a.m_link_hash == b.m_link_hash;
 }

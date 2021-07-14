@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include "LinkShardInput.h"
 
 class LinkResult {
 
@@ -10,6 +11,8 @@ public:
 	LinkResult();
 	LinkResult(uint64_t link_hash, uint64_t source, uint64_t target, uint64_t source_domain, uint64_t target_domain,
 		float score);
+	LinkResult(const LinkShardInput &input);
+	LinkResult(const LinkShardInput *input);
 
 	uint64_t m_link_hash;
 	uint64_t m_source;

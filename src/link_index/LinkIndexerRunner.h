@@ -9,6 +9,7 @@
 #include "hash_table/HashTable.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
+#include "full_text/UrlToDomain.h"
 #include "LinkIndex.h"
 
 #include <aws/core/Aws.h>
@@ -18,10 +19,6 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-
-//#define LI_NUM_THREADS_INDEXING 128
-#define LI_NUM_THREADS_INDEXING 16
-#define LI_NUM_THREADS_MERGING 64
 
 using namespace std;
 
@@ -49,6 +46,8 @@ private:
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 	mutex m_full_text_mutexes[FT_NUM_SHARDS];
 	mutex m_link_mutexes[LI_NUM_SHARDS];
+
+	UrlToDomain *m_url_to_domain;
 
 	string run_index_thread(const vector<string> &warc_paths, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);

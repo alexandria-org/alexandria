@@ -1,7 +1,8 @@
 
 #include "ResultWithSnippet.h"
 
-ResultWithSnippet::ResultWithSnippet(const string &tsv_data) {
+ResultWithSnippet::ResultWithSnippet(const string &tsv_data, float score)
+: m_score(score) {
 	size_t pos_start = 0;
 	size_t pos_end = 0;
 	size_t col_num = 0;
@@ -25,18 +26,6 @@ ResultWithSnippet::ResultWithSnippet(const string &tsv_data) {
 
 ResultWithSnippet::~ResultWithSnippet() {
 
-}
-
-URL ResultWithSnippet::url() const {
-	return m_url;
-}
-
-string ResultWithSnippet::title() const {
-	return m_title;
-}
-
-string ResultWithSnippet::snippet() const {
-	return m_snippet;
 }
 
 string ResultWithSnippet::make_snippet(const string &text) const {

@@ -152,10 +152,6 @@ void FullTextShardBuilder::add_adjustments(const AdjustmentList &adjustments) {
 
 void FullTextShardBuilder::merge_adjustments(const FullTextIndexer *indexer) {
 
-	if (m_shard_id == 5772) {
-		cout << "asd" << endl;
-	}
-
 	// Read everything to cache.
 	read_data_to_cache();
 
@@ -191,7 +187,6 @@ void FullTextShardBuilder::merge_adjustments(const FullTextIndexer *indexer) {
 
 	// Apply domain adjustments.
 	{
-		const unordered_map<uint64_t, uint64_t> *url_to_domain = indexer->url_to_domain();
 		ifstream reader(domain_adjustment_filename(), ios::binary);
 		while (!reader.eof()) {
 			reader.read(buffer, buffer_size);
@@ -201,8 +196,8 @@ void FullTextShardBuilder::merge_adjustments(const FullTextIndexer *indexer) {
 				struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
 
 				for (auto &iter : m_cache[adjustment->word_hash]) {
-					auto find_iter = url_to_domain->find(iter.m_value);
-					if (find_iter != url_to_domain->end() && find_iter->second == adjustment->key_hash) {
+					auto find_iter = indexer->url_to_domain().find(iter.m_value);
+					if (find_iter != indexer->url_to_domain().end() && find_iter->second == adjustment->key_hash) {
 						iter.m_score += adjustment->score;
 						cout << "updating domain to shard: " << target_filename() << endl;
 					}
@@ -457,47 +452,5 @@ size_t FullTextShardBuilder::disk_size() const {
 
 size_t FullTextShardBuilder::cache_size() const {
 	return m_input_position + (m_input.size() - 1) * m_max_cache_size;
-}
-
-size_t FullTextShardBuilder::count_keys(uint64_t for_key) const {
-	m_reader.open(filename(), ios::binary);
-	if (!m_reader.is_open()) {
-		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
-	}
-
-	char buffer[64];
-
-	m_reader.seekg(0, ios::end);
-	size_t file_size = m_reader.tellg();
-	m_reader.seekg(0, ios::beg);
-
-	size_t num_found = 0;
-	while (!m_reader.eof()) {
-		m_reader.read(buffer, FULL_TEXT_KEY_LEN);
-		uint64_t key = *((uint64_t *)(&buffer[0]));
-
-		if (m_reader.eof()) {
-			break;
-		}
-
-		m_reader.read(buffer, sizeof(size_t));
-		size_t len = *((size_t *)(&buffer[0]));
-
-		for (size_t i = 0; i < len; i++) {
-			m_reader.read(buffer, FULL_TEXT_KEY_LEN);
-			uint64_t value = *((uint64_t *)(&buffer[0]));
-
-			m_reader.read(buffer, FULL_TEXT_SCORE_LEN);
-			float score = *((float *)(&buffer[0]));
-
-			if (key == for_key) {
-				num_found++;
-			}
-		}
-		if (m_reader.eof()) break;
-	}
-	m_reader.close();
-
-	return num_found;
 }
 

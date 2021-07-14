@@ -9,12 +9,13 @@ using namespace std;
 class ResultWithSnippet {
 
 public:
-	ResultWithSnippet(const string &tsv_data);
+	ResultWithSnippet(const string &tsv_data, float score);
 	~ResultWithSnippet();
 
-	URL url() const;
-	string title() const;
-	string snippet() const;
+	const URL &url() const { return m_url; };
+	const string &title() const { return m_title; };
+	const string &snippet() const { return m_snippet; };
+	const float &score() const { return m_score; };
 
 private:
 

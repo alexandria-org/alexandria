@@ -8,10 +8,13 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &cc_bat
 : m_cc_batch(cc_batch), m_db_name(db_name), m_fti_name(fti_name)
 {
 	m_sub_system = new SubSystem();
+	m_url_to_domain = new UrlToDomain(m_fti_name);
+	m_url_to_domain->read();
 }
 
 LinkIndexerRunner::~LinkIndexerRunner() {
 	delete m_sub_system;
+	delete m_url_to_domain;
 }
 
 void LinkIndexerRunner::run() {
@@ -21,43 +24,49 @@ void LinkIndexerRunner::run() {
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
-	vector<string> warc_paths_raw, warc_paths;
+	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	size_t num = 0;
-	for (const string &path : warc_paths_raw) {
-		warc_paths.push_back(path);
-		num++;
-		//if (num >= 10000) break;
-		if (num >= 100) break;
+	const size_t limit = 25000;
+	while (warc_paths_raw.size() > 0) {
+
+		vector<string> warc_paths;
+		size_t num = 0;
+		while (warc_paths.size() < limit && warc_paths_raw.size() > 0) {
+			warc_paths.push_back(warc_paths_raw.back());
+			warc_paths_raw.pop_back();
+			num++;
+			//if (num >= 100) break;
+		}
+
+		vector<vector<string>> warc_path_chunks;
+		vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
+
+		ThreadPool pool(LI_NUM_THREADS_INDEXING);
+		std::vector<std::future<string>> results;
+
+		map<int, vector<string>> shard_files;
+		int id = 1;
+		for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+
+			results.emplace_back(
+				pool.enqueue([this, warc_paths_chunk, id] {
+					return run_index_thread(warc_paths_chunk, id);
+				})
+			);
+
+			id++;
+
+		}
+
+		for(auto && result: results) {
+			result.get();
+		}
+
+		merge();
+		merge_adjustments();
 	}
-
-	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
-
-	ThreadPool pool(LI_NUM_THREADS_INDEXING);
-	std::vector<std::future<string>> results;
-
-	map<int, vector<string>> shard_files;
-	int id = 1;
-	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
-
-		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk, id] {
-				return run_index_thread(warc_paths_chunk, id);
-			})
-		);
-
-		id++;
-
-	}
-
-	for(auto && result: results) {
-		result.get();
-	}
-
-	merge();
-	merge_adjustments();
+	
 	sort();
 	//upload();
 
@@ -100,11 +109,10 @@ void LinkIndexerRunner::merge_adjustments() {
 
 	const size_t merge_batch_size = 500;
 
-	ThreadPool merge_pool(1);
+	ThreadPool merge_pool(24);
 	std::vector<std::future<string>> merge_results;
 
-	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system);
-	indexer->read_url_to_domain();
+	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system, m_url_to_domain);
 
 	// Loop over shards and merge them.
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
@@ -159,6 +167,12 @@ void LinkIndexerRunner::truncate() {
 		delete shard_builder;
 	}
 
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(m_fti_name, shard_id);
+		shard_builder->truncate_cache_files();
+		delete shard_builder;
+	}
+
 	HashTable hash_table(m_db_name);
 	hash_table.truncate();
 }
@@ -170,7 +184,7 @@ void LinkIndexerRunner::index_stream(ifstream &infile) {
 		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
 	}
 
-	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system);
+	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system, m_url_to_domain);
 	ft_indexer.read_url_to_domain();
 
 	LinkIndexer indexer(1, m_db_name, m_sub_system, &ft_indexer);
@@ -195,8 +209,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
 	}
 
-	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system);
-	ft_indexer.read_url_to_domain();
+	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system, m_url_to_domain);
 
 	LinkIndexer indexer(id, m_db_name, m_sub_system, &ft_indexer);
 	size_t idx = 1;

@@ -20,10 +20,10 @@ Link::~Link() {
 }
 
 float Link::url_score() const {
-	return 1.0;
+	return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f);
 }
 
 float Link::domain_score() const {
-	return 1.0;
+	return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f);
 }
 

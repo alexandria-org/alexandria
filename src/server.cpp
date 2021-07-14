@@ -57,7 +57,7 @@ int main(void) {
 		vector<ResultWithSnippet> with_snippets;
 		for (FullTextResult &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data));
+			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
 		}
 
 		post_processor.run(with_snippets);

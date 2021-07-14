@@ -21,7 +21,7 @@ ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_result
 		json_result.WithObject("url", string.AsString(result.url().str()));
 		json_result.WithObject("title", string.AsString(Unicode::encode(result.title())));
 		json_result.WithObject("snippet", string.AsString(Unicode::encode(result.snippet())));
-		//json_result.WithObject("score", json_number.AsDouble(result.score()));
+		json_result.WithObject("score", json_number.AsDouble(result.score()));
 		result_array[idx] = json_result;
 		idx++;
 	}
@@ -32,7 +32,8 @@ ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_result
 	message.WithObject("total_found", json_number.AsInt64(total_results));
 	message.WithObject("results", json_results);
 
-	m_response = message.View().WriteCompact();
+	//m_response = message.View().WriteCompact();
+	m_response = message.View().WriteReadable();
 }
 
 ApiResponse::~ApiResponse() {
