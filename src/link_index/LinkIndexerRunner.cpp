@@ -162,13 +162,15 @@ void LinkIndexerRunner::upload() {
 
 void LinkIndexerRunner::truncate() {
 	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
-		LinkShardBuilder *shard_builder = new LinkShardBuilder(m_db_name, shard_id);
+		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
+			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id);
 		shard_builder->truncate();
 		delete shard_builder;
 	}
 
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(m_fti_name, shard_id);
+		FullTextShardBuilder<FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<FullTextRecord>(m_fti_name, shard_id);
 		shard_builder->truncate_cache_files();
 		delete shard_builder;
 	}
@@ -257,7 +259,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 }
 
 string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
-	LinkShardBuilder shard(m_db_name, shard_id);
+	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 
 	shard.merge();
 
@@ -265,9 +267,9 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 }
 
 string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id) {
-	FullTextShardBuilder shard(m_fti_name, shard_id);
 
-	shard.merge_adjustments(indexer);
+	FullTextShardBuilder<FullTextRecord> shard(m_fti_name, shard_id);
+	shard.merge_adjustments(indexer->url_to_domain());
 
 	return shard.filename();
 }

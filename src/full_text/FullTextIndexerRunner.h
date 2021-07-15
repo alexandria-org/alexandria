@@ -8,6 +8,7 @@
 #include "system/ThreadPool.h"
 #include "hash_table/HashTable.h"
 #include "full_text/FullTextIndex.h"
+#include "FullTextRecord.h"
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>

@@ -6,12 +6,12 @@ FullTextIndex::FullTextIndex(const string &db_name)
 : m_db_name(db_name)
 {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		m_shards.push_back(new FullTextShard(m_db_name, shard_id));
+		m_shards.push_back(new FullTextShard<FullTextRecord>(m_db_name, shard_id));
 	}
 }
 
 FullTextIndex::~FullTextIndex() {
-	for (FullTextShard *shard : m_shards) {
+	for (FullTextShard<FullTextRecord> *shard : m_shards) {
 		delete shard;
 	}
 }
@@ -19,7 +19,7 @@ FullTextIndex::~FullTextIndex() {
 vector<FullTextResult> FullTextIndex::search_word(const string &word) {
 	uint64_t word_hash = m_hasher(word);
 
-	FullTextResultSet *results = new FullTextResultSet();
+	FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>();
 	m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
 	LogInfo("Searched for " + word + " and found " + to_string(results->len()) + " results");
 
@@ -43,8 +43,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 	vector<string> words = get_full_text_words(phrase);
 
 	vector<string> searched_words;
-	map<size_t, FullTextResultSet *> result_map;
-	map<size_t, FullTextResultSet *> or_result_map;
+	map<size_t, FullTextResultSet<FullTextRecord> *> result_map;
+	map<size_t, FullTextResultSet<FullTextRecord> *> or_result_map;
 	
 	size_t idx = 0;
 	double total_time = 0.0;
@@ -57,7 +57,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 		uint64_t word_hash = m_hasher(word);
 		Profiler profiler0("->find: " + word);
-		FullTextResultSet *results = new FullTextResultSet();
+		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>();
 
 		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
@@ -90,7 +90,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 	vector<FullTextResult> result;
 
-	FullTextResultSet *shortest = result_map[shortest_vector];
+	FullTextResultSet<FullTextRecord> *shortest = result_map[shortest_vector];
 	uint64_t *value_arr = shortest->value_pointer();
 	for (size_t i = 0; i < result_ids.size(); i++) {
 		result.emplace_back(FullTextResult(value_arr[result_ids[i]], score_vector[i]));
@@ -176,7 +176,7 @@ void FullTextIndex::download(const SubSystem *sub_system) {
 	}
 }
 
-vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet *> &values_map,
+vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet<FullTextRecord> *> &values_map,
 	size_t &shortest_vector_position, vector<float> &scores) const {
 	Profiler value_intersection("FullTextIndex::value_intersection");
 	
@@ -238,7 +238,7 @@ void FullTextIndex::sort_results(vector<FullTextResult> &results) {
 	});
 }
 
-void FullTextIndex::run_upload_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+void FullTextIndex::run_upload_thread(const SubSystem *sub_system, const FullTextShard<FullTextRecord> *shard) {
 	ifstream infile(shard->filename());
 	if (infile.is_open()) {
 		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
@@ -246,7 +246,7 @@ void FullTextIndex::run_upload_thread(const SubSystem *sub_system, const FullTex
 	}
 }
 
-void FullTextIndex::run_download_thread(const SubSystem *sub_system, const FullTextShard *shard) {
+void FullTextIndex::run_download_thread(const SubSystem *sub_system, const FullTextShard<FullTextRecord> *shard) {
 	ofstream outfile(shard->filename(), ios::binary | ios::trunc);
 	if (outfile.is_open()) {
 		const string key = "full_text/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";

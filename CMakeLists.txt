@@ -35,8 +35,8 @@ set(SRC_CLASSES
 
 	"src/full_text/FullTextIndex.cpp"
 	"src/full_text/FullTextShard.cpp"
-	"src/full_text/FullTextShardBuilder.cpp"
 	"src/full_text/FullTextResult.cpp"
+	"src/full_text/FullTextShardBuilder.cpp"
 	"src/full_text/FullTextResultSet.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
@@ -45,8 +45,6 @@ set(SRC_CLASSES
 
 	"src/link_index/Link.cpp"
 	"src/link_index/LinkIndex.cpp"
-	"src/link_index/LinkShard.cpp"
-	"src/link_index/LinkShardBuilder.cpp"
 	"src/link_index/LinkResult.cpp"
 	"src/link_index/LinkResultSet.cpp"
 	"src/link_index/LinkIndexer.cpp"

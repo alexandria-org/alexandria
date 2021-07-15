@@ -11,6 +11,8 @@
 #include "full_text/FullTextIndexer.h"
 #include "full_text/UrlToDomain.h"
 #include "LinkIndex.h"
+#include "LinkFullTextRecord.h"
+#include "full_text/FullTextRecord.h"
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>

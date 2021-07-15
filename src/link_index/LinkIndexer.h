@@ -7,14 +7,13 @@
 #include <mutex>
 #include "common/common.h"
 
-#include "LinkShard.h"
-#include "LinkShardBuilder.h"
 #include "LinkIndex.h"
 #include "parser/URL.h"
 #include "abstract/TextBase.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
 #include "full_text/FullTextIndexer.h"
+#include "full_text/FullTextShardBuilder.h"
 
 using namespace std;
 
@@ -36,7 +35,7 @@ private:
 	FullTextIndexer *m_ft_indexer;
 	int m_indexer_id;
 	hash<string> m_hasher;
-	vector<LinkShardBuilder *> m_shards;
+	vector<FullTextShardBuilder<LinkFullTextRecord> *> m_shards;
 
 	void add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);

@@ -8,13 +8,14 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 {
 	m_ft_indexer = ft_indexer;
 	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
-		LinkShardBuilder *shard_builder = new LinkShardBuilder(m_db_name, shard_id);
+		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
+			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id);
 		m_shards.push_back(shard_builder);
 	}
 }
 
 LinkIndexer::~LinkIndexer() {
-	for (LinkShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
 		delete shard;
 	}
 }
@@ -57,14 +58,14 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 	}
 
 	// sort shards.
-	for (LinkShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
 		shard->sort_cache();
 	}
 }
 
 void LinkIndexer::write_cache(mutex *write_mutexes) {
 	size_t idx = 0;
-	for (LinkShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
 		if (shard->full()) {
 			write_mutexes[idx].lock();
 			shard->append();
@@ -77,7 +78,7 @@ void LinkIndexer::write_cache(mutex *write_mutexes) {
 
 void LinkIndexer::flush_cache(mutex *write_mutexes) {
 	size_t idx = 0;
-	for (LinkShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
 		write_mutexes[idx].lock();
 		shard->append();
 		write_mutexes[idx].unlock();
@@ -95,8 +96,9 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 		const uint64_t word_hash = m_hasher(word);
 		const size_t shard_id = word_hash % LI_NUM_SHARDS;
 
-		m_shards[shard_id]->add(word_hash, link_hash, source_url.hash(), target_url.hash(), source_url.host_hash(),
-			target_url.host_hash(), score);
+		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
+			.m_source_hash = source_url.hash(), .m_target_hash = target_url.hash(),
+			.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});
 	}
 }
 

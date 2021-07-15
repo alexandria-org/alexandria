@@ -234,7 +234,8 @@ void FullTextIndexerRunner::index_stream(ifstream &infile) {
 
 void FullTextIndexerRunner::truncate() {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(m_db_name, shard_id);
+		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id);
 		shard_builder->truncate();
 		delete shard_builder;
 	}
@@ -316,7 +317,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 
 string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
 
-	FullTextShardBuilder shard(m_db_name, shard_id);
+	FullTextShardBuilder<struct FullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();
 
 	return "";

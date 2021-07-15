@@ -18,13 +18,12 @@
 #include "system/SubSystem.h"
 #include "abstract/TextBase.h"
 #include "system/ThreadPool.h"
-#include "LinkShard.h"
 #include "LinkResult.h"
-#include "LinkResultSet.h"
+#include "LinkFullTextRecord.h"
+#include "full_text/FullTextShard.h"
+#include "full_text/FullTextResultSet.h"
 
 using namespace std;
-
-class LinkShard;
 
 class LinkIndex : public TextBase {
 
@@ -40,7 +39,7 @@ public:
 	void upload(const SubSystem *sub_system);
 
 	// Testable private functions.
-	vector<size_t> value_intersection(const map<size_t, LinkResultSet *> &values_map,
+	vector<size_t> value_intersection(const map<size_t, FullTextResultSet<LinkFullTextRecord> *> &values_map,
 		size_t &shortest_vector_position) const;
 
 private:
@@ -48,10 +47,10 @@ private:
 	string m_db_name;
 	hash<string> m_hasher;
 
-	vector<LinkShard *> m_shards;
+	vector<FullTextShard<LinkFullTextRecord> *> m_shards;
 
 	void sort_results(vector<LinkResult> &results);
-	void run_upload_thread(const SubSystem *sub_system, const LinkShard *shard);
-	void run_download_thread(const SubSystem *sub_system, const LinkShard *shard);
+	void run_upload_thread(const SubSystem *sub_system, const FullTextShard<LinkFullTextRecord> *shard);
+	void run_download_thread(const SubSystem *sub_system, const FullTextShard<LinkFullTextRecord> *shard);
 
 };

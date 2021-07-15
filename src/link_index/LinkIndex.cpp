@@ -6,12 +6,12 @@ LinkIndex::LinkIndex(const string &db_name)
 : m_db_name(db_name)
 {
 	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
-		m_shards.push_back(new LinkShard(m_db_name, shard_id));
+		m_shards.push_back(new FullTextShard<LinkFullTextRecord>(m_db_name, shard_id));
 	}
 }
 
 LinkIndex::~LinkIndex() {
-	for (LinkShard *shard : m_shards) {
+	for (FullTextShard<LinkFullTextRecord> *shard : m_shards) {
 		delete shard;
 	}
 }
@@ -23,8 +23,8 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 	vector<string> words = get_full_text_words(phrase);
 
 	vector<string> searched_words;
-	map<size_t, LinkResultSet *> result_map;
-	map<size_t, LinkResultSet *> or_result_map;
+	map<size_t, FullTextResultSet<LinkFullTextRecord> *> result_map;
+	map<size_t, FullTextResultSet<LinkFullTextRecord> *> or_result_map;
 
 	size_t idx = 0;
 	double total_time = 0.0;
@@ -37,7 +37,7 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 
 		uint64_t word_hash = m_hasher(word);
 		Profiler profiler0("->find: " + word);
-		LinkResultSet *results = new LinkResultSet();
+		FullTextResultSet<LinkFullTextRecord> *results = new FullTextResultSet<LinkFullTextRecord>();
 
 		m_shards[word_hash % LI_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
@@ -69,20 +69,18 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 
 	vector<LinkResult> result;
 
-	LinkResultSet *shortest = result_map[shortest_vector];
+	FullTextResultSet<LinkFullTextRecord> *shortest = result_map[shortest_vector];
 	vector<float> score_vector;
-	uint64_t *link_hash_arr = shortest->link_hash_pointer();
-	uint64_t *source_arr = shortest->source_pointer();
-	uint64_t *target_arr = shortest->target_pointer();
-	uint64_t *source_domain_arr = shortest->source_domain_pointer();
-	uint64_t *target_domain_arr = shortest->target_domain_pointer();
-	float *score_arr = shortest->score_pointer();
+
+	LinkFullTextRecord *records = shortest->record_pointer();
 	for (size_t result_id : result_ids) {
 
-		result.emplace_back(LinkResult(link_hash_arr[result_id], source_arr[result_id], target_arr[result_id],
-			source_domain_arr[result_id], target_domain_arr[result_id], score_arr[result_id]));
+		LinkFullTextRecord *item = &records[result_id];
 
-		score_vector.push_back(score_arr[result_id]);
+		result.emplace_back(LinkResult(item->m_value, item->m_source_hash, item->m_target_hash,
+			records->m_source_domain, item->m_target_domain, item->m_score));
+
+		score_vector.push_back(item->m_score);
 	}
 	profiler2.stop();
 
@@ -164,7 +162,7 @@ void LinkIndex::download(const SubSystem *sub_system) {
 	}
 }
 
-vector<size_t> LinkIndex::value_intersection(const map<size_t, LinkResultSet *> &values_map,
+vector<size_t> LinkIndex::value_intersection(const map<size_t, FullTextResultSet<LinkFullTextRecord> *> &values_map,
 	size_t &shortest_vector_position) const {
 	Profiler value_intersection("LinkIndex::value_intersection");
 	
@@ -183,7 +181,7 @@ vector<size_t> LinkIndex::value_intersection(const map<size_t, LinkResultSet *> 
 	vector<size_t> result_ids;
 
 	auto value_iter = values_map.find(shortest_vector_position);
-	uint64_t *link_hash_ptr = value_iter->second->link_hash_pointer();
+	uint64_t *link_hash_ptr = value_iter->second->value_pointer();
 
 	while (positions[shortest_vector_position] < shortest_len) {
 
@@ -191,7 +189,7 @@ vector<size_t> LinkIndex::value_intersection(const map<size_t, LinkResultSet *> 
 		uint64_t link_hash = link_hash_ptr[positions[shortest_vector_position]];
 
 		for (auto &iter : values_map) {
-			const uint64_t *val_arr = iter.second->link_hash_pointer();
+			const uint64_t *val_arr = iter.second->value_pointer();
 			const size_t len = iter.second->len();
 			size_t *pos = &(positions[iter.first]);
 			while (link_hash > val_arr[*pos] && *pos < len) {
@@ -220,7 +218,7 @@ void LinkIndex::sort_results(vector<LinkResult> &results) {
 	});
 }
 
-void LinkIndex::run_upload_thread(const SubSystem *sub_system, const LinkShard *shard) {
+void LinkIndex::run_upload_thread(const SubSystem *sub_system, const FullTextShard<LinkFullTextRecord> *shard) {
 	ifstream infile(shard->filename());
 	if (infile.is_open()) {
 		const string key = "link_index/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";
@@ -228,7 +226,7 @@ void LinkIndex::run_upload_thread(const SubSystem *sub_system, const LinkShard *
 	}
 }
 
-void LinkIndex::run_download_thread(const SubSystem *sub_system, const LinkShard *shard) {
+void LinkIndex::run_download_thread(const SubSystem *sub_system, const FullTextShard<LinkFullTextRecord> *shard) {
 	ofstream outfile(shard->filename(), ios::binary | ios::trunc);
 	if (outfile.is_open()) {
 		const string key = "link_index/" + m_db_name + "/" + to_string(shard->shard_id()) + ".gz";

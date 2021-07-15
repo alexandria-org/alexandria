@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include "common/common.h"
 
+class FullTextIndexer;
+
 #include "FullTextShard.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndex.h"
@@ -18,10 +20,9 @@
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
 #include "link_index/Link.h"
+#include "FullTextRecord.h"
 
 using namespace std;
-
-class FullTextShardBuilder;
 
 class FullTextIndexer : public TextBase {
 
@@ -56,8 +57,8 @@ public:
 		return iter->second > 0;
 	}
 
-	const unordered_map<uint64_t, uint64_t> &url_to_domain() const {
-		return m_url_to_domain->url_to_domain();
+	const UrlToDomain *url_to_domain() const {
+		return m_url_to_domain;
 	}
 
 private:
@@ -66,7 +67,7 @@ private:
 	int m_indexer_id;
 	const string m_db_name;
 	hash<string> m_hasher;
-	vector<FullTextShardBuilder *> m_shards;
+	vector<FullTextShardBuilder<struct FullTextRecord> *> m_shards;
 
 	UrlToDomain *m_url_to_domain = NULL;
 

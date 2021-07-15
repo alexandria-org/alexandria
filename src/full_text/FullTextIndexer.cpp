@@ -8,7 +8,8 @@ FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem 
 {
 	m_url_to_domain = url_to_domain;
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder *shard_builder = new FullTextShardBuilder(db_name, shard_id);
+		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
 		m_shards.push_back(shard_builder);
 
 		m_adjustments.push_back(new AdjustmentList());
@@ -16,7 +17,7 @@ FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem 
 }
 
 FullTextIndexer::~FullTextIndexer() {
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		delete shard;
 	}
 	for (AdjustmentList *adjustment_list : m_adjustments) {
@@ -52,7 +53,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		for (const auto &iter : word_map) {
 			const uint64_t word_hash = iter.first;
 			const size_t shard_id = word_hash % FT_NUM_SHARDS;
-			m_shards[shard_id]->add(word_hash, key_hash, iter.second);
+			m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second});
 		}
 		word_map.clear();
 	}
@@ -81,7 +82,7 @@ void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_bui
 	}
 
 	// sort shards.
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		shard->sort_cache();
 	}
 }
@@ -95,7 +96,7 @@ void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, 
 	add_data_to_shards(key_hash, text, score);
 
 	// sort shards.
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		shard->sort_cache();
 	}
 }
@@ -103,7 +104,7 @@ void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, 
 size_t FullTextIndexer::write_cache(mutex *write_mutexes) {
 	size_t idx = 0;
 	size_t ret = 0;
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		if (shard->full()) {
 			if (write_mutexes[idx].try_lock()) {
 				shard->append();
@@ -121,7 +122,7 @@ size_t FullTextIndexer::write_cache(mutex *write_mutexes) {
 size_t FullTextIndexer::write_large(mutex *write_mutexes) {
 	size_t idx = 0;
 	size_t ret = 0;
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		if (shard->should_merge()) {
 			write_mutexes[idx].lock();
 			if (shard->should_merge()) {
@@ -140,7 +141,7 @@ size_t FullTextIndexer::write_large(mutex *write_mutexes) {
 
 void FullTextIndexer::flush_cache(mutex *write_mutexes) {
 	size_t idx = 0;
-	for (FullTextShardBuilder *shard : m_shards) {
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		write_mutexes[idx].lock();
 		shard->append();
 		write_mutexes[idx].unlock();
@@ -210,6 +211,6 @@ void FullTextIndexer::add_data_to_shards(const uint64_t &key_hash, const string 
 		const uint64_t word_hash = m_hasher(word);
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
-		m_shards[shard_id]->add(word_hash, key_hash, score);
+		m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = score});
 	}
 }
