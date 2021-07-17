@@ -13,7 +13,6 @@ class FullTextIndexer;
 #include "FullTextShard.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndex.h"
-#include "AdjustmentList.h"
 #include "UrlToDomain.h"
 #include "parser/URL.h"
 #include "abstract/TextBase.h"
@@ -44,9 +43,6 @@ public:
 	void add_domain_link(uint64_t word_hash, const Link &link);
 	void add_url_link(uint64_t word_hash, const Link &link);
 
-	void write_adjustments_cache(mutex *write_mutexes);
-	void flush_adjustments_cache(mutex *write_mutexes);
-
 	bool has_key(uint64_t key) const {
 		return m_url_to_domain->url_to_domain().count(key) > 0;
 	}
@@ -70,9 +66,6 @@ private:
 	vector<FullTextShardBuilder<struct FullTextRecord> *> m_shards;
 
 	UrlToDomain *m_url_to_domain = NULL;
-
-	vector<AdjustmentList *> m_adjustments;
-	const size_t m_adjustment_cache_limit = 50;
 
 	void add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const;
 	void add_data_to_shards(const uint64_t &key_hash, const string &text, float score);

@@ -13,7 +13,6 @@ template<typename DataRecord> class FullTextShardBuilder;
 #include "FullTextIndexer.h"
 #include "FullTextIndex.h"
 #include "FullTextResult.h"
-#include "AdjustmentList.h"
 #include "parser/URL.h"
 #include "FullTextRecord.h"
 #include "UrlToDomain.h"
@@ -28,6 +27,7 @@ class FullTextShardBuilder {
 public:
 
 	FullTextShardBuilder(const string &db_name, size_t shard_id);
+	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t bytes_per_shard);
 	~FullTextShardBuilder();
 
 	void add(uint64_t key, const DataRecord &record);
@@ -36,14 +36,11 @@ public:
 	void append();
 	void merge();
 	bool should_merge();
-	void add_adjustments(const AdjustmentList &adjustments);
-	void merge_adjustments(const UrlToDomain *url_to_domain);
+	void merge_with(FullTextShardBuilder<DataRecord> &with);
 
 	string filename() const;
 	string key_filename() const;
 	string target_filename() const;
-	string domain_adjustment_filename() const;
-	string url_adjustment_filename() const;
 
 	void truncate();
 	void truncate_cache_files();
@@ -61,7 +58,7 @@ private:
 	const size_t m_max_results = 10000000;
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
-	const size_t m_max_cache_size = FT_INDEXER_CACHE_BYTES_PER_SHARD / sizeof(DataRecord);
+	const size_t m_max_cache_size;
 	const size_t m_max_num_keys = 10000000;
 	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
 	char *m_buffer;
@@ -80,7 +77,15 @@ private:
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id)
-: m_db_name(db_name), m_shard_id(shard_id) {
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(FT_INDEXER_CACHE_BYTES_PER_SHARD / sizeof(DataRecord)) {
+	m_records.push_back(new DataRecord[m_max_cache_size]);
+	m_keys.push_back(new uint64_t[m_max_cache_size]);
+	m_records_position = 0;
+}
+
+template<typename DataRecord>
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t bytes_per_shard)
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)) {
 	m_records.push_back(new DataRecord[m_max_cache_size]);
 	m_keys.push_back(new uint64_t[m_max_cache_size]);
 	m_records_position = 0;
@@ -252,90 +257,42 @@ bool FullTextShardBuilder<DataRecord>::should_merge() {
 }
 
 template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::add_adjustments(const AdjustmentList &adjustments) {
-
-	ofstream domain_writer(domain_adjustment_filename(), ios::binary | ios::app);
-	ofstream url_writer(url_adjustment_filename(), ios::binary | ios::app);
-
-	vector<Adjustment> data = adjustments.data();
-
-	for (const struct Adjustment &record : data) {
-		if (record.type == DOMAIN_ADJUSTMENT) {
-			domain_writer.write((const char *)&record, sizeof(struct Adjustment));
-		}
-		if (record.type == URL_ADJUSTMENT) {
-			url_writer.write((const char *)&record, sizeof(struct Adjustment));
-		}
-	}
-}
-
-template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::merge_adjustments(const UrlToDomain *url_to_domain) {
+void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecord> &with) {
 
 	// Read everything to cache.
 	read_data_to_cache();
+	with.read_data_to_cache();
 
-	// Allocate buffer.
-	const size_t buffer_size = 10000;
-	char *buffer = new char[buffer_size * sizeof(struct Adjustment)];
-
-	// Apply url adjustments.
-	{
-		ifstream reader(url_adjustment_filename(), ios::binary);
-		while (!reader.eof()) {
-			reader.read(buffer, buffer_size);
-			const size_t read_bytes = reader.gcount();
-
-			for (size_t i = 0; i < read_bytes; i += sizeof(struct Adjustment)) {
-				struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
-				auto end = m_cache[adjustment->word_hash].end();
-				auto iter = lower_bound(m_cache[adjustment->word_hash].begin(), end,
-					adjustment->key_hash, [](const DataRecord &a, uint64_t b) {
-						return a.m_value < b;
-					});
-				if (iter == end || (*iter).m_value != adjustment->key_hash) {
-					// Add the item.
-					cout << "adding url to shard: " << target_filename() << endl;
-					m_cache[adjustment->word_hash].push_back(DataRecord{.m_value = adjustment->key_hash,
-						.m_score = adjustment->score});
-					sort(m_cache[adjustment->word_hash].begin(), m_cache[adjustment->word_hash].end(),
-						[](const DataRecord &a, const DataRecord &b) {
-							return a.m_value < b.m_value;
-					});
-				} else {
-					cout << "updating url to shard: " << target_filename() << endl;
-					(*iter).m_score += adjustment->score;
-				}
+	// Merge algorithm as described here: https://en.wikipedia.org/wiki/Merge_algorithm
+	// but with an additional sum of the scores.
+	for (auto &iter : m_cache) {
+		const vector<DataRecord> *vec1 = &iter.second;
+		const vector<DataRecord> *vec2 = &(with.m_cache[iter.first]);
+		size_t i = 0;
+		size_t j = 0;
+		vector<DataRecord> merged;
+		while (i < vec1->size() && j < vec2->size()) {
+			if (vec1->at(i).m_value < vec2->at(j).m_value) {
+				merged.push_back(vec1->at(i));
+				i++;
+			} else if (vec1->at(i).m_value == vec2->at(j).m_value) {
+				// Sum the scores.
+				merged.push_back(vec1->at(i));
+				merged.back().m_score += vec2->at(j).m_score;
+				i++;
+			} else {
+				merged.push_back(vec2->at(j));
+				j++;
 			}
 		}
+		for ( ; i < vec1->size(); i++) merged.push_back(vec1->at(i));
+		for ( ; j < vec2->size(); j++) merged.push_back(vec2->at(j));
+
+		m_cache[iter.first] = merged;
 	}
 
-	// Apply domain adjustments.
-	{
-		ifstream reader(domain_adjustment_filename(), ios::binary);
-		while (!reader.eof()) {
-			reader.read(buffer, buffer_size);
-			const size_t read_bytes = reader.gcount();
-
-			for (size_t i = 0; i < read_bytes; i += sizeof(struct Adjustment)) {
-				struct Adjustment *adjustment = (struct Adjustment *)(&buffer[i]);
-
-				for (auto &iter : m_cache[adjustment->word_hash]) {
-					auto find_iter = url_to_domain->url_to_domain().find(iter.m_value);
-					if (find_iter != url_to_domain->url_to_domain().end() && find_iter->second == adjustment->key_hash) {
-						iter.m_score += adjustment->score;
-						cout << "updating domain to shard: " << target_filename() << endl;
-					}
-				}
-			}
-		}
-	}
-
-	delete buffer;
-
-	sort_cache();
 	save_file();
-	truncate_cache_files();
+	with.truncate();
 }
 
 template<typename DataRecord>
@@ -409,6 +366,13 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	while (total_read_data < data_size) {
 		reader.read(m_buffer, m_buffer_len);
 		const size_t read_len = reader.gcount();
+
+		if (read_len == 0) {
+			LogInfo("Data stopped before end. Ignoring shard " + m_shard_id);
+			m_cache.clear();
+			break;
+		}
+
 		total_read_data += read_len;
 
 		size_t num_records = read_len / sizeof(DataRecord);
@@ -519,16 +483,6 @@ string FullTextShardBuilder<DataRecord>::target_filename() const {
 	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 }
 
-template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::domain_adjustment_filename() const {
-	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".adj_dom";
-}
-
-template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::url_adjustment_filename() const {
-	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".adj_url";
-}
-
 /*
 	Deletes ALL data from this shard.
 */
@@ -551,12 +505,6 @@ void FullTextShardBuilder<DataRecord>::truncate_cache_files() {
 
 	m_writer.open(filename(), ios::trunc);
 	m_writer.close();
-
-	ofstream domain_writer(domain_adjustment_filename(), ios::trunc);
-	domain_writer.close();
-
-	ofstream url_writer(url_adjustment_filename(), ios::trunc);
-	url_writer.close();
 
 	ofstream key_writer(key_filename(), ios::trunc);
 	key_writer.close();

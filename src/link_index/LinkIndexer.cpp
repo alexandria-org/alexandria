@@ -7,15 +7,24 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_ft_indexer = ft_indexer;
-	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
-			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id);
+			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
 		m_shards.push_back(shard_builder);
+	}
+
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		FullTextShardBuilder<FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<FullTextRecord>("adjustments", shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
+		m_adjustment_shards.push_back(shard_builder);
 	}
 }
 
 LinkIndexer::~LinkIndexer() {
 	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
+		delete shard;
+	}
+	for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
 		delete shard;
 	}
 }
@@ -38,10 +47,10 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
 		if (m_ft_indexer->has_domain(target_url.host_hash())) {
-			adjust_score_for_domain_link(col_values[4], link);
+			//adjust_score_for_domain_link(col_values[4], link);
 		}
 
-		if (m_ft_indexer->has_key(target_url.hash())) {
+		if (true || m_ft_indexer->has_key(target_url.hash())) {
 
 			uint64_t link_hash = source_url.link_hash(target_url);
 
@@ -64,26 +73,54 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 }
 
 void LinkIndexer::write_cache(mutex *write_mutexes) {
-	size_t idx = 0;
-	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
-		if (shard->full()) {
-			write_mutexes[idx].lock();
-			shard->append();
-			write_mutexes[idx].unlock();
-		}
+	{
+		size_t idx = 0;
+		for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
+			if (shard->full()) {
+				write_mutexes[idx].lock();
+				shard->append();
+				write_mutexes[idx].unlock();
+			}
 
-		idx++;
+			idx++;
+		}
+	}
+
+	{
+		size_t idx = 0;
+		for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
+			if (shard->full()) {
+				write_mutexes[idx].lock();
+				shard->append();
+				write_mutexes[idx].unlock();
+			}
+
+			idx++;
+		}
 	}
 }
 
 void LinkIndexer::flush_cache(mutex *write_mutexes) {
-	size_t idx = 0;
-	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
-		write_mutexes[idx].lock();
-		shard->append();
-		write_mutexes[idx].unlock();
+	{
+		size_t idx = 0;
+		for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
+			write_mutexes[idx].lock();
+			shard->append();
+			write_mutexes[idx].unlock();
 
-		idx++;
+			idx++;
+		}
+	}
+
+	{
+		size_t idx = 0;
+		for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
+			write_mutexes[idx].lock();
+			shard->append();
+			write_mutexes[idx].unlock();
+
+			idx++;
+		}
 	}
 }
 
@@ -107,8 +144,11 @@ void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const Li
 	vector<string> words = get_full_text_words(link_text);
 
 	for (const string &word : words) {
+
 		const uint64_t word_hash = m_hasher(word);
-		m_ft_indexer->add_domain_link(word_hash, link);
+		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+
+		m_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().hash(), .m_score = link.url_score()});
 	}
 }
 
@@ -117,7 +157,10 @@ void LinkIndexer::adjust_score_for_url_link(const string &link_text, const Link 
 	vector<string> words = get_full_text_words(link_text);
 
 	for (const string &word : words) {
+
 		const uint64_t word_hash = m_hasher(word);
-		m_ft_indexer->add_url_link(word_hash, link);
+		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+
+		m_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().hash(), .m_score = link.url_score()});
 	}
 }

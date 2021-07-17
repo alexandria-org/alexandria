@@ -9,7 +9,7 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &cc_bat
 {
 	m_sub_system = new SubSystem();
 	m_url_to_domain = new UrlToDomain(m_fti_name);
-	m_url_to_domain->read();
+	//m_url_to_domain->read();
 }
 
 LinkIndexerRunner::~LinkIndexerRunner() {
@@ -36,7 +36,7 @@ void LinkIndexerRunner::run() {
 			warc_paths.push_back(warc_paths_raw.back());
 			warc_paths_raw.pop_back();
 			num++;
-			//if (num >= 100) break;
+			if (num >= 100) break;
 		}
 
 		vector<vector<string>> warc_path_chunks;
@@ -64,7 +64,11 @@ void LinkIndexerRunner::run() {
 		}
 
 		merge();
+		string line;
+		cout << "continue ? ";
+		cin >> line;
 		merge_adjustments();
+		break;
 	}
 	
 	sort();
@@ -82,9 +86,9 @@ void LinkIndexerRunner::merge() {
 	std::vector<std::future<string>> merge_results;
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; ) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
 
-		while (shard_id < LI_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
 
 			merge_results.emplace_back(
 				merge_pool.enqueue([this, shard_id] {
@@ -101,13 +105,12 @@ void LinkIndexerRunner::merge() {
 		}
 		merge_results.clear();
 	}
+
 }
 
 void LinkIndexerRunner::merge_adjustments() {
 	LogInfo("Merging adjustments...");
 	Profiler profiler("Merging adjustments...");
-
-	const size_t merge_batch_size = 500;
 
 	ThreadPool merge_pool(24);
 	std::vector<std::future<string>> merge_results;
@@ -115,24 +118,18 @@ void LinkIndexerRunner::merge_adjustments() {
 	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system, m_url_to_domain);
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 
-		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+		merge_results.emplace_back(
+			merge_pool.enqueue([this, indexer, shard_id] {
+				return run_merge_adjustments_thread(indexer, shard_id);
+			})
+		);
 
-			merge_results.emplace_back(
-				merge_pool.enqueue([this, indexer, shard_id] {
-					return run_merge_adjustments_thread(indexer, shard_id);
-				})
-			);
+	}
 
-			shard_id++;
-
-		}
-
-		for (auto && result: merge_results) {
-			result.get();
-		}
-		merge_results.clear();
+	for (auto && result: merge_results) {
+		result.get();
 	}
 
 	delete indexer;
@@ -170,6 +167,13 @@ void LinkIndexerRunner::truncate() {
 
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<FullTextRecord>("adjustments", shard_id);
+		shard_builder->truncate();
+		delete shard_builder;
+	}
+
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		FullTextShardBuilder<FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<FullTextRecord>(m_fti_name, shard_id);
 		shard_builder->truncate_cache_files();
 		delete shard_builder;
@@ -193,7 +197,6 @@ void LinkIndexerRunner::index_stream(ifstream &infile) {
 	indexer.add_stream(shard_builders, infile);
 
 	indexer.flush_cache(m_link_mutexes);
-	ft_indexer.flush_adjustments_cache(m_full_text_mutexes);
 
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
 		shard_builders[i]->write();
@@ -234,16 +237,11 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 			}
 		}
 
-		ft_indexer.write_adjustments_cache(m_full_text_mutexes);
-
 		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
 
 		idx++;
 	}
 	indexer.flush_cache(m_link_mutexes);
-	Profiler profiler("ft_indexer.flush_adjustments_cache");
-	ft_indexer.flush_adjustments_cache(m_full_text_mutexes);
-	profiler.stop();
 
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
 		m_hash_table_mutexes[i].lock();
@@ -259,8 +257,11 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 }
 
 string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
-	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 
+	FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
+	adjustment_shard.merge();
+
+	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();
 
 	return shard.filename();
@@ -268,10 +269,14 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
 string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id) {
 
-	FullTextShardBuilder<FullTextRecord> shard(m_fti_name, shard_id);
-	shard.merge_adjustments(indexer->url_to_domain());
+	FullTextShardBuilder<FullTextRecord> shard1(m_fti_name, shard_id);
+	FullTextShardBuilder<FullTextRecord> shard2("adjustments", shard_id);
 
-	return shard.filename();
+	shard1.merge_with(shard2);
+
+	LogInfo("Merged " + to_string(shard_id));
+
+	return shard1.filename();
 }
 
 int LinkIndexerRunner::download_file(const string &bucket, const string &key, stringstream &stream) {

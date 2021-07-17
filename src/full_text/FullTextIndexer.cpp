@@ -11,17 +11,12 @@ FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem 
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
 		m_shards.push_back(shard_builder);
-
-		m_adjustments.push_back(new AdjustmentList());
 	}
 }
 
 FullTextIndexer::~FullTextIndexer() {
 	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		delete shard;
-	}
-	for (AdjustmentList *adjustment_list : m_adjustments) {
-		delete adjustment_list;
 	}
 }
 
@@ -156,38 +151,6 @@ void FullTextIndexer::read_url_to_domain() {
 
 void FullTextIndexer::write_url_to_domain() {
 	m_url_to_domain->write(m_indexer_id);
-}
-
-void FullTextIndexer::add_domain_link(uint64_t word_hash, const Link &link) {
-	const size_t shard_id = word_hash % FT_NUM_SHARDS;
-	m_adjustments[shard_id]->add_domain_link(word_hash, link);
-}
-
-void FullTextIndexer::add_url_link(uint64_t word_hash, const Link &link) {
-	const size_t shard_id = word_hash % FT_NUM_SHARDS;
-	m_adjustments[shard_id]->add_link(word_hash, link);
-}
-
-void FullTextIndexer::write_adjustments_cache(mutex *write_mutexes) {
-
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		if (m_adjustments[shard_id]->count() >= m_adjustment_cache_limit) {
-			write_mutexes[shard_id].lock();
-			m_shards[shard_id]->add_adjustments(*m_adjustments[shard_id]);
-			write_mutexes[shard_id].unlock();
-		}
-	}
-}
-
-void FullTextIndexer::flush_adjustments_cache(mutex *write_mutexes) {
-
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		if (m_adjustments[shard_id]->count() > 0) {
-			write_mutexes[shard_id].lock();
-			m_shards[shard_id]->add_adjustments(*m_adjustments[shard_id]);
-			write_mutexes[shard_id].unlock();
-		}
-	}
 }
 
 void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
