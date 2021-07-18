@@ -222,7 +222,7 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 			}
 		}
 		if (all_equal) {
-			scores.push_back(score_sum);
+			scores.push_back(score_sum / positions.size());
 			result_ids.push_back(positions[shortest_vector_position]);
 		}
 

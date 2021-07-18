@@ -129,7 +129,7 @@ int test6_3(void) {
 
 		ok = ok && total == 1;
 		ok = ok && result.size() == 1;
-		ok = ok && result[0].m_score == 0;
+		ok = ok && result[0].m_score == 1.0;
 
 		string result_string = hash_table.find(result[0].m_value);
 		ok = ok && (result_string.find("http://url1.com") == 0);
@@ -155,7 +155,7 @@ int test6_3(void) {
 
 			ok = ok && total == 1;
 			ok = ok && result.size() == 1;
-			//ok = ok && result[0].m_score == 1.0f;
+			ok = ok && roundf(result[0].m_score * 100) == 102.0f;
 			ok = ok && (hash_table.find(result[0].m_value).find("http://url1.com") == 0);
 		}
 
@@ -175,7 +175,7 @@ int test6_3(void) {
 
 			ok = ok && total == 1;
 			ok = ok && result.size() == 1;
-			//ok = ok && result[0].m_score == 2.0f;
+			ok = ok && roundf(result[0].m_score * 100) == 102.0f;
 			ok = ok && (hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0);
 		}
 	}
@@ -204,10 +204,10 @@ int test6_4(void) {
 		size_t total;
 		vector<FullTextResult> result = fti.search_phrase("quick brown fox", 1000, total);
 
-		assert(total == 1);
-		assert(result.size() == 1);
-		assert(result[0].m_score == 0);
-		assert(hash_table.find(result[0].m_value).find("http://url1.com") == 0);
+		ok = ok && total == 1;
+		ok = ok && result.size() == 1;
+		ok = ok && result[0].m_score == 1.0;
+		ok = ok && hash_table.find(result[0].m_value).find("http://url1.com") == 0;
 	}
 
 	// Add links
@@ -230,20 +230,20 @@ int test6_4(void) {
 
 			cout << "SCORE: " << result[0].m_score << endl;
 
-			assert(total == 1);
-			assert(result.size() == 1);
+			ok = ok && total == 1;
+			ok = ok && result.size() == 1;
 			//assert(result[0].m_score == 2.0f);
-			assert(hash_table.find(result[0].m_value).find("http://url1.com") == 0);
+			ok = ok && hash_table.find(result[0].m_value).find("http://url1.com") == 0;
 		}
 
 		{
 			size_t total;
 			vector<FullTextResult> result = fti.search_phrase("josef and jesus", 1000, total);
 
-			assert(total == 1);
-			assert(result.size() == 1);
+			ok = ok && total == 1;
+			ok = ok && result.size() == 1;
 			//assert(result[0].m_score == 2.0f);
-			assert(hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0);
+			ok = ok && hash_table.find(result[0].m_value).find("http://url2.com/sub_page") == 0;
 		}
 	}
 
@@ -271,11 +271,11 @@ int test6_5(void) {
 		size_t total;
 		vector<FullTextResult> result = fti.search_phrase("I saw blood floating in the sea", 1000, total);
 
-		assert(total == 1);
-		assert(result.size() == 1);
-		assert(result[0].m_score == 0);
-		assert(hash_table.find(result[0].m_value)
-			.find("http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm") == 0);
+		ok = ok && total == 1;
+		ok = ok && result.size() == 1;
+		ok = ok && result[0].m_score == 1;
+		ok = ok && hash_table.find(result[0].m_value)
+			.find("http://accommodation.jonathan-david.org/Wolf/B74f295_King-Wolf-Sex/Pill.htm") == 0;
 	}
 
 	// Add links
@@ -296,30 +296,30 @@ int test6_5(void) {
 			size_t total;
 			vector<FullTextResult> result = fti.search_phrase("Recensioner och tips för böcker", 1000, total);
 
-			assert(total == 1);
-			assert(result.size() == 1);
+			ok = ok && total == 1;
+			ok = ok && result.size() == 1;
 			//assert(result[0].m_score == 1.0f);
-			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0);
+			ok = ok && hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0;
 		}
 
 		{
 			size_t total;
 			vector<FullTextResult> result = fti.search_phrase("Recensioner", 1000, total);
 
-			assert(total == 1);
-			assert(result.size() == 1);
+			ok = ok && total == 1;
+			ok = ok && result.size() == 1;
 			//assert(result[0].m_score == 1.0f);
-			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0);
+			ok = ok && hash_table.find(result[0].m_value).find("http://www.omnible.se") == 0;
 		}
 
 		{
 			size_t total;
 			vector<FullTextResult> result = fti.search_phrase("Bokrecension", 1000, total);
 
-			assert(total == 1);
-			assert(result.size() == 1);
+			ok = ok && total == 1;
+			ok = ok && result.size() == 1;
 			//assert(result[0].m_score == 2.0f);
-			assert(hash_table.find(result[0].m_value).find("http://www.omnible.se/749827359873598734") == 0);
+			ok = ok && hash_table.find(result[0].m_value).find("http://www.omnible.se/749827359873598734") == 0;
 		}
 	}
 

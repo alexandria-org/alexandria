@@ -38,6 +38,7 @@ private:
 
 	vector<FullTextShardBuilder<LinkFullTextRecord> *> m_shards;
 	vector<FullTextShardBuilder<FullTextRecord> *> m_adjustment_shards;
+	vector<FullTextShardBuilder<FullTextRecord> *> m_domain_adjustment_shards;
 
 	void add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);

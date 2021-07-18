@@ -33,7 +33,10 @@ string URL::str() const {
 }
 
 uint64_t URL::hash() const {
-	return m_hasher(m_host + m_path);
+	const size_t host_bits = 20;
+	const uint64_t hash = m_hasher(m_host + m_path);
+	const uint64_t host_part = (host_hash() >> (64 - host_bits)) << (64 - host_bits);
+	return (hash >> host_bits) | host_part;
 }
 
 uint64_t URL::host_hash() const {

@@ -174,6 +174,13 @@ void LinkIndexerRunner::truncate() {
 
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<FullTextRecord>("domain_adjustments", shard_id);
+		shard_builder->truncate();
+		delete shard_builder;
+	}
+
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+		FullTextShardBuilder<FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<FullTextRecord>(m_fti_name, shard_id);
 		shard_builder->truncate_cache_files();
 		delete shard_builder;
@@ -261,6 +268,9 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 	FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
 	adjustment_shard.merge();
 
+	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
+	domain_adjustment_shard.merge();
+
 	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();
 
@@ -271,8 +281,9 @@ string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *in
 
 	FullTextShardBuilder<FullTextRecord> shard1(m_fti_name, shard_id);
 	FullTextShardBuilder<FullTextRecord> shard2("adjustments", shard_id);
+	FullTextShardBuilder<FullTextRecord> shard3("domain_adjustments", shard_id);
 
-	shard1.merge_with(shard2);
+	shard1.merge_domain(shard2, shard3, indexer->url_to_domain());
 
 	LogInfo("Merged " + to_string(shard_id));
 

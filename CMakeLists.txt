@@ -111,6 +111,11 @@ add_executable(server
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
+add_executable(hash_test
+	"src/hash_test.cpp"
+	${SRC_CLASSES}
+	${SRC_COMMON}
+)
 
 target_compile_definitions(run_tests PUBLIC CC_TESTING)
 
@@ -130,6 +135,9 @@ target_link_libraries(server PUBLIC
 	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
+	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+target_link_libraries(hash_test PUBLIC
+	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 
 aws_lambda_package_target(${PROJECT_NAME})

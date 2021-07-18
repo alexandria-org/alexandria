@@ -37,6 +37,8 @@ public:
 	void merge();
 	bool should_merge();
 	void merge_with(FullTextShardBuilder<DataRecord> &with);
+	void merge_domain(FullTextShardBuilder<DataRecord> &urls, FullTextShardBuilder<DataRecord> &domains,
+		const UrlToDomain *url_to_domain);
 
 	string filename() const;
 	string key_filename() const;
@@ -263,6 +265,11 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 	read_data_to_cache();
 	with.read_data_to_cache();
 
+	// Copy vectors from with that are not present in m_cache.
+	for (auto &iter : with.m_cache) {
+		if (m_cache.find(iter.first) == m_cache.end()) m_cache[iter.first] = iter.second;
+	}
+
 	// Merge algorithm as described here: https://en.wikipedia.org/wiki/Merge_algorithm
 	// but with an additional sum of the scores.
 	for (auto &iter : m_cache) {
@@ -280,6 +287,7 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 				merged.push_back(vec1->at(i));
 				merged.back().m_score += vec2->at(j).m_score;
 				i++;
+				j++;
 			} else {
 				merged.push_back(vec2->at(j));
 				j++;
@@ -293,6 +301,78 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 
 	save_file();
 	with.truncate();
+}
+
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRecord> &urls,
+	FullTextShardBuilder<DataRecord> &domains, const UrlToDomain *url_to_domain) {
+
+	// Read everything to cache.
+	read_data_to_cache();
+	urls.read_data_to_cache();
+	domains.read_data_to_cache();
+
+	// Copy vectors from urls that are not present in m_cache.
+	for (auto &iter : urls.m_cache) {
+		if (m_cache.find(iter.first) == m_cache.end()) m_cache[iter.first] = iter.second;
+	}
+
+	// Merge algorithm as described here: https://en.wikipedia.org/wiki/Merge_algorithm
+	// but with an additional sum of the scores.
+	for (auto &iter : m_cache) {
+		const vector<DataRecord> *vec1 = &iter.second;
+		const vector<DataRecord> *vec2 = &(urls.m_cache[iter.first]);
+		size_t i = 0;
+		size_t j = 0;
+		vector<DataRecord> merged;
+		while (i < vec1->size() && j < vec2->size()) {
+			if (vec1->at(i).m_value < vec2->at(j).m_value) {
+				merged.push_back(vec1->at(i));
+				i++;
+			} else if (vec1->at(i).m_value == vec2->at(j).m_value) {
+				// Sum the scores.
+				merged.push_back(vec1->at(i));
+				merged.back().m_score += vec2->at(j).m_score;
+				i++;
+				j++;
+			} else {
+				merged.push_back(vec2->at(j));
+				j++;
+			}
+		}
+		for ( ; i < vec1->size(); i++) merged.push_back(vec1->at(i));
+		for ( ; j < vec2->size(); j++) merged.push_back(vec2->at(j));
+
+		// Update scores according to domains in the sorted vector merged
+		const vector<DataRecord> *vec3 = &(domains.m_cache[iter.first]);
+		const size_t host_bits = 20;
+		i = 0;
+		j = 0;
+		while (i < merged.size() && j < vec3->size()) {
+			const uint64_t host_part1 = (merged.at(i).m_value >> (64 - host_bits)) << (64 - host_bits);
+			const uint64_t host_part2 = (vec3->at(j).m_value >> (64 - host_bits)) << (64 - host_bits);
+			if (host_part1 < host_part2) {
+				i++;
+			} else if (host_part1 == host_part2) {
+				// Actually check if the hosts are the same
+				auto iter = url_to_domain->url_to_domain().find(merged.at(i).m_value);
+				if (iter != url_to_domain->url_to_domain().end() && iter->second == vec3->at(j).m_value) {
+					// Add score.
+					merged[i].m_score += vec3->at(j).m_score;
+				}
+				i++;
+			} else {
+				// host_part1 > host_part2
+				j++;
+			}
+		}
+
+		m_cache[iter.first] = merged;
+	}
+
+	save_file();
+	urls.truncate();
+	domains.truncate();
 }
 
 template<typename DataRecord>
