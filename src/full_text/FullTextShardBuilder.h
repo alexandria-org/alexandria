@@ -32,9 +32,12 @@ public:
 
 	void add(uint64_t key, const DataRecord &record);
 	void sort_cache();
+	void sort_cache_with_sum();
 	bool full() const;
 	void append();
 	void merge();
+	void merge_with_sum();
+	void read_append_cache();
 	bool should_merge();
 	void merge_with(FullTextShardBuilder<DataRecord> &with);
 	void merge_domain(FullTextShardBuilder<DataRecord> &urls, FullTextShardBuilder<DataRecord> &domains,
@@ -49,6 +52,8 @@ public:
 
 	size_t disk_size() const;
 	size_t cache_size() const;
+
+	void read_data_to_cache();
 
 private:
 
@@ -72,7 +77,6 @@ private:
 	map<uint64_t, vector<DataRecord>> m_cache;
 	map<uint64_t, size_t> m_total_results;
 
-	void read_data_to_cache();
 	void save_file();
 
 };
@@ -156,6 +160,45 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 }
 
 template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::sort_cache_with_sum() {
+	for (auto &iter : m_cache) {
+		// Make elements unique.
+		sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_value < b.m_value;
+		});
+
+		size_t sum_pos = 0;
+		for (size_t i = 1; i < iter.second.size(); i++) {
+			if (iter.second[sum_pos].m_value == iter.second[i].m_value) {
+				iter.second[sum_pos].m_score += iter.second[i].m_score;
+			} else {
+				sum_pos++;
+				iter.second[sum_pos] = iter.second[i];
+			}
+		}
+		sum_pos++;
+
+		iter.second.erase(iter.second.begin() + sum_pos, iter.second.end());
+
+		m_total_results[iter.first] = iter.second.size();
+
+		// Cap at m_max_results
+		if (iter.second.size() > m_max_results) {
+			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
+				return a.m_score > b.m_score;
+			});
+			iter.second.resize(m_max_results);
+
+			// Order by value again.
+			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
+				return a.m_value < b.m_value;
+			});
+		}
+
+	}
+}
+
+template<typename DataRecord>
 bool FullTextShardBuilder<DataRecord>::full() const {
 	return cache_size() > m_max_cache_size;
 }
@@ -195,6 +238,29 @@ void FullTextShardBuilder<DataRecord>::append() {
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::merge() {
+
+	read_append_cache();
+
+	sort_cache();
+
+	save_file();
+
+	truncate_cache_files();
+}
+
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::merge_with_sum() {
+	read_append_cache();
+
+	sort_cache_with_sum();
+
+	save_file();
+
+	truncate_cache_files();
+}
+
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::read_append_cache() {
 
 	m_cache.clear();
 	m_total_results.clear();
@@ -240,12 +306,6 @@ void FullTextShardBuilder<DataRecord>::merge() {
 
 	delete key_buffer;
 	delete buffer;
-
-	sort_cache();
-
-	save_file();
-
-	truncate_cache_files();
 }
 
 template<typename DataRecord>
@@ -319,6 +379,10 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 
 	// Merge algorithm as described here: https://en.wikipedia.org/wiki/Merge_algorithm
 	// but with an additional sum of the scores.
+	float total_added_url = 0.0;
+	size_t num_added_url = 0;
+	float total_added_domain = 0.0;
+	size_t num_added_domain = 0;
 	for (auto &iter : m_cache) {
 		const vector<DataRecord> *vec1 = &iter.second;
 		const vector<DataRecord> *vec2 = &(urls.m_cache[iter.first]);
@@ -333,6 +397,10 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 				// Sum the scores.
 				merged.push_back(vec1->at(i));
 				merged.back().m_score += vec2->at(j).m_score;
+
+				total_added_url += vec2->at(j).m_score;
+				num_added_url++;
+
 				i++;
 				j++;
 			} else {
@@ -359,6 +427,8 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 				if (iter != url_to_domain->url_to_domain().end() && iter->second == vec3->at(j).m_value) {
 					// Add score.
 					merged[i].m_score += vec3->at(j).m_score;
+					total_added_domain += vec3->at(j).m_score;
+					num_added_domain++;
 				}
 				i++;
 			} else {
@@ -369,6 +439,8 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 
 		m_cache[iter.first] = merged;
 	}
+
+	cout << "DEBUG, added_score_url: " << total_added_url << " (" << num_added_url << ") added_score_domain: " << total_added_domain << " (" << num_added_domain << ")" << endl;
 
 	save_file();
 	urls.truncate();
@@ -442,7 +514,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	// Read the data.
 	size_t total_read_data = 0;
 	size_t key_id = 0;
-	size_t key_data_len = lens[key_id];
+	size_t num_records_for_key = lens[key_id] / sizeof(DataRecord);
 	while (total_read_data < data_size) {
 		reader.read(m_buffer, m_buffer_len);
 		const size_t read_len = reader.gcount();
@@ -457,15 +529,19 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 
 		size_t num_records = read_len / sizeof(DataRecord);
 		for (size_t i = 0; i < num_records; i++) {
-			if (key_data_len == 0) {
+			while (num_records_for_key == 0 && key_id < num_keys) {
 				key_id++;
-				key_data_len = lens[key_id];
+				num_records_for_key = lens[key_id] / sizeof(DataRecord);
 			}
-			
-			const DataRecord *record = (DataRecord *)&m_buffer[i * sizeof(DataRecord)];
-			m_cache[keys[key_id]].push_back(*record);
 
-			key_data_len--;
+			if (num_records_for_key > 0) {
+
+				const DataRecord *record = (DataRecord *)&m_buffer[i * sizeof(DataRecord)];
+				
+				m_cache[keys[key_id]].push_back(*record);
+
+				num_records_for_key--;
+			}
 		}
 	}
 

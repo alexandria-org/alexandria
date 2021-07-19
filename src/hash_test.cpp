@@ -2,8 +2,20 @@
 #include <iostream>
 #include "system/SubSystem.h"
 #include "parser/URL.h"
+#include "full_text/FullTextRecord.h"
+#include "full_text/FullTextShardBuilder.h"
 
 int main() {
+
+	hash<string> asd;
+
+	FullTextShardBuilder<FullTextRecord> *shard = new FullTextShardBuilder<FullTextRecord>("main_index", 7252);
+
+	shard->read_data_to_cache();
+
+	cout << "hash of 'beatles':" << asd("beatles") << endl;
+
+	return 0;
 
 	string cc_batch = "CC-MAIN-2021-17";
 

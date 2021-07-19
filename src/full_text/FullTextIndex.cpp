@@ -42,6 +42,8 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 
 	vector<string> words = get_full_text_words(phrase);
 
+	if (words.size() == 0) return {};
+
 	vector<string> searched_words;
 	map<size_t, FullTextResultSet<FullTextRecord> *> result_map;
 	map<size_t, FullTextResultSet<FullTextRecord> *> or_result_map;
@@ -59,6 +61,7 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 		Profiler profiler0("->find: " + word);
 		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>();
 
+		LogInfo("Querying shard " + to_string(word_hash % FT_NUM_SHARDS) + " for word: " + word);
 		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
 

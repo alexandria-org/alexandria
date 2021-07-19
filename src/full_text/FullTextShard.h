@@ -130,8 +130,10 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	size_t kk = 0;
 	Profiler pf2("FullTextShard::find ads");
 	while (read_bytes < len) {
-		size_t read_len = min(m_buffer_len, len);
-		reader.read(m_buffer, read_len);
+		const size_t bytes_left = len - read_bytes;
+		const size_t max_read_len = min(m_buffer_len, bytes_left);
+		reader.read(m_buffer, max_read_len);
+		const size_t read_len = reader.gcount();
 		read_bytes += read_len;
 
 		size_t num_records_read = read_len / sizeof(DataRecord);

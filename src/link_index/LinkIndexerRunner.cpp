@@ -9,7 +9,7 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &cc_bat
 {
 	m_sub_system = new SubSystem();
 	m_url_to_domain = new UrlToDomain(m_fti_name);
-	//m_url_to_domain->read();
+	m_url_to_domain->read();
 }
 
 LinkIndexerRunner::~LinkIndexerRunner() {
@@ -28,7 +28,10 @@ void LinkIndexerRunner::run() {
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
 	const size_t limit = 25000;
+	size_t run_num = 0;
 	while (warc_paths_raw.size() > 0) {
+
+		run_num++;
 
 		vector<string> warc_paths;
 		size_t num = 0;
@@ -36,8 +39,10 @@ void LinkIndexerRunner::run() {
 			warc_paths.push_back(warc_paths_raw.back());
 			warc_paths_raw.pop_back();
 			num++;
-			if (num >= 100) break;
+			if (num >= 1000) break;
 		}
+
+		//if (run_num == 1) continue;
 
 		vector<vector<string>> warc_path_chunks;
 		vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
@@ -266,10 +271,10 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
 	FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
-	adjustment_shard.merge();
+	adjustment_shard.merge_with_sum();
 
 	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
-	domain_adjustment_shard.merge();
+	domain_adjustment_shard.merge_with_sum();
 
 	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();
