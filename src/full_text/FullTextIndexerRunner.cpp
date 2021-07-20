@@ -63,7 +63,6 @@ void FullTextIndexerRunner::run() {
 		}
 
 		merge();
-		break;
 	}
 
 	sort();

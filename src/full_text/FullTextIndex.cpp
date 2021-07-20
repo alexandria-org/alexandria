@@ -211,13 +211,13 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 			const float *score_arr = iter.second->score_pointer();
 			const size_t len = iter.second->len();
 			size_t *pos = &(positions[iter.first]);
-			while (value > val_arr[*pos] && *pos < len) {
+			while (*pos < len && value > val_arr[*pos]) {
 				(*pos)++;
 			}
-			if (value == val_arr[*pos] && *pos < len) {
+			if (*pos < len && value == val_arr[*pos]) {
 				score_sum += score_arr[*pos];
 			}
-			if (value < val_arr[*pos] && *pos < len) {
+			if (*pos < len && value < val_arr[*pos]) {
 				all_equal = false;
 			}
 			if (*pos >= len) {

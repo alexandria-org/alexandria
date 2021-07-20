@@ -26,6 +26,8 @@ public:
 
 private:
 
+	FullTextResultSet(const FullTextResultSet &res) = delete;
+
 	uint64_t *m_value_pointer;
 	float *m_score_pointer;
 	DataRecord *m_record_pointer;

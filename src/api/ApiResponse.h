@@ -11,7 +11,7 @@ using namespace std;
 class ApiResponse {
 
 public:
-	ApiResponse(vector<ResultWithSnippet> &results, size_t total_found);
+	ApiResponse(vector<ResultWithSnippet> &results, size_t total_found, double profile);
 	~ApiResponse();
 
 	friend ostream &operator<<(ostream &os, const ApiResponse &api_response);

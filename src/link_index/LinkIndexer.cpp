@@ -164,7 +164,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % LI_NUM_SHARDS;
+		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
 		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
 			.m_source_hash = source_url.hash(), .m_target_hash = target_url.hash(),

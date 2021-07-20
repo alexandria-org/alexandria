@@ -5,7 +5,7 @@
 LinkIndex::LinkIndex(const string &db_name)
 : m_db_name(db_name)
 {
-	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		m_shards.push_back(new FullTextShard<LinkFullTextRecord>(m_db_name, shard_id));
 	}
 }
@@ -39,7 +39,7 @@ vector<LinkResult> LinkIndex::search_phrase(const string &phrase, int limit, siz
 		Profiler profiler0("->find: " + word);
 		FullTextResultSet<LinkFullTextRecord> *results = new FullTextResultSet<LinkFullTextRecord>();
 
-		m_shards[word_hash % LI_NUM_SHARDS]->find(word_hash, results);
+		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
 		profiler0.stop();
 
 		Profiler profiler1("Accumuating "+to_string(results->len())+" results for: " + word);

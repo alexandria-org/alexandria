@@ -3,7 +3,7 @@
 
 using namespace Aws::Utils::Json;
 
-ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_results) {
+ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_results, double profile) {
 
 	JsonValue message("{}");
 
@@ -29,6 +29,7 @@ ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_result
 	JsonValue json_results, json_string, json_number;
 	json_results.AsArray(result_array);
 	message.WithObject("status", json_string.AsString("success"));
+	message.WithObject("time_ms", json_string.AsDouble(profile));
 	message.WithObject("total_found", json_number.AsInt64(total_results));
 	message.WithObject("results", json_results);
 

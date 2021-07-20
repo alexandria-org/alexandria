@@ -18,6 +18,73 @@
 
 using namespace std;
 
+void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex &fti) {
+
+	Profiler profiler("total");
+
+	size_t total;
+	vector<FullTextResult> results = fti.search_phrase(query, 1000, total);
+
+	PostProcessor post_processor(query);
+
+	vector<ResultWithSnippet> with_snippets;
+	for (FullTextResult &res : results) {
+		const string tsv_data = hash_table.find(res.m_value);
+		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
+	}
+
+	post_processor.run(with_snippets);
+
+	ApiResponse response(with_snippets, total, profiler.get());
+
+	streambuf *cin_streambuf  = cin.rdbuf();
+	streambuf *cout_streambuf = cout.rdbuf();
+	streambuf *cerr_streambuf = cerr.rdbuf();
+
+	fcgi_streambuf cin_fcgi_streambuf(request.in);
+	fcgi_streambuf cout_fcgi_streambuf(request.out);
+	fcgi_streambuf cerr_fcgi_streambuf(request.err);
+
+	cin.rdbuf(&cin_fcgi_streambuf);
+	cout.rdbuf(&cout_fcgi_streambuf);
+	cerr.rdbuf(&cerr_fcgi_streambuf);
+
+	cout << "Content-type: application/json\r\n"
+	     << "\r\n"
+	     << response;
+
+	cin.rdbuf(cin_streambuf);
+	cout.rdbuf(cout_streambuf);
+	cerr.rdbuf(cerr_streambuf);
+}
+
+void run_url_lookup(const string &url_str, FCGX_Request &request, HashTable &hash_table) {
+
+	URL url(url_str);
+
+	const string response = hash_table.find(url.hash());
+
+	streambuf *cin_streambuf  = cin.rdbuf();
+	streambuf *cout_streambuf = cout.rdbuf();
+	streambuf *cerr_streambuf = cerr.rdbuf();
+
+	fcgi_streambuf cin_fcgi_streambuf(request.in);
+	fcgi_streambuf cout_fcgi_streambuf(request.out);
+	fcgi_streambuf cerr_fcgi_streambuf(request.err);
+
+	cin.rdbuf(&cin_fcgi_streambuf);
+	cout.rdbuf(&cout_fcgi_streambuf);
+	cerr.rdbuf(&cerr_fcgi_streambuf);
+
+	cout << "Content-type: text/html\r\n"
+	     << "\r\n"
+	     << response;
+
+	cin.rdbuf(cin_streambuf);
+	cout.rdbuf(cout_streambuf);
+	cerr.rdbuf(cerr_streambuf);
+}
+
 int main(void) {
 
 	streambuf *cin_streambuf = cin.rdbuf();
@@ -28,7 +95,12 @@ int main(void) {
 
 	FCGX_Init();
 
-	FCGX_InitRequest(&request, 0, 0);
+	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
+	if (socket_id < 0) {
+		LogInfo("Could not open socket, exiting");
+		return 1;
+	}
+	FCGX_InitRequest(&request, socket_id, 0);
 
 	HashTable hash_table("main_index");
 	FullTextIndex fti("main_index");
@@ -43,41 +115,12 @@ int main(void) {
 		URL url("http://alexandria.org" + uri);
 
 		auto query = url.query();
-		size_t total;
 
-		vector<FullTextResult> results = fti.search_phrase(query["q"], 1000, total);
-
-		PostProcessor post_processor(query["q"]);
-
-		vector<ResultWithSnippet> with_snippets;
-		for (FullTextResult &res : results) {
-			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
+		if (query.find("q") != query.end()) {
+			run_search_query(query["q"], request, hash_table, fti);
+		} else if (query.find("u") != query.end()) {
+			run_url_lookup(query["u"], request, hash_table);
 		}
-
-		post_processor.run(with_snippets);
-
-		ApiResponse response(with_snippets, total);
-
-		streambuf *cin_streambuf  = cin.rdbuf();
-		streambuf *cout_streambuf = cout.rdbuf();
-		streambuf *cerr_streambuf = cerr.rdbuf();
-
-		fcgi_streambuf cin_fcgi_streambuf(request.in);
-		fcgi_streambuf cout_fcgi_streambuf(request.out);
-		fcgi_streambuf cerr_fcgi_streambuf(request.err);
-
-		cin.rdbuf(&cin_fcgi_streambuf);
-		cout.rdbuf(&cout_fcgi_streambuf);
-		cerr.rdbuf(&cerr_fcgi_streambuf);
-
-		cout << "Content-type: application/json\r\n"
-		     << "\r\n"
-		     << response;
-
-		cin.rdbuf(cin_streambuf);
-		cout.rdbuf(cout_streambuf);
-		cerr.rdbuf(cerr_streambuf);
 	}
 
 	cin.rdbuf(cin_streambuf);

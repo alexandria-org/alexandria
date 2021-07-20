@@ -39,10 +39,10 @@ void LinkIndexerRunner::run() {
 			warc_paths.push_back(warc_paths_raw.back());
 			warc_paths_raw.pop_back();
 			num++;
-			if (num >= 1000) break;
+			//if (num >= 1000) break;
 		}
 
-		//if (run_num == 1) continue;
+		if (run_num == 1) continue;
 
 		vector<vector<string>> warc_path_chunks;
 		vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
@@ -69,11 +69,13 @@ void LinkIndexerRunner::run() {
 		}
 
 		merge();
+		/*
 		string line;
 		cout << "continue ? ";
 		cin >> line;
+		*/
 		merge_adjustments();
-		break;
+		//break;
 	}
 	
 	sort();
@@ -117,24 +119,32 @@ void LinkIndexerRunner::merge_adjustments() {
 	LogInfo("Merging adjustments...");
 	Profiler profiler("Merging adjustments...");
 
+	const size_t merge_batch_size = 500;
+
 	ThreadPool merge_pool(24);
 	std::vector<std::future<string>> merge_results;
 
 	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system, m_url_to_domain);
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
 
-		merge_results.emplace_back(
-			merge_pool.enqueue([this, indexer, shard_id] {
-				return run_merge_adjustments_thread(indexer, shard_id);
-			})
-		);
+		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+			merge_results.emplace_back(
+				merge_pool.enqueue([this, indexer, shard_id] {
+					return run_merge_adjustments_thread(indexer, shard_id);
+				})
+			);
 
-	}
+			shard_id++;
+		}
 
-	for (auto && result: merge_results) {
-		result.get();
+		for (auto && result: merge_results) {
+			result.get();
+		}
+
+		merge_results.clear();
+
 	}
 
 	delete indexer;
@@ -163,7 +173,7 @@ void LinkIndexerRunner::upload() {
 }
 
 void LinkIndexerRunner::truncate() {
-	for (size_t shard_id = 0; shard_id < LI_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
 			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id);
 		shard_builder->truncate();

@@ -24,7 +24,6 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 	const vector<size_t> &cols, const vector<float> &scores) {
 
 	string line;
-	map<uint64_t, float> word_map;
 	while (getline(stream, line)) {
 		vector<string> col_values;
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -41,6 +40,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		add_data_to_shards(url.hash(), site_colon, harmonic);
 
 		size_t score_index = 0;
+		map<uint64_t, float> word_map;
 		for (size_t col_index : cols) {
 			add_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
 			score_index++;

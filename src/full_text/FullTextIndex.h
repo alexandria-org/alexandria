@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define FT_NUM_SHARDS 8192
+#define FT_NUM_SHARDS 16384
 #define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
 #define FULL_TEXT_KEY_LEN 8
 #define FULL_TEXT_SCORE_LEN 4
