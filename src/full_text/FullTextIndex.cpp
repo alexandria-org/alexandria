@@ -86,14 +86,20 @@ vector<FullTextResult> FullTextIndex::search_phrase(const string &phrase, int li
 		or_result_map.clear();
 	}
 
+	vector<FullTextResultSet<FullTextRecord> *> result_vector;
+
+	for (auto &iter : result_map) {
+		result_vector.push_back(iter.second);
+	}
+
 	Profiler profiler2("value_intersection");
 	size_t shortest_vector;
 	vector<float> score_vector;
-	vector<size_t> result_ids = value_intersection(result_map, shortest_vector, score_vector);
+	vector<size_t> result_ids = value_intersection(result_vector, shortest_vector, score_vector);
 
 	vector<FullTextResult> result;
 
-	FullTextResultSet<FullTextRecord> *shortest = result_map[shortest_vector];
+	FullTextResultSet<FullTextRecord> *shortest = result_vector[shortest_vector];
 	uint64_t *value_arr = shortest->value_pointer();
 	for (size_t i = 0; i < result_ids.size(); i++) {
 		result.emplace_back(FullTextResult(value_arr[result_ids[i]], score_vector[i]));
@@ -179,26 +185,27 @@ void FullTextIndex::download(const SubSystem *sub_system) {
 	}
 }
 
-vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResultSet<FullTextRecord> *> &values_map,
+vector<size_t> FullTextIndex::value_intersection(const vector<FullTextResultSet<FullTextRecord> *> &result_sets,
 	size_t &shortest_vector_position, vector<float> &scores) const {
 	Profiler value_intersection("FullTextIndex::value_intersection");
 	
-	if (values_map.size() == 0) return {};
+	if (result_sets.size() == 0) return {};
 
 	shortest_vector_position = 0;
 	size_t shortest_len = SIZE_MAX;
-	for (auto &iter : values_map) {
-		if (shortest_len > iter.second->len()) {
-			shortest_len = iter.second->len();
-			shortest_vector_position = iter.first;
+	size_t iter_index = 0;
+	for (FullTextResultSet<FullTextRecord> *result_set : result_sets) {
+		if (shortest_len > result_set->len()) {
+			shortest_len = result_set->len();
+			shortest_vector_position = iter_index;
 		}
+		iter_index++;
 	}
 
-	vector<size_t> positions(values_map.size(), 0);
+	vector<size_t> positions(result_sets.size(), 0);
 	vector<size_t> result_ids;
 
-	auto value_iter = values_map.find(shortest_vector_position);
-	uint64_t *value_ptr = value_iter->second->value_pointer();
+	uint64_t *value_ptr = result_sets[shortest_vector_position]->value_pointer();
 
 	while (positions[shortest_vector_position] < shortest_len) {
 
@@ -206,11 +213,12 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 		uint64_t value = value_ptr[positions[shortest_vector_position]];
 
 		float score_sum = 0.0f;
-		for (auto &iter : values_map) {
-			const uint64_t *val_arr = iter.second->value_pointer();
-			const float *score_arr = iter.second->score_pointer();
-			const size_t len = iter.second->len();
-			size_t *pos = &(positions[iter.first]);
+		size_t iter_index = 0;
+		for (FullTextResultSet<FullTextRecord> *result_set : result_sets) {
+			const uint64_t *val_arr = result_set->value_pointer();
+			const float *score_arr = result_set->score_pointer();
+			const size_t len = result_set->len();
+			size_t *pos = &(positions[iter_index]);
 			while (*pos < len && value > val_arr[*pos]) {
 				(*pos)++;
 			}
@@ -223,9 +231,10 @@ vector<size_t> FullTextIndex::value_intersection(const map<size_t, FullTextResul
 			if (*pos >= len) {
 				all_equal = false;
 			}
+			iter_index++;
 		}
 		if (all_equal) {
-			scores.push_back(score_sum / positions.size());
+			scores.push_back(score_sum / result_sets.size());
 			result_ids.push_back(positions[shortest_vector_position]);
 		}
 

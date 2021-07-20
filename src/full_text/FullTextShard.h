@@ -122,6 +122,8 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 
 	result_set->allocate(num_records);
 
+	cout << "num_records: " << num_records << endl;
+
 	uint64_t *value_res = result_set->value_pointer();
 	float *score_res = result_set->score_pointer();
 	DataRecord *record_res = result_set->record_pointer();
@@ -144,6 +146,7 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 			record_res[kk] = *item;
 			kk++;
 		}
+		cout << "kk after loop: " << kk << endl;
 	}
 }
 

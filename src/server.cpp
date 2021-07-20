@@ -58,6 +58,46 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	cerr.rdbuf(cerr_streambuf);
 }
 
+void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex &fti) {
+
+	Profiler profiler("total");
+
+	size_t total;
+	vector<FullTextResult> results = fti.search_phrase(query, 1000, total);
+
+	PostProcessor post_processor(query);
+
+	vector<ResultWithSnippet> with_snippets;
+	for (FullTextResult &res : results) {
+		const string tsv_data = hash_table.find(res.m_value);
+		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
+	}
+
+	post_processor.run(with_snippets);
+
+	ApiResponse response(with_snippets, total, profiler.get());
+
+	streambuf *cin_streambuf  = cin.rdbuf();
+	streambuf *cout_streambuf = cout.rdbuf();
+	streambuf *cerr_streambuf = cerr.rdbuf();
+
+	fcgi_streambuf cin_fcgi_streambuf(request.in);
+	fcgi_streambuf cout_fcgi_streambuf(request.out);
+	fcgi_streambuf cerr_fcgi_streambuf(request.err);
+
+	cin.rdbuf(&cin_fcgi_streambuf);
+	cout.rdbuf(&cout_fcgi_streambuf);
+	cerr.rdbuf(&cerr_fcgi_streambuf);
+
+	cout << "Content-type: application/json\r\n"
+	     << "\r\n"
+	     << response;
+
+	cin.rdbuf(cin_streambuf);
+	cout.rdbuf(cout_streambuf);
+	cerr.rdbuf(cerr_streambuf);
+}
+
 void run_url_lookup(const string &url_str, FCGX_Request &request, HashTable &hash_table) {
 
 	URL url(url_str);

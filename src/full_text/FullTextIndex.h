@@ -38,7 +38,7 @@ public:
 	void upload(const SubSystem *sub_system);
 
 	// Testable private functions.
-	vector<size_t> value_intersection(const map<size_t, FullTextResultSet<FullTextRecord> *> &values_map,
+	vector<size_t> value_intersection(const vector<FullTextResultSet<FullTextRecord> *> &result_sets,
 		size_t &shortest_vector_position, vector<float> &scores) const;
 	
 private:
