@@ -27,7 +27,7 @@ void LinkIndexerRunner::run() {
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	const size_t limit = 25000;
+	const size_t limit = 10000;
 	size_t run_num = 0;
 	while (warc_paths_raw.size() > 0) {
 
@@ -42,7 +42,7 @@ void LinkIndexerRunner::run() {
 			//if (num >= 1000) break;
 		}
 
-		if (run_num == 1) continue;
+		//if (run_num == 1) continue;
 
 		vector<vector<string>> warc_path_chunks;
 		vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);

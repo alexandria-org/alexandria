@@ -39,6 +39,7 @@ int main(int argc, const char **argv) {
 	if (argc == 1) {
 		FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
 		indexer.run();
+		Profiler::print_memory_status();
 		return 0;
 	}
 
@@ -47,6 +48,7 @@ int main(int argc, const char **argv) {
 	if (arg == "link") {
 		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
 		indexer.run();
+		Profiler::print_memory_status();
 		return 0;
 	}
 

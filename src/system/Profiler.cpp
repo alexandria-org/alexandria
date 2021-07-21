@@ -44,3 +44,13 @@ void Profiler::print() {
 	cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
 }
 
+void Profiler::print_memory_status() {
+	ifstream infile("/proc/" + to_string(getpid()) + "/status");
+	if (infile.is_open()) {
+		string line;
+		while (getline(infile, line)) {
+			cout << line << endl;
+		}
+	}
+}
+

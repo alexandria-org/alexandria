@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -18,6 +20,8 @@ public:
 	double get_micro() const;
 	void stop();
 	void print();
+
+	static void print_memory_status();
 
 private:
 	bool m_enabled = true;
