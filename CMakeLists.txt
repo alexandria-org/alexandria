@@ -33,7 +33,6 @@ set(SRC_CLASSES
 	"src/file/TsvFileS3.cpp"
 	"src/file/TsvRow.cpp"
 
-	"src/full_text/FullTextIndex.cpp"
 	"src/full_text/FullTextShard.cpp"
 	"src/full_text/FullTextResult.cpp"
 	"src/full_text/FullTextResultSet.cpp"
@@ -42,7 +41,6 @@ set(SRC_CLASSES
 	"src/full_text/UrlToDomain.cpp"
 
 	"src/link_index/Link.cpp"
-	"src/link_index/LinkIndex.cpp"
 	"src/link_index/LinkResult.cpp"
 	"src/link_index/LinkResultSet.cpp"
 	"src/link_index/LinkIndexer.cpp"

@@ -9,26 +9,27 @@
 #include "hash_table/HashTable.h"
 
 #include "full_text/FullTextIndex.h"
-#include "full_text/FullTextResult.h"
+#include "full_text/FullTextRecord.h"
 
 #include "link_index/LinkIndex.h"
-#include "link_index/LinkResult.h"
+#include "link_index/LinkFullTextRecord.h"
 
 #include "system/Logger.h"
 
 using namespace std;
 
-void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex &fti) {
+void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex<FullTextRecord> &fti,
+	FullTextIndex<LinkFullTextRecord> &link_fti) {
 
 	Profiler profiler("total");
 
 	size_t total;
-	vector<FullTextResult> results = fti.search_phrase(query, 1000, total);
+	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 1000, total);
 
 	PostProcessor post_processor(query);
 
 	vector<ResultWithSnippet> with_snippets;
-	for (FullTextResult &res : results) {
+	for (FullTextRecord &res : results) {
 		const string tsv_data = hash_table.find(res.m_value);
 		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
 	}
@@ -58,19 +59,20 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	cerr.rdbuf(cerr_streambuf);
 }
 
-void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex &fti) {
+void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex<LinkFullTextRecord> &fti) {
 
 	Profiler profiler("total");
 
 	size_t total;
-	vector<FullTextResult> results = fti.search_phrase(query, 1000, total);
+	vector<LinkFullTextRecord> results = fti.search_phrase(query, 1000, total);
 
 	PostProcessor post_processor(query);
 
 	vector<ResultWithSnippet> with_snippets;
-	for (FullTextResult &res : results) {
+	for (LinkFullTextRecord &res : results) {
 		const string tsv_data = hash_table.find(res.m_value);
-		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
+		cout << res.m_value << ": " << tsv_data << endl;
+		//with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
 	}
 
 	post_processor.run(with_snippets);
@@ -143,7 +145,9 @@ int main(void) {
 	FCGX_InitRequest(&request, socket_id, 0);
 
 	HashTable hash_table("main_index");
-	FullTextIndex fti("main_index");
+	FullTextIndex<FullTextRecord> fti("main_index");
+	FullTextIndex<LinkFullTextRecord> link_fti("link_index");
+	HashTable hash_table_link("link_index");
 
 	LogInfo("Server has started...");
 
@@ -157,7 +161,9 @@ int main(void) {
 		auto query = url.query();
 
 		if (query.find("q") != query.end()) {
-			run_search_query(query["q"], request, hash_table, fti);
+			run_search_query(query["q"], request, hash_table, fti, link_fti);
+		} else if (query.find("l") != query.end()) {
+			run_link_query(query["l"], request, hash_table_link, link_fti);
 		} else if (query.find("u") != query.end()) {
 			run_url_lookup(query["u"], request, hash_table);
 		}

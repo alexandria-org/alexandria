@@ -17,7 +17,7 @@ LinkIndexerRunner::~LinkIndexerRunner() {
 	delete m_url_to_domain;
 }
 
-void LinkIndexerRunner::run() {
+void LinkIndexerRunner::run(size_t offset, size_t limit) {
 
 	truncate();
 
@@ -27,59 +27,38 @@ void LinkIndexerRunner::run() {
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	const size_t limit = 10000;
-	size_t run_num = 0;
-	while (warc_paths_raw.size() > 0) {
-
-		run_num++;
-
-		vector<string> warc_paths;
-		size_t num = 0;
-		while (warc_paths.size() < limit && warc_paths_raw.size() > 0) {
-			warc_paths.push_back(warc_paths_raw.back());
-			warc_paths_raw.pop_back();
-			num++;
-			//if (num >= 1000) break;
-		}
-
-		//if (run_num == 1) continue;
-
-		vector<vector<string>> warc_path_chunks;
-		vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
-
-		ThreadPool pool(LI_NUM_THREADS_INDEXING);
-		std::vector<std::future<string>> results;
-
-		map<int, vector<string>> shard_files;
-		int id = 1;
-		for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
-
-			results.emplace_back(
-				pool.enqueue([this, warc_paths_chunk, id] {
-					return run_index_thread(warc_paths_chunk, id);
-				})
-			);
-
-			id++;
-
-		}
-
-		for(auto && result: results) {
-			result.get();
-		}
-
-		merge();
-		/*
-		string line;
-		cout << "continue ? ";
-		cin >> line;
-		*/
-		merge_adjustments();
-		//break;
+	vector<string> warc_paths;
+	for (int i = (warc_paths_raw.size() - 1) - offset; i >= 0 && warc_paths.size() < limit; i--) {
+		warc_paths.push_back(warc_paths_raw[i]);
 	}
-	
+
+	vector<vector<string>> warc_path_chunks;
+	vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
+
+	ThreadPool pool(LI_NUM_THREADS_INDEXING);
+	std::vector<std::future<string>> results;
+
+	map<int, vector<string>> shard_files;
+	int id = 1;
+	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+
+		results.emplace_back(
+			pool.enqueue([this, warc_paths_chunk, id] {
+				return run_index_thread(warc_paths_chunk, id);
+			})
+		);
+
+		id++;
+
+	}
+
+	for(auto && result: results) {
+		result.get();
+	}
+
+	merge();
+	merge_adjustments();
 	sort();
-	//upload();
 
 }
 
@@ -87,7 +66,7 @@ void LinkIndexerRunner::merge() {
 	LogInfo("Merging...");
 	Profiler profiler("Merging...");
 
-	const size_t merge_batch_size = 500;
+	const size_t merge_batch_size = 250;
 
 	ThreadPool merge_pool(LI_NUM_THREADS_MERGING);
 	std::vector<std::future<string>> merge_results;
@@ -119,9 +98,9 @@ void LinkIndexerRunner::merge_adjustments() {
 	LogInfo("Merging adjustments...");
 	Profiler profiler("Merging adjustments...");
 
-	const size_t merge_batch_size = 500;
+	const size_t merge_batch_size = 250;
 
-	ThreadPool merge_pool(24);
+	ThreadPool merge_pool(LI_NUM_THREADS_MERGING);
 	std::vector<std::future<string>> merge_results;
 
 	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system, m_url_to_domain);
@@ -165,7 +144,7 @@ void LinkIndexerRunner::sort() {
 void LinkIndexerRunner::upload() {
 	LogInfo("Uploading...");
 
-	LinkIndex li(m_db_name);
+	FullTextIndex<LinkFullTextRecord> li(m_db_name);
 	li.upload(m_sub_system);
 
 	HashTable hash_table(m_db_name);

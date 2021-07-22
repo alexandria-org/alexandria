@@ -116,7 +116,7 @@ void FullTextIndexerRunner::sort() {
 void FullTextIndexerRunner::upload() {
 	LogInfo("Uploading...");
 
-	FullTextIndex fti(m_db_name);
+	FullTextIndex<FullTextRecord> fti(m_db_name);
 	fti.upload(m_sub_system);
 
 	HashTable hash_table(m_db_name);

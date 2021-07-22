@@ -31,7 +31,7 @@ public:
 	LinkIndexerRunner(const string &db_name, const string &cc_batch, const string &fti_name);
 	~LinkIndexerRunner();
 
-	void run();
+	void run(size_t offset, size_t limit);
 	void merge();
 	void merge_adjustments();
 	void sort();
