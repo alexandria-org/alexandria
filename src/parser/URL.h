@@ -25,13 +25,14 @@ public:
 	string str() const;
 	uint64_t hash() const;
 	uint64_t host_hash() const;
-	uint64_t link_hash(const URL &target_url) const;
+	uint64_t link_hash(const URL &target_url, const string &link_text) const;
 	string host() const;
 	string path() const;
 	map<string, string> query() const;
 	float harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
 	string unescape(const string &str) const;
+	uint32_t size() const;
 
 	friend istream &operator >>(istream &ss, URL &url);
 	friend ostream &operator <<(ostream& os, const URL& url);

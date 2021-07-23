@@ -19,8 +19,13 @@ public:
 	void allocate(size_t len);
 
 	uint64_t *value_pointer() { return m_value_pointer; }
+	const uint64_t *value_pointer() const { return m_value_pointer; }
+
 	float *score_pointer() { return m_score_pointer; }
+	const float *score_pointer() const { return m_score_pointer; }
+
 	DataRecord *record_pointer() { return m_record_pointer; }
+	const DataRecord *record_pointer() const { return m_record_pointer; }
 
 	void set_total_num_results(size_t total_num_results);
 

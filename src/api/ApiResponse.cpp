@@ -22,6 +22,7 @@ ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, size_t total_result
 		json_result.WithObject("title", string.AsString(Unicode::encode(result.title())));
 		json_result.WithObject("snippet", string.AsString(Unicode::encode(result.snippet())));
 		json_result.WithObject("score", json_number.AsDouble(result.score()));
+		json_result.WithObject("domain_hash", string.AsString(to_string(result.domain_hash())));
 		result_array[idx] = json_result;
 		idx++;
 	}

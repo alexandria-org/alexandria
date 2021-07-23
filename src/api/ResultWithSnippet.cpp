@@ -1,8 +1,8 @@
 
 #include "ResultWithSnippet.h"
 
-ResultWithSnippet::ResultWithSnippet(const string &tsv_data, float score)
-: m_score(score) {
+ResultWithSnippet::ResultWithSnippet(const string &tsv_data, const FullTextRecord &res)
+: m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
 	size_t pos_start = 0;
 	size_t pos_end = 0;
 	size_t col_num = 0;

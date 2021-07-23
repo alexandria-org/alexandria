@@ -344,8 +344,8 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 				i++;
 			} else if (vec1->at(i).m_value == vec2->at(j).m_value) {
 				// Sum the scores.
-				merged.push_back(vec1->at(i));
-				merged.back().m_score += vec2->at(j).m_score;
+				/*merged.push_back(vec1->at(i));
+				merged.back().m_score += vec2->at(j).m_score;*/
 				i++;
 				j++;
 			} else {
@@ -395,11 +395,11 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 				i++;
 			} else if (vec1->at(i).m_value == vec2->at(j).m_value) {
 				// Sum the scores.
-				merged.push_back(vec1->at(i));
+				/*merged.push_back(vec1->at(i));
 				merged.back().m_score += vec2->at(j).m_score;
 
 				total_added_url += vec2->at(j).m_score;
-				num_added_url++;
+				num_added_url++;*/
 
 				i++;
 				j++;
@@ -411,6 +411,7 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 		for ( ; i < vec1->size(); i++) merged.push_back(vec1->at(i));
 		for ( ; j < vec2->size(); j++) merged.push_back(vec2->at(j));
 
+		/*
 		// Update scores according to domains in the sorted vector merged
 		const vector<DataRecord> *vec3 = &(domains.m_cache[iter.first]);
 		const size_t host_bits = 20;
@@ -435,7 +436,7 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 				// host_part1 > host_part2
 				j++;
 			}
-		}
+		}*/
 
 		m_cache[iter.first] = merged;
 	}

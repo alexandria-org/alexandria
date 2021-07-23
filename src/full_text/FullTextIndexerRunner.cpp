@@ -24,7 +24,7 @@ void FullTextIndexerRunner::run() {
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	const size_t limit = 25000;
+	const size_t limit = 10000;
 	while (warc_paths_raw.size() > 0) {
 
 		vector<string> warc_paths;
@@ -63,6 +63,7 @@ void FullTextIndexerRunner::run() {
 		}
 
 		merge();
+		break;
 	}
 
 	sort();

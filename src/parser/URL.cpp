@@ -43,8 +43,8 @@ uint64_t URL::host_hash() const {
 	return m_hasher(m_host);
 }
 
-uint64_t URL::link_hash(const URL &target_url) const {
-	return m_hasher(str() + " to " + target_url.str());
+uint64_t URL::link_hash(const URL &target_url, const string &link_text) const {
+	return m_hasher(host() + " to " + target_url.str() + " link text " + link_text);
 }
 
 string URL::host() const {
@@ -116,6 +116,10 @@ string URL::unescape(const string &str) const {
 	delete ret;
 
 	return ret_str;
+}
+
+uint32_t URL::size() const {
+	return str().size();
 }
 
 istream &operator >>(istream &ss, URL &url) {

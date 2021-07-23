@@ -260,10 +260,10 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
 	FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
-	adjustment_shard.merge_with_sum();
+	adjustment_shard.merge();
 
 	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
-	domain_adjustment_shard.merge_with_sum();
+	domain_adjustment_shard.merge();
 
 	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();

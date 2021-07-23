@@ -55,15 +55,18 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
+		/*
+		// Skip domain links for now
 		if (m_ft_indexer->has_domain(target_url.host_hash())) {
-			adjust_score_for_domain_link(col_values[4], link);
+			add_domain_link(col_values[4], link);
 		}
+		*/
 
 		if (m_ft_indexer->has_key(target_url.hash())) {
 
-			uint64_t link_hash = source_url.link_hash(target_url);
+			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-			adjust_score_for_url_link(col_values[4], link);
+			add_url_link(col_values[4], link);
 
 			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + col_values[4]);
 
@@ -172,7 +175,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	}
 }
 
-void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const Link &link) {
+void LinkIndexer::add_domain_link(const string &link_text, const Link &link) {
 	
 	vector<string> words = get_full_text_words(link_text);
 
@@ -186,7 +189,7 @@ void LinkIndexer::adjust_score_for_domain_link(const string &link_text, const Li
 	}
 }
 
-void LinkIndexer::adjust_score_for_url_link(const string &link_text, const Link &link) {
+void LinkIndexer::add_url_link(const string &link_text, const Link &link) {
 	
 	vector<string> words = get_full_text_words(link_text);
 
@@ -195,6 +198,7 @@ void LinkIndexer::adjust_score_for_url_link(const string &link_text, const Link 
 		const uint64_t word_hash = m_hasher(word);
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
-		m_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().hash(), .m_score = link.url_score()});
+		m_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().hash(), .m_score = link.url_score(),
+				.m_domain_hash = link.target_url().host_hash(), .m_url_len = link.target_url().size()});
 	}
 }

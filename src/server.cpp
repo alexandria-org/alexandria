@@ -31,7 +31,7 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	vector<ResultWithSnippet> with_snippets;
 	for (FullTextRecord &res : results) {
 		const string tsv_data = hash_table.find(res.m_value);
-		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
+		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
 	}
 
 	post_processor.run(with_snippets);

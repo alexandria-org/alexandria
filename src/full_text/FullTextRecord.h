@@ -5,6 +5,8 @@ struct FullTextRecord {
 
 	uint64_t m_value;
 	float m_score;
+	uint64_t m_domain_hash;
+	uint32_t m_url_len;
 
 };
 
