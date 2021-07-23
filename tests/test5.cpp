@@ -21,8 +21,8 @@ int test5_1(void) {
 		indexer.merge();
 		indexer.sort();
 
-		FullTextIndex fti("test_db1");
-		vector<FullTextResult> result = fti.search_word("permanent");
+		FullTextIndex<FullTextRecord> fti("test_db1");
+		vector<FullTextRecord> result = fti.search_word("permanent");
 		ok = ok && result.size() == 1;
 		ok = ok && result[0].m_value == URL("http://aciedd.org/fixing-solar-panels/").hash();
 	}
@@ -37,9 +37,9 @@ int test5_1(void) {
 		indexer.merge();
 		indexer.sort();
 
-		FullTextIndex fti("test_db2");
+		FullTextIndex<FullTextRecord> fti("test_db2");
 
-		vector<FullTextResult> result = fti.search_word("josef");
+		vector<FullTextRecord> result = fti.search_word("josef");
 		ok = ok && result.size() == 1;
 		ok = ok && result[0].m_value == URL("http://example.com").hash();
 
@@ -53,9 +53,9 @@ int test5_1(void) {
 	}
 
 	{
-		FullTextIndex fti("test_db2");
+		FullTextIndex<FullTextRecord> fti("test_db2");
 
-		vector<FullTextResult> result = fti.search_word("josef");
+		vector<FullTextRecord> result = fti.search_word("josef");
 		ok = ok && result.size() == 1;
 		ok = ok && result[0].m_value == URL("http://example.com").hash();
 
@@ -76,9 +76,9 @@ int test5_1(void) {
 		indexer.merge();
 		indexer.sort();
 
-		FullTextIndex fti("test_db3");
+		FullTextIndex<FullTextRecord> fti("test_db3");
 
-		vector<FullTextResult> result = fti.search_word("hej");
+		vector<FullTextRecord> result = fti.search_word("hej");
 		ok = ok && result.size() == 3;
 		ok = ok && result[0].m_value == URL("http://example3.com").hash();
 		ok = ok && result[1].m_value == URL("http://example2.com").hash();
@@ -86,9 +86,9 @@ int test5_1(void) {
 	}
 
 	{
-		FullTextIndex fti("test_db3");
+		FullTextIndex<FullTextRecord> fti("test_db3");
 
-		vector<FullTextResult> result = fti.search_word("hej");
+		vector<FullTextRecord> result = fti.search_word("hej");
 		ok = ok && result.size() == 3;
 		ok = ok && result[0].m_value == URL("http://example3.com").hash();
 		ok = ok && result[1].m_value == URL("http://example2.com").hash();
@@ -113,9 +113,9 @@ int test5_2(void) {
 
 	hash<string> hasher;
 
-	vector<FullTextResult> result;
+	vector<FullTextRecord> result;
 	{
-		FullTextIndex fti(ft_db_name);
+		FullTextIndex<FullTextRecord> fti(ft_db_name);
 
 		size_t total;
 		result = fti.search_phrase("Ariel Rockmore - ELA Study Skills - North Clayton Middle School", 1000, total);
@@ -133,7 +133,7 @@ int test5_2(void) {
 		ok = ok && result.size() > 0;
 
 		bool contains_url = false;
-		for (const FullTextResult &res : result) {
+		for (const FullTextRecord &res : result) {
 			if (res.m_value == URL("http://aminorconsideration.org/apt-pupil-an-ode-to-power/").hash()) {
 				contains_url = true;
 				break;
@@ -145,7 +145,7 @@ int test5_2(void) {
 		ok = ok && result.size() > 0;
 
 		contains_url = false;
-		for (const FullTextResult &res : result) {
+		for (const FullTextRecord &res : result) {
 			if (res.m_value == URL("http://artesacro.org/Noticia.asp?idreg=47157").hash()) {
 				contains_url = true;
 				break;
@@ -168,7 +168,7 @@ int test5_3(void) {
 	};
 
 	{
-		FullTextIndex fti("test_db_5");
+		FullTextIndex<FullTextRecord> fti("test_db_5");
 
 		size_t shortest_vector;
 		vector<float> scores;

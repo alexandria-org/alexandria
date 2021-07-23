@@ -96,7 +96,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_word(const string &word) {
 	LogInfo("Searched for " + word + " and found " + to_string(results->len()) + " results");
 
 	vector<DataRecord> ret;
-	auto records = results->value_pointer();
+	auto records = results->record_pointer();
 	for (size_t i = 0; i < results->len(); i++) {
 		ret.push_back(records[i]);
 	}
@@ -351,7 +351,22 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 	FullTextResultSet<DataRecord> *shortest = result_vector[shortest_vector];
 	if (typeid(DataRecord) == typeid(FullTextRecord)) {
 		const DataRecord *record_arr = shortest->record_pointer();
-		for (auto link : links) {
+		size_t i = 0;
+		size_t j = 0;
+		const size_t host_bits = 20;
+		while (i < links.size(); j < result_ids.size()) {
+			const uint64_t host_part1 = (links[i].m_value >> (64 - host_bits)) << (64 - host_bits);
+			const uint64_t host_part2 = (record_arr[id].m_value >> (64 - host_bits)) << (64 - host_bits);
+
+			if (host_part1 < host_part2) {
+				i++;
+			} else if (host_part1 == host_part2) {
+				
+			} else {
+				j++;
+			}
+		}
+		/*for (auto link : links) {
 			for (size_t i = 0; i < result_ids.size(); i++) {
 				const size_t id = result_ids[i];
 				const float url_score = expm1(10*link.m_score) + 0.1;
@@ -366,7 +381,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 					score_vector[i] += domain_score;
 				}
 			}
-		}
+		}*/
 	}
 
 	vector<DataRecord> deduped_result;
