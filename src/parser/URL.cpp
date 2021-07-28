@@ -33,6 +33,7 @@ string URL::str() const {
 }
 
 uint64_t URL::hash() const {
+	//return m_hasher(m_host + m_path);
 	const size_t host_bits = 20;
 	const uint64_t hash = m_hasher(m_host + m_path);
 	const uint64_t host_part = (host_hash() >> (64 - host_bits)) << (64 - host_bits);
@@ -79,7 +80,7 @@ map<string, string> URL::query() const {
 
 float URL::harmonic(const SubSystem *sub_system) const {
 
-	const auto iter = sub_system->domain_index()->find(host_reverse());
+	const auto iter = sub_system->domain_index()->find(host_reverse_top_domain(m_host));
 
 	float harmonic;
 	if (iter == sub_system->domain_index()->end()) {
@@ -95,6 +96,20 @@ float URL::harmonic(const SubSystem *sub_system) const {
 string URL::host_reverse(const string &host) {
 	vector<string> parts;
 	boost::split(parts, host, boost::is_any_of("."));
+	reverse(parts.begin(), parts.end());
+	return boost::algorithm::join(parts, ".");
+}
+
+string URL::host_reverse_top_domain(const string &host) {
+	/*
+	 * This algorithm is OK since we only run on these tlds:
+	 * {"se", "com", "nu", "net", "org", "gov", "edu", "info"}
+	 * */
+	vector<string> parts;
+	boost::split(parts, host, boost::is_any_of("."));
+	if (parts.size() > 2) {
+		parts = {parts[parts.size() - 2], parts[parts.size() - 1]};
+	}
 	reverse(parts.begin(), parts.end());
 	return boost::algorithm::join(parts, ".");
 }

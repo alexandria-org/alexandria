@@ -13,7 +13,7 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 		m_shards.push_back(shard_builder);
 	}
 
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	/*for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<FullTextRecord>("adjustments", shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
 		m_adjustment_shards.push_back(shard_builder);
@@ -23,19 +23,20 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 		FullTextShardBuilder<FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<FullTextRecord>("domain_adjustments", shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
 		m_domain_adjustment_shards.push_back(shard_builder);
-	}
+	}*/
 }
 
 LinkIndexer::~LinkIndexer() {
 	for (FullTextShardBuilder<LinkFullTextRecord> *shard : m_shards) {
 		delete shard;
 	}
+	/*
 	for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
 		delete shard;
 	}
 	for (FullTextShardBuilder<FullTextRecord> *shard : m_domain_adjustment_shards) {
 		delete shard;
-	}
+	}*/
 }
 
 void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream) {
@@ -66,7 +67,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-			add_url_link(col_values[4], link);
+			//add_url_link(col_values[4], link);
 
 			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + col_values[4]);
 
@@ -98,6 +99,7 @@ void LinkIndexer::write_cache(mutex *write_mutexes) {
 		}
 	}
 
+	/*
 	{
 		size_t idx = 0;
 		for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
@@ -123,6 +125,7 @@ void LinkIndexer::write_cache(mutex *write_mutexes) {
 			idx++;
 		}
 	}
+	*/
 }
 
 void LinkIndexer::flush_cache(mutex *write_mutexes) {
@@ -137,6 +140,7 @@ void LinkIndexer::flush_cache(mutex *write_mutexes) {
 		}
 	}
 
+	/*
 	{
 		size_t idx = 0;
 		for (FullTextShardBuilder<FullTextRecord> *shard : m_adjustment_shards) {
@@ -158,6 +162,7 @@ void LinkIndexer::flush_cache(mutex *write_mutexes) {
 			idx++;
 		}
 	}
+	*/
 }
 
 void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
@@ -177,6 +182,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 
 void LinkIndexer::add_domain_link(const string &link_text, const Link &link) {
 	
+	/*
 	vector<string> words = get_full_text_words(link_text);
 
 	for (const string &word : words) {
@@ -187,10 +193,12 @@ void LinkIndexer::add_domain_link(const string &link_text, const Link &link) {
 		m_domain_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().host_hash(),
 			.m_score = link.domain_score()});
 	}
+	*/
 }
 
 void LinkIndexer::add_url_link(const string &link_text, const Link &link) {
 	
+	/*
 	vector<string> words = get_full_text_words(link_text);
 
 	for (const string &word : words) {
@@ -199,6 +207,7 @@ void LinkIndexer::add_url_link(const string &link_text, const Link &link) {
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
 		m_adjustment_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = link.target_url().hash(), .m_score = link.url_score(),
-				.m_domain_hash = link.target_url().host_hash(), .m_url_len = link.target_url().size()});
+				.m_domain_hash = link.target_url().host_hash()});
 	}
+	*/
 }

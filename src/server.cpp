@@ -10,6 +10,7 @@
 
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
+#include "full_text/SearchMetric.h"
 
 #include "link_index/LinkIndex.h"
 #include "link_index/LinkFullTextRecord.h"
@@ -23,8 +24,8 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 
 	Profiler profiler("total");
 
-	size_t total;
-	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 1000, total);
+	struct SearchMetric metric;
+	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 3000, metric);
 
 	PostProcessor post_processor(query);
 
@@ -36,27 +37,20 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 
 	post_processor.run(with_snippets);
 
-	ApiResponse response(with_snippets, total, profiler.get());
-
-	streambuf *cin_streambuf  = cin.rdbuf();
-	streambuf *cout_streambuf = cout.rdbuf();
-	streambuf *cerr_streambuf = cerr.rdbuf();
+	ApiResponse response(with_snippets, metric, profiler.get());
 
 	fcgi_streambuf cin_fcgi_streambuf(request.in);
 	fcgi_streambuf cout_fcgi_streambuf(request.out);
 	fcgi_streambuf cerr_fcgi_streambuf(request.err);
 
-	cin.rdbuf(&cin_fcgi_streambuf);
-	cout.rdbuf(&cout_fcgi_streambuf);
-	cerr.rdbuf(&cerr_fcgi_streambuf);
+	istream is{&cin_fcgi_streambuf};
+	ostream os{&cout_fcgi_streambuf};
+	ostream errs{&cerr_fcgi_streambuf};
 
-	cout << "Content-type: application/json\r\n"
+	os << "Content-type: application/json\r\n"
 	     << "\r\n"
 	     << response;
 
-	cin.rdbuf(cin_streambuf);
-	cout.rdbuf(cout_streambuf);
-	cerr.rdbuf(cerr_streambuf);
 }
 
 void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex<LinkFullTextRecord> &fti) {
@@ -77,7 +71,7 @@ void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_
 
 	post_processor.run(with_snippets);
 
-	ApiResponse response(with_snippets, total, profiler.get());
+	/*ApiResponse response(with_snippets, total, profiler.get());
 
 	streambuf *cin_streambuf  = cin.rdbuf();
 	streambuf *cout_streambuf = cout.rdbuf();
@@ -97,7 +91,7 @@ void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_
 
 	cin.rdbuf(cin_streambuf);
 	cout.rdbuf(cout_streambuf);
-	cerr.rdbuf(cerr_streambuf);
+	cerr.rdbuf(cerr_streambuf);*/
 }
 
 void run_url_lookup(const string &url_str, FCGX_Request &request, HashTable &hash_table) {
@@ -152,9 +146,10 @@ int main(void) {
 	LogInfo("Server has started...");
 
 	while (FCGX_Accept_r(&request) == 0) {
-		LogInfo("Serving request");
 
 		string uri = FCGX_GetParam("REQUEST_URI", request.envp);
+
+		LogInfo("Serving request: " + uri);
 
 		URL url("http://alexandria.org" + uri);
 

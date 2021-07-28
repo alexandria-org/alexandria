@@ -18,13 +18,18 @@ void FullTextIndexerRunner::run() {
 
 	truncate();
 
+	string manual_paths_url = "manual-files.txt";
+	TsvFileS3 manual_paths_file(m_sub_system->s3_client(), "alexandria-cc-output", manual_paths_url);
+
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
+	manual_paths_file.read_column_into(0, warc_paths_raw);
 
 	const size_t limit = 10000;
+	size_t num_run = 1;
 	while (warc_paths_raw.size() > 0) {
 
 		vector<string> warc_paths;
@@ -35,6 +40,7 @@ void FullTextIndexerRunner::run() {
 			num++;
 			//if (num >= 10000) break;
 			//if (num >= 5000) break;
+			//if (num >= 48) break;
 			//if (num >= 48) break;
 		}
 
@@ -63,7 +69,11 @@ void FullTextIndexerRunner::run() {
 		}
 
 		merge();
-		break;
+
+		if (num_run >= 10) {
+			//break;
+		}
+		num_run++;
 	}
 
 	sort();
@@ -278,7 +288,10 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		stringstream stream;
 
 		string warc_path = raw_warc_path;
-		warc_path.replace(warc_path.find(".warc.gz"), 8, ".gz");
+		const size_t pos = warc_path.find(".warc.gz");
+		if (pos != string::npos) {
+			warc_path.replace(pos, 8, ".gz");
+		}
 
 		if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
 			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1});

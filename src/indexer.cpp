@@ -54,7 +54,10 @@ int main(int argc, const char **argv) {
 		size_t offset = stoi(argv[2]);
 		size_t limit = stoi(argv[3]);
 
-		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
+		cout << "Running with offset: " << offset << " and limit: " << limit << endl;
+
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
+		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
 		indexer.run(offset, limit);
 		Profiler::print_memory_status();
 		return 0;

@@ -19,7 +19,7 @@ LinkIndexerRunner::~LinkIndexerRunner() {
 
 void LinkIndexerRunner::run(size_t offset, size_t limit) {
 
-	truncate();
+	//truncate();
 
 	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
@@ -57,7 +57,7 @@ void LinkIndexerRunner::run(size_t offset, size_t limit) {
 	}
 
 	merge();
-	merge_adjustments();
+	//merge_adjustments();
 	sort();
 
 }
@@ -259,11 +259,12 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 
 string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
+	/*
 	FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
 	adjustment_shard.merge();
 
 	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
-	domain_adjustment_shard.merge();
+	domain_adjustment_shard.merge();*/
 
 	FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
 	shard.merge();

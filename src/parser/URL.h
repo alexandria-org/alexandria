@@ -20,6 +20,7 @@ public:
 	~URL();
 
 	static string host_reverse(const string &host);
+	static string host_reverse_top_domain(const string &host);
 
 	void set_url_string(const string &url);
 	string str() const;
