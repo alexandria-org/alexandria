@@ -5,6 +5,11 @@
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
 3. [API Response format](/documentation/api_response_format.md)
 
+## Notes
+
+This is a pretty nice open source font: https://rsms.me/inter/
+Found it here: https://news.ycombinator.com/item?id=28009042
+
 ## How to build and deploy
 1. Configure the system
 ```
