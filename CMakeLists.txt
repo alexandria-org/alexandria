@@ -29,8 +29,10 @@ set(SRC_CLASSES
 	"src/api/ApiLink.cpp"
 	"src/api/ResultWithSnippet.cpp"
 
+	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"
 	"src/file/TsvFileS3.cpp"
+	"src/file/TsvFileRemote.cpp"
 	"src/file/TsvRow.cpp"
 
 	"src/full_text/FullTextShard.cpp"
@@ -63,6 +65,7 @@ set(SRC_CLASSES
 	"src/parser/URL.cpp"
 	
 	"src/system/Profiler.cpp"
+	"src/system/System.cpp"
 	"src/system/SubSystem.cpp"
 	"src/system/Logger.cpp"
 )

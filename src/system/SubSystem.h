@@ -15,6 +15,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "file/TsvFileS3.h"
+#include "file/TsvFileRemote.h"
 #include "common/Dictionary.h"
 
 using namespace boost::iostreams;

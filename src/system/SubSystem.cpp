@@ -11,27 +11,11 @@ SubSystem::SubSystem() {
 	m_s3_client = new Aws::S3::S3Client(credentialsProvider, get_s3_config());
 
 	LogInfo("download domain_info.tsv");
-	TsvFileS3 domain_index(*m_s3_client, "domain_info.tsv");
+	TsvFileRemote domain_index(System::domain_index_filename());
 	m_domain_index = new Dictionary(domain_index);
 
-	/*ifstream infile("/mnt/0/domain_info.tsv");
-	ofstream outfile("/mnt/0/domain_info2.tsv");
-	string line;
-	while (getline(infile, line)) {
-		vector<string> cols;
-		boost::algorithm::split(cols, line, boost::is_any_of("\t"));
-		float harmonic = stod(cols[2]) / 85908636.0f;
-		if (cols[0] != "") {
-			outfile << cols[0] << "\t" << cols[1] << "\t" << fixed << setprecision(20) << harmonic << endl;
-		}
-	}
-	infile.close();
-	outfile.close();
-	exit(0);*/
-
 	LogInfo("download dictionary.tsv");
-	TsvFileS3 dictionary(*m_s3_client, "dictionary.tsv");
-
+	TsvFileRemote dictionary(System::dictionary_filename());
 	m_dictionary = new Dictionary(dictionary);
 
 	dictionary.read_column_into(0, m_words);

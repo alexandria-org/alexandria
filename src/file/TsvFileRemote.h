@@ -11,32 +11,25 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "system/System.h"
+#include "Transfer.h"
 #include "common/common.h"
 #include "TsvFile.h"
 
 using namespace std;
 using namespace boost::iostreams;
 
-#define TSV_FILE_BUCKET "alexandria-database"
-#define TSV_FILE_BUCKET_DEV "alexandria-database-dev"
-
-class TsvFileS3 : public TsvFile {
+class TsvFileRemote : public TsvFile {
 
 public:
 
-	TsvFileS3(const Aws::S3::S3Client &s3_client, const string &file_name);
-	TsvFileS3(const Aws::S3::S3Client &s3_client, const string &bucket, const string &file_name);
-	~TsvFileS3();
+	TsvFileRemote(const string &file_name);
+	~TsvFileRemote();
 
 	string get_path() const;
 
 private:
-	Aws::S3::S3Client m_s3_client;
-	string m_bucket;
 
 	int download_file();
-	string get_bucket();
 	void create_directory();
 
 };

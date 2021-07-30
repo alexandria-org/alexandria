@@ -225,7 +225,9 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 		string warc_path = raw_warc_path;
 		warc_path.replace(warc_path.find(".warc.gz"), 8, ".links.gz");
 
-		if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
+		int error;
+		Transfer::gz_file_to_stream(warc_path, stream, error);
+		if (error == Transfer::OK) {
 			indexer.add_stream(shard_builders, stream);
 			indexer.write_cache(m_link_mutexes);
 		}
@@ -283,30 +285,5 @@ string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *in
 	LogInfo("Merged " + to_string(shard_id));
 
 	return shard1.filename();
-}
-
-int LinkIndexerRunner::download_file(const string &bucket, const string &key, stringstream &stream) {
-
-	Aws::S3::Model::GetObjectRequest request;
-	cout << "Downloading " << bucket << " key: " << key << endl;
-	request.SetBucket(bucket);
-	request.SetKey(key);
-
-	auto outcome = m_sub_system->s3_client().GetObject(request);
-
-	if (outcome.IsSuccess()) {
-
-		auto &input_stream = outcome.GetResultWithOwnership().GetBody();
-
-		filtering_istream decompress_stream;
-		decompress_stream.push(gzip_decompressor());
-		decompress_stream.push(input_stream);
-
-		stream << decompress_stream.rdbuf();
-
-		return 0;
-	}
-
-	return 1;
 }
 

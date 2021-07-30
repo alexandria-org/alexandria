@@ -88,7 +88,7 @@ int TsvFileS3::download_file() {
 
 string TsvFileS3::get_bucket() {
 	if (m_bucket.size()) return m_bucket;
-	if (getenv("ALEXANDRIA_LIVE") != NULL && stoi(getenv("ALEXANDRIA_LIVE")) > 0) {
+	if (System::is_dev()) {
 		return TSV_FILE_BUCKET;
 	}
 	return TSV_FILE_BUCKET_DEV;

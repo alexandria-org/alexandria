@@ -55,6 +55,5 @@ private:
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	string run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id);
-	int download_file(const string &bucket, const string &key, stringstream &stream);
 
 };

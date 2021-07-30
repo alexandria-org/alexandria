@@ -9,6 +9,8 @@
 #include <map>
 #include <string.h>
 
+#define TSV_FILE_DESTINATION "/mnt/0"
+
 using namespace std;
 
 class TsvFile {
