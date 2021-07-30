@@ -9,7 +9,6 @@
 
 #include "LinkIndex.h"
 #include "parser/URL.h"
-#include "abstract/TextBase.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
 #include "full_text/FullTextIndexer.h"
@@ -17,7 +16,7 @@
 
 using namespace std;
 
-class LinkIndexer : public TextBase {
+class LinkIndexer {
 
 public:
 

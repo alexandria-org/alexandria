@@ -1,6 +1,7 @@
 
 #include "entities.h"
 #include "HtmlParser.h"
+#include "text/Text.h"
 #include <curl/curl.h>
 
 const vector<string> non_content_tags{"script", "noscript", "style", "embed", "label", "form", "input",
@@ -194,7 +195,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path) {
 inline void HtmlParser::remove_www(string &path) {
 	size_t pos = path.find("www.");
 	if (pos == 0) path.erase(0, 4);
-	trim(path);
+	Text::trim(path);
 }
 
 void HtmlParser::parse_encoding(const string &html) {
@@ -203,7 +204,7 @@ void HtmlParser::parse_encoding(const string &html) {
 	if (pos_start == string::npos || pos_start > 1024) return;
 
 	string encoding = html.substr(pos_start, 40);
-	encoding = lower_case(encoding);
+	encoding = Text::lower_case(encoding);
 
 	const size_t utf8_start = encoding.find("utf-8");
 	const size_t iso88591_start = encoding.find("iso-8859-1");
@@ -327,7 +328,7 @@ inline void HtmlParser::clean_text(string &str) {
 	decode_html_entities_utf8(m_clean_buff, str.c_str());
 	str = m_clean_buff;
 	strip_whitespace(str);
-	trim(str);
+	Text::trim(str);
 }
 
 inline void HtmlParser::strip_tags(string &html) {

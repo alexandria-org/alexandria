@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "system/SubSystem.h"
-#include "abstract/TextBase.h"
 #include "system/ThreadPool.h"
 #include "LinkResult.h"
 #include "LinkFullTextRecord.h"

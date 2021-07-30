@@ -1,6 +1,7 @@
 
 #include "LinkIndexer.h"
 #include "system/Logger.h"
+#include "text/Text.h"
 #include <math.h>
 
 LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, FullTextIndexer *ft_indexer)
@@ -168,7 +169,7 @@ void LinkIndexer::flush_cache(mutex *write_mutexes) {
 void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
 	const string &link_text, float score) {
 
-	vector<string> words = get_full_text_words(link_text);
+	vector<string> words = Text::get_full_text_words(link_text);
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
@@ -183,7 +184,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 void LinkIndexer::add_domain_link(const string &link_text, const Link &link) {
 	
 	/*
-	vector<string> words = get_full_text_words(link_text);
+	vector<string> words = Text::get_full_text_words(link_text);
 
 	for (const string &word : words) {
 
@@ -199,7 +200,7 @@ void LinkIndexer::add_domain_link(const string &link_text, const Link &link) {
 void LinkIndexer::add_url_link(const string &link_text, const Link &link) {
 	
 	/*
-	vector<string> words = get_full_text_words(link_text);
+	vector<string> words = Text::get_full_text_words(link_text);
 
 	for (const string &word : words) {
 

@@ -15,7 +15,6 @@ class FullTextIndexer;
 #include "FullTextIndex.h"
 #include "UrlToDomain.h"
 #include "parser/URL.h"
-#include "abstract/TextBase.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
 #include "link_index/Link.h"
@@ -23,7 +22,7 @@ class FullTextIndexer;
 
 using namespace std;
 
-class FullTextIndexer : public TextBase {
+class FullTextIndexer {
 
 public:
 

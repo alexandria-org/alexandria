@@ -1,6 +1,7 @@
 
 #include "FullTextIndexer.h"
 #include "system/Logger.h"
+#include "text/Text.h"
 #include <math.h>
 
 FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
@@ -36,8 +37,8 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		uint64_t key_hash = url.hash();
 		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, line);
 
-		const string site_colon = "site:" + url.host() + " site:www." + url.host(); 
-		add_data_to_shards(url, site_colon, harmonic);
+		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+		add_data_to_shards(url, site_colon, harmonic * 20);
 
 		size_t score_index = 0;
 		map<uint64_t, float> word_map;
@@ -156,7 +157,7 @@ void FullTextIndexer::write_url_to_domain() {
 
 void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
 
-	vector<string> words = get_full_text_words(text);
+	vector<string> words = Text::get_full_text_words(text);
 	map<uint64_t, uint64_t> uniq;
 	for (const string &word : words) {
 		const uint64_t word_hash = m_hasher(word);
@@ -169,7 +170,7 @@ void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const
 
 void FullTextIndexer::add_data_to_shards(const URL &url, const string &text, float score) {
 
-	vector<string> words = get_full_text_words(text);
+	vector<string> words = Text::get_full_text_words(text);
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);

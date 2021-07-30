@@ -5,12 +5,11 @@
 #include <sstream>
 
 #include "parser/URL.h"
-#include "abstract/TextBase.h"
 #include "LinkSearchResult.h"
 
 using namespace std;
 
-class SearchResult : public TextBase {
+class SearchResult {
 
 public:
 

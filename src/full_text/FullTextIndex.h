@@ -16,7 +16,6 @@ template<typename DataRecord> class FullTextIndex;
 #include <vector>
 
 #include <cmath>
-#include "abstract/TextBase.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
 #include "FullTextRecord.h"
@@ -24,13 +23,14 @@ template<typename DataRecord> class FullTextIndex;
 #include "FullTextResultSet.h"
 #include "SearchMetric.h"
 #include "link_index/LinkFullTextRecord.h"
+#include "text/Text.h"
 
 #include "system/Logger.h"
 
 using namespace std;
 
 template<typename DataRecord>
-class FullTextIndex : public TextBase {
+class FullTextIndex {
 
 public:
 	FullTextIndex(const string &name);
@@ -147,7 +147,7 @@ void FullTextIndex<DataRecord>::make_search_futures(const vector<string> &words,
 template<typename DataRecord>
 vector<DataRecord> FullTextIndex<DataRecord>::query_links(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase) const {
 
-	vector<string> words = get_full_text_words(phrase);
+	vector<string> words = Text::get_full_text_words(phrase);
 
 	map<size_t, FullTextResultSet<LinkFullTextRecord> *> result_map;
 	map<size_t, FullTextResultSet<LinkFullTextRecord> *> or_result_map;
@@ -178,7 +178,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const string &phrase
 
 	total_found = 0;
 
-	vector<string> words = get_full_text_words(phrase);
+	vector<string> words = Text::get_full_text_words(phrase);
 
 	if (words.size() == 0) return {};
 
@@ -315,7 +315,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 	metric.m_link_domain_matches = 0;
 	metric.m_link_url_matches = 0;
 
-	vector<string> words = get_full_text_words(phrase);
+	vector<string> words = Text::get_full_text_words(phrase);
 
 	if (words.size() == 0) return {};
 
@@ -507,7 +507,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase_unsorted(const strin
 
 	total_found = 0;
 
-	vector<string> words = get_full_text_words(phrase);
+	vector<string> words = Text::get_full_text_words(phrase);
 
 	if (words.size() == 0) return {};
 

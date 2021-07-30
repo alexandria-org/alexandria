@@ -11,14 +11,13 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "TextBase.h"
 #include "BasicData.h"
 #include "parser/URL.h"
 
 using namespace boost::iostreams;
 using namespace std;
 
-class BasicLinkData : public BasicData, public TextBase {
+class BasicLinkData : public BasicData {
 
 public:
 	BasicLinkData();

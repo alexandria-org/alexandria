@@ -12,7 +12,6 @@
 
 #include "common/common.h"
 #include "api/ApiLink.h"
-#include "abstract/TextBase.h"
 #include "parser/Unicode.h"
 
 using namespace std;
@@ -28,7 +27,7 @@ using namespace std;
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
 
-class HtmlParser : public TextBase {
+class HtmlParser {
 
 public:
 

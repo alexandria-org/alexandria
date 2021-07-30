@@ -7,11 +7,9 @@
 #include "common/common.h"
 #include "system/SubSystem.h"
 
-#include "abstract/TextBase.h"
-
 using namespace std;
 
-class URL : public TextBase {
+class URL {
 
 public:
 	URL();
@@ -33,6 +31,7 @@ public:
 	float harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
 	string unescape(const string &str) const;
+	string domain_without_tld() const;
 	uint32_t size() const;
 
 	friend istream &operator >>(istream &ss, URL &url);

@@ -1,6 +1,7 @@
 
 #include "URL.h"
 #include <curl/curl.h>
+#include "text/Text.h"
 
 URL::URL() {
 	m_status = CC_OK;
@@ -136,6 +137,15 @@ string URL::unescape(const string &str) const {
 	return ret_str;
 }
 
+string URL::domain_without_tld() const {
+	vector<string> parts;
+	boost::split(parts, m_host, boost::is_any_of("."));
+	if (parts.size() > 1) {
+		return parts[parts.size() - 2];
+	}
+	return "";
+}
+
 uint32_t URL::size() const {
 	return str().size();
 }
@@ -195,5 +205,5 @@ int URL::parse() {
 inline void URL::remove_www(string &path) {
 	size_t pos = path.find("www.");
 	if (pos == 0) path.erase(0, 4);
-	trim(path);
+	Text::trim(path);
 }

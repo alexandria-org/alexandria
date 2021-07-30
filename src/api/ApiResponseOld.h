@@ -11,11 +11,10 @@
 #include <aws/core/utils/json/JsonSerializer.h>
 
 #include "SearchResult.h"
-#include "abstract/TextBase.h"
 
 using namespace std;
 
-class ApiResponse : public TextBase {
+class ApiResponse {
 
 public:
 	ApiResponse();

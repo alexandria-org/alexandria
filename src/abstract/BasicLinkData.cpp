@@ -1,6 +1,6 @@
 
 #include "BasicLinkData.h"
-
+#include "text/Text.h"
 
 BasicLinkData::BasicLinkData() {
 
@@ -39,7 +39,7 @@ void BasicLinkData::build_index(const string &output_file_name) {
 		string link_text;
 		getline(ss, link_text, '\t');
 
-		vector<string> link_words = get_words_without_stopwords(link_text, 3);
+		vector<string> link_words = Text::get_words_without_stopwords(link_text, 3);
 
 		for (const string &word : link_words) {
 			if (is_in_dictionary(word)) {

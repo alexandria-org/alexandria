@@ -2,7 +2,7 @@
 
 #include "test4.h"
 #include "file/Transfer.h"
-#include "Text.h"
+#include "text/Text.h"
 
 using namespace std;
 
@@ -40,15 +40,17 @@ int test4_1(void) {
 	{
 		stringstream ss;
 		Transfer::file_to_stream("/example.txt", ss, error);
+		string result = ss.str();
 		ok = ok && error == Transfer::OK;
-		ok = ok && Text::trim(ss.str()) == "An example file";
+		ok = ok && Text::trim(result) == "An example file";
 	}
 
 	{
 		stringstream ss;
 		Transfer::gz_file_to_stream("/example.txt.gz", ss, error);
+		string result = ss.str();
 		ok = ok && error == Transfer::OK;
-		ok = ok && Text::trim(ss.str()) == "An example file";
+		ok = ok && Text::trim(result) == "An example file";
 	}
 
 	return ok;

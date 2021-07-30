@@ -12,7 +12,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "TextBase.h"
 #include "BasicData.h"
 #include "parser/URL.h"
 #include "file/TsvFile.h"
@@ -23,7 +22,7 @@ using namespace boost::iostreams;
 
 #define CC_HARMONIC_LIMIT 0
 
-class BasicUrlData : public BasicData, public TextBase {
+class BasicUrlData : public BasicData {
 
 public:
 	BasicUrlData() {};

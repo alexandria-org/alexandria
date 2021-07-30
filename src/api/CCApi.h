@@ -8,7 +8,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "ApiResponse.h"
-#include "abstract/TextBase.h"
 #include "SearchResult.h"
 #include "LinkSearchResult.h"
 #include "system/ThreadPool.h"
@@ -19,7 +18,7 @@ using namespace std;
 
 #define CC_API_THREADS_DOWNLOADING 32
 
-class CCApi : public TextBase {
+class CCApi {
 
 public:
 	CCApi(const Aws::S3::S3Client &s3_client);

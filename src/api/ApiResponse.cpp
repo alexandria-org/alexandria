@@ -1,5 +1,6 @@
 
 #include "ApiResponse.h"
+#include "parser/Unicode.h"
 
 using namespace Aws::Utils::Json;
 

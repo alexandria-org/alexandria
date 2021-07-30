@@ -32,7 +32,7 @@ int main(int argc, const char **argv) {
 	int numSuites = 6;
 	int numTestsInSuite [] = {
 		3,
-		2,
+		3,
 		4,
 		1,
 		3,
@@ -47,7 +47,8 @@ int main(int argc, const char **argv) {
 
 	int (* testSuite2 [])() = {
 		test2_1,
-		test2_2
+		test2_2,
+		test2_3
 	};
 
 	int (* testSuite3 [])() = {

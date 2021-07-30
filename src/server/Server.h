@@ -17,7 +17,6 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "abstract/TextBase.h"
 #include "FullTextIndex.h"
 #include "FullTextResult.h"
 #include "FullTextShard.h"
@@ -31,7 +30,7 @@
 
 using namespace std;
 
-class Server : public TextBase {
+class Server {
 
 public:
 

@@ -74,7 +74,8 @@ set(SRC_COMMON
 	"src/common/common.cpp"
 	"src/common/Dictionary.cpp"
 	"src/common/DictionaryRow.cpp"
-	"src/common/Stopwords.cpp"
+	"src/text/Stopwords.cpp"
+	"src/text/Text.cpp"
 )
 
 set(SRC_TESTS
