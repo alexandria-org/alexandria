@@ -16,6 +16,7 @@ template<typename DataRecord> class FullTextIndex;
 #include <vector>
 
 #include <cmath>
+#include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
 #include "FullTextRecord.h"
@@ -46,12 +47,12 @@ public:
 		size_t &total_found) const;
 	vector<DataRecord> search_phrase(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase, int limit,
 		struct SearchMetric &metric) const;
-	vector<DataRecord> search_phrase_unsorted(const string &phrase, int limit, size_t &total_found) const;
+	vector<DataRecord> search_phrase_unsorted(const string &phrase, size_t &total_found) const;
 
-	void deduplicate(const FullTextResultSet<DataRecord> *results, const vector<float> &scores, const vector<size_t> &indices,
-		vector<DataRecord> &deduped_result, vector<float> &deduped_scores) const;
-	void deduplicate_domains(const FullTextResultSet<DataRecord> *results, const vector<float> &scores, const vector<size_t> &indices,
-		vector<DataRecord> &deduped_result, vector<float> &deduped_scores) const;
+	void flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores, const vector<size_t> &indices,
+		vector<DataRecord> &deduped_result) const;
+	vector<DataRecord> deduplicate_domains(const vector<DataRecord> results, size_t results_per_domain, size_t limit) const;
+	void find_score(const string &word, URL &url);
 
 	size_t disk_size() const;
 
@@ -272,7 +273,7 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const string &phrase
 
 	Profiler profiler3("sorting results");
 	if (result.size() > limit) {
-		nth_element(score_vector.begin(), score_vector.begin() + (limit - 1), score_vector.end());
+		nth_element(score_vector.begin(), score_vector.begin() + (limit - 1), score_vector.end(), greater{});
 		const float nth = score_vector[limit - 1];
 
 		vector<DataRecord> top_result;
@@ -309,6 +310,8 @@ template<typename DataRecord>
 vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase, int limit,
 		struct SearchMetric &metric) const {
 
+	Profiler profiler1("Running all queries");
+
 	metric.m_total_found = 0;
 	metric.m_total_links_found = 0;
 	metric.m_links_handled = 0;
@@ -322,14 +325,12 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 	map<size_t, FullTextResultSet<DataRecord> *> result_map;
 	map<size_t, FullTextResultSet<DataRecord> *> or_result_map;
 
-	Profiler profiler1("Running all queries");
-
 	ThreadPool pool(24);
 	std::vector<std::future<FullTextResultSet<DataRecord> *>> thread_results;
 	make_search_futures(words, pool, thread_results);
 
 	size_t total_links_found = 0;
-	vector<LinkFullTextRecord> links = link_fti.search_phrase_unsorted(phrase, 10000, metric.m_total_links_found);
+	vector<LinkFullTextRecord> links = link_fti.search_phrase_unsorted(phrase, metric.m_total_links_found);
 	metric.m_links_handled = links.size();
 
 	size_t idx = 0;
@@ -340,14 +341,16 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 		LogInfo("Accumuating "+to_string(results->len())+" results for: " + words[idx]);
 
 		//if (results->total_num_results() > results->len()) {
-			//or_result_map[idx] = results;
+		//	or_result_map[idx] = results;
 		//} else {
 			result_map[idx] = results;
 		//}
 		idx++;
 	}
 
-	double total_time = profiler1.get();
+	profiler1.stop();
+
+	Profiler profiler2("value_intersection");
 
 	if (result_map.size() == 0) {
 		result_map = or_result_map;
@@ -365,86 +368,81 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 		result_vector.push_back(iter.second);
 	}
 
-	uint64_t *value_pt = result_vector[0]->value_pointer();
+	vector<DataRecord> flat_result;
+	if (result_vector.size() > 1) {
+		size_t shortest_vector;
+		vector<float> score_vector;
+		vector<vector<float>> score_parts;
+		vector<size_t> result_ids = value_intersection(result_vector, shortest_vector, score_vector, score_parts);
 
-	for (size_t i = 0; i < result_vector[0]->len(); i++) {
-		if (value_pt[i] == 11863130174689289975ul) {
-			cout << "found it " << value_pt[i] << endl;
+		{
+			Profiler profiler4("Flatten");
+			FullTextResultSet<DataRecord> *shortest = result_vector[shortest_vector];
+			flatten_results(shortest, score_vector, result_ids, flat_result);
+		}
+
+	} else {
+		Profiler profiler4("Flatten");
+		
+		const DataRecord *record_arr = result_vector[0]->record_pointer();
+		for (size_t i = 0; i < result_vector[0]->len(); i++) {
+			flat_result.push_back(record_arr[i]);
 		}
 	}
 
-	Profiler profiler2("value_intersection");
-	size_t shortest_vector;
-	vector<float> score_vector;
-	vector<vector<float>> score_parts;
-	vector<size_t> result_ids = value_intersection(result_vector, shortest_vector, score_vector, score_parts);
+	if (metric.m_total_found == 0) {
+		metric.m_total_found = flat_result.size();
+	}
 
-	/*
-	for (vector<float> &vec : score_parts) {
-		for (float score : vec) {
-			cout << "score_part: " << score << endl;
-		}
-	}*/
+	profiler2.stop();
 
-	vector<float> link_scores(result_ids.size(), 0.0f);
 
-	FullTextResultSet<DataRecord> *shortest = result_vector[shortest_vector];
+	Profiler profiler3("Adding link scores");
+
 	if (typeid(DataRecord) == typeid(FullTextRecord)) {
 
 		{
-			const DataRecord *record_arr = shortest->record_pointer();
-			size_t i = 0;
-			size_t j = 0;
-			const size_t host_bits = 20;
-			while (i < links.size() && j < result_ids.size()) {
+			Profiler profiler3("Adding domain link scores");
 
-				const uint64_t host_part1 = (links[i].m_value >> (64 - host_bits)) << (64 - host_bits);
-				const uint64_t host_part2 = (record_arr[result_ids[j]].m_value >> (64 - host_bits)) << (64 - host_bits);
-
-				if (host_part1 < host_part2) {
-					i++;
-				} else if (host_part1 == host_part2) {
-
-					const float domain_score = expm1(5*links[i].m_score) + 0.1;
-
-					size_t jj = j;
-					while (((record_arr[result_ids[jj]].m_value >> (64 - host_bits)) << (64 - host_bits)) == host_part2 && jj < result_ids.size()) {
-						if (record_arr[result_ids[jj]].m_domain_hash == links[i].m_target_domain) {
-							//cout << "Matched domain link and added score ["<< i <<"]: " << domain_score << endl;
-							score_vector[jj] += domain_score;
-							link_scores[jj] += domain_score;
-							metric.m_link_domain_matches++;
-						}
-						jj++;
-					}
-
-					i++;
-				} else {
-					j++;
+			unordered_map<uint64_t, float> domain_scores;
+			{
+				Profiler profiler_sum("Summing domain link scores");
+				for (const LinkFullTextRecord &link : links) {
+					const float domain_score = expm1(5*link.m_score) + 0.1;
+					domain_scores[link.m_target_domain] += domain_score;
 				}
+			}
+
+			metric.m_link_domain_matches = domain_scores.size();
+
+			// Loop over the results and add the calculated domain scores.
+			for (size_t i = 0; i < flat_result.size(); i++) {
+				const float domain_score = domain_scores[flat_result[i].m_domain_hash];
+				flat_result[i].m_score += domain_score;
 			}
 		}
 
-
 		{
-			sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
-				return a.m_target_hash < b.m_target_hash;
-			});
-			const DataRecord *record_arr = shortest->record_pointer();
+			Profiler profiler3("Adding url link scores");
+			{
+				Profiler profiler_sorting_links("Sorting Links");
+				sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+					return a.m_target_hash < b.m_target_hash;
+				});
+			}
 			size_t i = 0;
 			size_t j = 0;
-			while (i < links.size() && j < result_ids.size()) {
+			while (i < links.size() && j < flat_result.size()) {
 
 				const uint64_t hash1 = links[i].m_target_hash;
-				const uint64_t hash2 = record_arr[result_ids[j]].m_value;
+				const uint64_t hash2 = flat_result[j].m_value;
 
 				if (hash1 < hash2) {
 					i++;
 				} else if (hash1 == hash2) {
 					const float url_score = expm1(10*links[i].m_score) + 0.1;
-					//cout << "Matched link and added score: " << url_score << endl;
-					score_vector[j] += url_score;
-					link_scores[j] += url_score;
+
+					flat_result[j].m_score += url_score;
 					metric.m_link_url_matches++;
 					i++;
 				} else {
@@ -454,22 +452,32 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 		}
 	}
 
+	profiler3.stop();
+
 	vector<DataRecord> deduped_result;
-	vector<float> deduped_scores;
-	if (score_vector.size() >= 1000) {
-		if (typeid(DataRecord) == typeid(FullTextRecord)) {
-			deduplicate_domains(shortest, score_vector, result_ids, deduped_result, deduped_scores);
-		} else {
-			deduplicate(shortest, score_vector, result_ids, deduped_result, deduped_scores);
+	if (flat_result.size() > 0) {
+		Profiler profiler5("Sorting results");
+		sort(flat_result.begin(), flat_result.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_score > b.m_score;
+		});
+
+		bool has_many_domains = false;
+		const uint64_t first_domain_hash = flat_result[0].m_domain_hash;
+		for (const DataRecord &record : flat_result) {
+			if (record.m_domain_hash != first_domain_hash) {
+				has_many_domains = true;
+				break;
+			}
 		}
-	} else {
-		deduplicate(shortest, score_vector, result_ids, deduped_result, deduped_scores);
-	}
 
-	profiler2.stop();
-
-	if (metric.m_total_found == 0) {
-		metric.m_total_found = score_vector.size();
+		if (flat_result.size() > 10 && has_many_domains) {
+			deduped_result = deduplicate_domains(flat_result, 5, limit);
+		} else {
+			if (flat_result.size() > limit) {
+				flat_result.resize(limit);
+			}
+			deduped_result = flat_result;
+		}
 	}
 
 	for (auto &iter : result_map) {
@@ -479,31 +487,11 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 		delete iter.second;
 	}
 
-	Profiler profiler3("sorting results");
-	if (deduped_result.size() > limit) {
-		nth_element(deduped_scores.begin(), deduped_scores.begin() + (limit - 1), deduped_scores.end());
-		const float nth = deduped_scores[limit - 1];
-
-		vector<DataRecord> top_result;
-		for (const DataRecord &res : deduped_result) {
-			if (res.m_score >= nth) {
-				top_result.push_back(res);
-				if (top_result.size() >= limit) break;
-			}
-		}
-
-		sort_results(top_result);
-
-		return top_result;
-	}
-
-	sort_results(deduped_result);
-
 	return deduped_result;
 }
 
 template<typename DataRecord>
-vector<DataRecord> FullTextIndex<DataRecord>::search_phrase_unsorted(const string &phrase, int limit, size_t &total_found) const {
+vector<DataRecord> FullTextIndex<DataRecord>::search_phrase_unsorted(const string &phrase, size_t &total_found) const {
 
 	total_found = 0;
 
@@ -603,8 +591,8 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase_unsorted(const strin
 }
 
 template<typename DataRecord>
-void FullTextIndex<DataRecord>::deduplicate(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,
-		const vector<size_t> &indices, vector<DataRecord> &deduped_result, vector<float> &deduped_scores) const {
+void FullTextIndex<DataRecord>::flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,
+		const vector<size_t> &indices, vector<DataRecord> &deduped_result) const {
 
 	const DataRecord *record_arr = results->record_pointer();
 	for (size_t i = 0; i < indices.size(); i++) {
@@ -612,36 +600,42 @@ void FullTextIndex<DataRecord>::deduplicate(const FullTextResultSet<DataRecord> 
 		const float score = scores[i];
 
 		deduped_result.push_back(*record);
-		deduped_scores.push_back(score);
 		deduped_result.back().m_score = score;
 	}
 }
 
 template<typename DataRecord>
-void FullTextIndex<DataRecord>::deduplicate_domains(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,
-		const vector<size_t> &indices, vector<DataRecord> &deduped_result, vector<float> &deduped_scores) const {
+vector<DataRecord> FullTextIndex<DataRecord>::deduplicate_domains(const vector<DataRecord> results, size_t results_per_domain, size_t limit) const {
 
-	const DataRecord *record_arr = results->record_pointer();
-	unordered_map<uint64_t, float> max_scores;
-	unordered_map<uint64_t, size_t> domain_position;
-	for (size_t i = 0; i < indices.size(); i++) {
-		const DataRecord *record = &record_arr[indices[i]];
-		const float score = scores[i];
-		auto iter = domain_position.find(record->m_domain_hash);
-		if (iter == domain_position.end()) {
-			domain_position[record->m_domain_hash] = deduped_result.size();
-			deduped_result.push_back(*record);
-			deduped_scores.push_back(score);
-			deduped_result.back().m_score = score;
-			max_scores[record->m_domain_hash] = score;
-		} else {
-			if (max_scores[record->m_domain_hash] < score) {
-				deduped_result[iter->second] = *record;
-				deduped_result[iter->second].m_score = score;
-				max_scores[record->m_domain_hash] = score;
-			}
+	vector<DataRecord> deduplicate;
+	unordered_map<uint64_t, size_t> domain_counts;
+	for (const DataRecord &record : results) {
+		if (deduplicate.size() >= limit) break;
+		if (domain_counts[record.m_domain_hash] < results_per_domain) {
+			deduplicate.push_back(record);
+			domain_counts[record.m_domain_hash]++;
 		}
 	}
+
+	return deduplicate;
+}
+
+template<typename DataRecord>
+void FullTextIndex<DataRecord>::find_score(const string &word, URL &url) {
+	uint64_t word_hash = m_hasher(word);
+	uint64_t url_hash = url.hash();
+
+	FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
+	m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+
+	DataRecord *records = results->record_pointer();
+	for (size_t i = 0; i < results->len(); i++) {
+		if (records[i].m_value == url_hash) {
+			cout << "FOUND RECORD WITH SCORE: " << records[i].m_score << endl;
+		}
+	}
+
+	delete results;
 }
 
 template<typename DataRecord>

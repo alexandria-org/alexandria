@@ -38,12 +38,14 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, line);
 
 		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
-		add_data_to_shards(url, site_colon, harmonic * 20);
 
 		size_t score_index = 0;
 		map<uint64_t, float> word_map;
+
+		add_data_to_word_map(word_map, site_colon, 20*harmonic);
+
 		for (size_t col_index : cols) {
-			add_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
+			add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
 			score_index++;
 		}
 		for (const auto &iter : word_map) {
@@ -153,6 +155,19 @@ void FullTextIndexer::read_url_to_domain() {
 
 void FullTextIndexer::write_url_to_domain() {
 	m_url_to_domain->write(m_indexer_id);
+}
+
+void FullTextIndexer::add_expanded_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
+
+	vector<string> words = Text::get_expanded_full_text_words(text);
+	map<uint64_t, uint64_t> uniq;
+	for (const string &word : words) {
+		const uint64_t word_hash = m_hasher(word);
+		if (uniq.find(word_hash) == uniq.end()) {
+			word_map[word_hash] += score;
+			uniq[word_hash] = word_hash;
+		}
+	}
 }
 
 void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {

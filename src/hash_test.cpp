@@ -7,6 +7,14 @@
 
 int main() {
 
+
+	URL url("https://www.cnn.com/");
+	cout << url.hash() << endl;
+	FullTextIndex<FullTextRecord> fti("main_index");
+	fti.find_score("cnn", url);
+
+	return 0;
+
 	hash<string> asd;
 
 	FullTextShardBuilder<FullTextRecord> *shard = new FullTextShardBuilder<FullTextRecord>("main_index", 7252);

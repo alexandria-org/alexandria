@@ -28,7 +28,7 @@ void FullTextIndexerRunner::run() {
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 	manual_paths_file.read_column_into(0, warc_paths_raw);
 
-	const size_t limit = 10000;
+	const size_t limit = 15000;
 	size_t num_run = 1;
 	while (warc_paths_raw.size() > 0) {
 

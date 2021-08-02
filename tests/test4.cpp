@@ -2,6 +2,7 @@
 
 #include "test4.h"
 #include "file/Transfer.h"
+#include "parser/URL.h"
 #include "text/Text.h"
 
 using namespace std;
@@ -52,6 +53,18 @@ int test4_1(void) {
 		ok = ok && error == Transfer::OK;
 		ok = ok && Text::trim(result) == "An example file";
 	}
+
+	return ok;
+}
+
+/*
+ * Test URL parser
+ * */
+int test4_2(void) {
+	int ok = 1;
+
+	URL url("https://www.facebook.com/test.html");
+	ok = ok && url.domain_without_tld() == "facebook";
 
 	return ok;
 }

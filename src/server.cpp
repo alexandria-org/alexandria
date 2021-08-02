@@ -25,7 +25,9 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	Profiler profiler("total");
 
 	struct SearchMetric metric;
-	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 3000, metric);
+	Profiler profiler2("fti.search_phrase");
+	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 1000, metric);
+	profiler2.stop();
 
 	PostProcessor post_processor(query);
 

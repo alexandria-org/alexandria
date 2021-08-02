@@ -57,8 +57,8 @@ int main(int argc, const char **argv) {
 		cout << "Running with offset: " << offset << " and limit: " << limit << endl;
 
 		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
-		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
+		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
 		indexer.run(offset, limit);
 		Profiler::print_memory_status();
 		return 0;

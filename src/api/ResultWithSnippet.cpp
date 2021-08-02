@@ -1,5 +1,6 @@
 
 #include "ResultWithSnippet.h"
+#include "text/Text.h"
 
 ResultWithSnippet::ResultWithSnippet(const string &tsv_data, const FullTextRecord &res)
 : m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
@@ -15,8 +16,14 @@ ResultWithSnippet::ResultWithSnippet(const string &tsv_data, const FullTextRecor
 		if (col_num == 1) {
 			m_title = tsv_data.substr(pos_start, len);
 		}
+		if (col_num == 3) {
+			m_meta = tsv_data.substr(pos_start, len);
+		}
 		if (col_num == 4) {
 			m_snippet = make_snippet(tsv_data.substr(pos_start, len));
+			if (m_snippet.size() == 0) {
+				m_snippet = make_snippet(m_meta);
+			}
 		}
 
 		pos_start = pos_end + 1;
@@ -30,6 +37,7 @@ ResultWithSnippet::~ResultWithSnippet() {
 
 string ResultWithSnippet::make_snippet(const string &text) const {
 	string response = text.substr(0, 140);
+	Text::trim(response);
 	if (response.size() >= 140) response += "...";
 	return response;
 }

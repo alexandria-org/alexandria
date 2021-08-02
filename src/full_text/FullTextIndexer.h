@@ -66,6 +66,7 @@ private:
 
 	UrlToDomain *m_url_to_domain = NULL;
 
+	void add_expanded_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const;
 	void add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const;
 	void add_data_to_shards(const URL &url, const string &text, float score);
 

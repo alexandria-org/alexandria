@@ -68,10 +68,6 @@ string HashTableShard::find(uint64_t key) {
 	stringstream decompressed;
 	decompressed << decompress_stream.rdbuf();
 
-	if (byte_len > 3000) {
-		cout << "Encountered long hash content: " << decompressed.str() << endl;
-	}
-
 	delete buffer;
 
 	return decompressed.str();

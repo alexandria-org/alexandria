@@ -41,6 +41,8 @@ private:
 
 	void add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);
+	void add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
+		float score);
 	void add_domain_link(const string &link_text, const Link &link);
 	void add_url_link(const string &link_text, const Link &link);
 

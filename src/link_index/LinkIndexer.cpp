@@ -75,7 +75,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 			const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
 
 			add_data_to_shards(link_hash, source_url, target_url, link_colon, source_harmonic);
-			add_data_to_shards(link_hash, source_url, target_url, col_values[4], source_harmonic);			
+			add_expanded_data_to_shards(link_hash, source_url, target_url, col_values[4], source_harmonic);			
 		}
 
 	}
@@ -170,6 +170,21 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	const string &link_text, float score) {
 
 	vector<string> words = Text::get_full_text_words(link_text);
+	for (const string &word : words) {
+
+		const uint64_t word_hash = m_hasher(word);
+		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+
+		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
+			.m_source_hash = source_url.hash(), .m_target_hash = target_url.hash(),
+			.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});
+	}
+}
+
+void LinkIndexer::add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
+	const string &link_text, float score) {
+
+	vector<string> words = Text::get_expanded_full_text_words(link_text);
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);

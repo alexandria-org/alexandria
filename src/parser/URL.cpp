@@ -81,11 +81,17 @@ map<string, string> URL::query() const {
 
 float URL::harmonic(const SubSystem *sub_system) const {
 
-	const auto iter = sub_system->domain_index()->find(host_reverse_top_domain(m_host));
+	const auto iter = sub_system->domain_index()->find(m_host_reverse);
 
 	float harmonic;
 	if (iter == sub_system->domain_index()->end()) {
-		harmonic = 0.0f;
+		const auto iter2 = sub_system->domain_index()->find(host_reverse_top_domain(m_host));
+		if (iter2 == sub_system->domain_index()->end()) {
+			harmonic = 0.0f;
+		} else {
+			const DictionaryRow row = iter2->second;
+			harmonic = row.get_float(1) / 2.0; // Half the power for sub domains.
+		}
 	} else {
 		const DictionaryRow row = iter->second;
 		harmonic = row.get_float(1);

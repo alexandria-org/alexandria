@@ -23,6 +23,7 @@ private:
 
 	URL m_url;
 	string m_title;
+	string m_meta;
 	string m_snippet;
 	float m_score;
 	uint64_t m_domain_hash;

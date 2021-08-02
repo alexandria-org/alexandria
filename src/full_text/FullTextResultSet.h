@@ -45,7 +45,7 @@ private:
 
 template<typename DataRecord>
 FullTextResultSet<DataRecord>::FullTextResultSet()
-: m_len(0), m_has_allocated(false)
+: m_len(0), m_has_allocated(false), m_total_num_results(0)
 {
 
 }
