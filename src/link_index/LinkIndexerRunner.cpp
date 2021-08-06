@@ -139,16 +139,6 @@ void LinkIndexerRunner::sort() {
 	}
 }
 
-void LinkIndexerRunner::upload() {
-	LogInfo("Uploading...");
-
-	FullTextIndex<LinkFullTextRecord> li(m_db_name);
-	li.upload(m_sub_system);
-
-	HashTable hash_table(m_hash_table_name);
-	hash_table.upload(m_sub_system);
-}
-
 void LinkIndexerRunner::truncate() {
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =

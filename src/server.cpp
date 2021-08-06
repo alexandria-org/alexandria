@@ -61,12 +61,14 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 
 }
 
-void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex<LinkFullTextRecord> &fti) {
+void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array) {
 
 	Profiler profiler("total");
 
+	struct SearchMetric metric;
+
 	size_t total;
-	vector<LinkFullTextRecord> results = fti.search_phrase(query, 1000, total);
+	vector<LinkFullTextRecord> results = FullText::search_link_array(link_index_array, query, 1000, metric);
 
 	PostProcessor post_processor(query);
 

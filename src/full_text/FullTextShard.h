@@ -40,7 +40,6 @@ public:
 	~FullTextShard();
 
 	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
-	void debug(uint64_t key, FullTextResultSet<DataRecord> *result_set, size_t limit);
 	void read_keys();
 
 	string mountpoint() const;
@@ -110,68 +109,6 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	reader.seekg(m_len_start + key_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t len = *((size_t *)(&buffer[0]));
-
-	reader.seekg(m_total_start + key_pos * 8, ios::beg);
-	reader.read(buffer, 8);
-	size_t total_num_results = *((size_t *)(&buffer[0]));
-	result_set->set_total_num_results(total_num_results);
-
-	reader.seekg(m_data_start + pos, ios::beg);
-
-	const size_t num_records = len / sizeof(DataRecord);
-
-	result_set->allocate(num_records);
-
-	uint64_t *value_res = result_set->value_pointer();
-	float *score_res = result_set->score_pointer();
-	DataRecord *record_res = result_set->record_pointer();
-
-	size_t read_bytes = 0;
-	size_t kk = 0;
-	while (read_bytes < len) {
-		const size_t bytes_left = len - read_bytes;
-		const size_t max_read_len = min(m_buffer_len, bytes_left);
-		reader.read(m_buffer, max_read_len);
-		const size_t read_len = reader.gcount();
-		read_bytes += read_len;
-
-		size_t num_records_read = read_len / sizeof(DataRecord);
-		for (size_t i = 0; i < num_records_read; i++) {
-			DataRecord *item = (DataRecord *)&m_buffer[i * sizeof(DataRecord)];
-			value_res[kk] = item->m_value;
-			score_res[kk] = item->m_score;
-			record_res[kk] = *item;
-			kk++;
-		}
-	}
-}
-
-template<typename DataRecord>
-void FullTextShard<DataRecord>::debug(uint64_t key, FullTextResultSet<DataRecord> *result_set, size_t limit) {
-
-	if (!m_keys_read) read_keys();
-
-	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
-
-	if (iter == m_keys.end() || *iter > key) {
-		return;
-	}
-
-	size_t key_pos = iter - m_keys.begin();
-
-	ifstream reader(filename(), ios::binary);
-
-	char buffer[64];
-
-	// Read position and length.
-	reader.seekg(m_pos_start + key_pos * 8, ios::beg);
-	reader.read(buffer, 8);
-	size_t pos = *((size_t *)(&buffer[0]));
-
-	reader.seekg(m_len_start + key_pos * 8, ios::beg);
-	reader.read(buffer, 8);
-	size_t len = *((size_t *)(&buffer[0]));
-	if (len * sizeof(DataRecord) > limit) len = limit * sizeof(DataRecord);
 
 	reader.seekg(m_total_start + key_pos * 8, ios::beg);
 	reader.read(buffer, 8);

@@ -101,16 +101,6 @@ void FullTextIndexerRunner::sort() {
 	}
 }
 
-void FullTextIndexerRunner::upload() {
-	LogInfo("Uploading...");
-
-	FullTextIndex<FullTextRecord> fti(m_db_name);
-	fti.upload(m_sub_system);
-
-	HashTable hash_table(m_db_name);
-	hash_table.upload(m_sub_system);
-}
-
 void FullTextIndexerRunner::index_text(const string &text) {
 
 	vector<HashTableShardBuilder *> shard_builders;

@@ -33,7 +33,6 @@ public:
 	void run_link();
 	void merge();
 	void sort();
-	void upload();
 	void index_text(const string &text);
 	void index_text(const string &key, const string &text, float score);
 	void index_warc_path(const string warc_path);

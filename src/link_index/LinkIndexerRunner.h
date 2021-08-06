@@ -36,7 +36,6 @@ public:
 	void merge();
 	void merge_adjustments();
 	void sort();
-	void upload();
 	void truncate();
 	void index_stream(ifstream &infile);
 
