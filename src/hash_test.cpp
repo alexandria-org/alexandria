@@ -4,14 +4,51 @@
 #include "parser/URL.h"
 #include "full_text/FullTextRecord.h"
 #include "full_text/FullTextShardBuilder.h"
+#include "full_text/FullText.h"
 
 int main() {
 
+	hash<string> hasher;
+	URL url("http://heroes.thelazy.net/index.php/List_of_heroes");
 
-	URL url("https://www.cnn.com/");
-	cout << url.hash() << endl;
-	FullTextIndex<FullTextRecord> fti("main_index");
-	fti.find_score("cnn", url);
+	FullTextIndex<FullTextRecord> fti("main_index_0");
+
+	fti.read_num_results("the", 3000000);
+
+	return 0;
+
+	cout << "url_hash: " << url.hash() << endl;
+	cout << "3_hash: " << hasher("3") << endl;
+	fti.find_score("3", url);
+
+	cout << "lowest_score: " << fti.find_lowest_score("3") << endl;
+
+	return 0;
+
+	HashTable hash_table("main_index");
+	const string tsv_data = hash_table.find(url.hash());
+
+	cout << tsv_data << endl;
+
+	SubSystem *sub_system = new SubSystem();
+	map<uint64_t, float> scores = FullText::tsv_data_to_scores(tsv_data, sub_system);
+	cout << "got score for 3: " << scores[hasher("3")] << endl;
+
+	const uint64_t word_hash = hasher("3");
+	size_t shard_id = word_hash % FT_NUM_SHARDS;
+	{
+		FullTextShardBuilder<struct FullTextRecord> shard("main_index", shard_id);
+		shard.add(word_hash, FullTextRecord{.m_value = url.hash(), .m_score = scores[word_hash], .m_domain_hash = url.host_hash()});
+		shard.append();
+	}
+
+	{
+		FullTextShardBuilder<struct FullTextRecord> shard("main_index", shard_id);
+		shard.merge();
+	}
+
+	return 0;
+
 
 	return 0;
 
@@ -26,8 +63,6 @@ int main() {
 	return 0;
 
 	string cc_batch = "CC-MAIN-2021-17";
-
-	SubSystem *sub_system = new SubSystem();
 
 	string warc_paths_url = string("crawl-data/") + cc_batch + "/warc.paths.gz";
 	TsvFileS3 warc_paths_file(sub_system->s3_client(), "commoncrawl", warc_paths_url);
@@ -46,8 +81,6 @@ int main() {
 	size_t checked = 0;
 	size_t collisions = 0;
 	size_t domain_collisions = 0;
-
-	hash<string> hasher;
 
 	for (string warc_path : warc_paths_raw) {
 		warc_path.replace(warc_path.find(".warc.gz"), 8, ".gz");

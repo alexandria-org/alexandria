@@ -1,20 +1,20 @@
 
 #include "FullTextIndexerRunner.h"
+#include "FullText.h"
 #include "FullTextIndexer.h"
 #include <math.h>
 #include "system/Logger.h"
 
-FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &cc_batch)
-: m_cc_batch(cc_batch), m_db_name(db_name)
+FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system)
+: m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
 {
-	m_sub_system = new SubSystem();
+	m_sub_system = sub_system;
 }
 
 FullTextIndexerRunner::~FullTextIndexerRunner() {
-	delete m_sub_system;
 }
 
-void FullTextIndexerRunner::run() {
+void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	truncate();
 
@@ -25,59 +25,36 @@ void FullTextIndexerRunner::run() {
 	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
 
 	vector<string> warc_paths_raw;
-	warc_paths_file.read_column_into(0, warc_paths_raw);
+	warc_paths_file.read_column_into(0, warc_paths_raw, 45000);
 	manual_paths_file.read_column_into(0, warc_paths_raw);
 
-	const size_t limit = 15000;
-	size_t num_run = 1;
-	while (warc_paths_raw.size() > 0) {
+	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
 
-		vector<string> warc_paths;
-		size_t num = 0;
-		while (warc_paths.size() < limit && warc_paths_raw.size() > 0) {
-			warc_paths.push_back(warc_paths_raw.back());
-			warc_paths_raw.pop_back();
-			num++;
-			//if (num >= 10000) break;
-			//if (num >= 5000) break;
-			//if (num >= 48) break;
-			//if (num >= 48) break;
-		}
+	vector<vector<string>> warc_path_chunks;
+	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
 
-		vector<vector<string>> warc_path_chunks;
-		vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
+	ThreadPool pool(FT_NUM_THREADS_INDEXING);
+	std::vector<std::future<string>> results;
 
-		ThreadPool pool(FT_NUM_THREADS_INDEXING);
-		std::vector<std::future<string>> results;
+	int id = 1;
+	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
 
-		map<int, vector<string>> shard_files;
-		int id = 1;
-		for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+		results.emplace_back(
+			pool.enqueue([this, warc_paths_chunk, id] {
+				return run_index_thread(warc_paths_chunk, id);
+			})
+		);
 
-			results.emplace_back(
-				pool.enqueue([this, warc_paths_chunk, id] {
-					return run_index_thread(warc_paths_chunk, id);
-				})
-			);
+		id++;
 
-			id++;
-
-		}
-
-		for(auto && result: results) {
-			result.get();
-		}
-
-		merge();
-
-		if (num_run >= 10) {
-			//break;
-		}
-		num_run++;
 	}
 
+	for(auto && result: results) {
+		result.get();
+	}
+
+	merge();
 	sort();
-	//upload();
 
 }
 
@@ -118,7 +95,7 @@ void FullTextIndexerRunner::sort() {
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		HashTableShard *shard = new HashTableShard(m_db_name, shard_id);
+		HashTableShard *shard = new HashTableShard(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
 	}
@@ -138,12 +115,12 @@ void FullTextIndexerRunner::index_text(const string &text) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
 	stringstream ss(text);
 
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 	indexer.add_stream(shard_builders, ss, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
 	indexer.write_cache(m_full_text_mutexes);
@@ -166,10 +143,10 @@ void FullTextIndexerRunner::index_text(const string &key, const string &text, fl
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 	indexer.add_text(shard_builders, key, text, score);
 	indexer.write_cache(m_full_text_mutexes);
@@ -192,11 +169,11 @@ void FullTextIndexerRunner::index_warc_path(const string warc_path) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
 	stringstream stream;
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 	if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
 		indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
@@ -222,10 +199,10 @@ void FullTextIndexerRunner::index_stream(ifstream &infile) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 	indexer.add_stream(shard_builders, infile, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
 	indexer.flush_cache(m_full_text_mutexes);
@@ -256,14 +233,11 @@ void FullTextIndexerRunner::truncate() {
 		ofstream outfile(file_name, ios::binary | ios::trunc);
 		outfile.close();
 	}
-
-	HashTable hash_table(m_db_name);
-	hash_table.truncate();
 }
 
 string FullTextIndexerRunner::run_merge_large_thread() {
 
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 
 	while (m_run_merge_large) {
@@ -278,10 +252,10 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	UrlToDomain url_to_domain(m_db_name);
+	UrlToDomain url_to_domain("main_index");
 	FullTextIndexer indexer(id, m_db_name, m_sub_system, &url_to_domain);
 	size_t idx = 1;
 	for (const string &raw_warc_path : warc_paths) {
@@ -308,7 +282,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 			}
 		}
 
-		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
+		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()) + " for " + m_db_name);
 
 		idx++;
 	}

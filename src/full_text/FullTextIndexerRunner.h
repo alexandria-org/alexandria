@@ -26,10 +26,10 @@ class FullTextIndexerRunner {
 
 public:
 
-	FullTextIndexerRunner(const string &db_name, const string &cc_batch);
+	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system);
 	~FullTextIndexerRunner();
 
-	void run();
+	void run(size_t partition, size_t max_partitions);
 	void run_link();
 	void merge();
 	void sort();
@@ -44,6 +44,7 @@ private:
 
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
+	const string m_hash_table_name;
 	const string m_db_name;
 
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];

@@ -6,14 +6,14 @@
 HashTable::HashTable(const string &db_name)
 : m_db_name(db_name)
 {
-	size_t num_items = 0;
+	m_num_items = 0;
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
 		auto shard = new HashTableShard(m_db_name, shard_id);
-		num_items += shard->size();
+		m_num_items += shard->size();
 		m_shards.push_back(shard);
 	}
 
-	LogInfo("HashTable contains " + to_string(num_items) + " (" + to_string((double)num_items/1000000000) + "b) urls");
+	LogInfo("HashTable contains " + to_string(m_num_items) + " (" + to_string((double)m_num_items/1000000000) + "b) urls");
 }
 
 HashTable::~HashTable() {
@@ -35,6 +35,15 @@ void HashTable::add(uint64_t key, const string &value) {
 }
 
 void HashTable::truncate() {
+	if (m_num_items > 1000000) {
+		cout << "Are you sure you want to truncate hash table containing " << m_num_items << " elements? [y/N]: ";
+		string line;
+		cin >> line;
+		if (line != "y") {
+			cout << "Exiting..." << endl;
+			exit(0);
+		}
+	}
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
 		HashTableShardBuilder builder(m_db_name, shard_id);
 		builder.truncate();

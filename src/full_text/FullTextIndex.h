@@ -1,10 +1,8 @@
 
 #pragma once
 
-#define FT_NUM_SHARDS 16384
+#define FT_NUM_SHARDS 1024
 #define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
-#define FULL_TEXT_KEY_LEN 8
-#define FULL_TEXT_SCORE_LEN 4
 #define FT_INDEXER_MAX_CACHE_GB 30
 #define FT_NUM_THREADS_INDEXING 48
 #define FT_NUM_THREADS_MERGING 24
@@ -15,10 +13,10 @@ template<typename DataRecord> class FullTextIndex;
 #include <iostream>
 #include <vector>
 
-#include <cmath>
 #include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
+#include "Scores.h"
 #include "FullTextRecord.h"
 #include "FullTextShard.h"
 #include "FullTextResultSet.h"
@@ -42,22 +40,30 @@ public:
 	void make_search_futures(const vector<string> &words, ThreadPool &pool, vector<future<FullTextResultSet<DataRecord> *>> &futures) const;
 
 	vector<DataRecord> query_links(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase) const;
+
 	vector<DataRecord> search_phrase(const string &phrase, int limit, size_t &total_found) const;
 	vector<DataRecord> search_phrase(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase, int limit,
 		size_t &total_found) const;
 	vector<DataRecord> search_phrase(const FullTextIndex<LinkFullTextRecord> &link_fti, const string &phrase, int limit,
 		struct SearchMetric &metric) const;
 	vector<DataRecord> search_phrase_unsorted(const string &phrase, size_t &total_found) const;
+	vector<DataRecord> search_unsorted_single_thread(const vector<LinkFullTextRecord> &links, const string &phrase, size_t limit,
+		struct SearchMetric &metric) const;
+	vector<DataRecord> search_unsorted_single_thread_no_deduplication(const string &phrase, size_t limit, struct SearchMetric &metric) const;
 
 	void flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores, const vector<size_t> &indices,
 		vector<DataRecord> &deduped_result) const;
 	vector<DataRecord> deduplicate_domains(const vector<DataRecord> results, size_t results_per_domain, size_t limit) const;
 	void find_score(const string &word, URL &url);
+	float find_lowest_score(const string &word);
+	void read_num_results(const string &word, size_t limit);
 
 	size_t disk_size() const;
 
 	void download(const SubSystem *sub_system);
 	void upload(const SubSystem *sub_system);
+
+	const vector<FullTextShard<DataRecord> *> &shards() { return m_shards; };
 
 	vector<size_t> value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets,
 		size_t &shortest_vector_position, vector<float> &scores) const;
@@ -400,56 +406,13 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase(const FullTextIndex<
 	Profiler profiler3("Adding link scores");
 
 	if (typeid(DataRecord) == typeid(FullTextRecord)) {
-
 		{
-			Profiler profiler3("Adding domain link scores");
-
-			unordered_map<uint64_t, float> domain_scores;
-			{
-				Profiler profiler_sum("Summing domain link scores");
-				for (const LinkFullTextRecord &link : links) {
-					const float domain_score = expm1(5*link.m_score) + 0.1;
-					domain_scores[link.m_target_domain] += domain_score;
-				}
-			}
-
-			metric.m_link_domain_matches = domain_scores.size();
-
-			// Loop over the results and add the calculated domain scores.
-			for (size_t i = 0; i < flat_result.size(); i++) {
-				const float domain_score = domain_scores[flat_result[i].m_domain_hash];
-				flat_result[i].m_score += domain_score;
-			}
+			Profiler profiler_sorting_links("Sorting Links");
+			sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+				return a.m_target_hash < b.m_target_hash;
+			});
 		}
-
-		{
-			Profiler profiler3("Adding url link scores");
-			{
-				Profiler profiler_sorting_links("Sorting Links");
-				sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
-					return a.m_target_hash < b.m_target_hash;
-				});
-			}
-			size_t i = 0;
-			size_t j = 0;
-			while (i < links.size() && j < flat_result.size()) {
-
-				const uint64_t hash1 = links[i].m_target_hash;
-				const uint64_t hash2 = flat_result[j].m_value;
-
-				if (hash1 < hash2) {
-					i++;
-				} else if (hash1 == hash2) {
-					const float url_score = expm1(10*links[i].m_score) + 0.1;
-
-					flat_result[j].m_score += url_score;
-					metric.m_link_url_matches++;
-					i++;
-				} else {
-					j++;
-				}
-			}
-		}
+		Scores::apply_link_scores(links, flat_result, metric);
 	}
 
 	profiler3.stop();
@@ -591,6 +554,168 @@ vector<DataRecord> FullTextIndex<DataRecord>::search_phrase_unsorted(const strin
 }
 
 template<typename DataRecord>
+vector<DataRecord> FullTextIndex<DataRecord>::search_unsorted_single_thread(const vector<LinkFullTextRecord> &links, const string &phrase, size_t limit,
+	struct SearchMetric &metric) const {
+
+	metric.m_total_found = 0;
+	metric.m_total_links_found = 0;
+	metric.m_links_handled = 0;
+	metric.m_link_domain_matches = 0;
+	metric.m_link_url_matches = 0;
+
+	vector<string> words = Text::get_full_text_words(phrase);
+
+	if (words.size() == 0) return {};
+
+	vector<string> searched_words;
+	vector<FullTextResultSet<DataRecord> *> result_vector;
+
+	Profiler profiler1("performing the main search");
+	for (const string &word : words) {
+
+		// One word should only be searched once.
+		if (find(searched_words.begin(), searched_words.end(), word) != searched_words.end()) continue;
+		
+		searched_words.push_back(word);
+
+		uint64_t word_hash = m_hasher(word);
+		FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
+		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+
+		result_vector.push_back(results);
+	}
+
+	for (FullTextResultSet<DataRecord> *result : result_vector) {
+		if (result->total_num_results() > metric.m_total_found) {
+			metric.m_total_found = result->total_num_results();
+		}
+	}
+	profiler1.stop();
+
+	Profiler profiler2("value_intersection");
+	size_t shortest_vector;
+	vector<float> score_vector;
+	vector<size_t> result_ids = value_intersection(result_vector, shortest_vector, score_vector);
+
+	vector<DataRecord> flat_result;
+
+	FullTextResultSet<DataRecord> *shortest = result_vector[shortest_vector];
+	DataRecord *record_arr = shortest->record_pointer();
+	for (size_t i = 0; i < result_ids.size(); i++) {
+		flat_result.emplace_back(record_arr[result_ids[i]]);
+	}
+	profiler2.stop();
+
+	for (FullTextResultSet<DataRecord> *result_object : result_vector) {
+		delete result_object;
+	}
+
+	Scores::apply_link_scores(links, flat_result, metric);
+
+	vector<DataRecord> deduped_result;
+	if (flat_result.size() > 0) {
+		Profiler profiler5("Sorting results");
+		sort(flat_result.begin(), flat_result.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_score > b.m_score;
+		});
+
+		bool has_many_domains = false;
+
+		const uint64_t first_domain_hash = flat_result[0].m_domain_hash;
+		for (const DataRecord &record : flat_result) {
+			if (record.m_domain_hash != first_domain_hash) {
+				has_many_domains = true;
+				break;
+			}
+		}
+
+		if (flat_result.size() > 10 && has_many_domains) {
+			deduped_result = deduplicate_domains(flat_result, 5, limit);
+		} else {
+			if (flat_result.size() > limit) {
+				flat_result.resize(limit);
+			}
+			deduped_result = flat_result;
+		}
+	}
+
+	return deduped_result;
+}
+
+template<typename DataRecord>
+vector<DataRecord> FullTextIndex<DataRecord>::search_unsorted_single_thread_no_deduplication(const string &phrase, size_t limit,
+	struct SearchMetric &metric) const {
+
+	metric.m_total_found = 0;
+	metric.m_total_links_found = 0;
+	metric.m_links_handled = 0;
+	metric.m_link_domain_matches = 0;
+	metric.m_link_url_matches = 0;
+
+	vector<string> words = Text::get_full_text_words(phrase);
+
+	if (words.size() == 0) return {};
+
+	vector<string> searched_words;
+	vector<FullTextResultSet<DataRecord> *> result_vector;
+
+	Profiler profiler1("performing the main search");
+	for (const string &word : words) {
+
+		// One word should only be searched once.
+		if (find(searched_words.begin(), searched_words.end(), word) != searched_words.end()) continue;
+		
+		searched_words.push_back(word);
+
+		uint64_t word_hash = m_hasher(word);
+		FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
+		m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+
+		result_vector.push_back(results);
+	}
+
+	for (FullTextResultSet<DataRecord> *result : result_vector) {
+		if (result->total_num_results() > metric.m_total_found) {
+			metric.m_total_found = result->total_num_results();
+		}
+	}
+	profiler1.stop();
+
+	Profiler profiler2("value_intersection");
+	size_t shortest_vector;
+	vector<float> score_vector;
+	vector<size_t> result_ids = value_intersection(result_vector, shortest_vector, score_vector);
+
+	vector<DataRecord> flat_result;
+
+	FullTextResultSet<DataRecord> *shortest = result_vector[shortest_vector];
+	DataRecord *record_arr = shortest->record_pointer();
+	for (size_t i = 0; i < result_ids.size(); i++) {
+		flat_result.emplace_back(record_arr[result_ids[i]]);
+	}
+	profiler2.stop();
+
+	for (FullTextResultSet<DataRecord> *result_object : result_vector) {
+		delete result_object;
+	}
+
+	vector<DataRecord> deduped_result;
+	if (flat_result.size() > 0) {
+		Profiler profiler5("Sorting results");
+		sort(flat_result.begin(), flat_result.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_score > b.m_score;
+		});
+
+		if (flat_result.size() > limit) {
+			flat_result.resize(limit);
+		}
+		deduped_result = flat_result;
+	}
+
+	return deduped_result;
+}
+
+template<typename DataRecord>
 void FullTextIndex<DataRecord>::flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,
 		const vector<size_t> &indices, vector<DataRecord> &deduped_result) const {
 
@@ -635,6 +760,38 @@ void FullTextIndex<DataRecord>::find_score(const string &word, URL &url) {
 		}
 	}
 
+	delete results;
+}
+
+template<typename DataRecord>
+float FullTextIndex<DataRecord>::find_lowest_score(const string &word) {
+	uint64_t word_hash = m_hasher(word);
+
+	FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
+	m_shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+
+	if (results->len() == 0) return 0.0f;
+
+	DataRecord *records = results->record_pointer();
+	float min_score = records[0].m_score;
+	for (size_t i = 0; i < results->len(); i++) {
+		if (records[i].m_score < min_score) {
+			min_score = records[i].m_score;
+		}
+	}
+
+	delete results;
+
+	return min_score;
+}
+
+template<typename DataRecord>
+void FullTextIndex<DataRecord>::read_num_results(const string &word, size_t limit) {
+	Profiler profiler("read_num_results with limit " + to_string(limit));
+	uint64_t word_hash = m_hasher(word);
+
+	FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
+	m_shards[word_hash % FT_NUM_SHARDS]->debug(word_hash, results, limit);
 	delete results;
 }
 

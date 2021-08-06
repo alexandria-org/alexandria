@@ -3,21 +3,20 @@
 #include "LinkIndexer.h"
 #include <math.h>
 #include "system/Logger.h"
+#include "full_text/FullText.h"
 
-LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &cc_batch, const string &fti_name)
-: m_cc_batch(cc_batch), m_db_name(db_name), m_fti_name(fti_name)
+LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system,
+	UrlToDomain *url_to_domain)
+: m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
 {
-	m_sub_system = new SubSystem();
-	m_url_to_domain = new UrlToDomain(m_fti_name);
-	m_url_to_domain->read();
+	m_sub_system = sub_system;
+	m_url_to_domain = url_to_domain;
 }
 
 LinkIndexerRunner::~LinkIndexerRunner() {
-	delete m_sub_system;
-	delete m_url_to_domain;
 }
 
-void LinkIndexerRunner::run(size_t offset, size_t limit) {
+void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	//truncate();
 
@@ -27,10 +26,7 @@ void LinkIndexerRunner::run(size_t offset, size_t limit) {
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);
 
-	vector<string> warc_paths;
-	for (int i = (warc_paths_raw.size() - 1) - offset; i >= 0 && warc_paths.size() < limit; i--) {
-		warc_paths.push_back(warc_paths_raw[i]);
-	}
+	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
 
 	vector<vector<string>> warc_path_chunks;
 	vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
@@ -98,12 +94,13 @@ void LinkIndexerRunner::merge_adjustments() {
 	LogInfo("Merging adjustments...");
 	Profiler profiler("Merging adjustments...");
 
+	/*
 	const size_t merge_batch_size = 250;
 
 	ThreadPool merge_pool(LI_NUM_THREADS_MERGING);
 	std::vector<std::future<string>> merge_results;
 
-	FullTextIndexer *indexer = new FullTextIndexer(1, m_fti_name, m_sub_system, m_url_to_domain);
+	FullTextIndexer *indexer = new FullTextIndexer(1, "main_index", m_sub_system, m_url_to_domain);
 
 	// Loop over shards and merge them.
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
@@ -127,6 +124,7 @@ void LinkIndexerRunner::merge_adjustments() {
 	}
 
 	delete indexer;
+	*/
 }
 
 void LinkIndexerRunner::sort() {
@@ -135,7 +133,7 @@ void LinkIndexerRunner::sort() {
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		HashTableShard *shard = new HashTableShard(m_db_name, shard_id);
+		HashTableShard *shard = new HashTableShard(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
 	}
@@ -147,7 +145,7 @@ void LinkIndexerRunner::upload() {
 	FullTextIndex<LinkFullTextRecord> li(m_db_name);
 	li.upload(m_sub_system);
 
-	HashTable hash_table(m_db_name);
+	HashTable hash_table(m_hash_table_name);
 	hash_table.upload(m_sub_system);
 }
 
@@ -158,43 +156,16 @@ void LinkIndexerRunner::truncate() {
 		shard_builder->truncate();
 		delete shard_builder;
 	}
-
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder<FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<FullTextRecord>("adjustments", shard_id);
-		shard_builder->truncate();
-		delete shard_builder;
-	}
-
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder<FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<FullTextRecord>("domain_adjustments", shard_id);
-		shard_builder->truncate();
-		delete shard_builder;
-	}
-
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
-		FullTextShardBuilder<FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<FullTextRecord>(m_fti_name, shard_id);
-		shard_builder->truncate_cache_files();
-		delete shard_builder;
-	}
-
-	HashTable hash_table(m_db_name);
-	hash_table.truncate();
 }
 
 void LinkIndexerRunner::index_stream(ifstream &infile) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system, m_url_to_domain);
-	ft_indexer.read_url_to_domain();
-
-	LinkIndexer indexer(1, m_db_name, m_sub_system, &ft_indexer);
+	LinkIndexer indexer(1, m_db_name, m_sub_system, m_url_to_domain);
 	indexer.add_stream(shard_builders, infile);
 
 	indexer.flush_cache(m_link_mutexes);
@@ -212,12 +183,10 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_db_name, i));
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	FullTextIndexer ft_indexer(1, m_fti_name, m_sub_system, m_url_to_domain);
-
-	LinkIndexer indexer(id, m_db_name, m_sub_system, &ft_indexer);
+	LinkIndexer indexer(id, m_db_name, m_sub_system, m_url_to_domain);
 	size_t idx = 1;
 	for (const string &raw_warc_path : warc_paths) {
 		stringstream stream;
@@ -276,7 +245,8 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
 string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id) {
 
-	FullTextShardBuilder<FullTextRecord> shard1(m_fti_name, shard_id);
+	/*
+	FullTextShardBuilder<FullTextRecord> shard1("main_index", shard_id);
 	FullTextShardBuilder<FullTextRecord> shard2("adjustments", shard_id);
 	FullTextShardBuilder<FullTextRecord> shard3("domain_adjustments", shard_id);
 
@@ -284,6 +254,7 @@ string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *in
 
 	LogInfo("Merged " + to_string(shard_id));
 
-	return shard1.filename();
+	return shard1.filename();*/
+	return "";
 }
 

@@ -46,7 +46,9 @@ public:
 	map<string, string> find_all(const set<string> &keys);
 
 	size_t read_column_into(int column, set<string> &container);
+	size_t read_column_into(int column, set<string> &container, size_t limit);
 	size_t read_column_into(int column, vector<string> &container);
+	size_t read_column_into(int column, vector<string> &container, size_t limit);
 
 	size_t size() const;
 	bool eof() const;

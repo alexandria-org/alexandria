@@ -4,10 +4,10 @@
 #include "text/Text.h"
 #include <math.h>
 
-LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, FullTextIndexer *ft_indexer)
+LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
-	m_ft_indexer = ft_indexer;
+	m_url_to_domain = url_to_domain;
 	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
 		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
 			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
@@ -59,12 +59,12 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 		/*
 		// Skip domain links for now
-		if (m_ft_indexer->has_domain(target_url.host_hash())) {
+		if (m_url_to_domain->has_domain(target_url.host_hash())) {
 			add_domain_link(col_values[4], link);
 		}
 		*/
 
-		if (m_ft_indexer->has_key(target_url.hash())) {
+		if (m_url_to_domain->has_url(target_url.hash())) {
 
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 

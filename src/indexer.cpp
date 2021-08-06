@@ -37,8 +37,15 @@ int main(int argc, const char **argv) {
 	cout << "FT_INDEXER_CACHE_BYTES_PER_SHARD: " << FT_INDEXER_CACHE_BYTES_PER_SHARD << endl;
 
 	if (argc == 1) {
-		FullTextIndexerRunner indexer("main_index", "CC-MAIN-2021-17");
-		indexer.run();
+
+		HashTable hash_table("main_index");
+		hash_table.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("main_index_" + to_string(partition_num), "main_index", "CC-MAIN-2021-17", sub_system);
+			indexer.run(partition_num, 8);
+		}
 		Profiler::print_memory_status();
 		return 0;
 	}
@@ -46,21 +53,68 @@ int main(int argc, const char **argv) {
 	const string arg(argv[1]);
 
 	if (arg == "link") {
-		if (argc != 4) {
-			cerr << "Missing offset and limit arguments." << endl;	
-			return 1;
+
+		LogInfo("Running link indexer");
+
+		LogInfo("Reading UrlToDomain map");
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-17", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
 		}
-
-		size_t offset = stoi(argv[2]);
-		size_t limit = stoi(argv[3]);
-
-		cout << "Running with offset: " << offset << " and limit: " << limit << endl;
+		Profiler::print_memory_status();
 
 		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
-		LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
 		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
-		indexer.run(offset, limit);
+		return 0;
+	}
+
+	if (arg == "link2") {
+
+		LogInfo("Running link indexer");
+
+		LogInfo("Reading UrlToDomain map");
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-10", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
 		Profiler::print_memory_status();
+
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
+		return 0;
+	}
+
+	if (arg == "link3") {
+
+		LogInfo("Running link indexer");
+
+		LogInfo("Reading UrlToDomain map");
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-04", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+		Profiler::print_memory_status();
+
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
+		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
 		return 0;
 	}
 

@@ -43,6 +43,7 @@ public:
 	void merge_domain(FullTextShardBuilder<DataRecord> &urls, FullTextShardBuilder<DataRecord> &domains,
 		const UrlToDomain *url_to_domain);
 
+	string mountpoint() const;
 	string filename() const;
 	string key_filename() const;
 	string target_filename() const;
@@ -62,7 +63,7 @@ private:
 
 	mutable ifstream m_reader;
 	ofstream m_writer;
-	const size_t m_max_results = 10000000;
+	const size_t m_max_results = 4000000;
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 	const size_t m_max_cache_size;
@@ -624,20 +625,26 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 }
 
 template<typename DataRecord>
+string FullTextShardBuilder<DataRecord>::mountpoint() const {
+	hash<string> hasher;
+	return to_string((hasher(m_db_name) + m_shard_id) % 8);
+}
+
+template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::filename() const {
-	return "/mnt/" + (to_string(m_shard_id % 8)) + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
 		".cache";
 }
 
 template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::key_filename() const {
-	return "/mnt/" + (to_string(m_shard_id % 8)) + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
 		".keys";
 }
 
 template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::target_filename() const {
-	return "/mnt/" + to_string(m_shard_id % 8) + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 }
 
 /*

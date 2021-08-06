@@ -8,6 +8,7 @@
 
 #include "hash_table/HashTable.h"
 
+#include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
@@ -19,14 +20,19 @@
 
 using namespace std;
 
-void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, FullTextIndex<FullTextRecord> &fti,
-	FullTextIndex<LinkFullTextRecord> &link_fti) {
+void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array) {
 
 	Profiler profiler("total");
 
 	struct SearchMetric metric;
-	Profiler profiler2("fti.search_phrase");
-	vector<FullTextRecord> results = fti.search_phrase(link_fti, query, 1000, metric);
+
+	Profiler profiler1("Search links");
+	vector<LinkFullTextRecord> links = FullText::search_link_array(link_index_array, query, 1000, metric);
+	profiler1.stop();
+
+	Profiler profiler2("Search urls");
+	vector<FullTextRecord> results = FullText::search_index_array(index_array, links, query, 1000, metric);
 	profiler2.stop();
 
 	PostProcessor post_processor(query);
@@ -141,9 +147,17 @@ int main(void) {
 	FCGX_InitRequest(&request, socket_id, 0);
 
 	HashTable hash_table("main_index");
-	FullTextIndex<FullTextRecord> fti("main_index");
-	FullTextIndex<LinkFullTextRecord> link_fti("link_index");
 	HashTable hash_table_link("link_index");
+
+	vector<FullTextIndex<FullTextRecord> *> index_array;
+	for (size_t partition = 0; partition < 8; partition++) {
+		index_array.push_back(new FullTextIndex<FullTextRecord>("main_index_" + to_string(partition)));
+	}
+
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array;
+	for (size_t partition = 0; partition < 8; partition++) {
+		link_index_array.push_back(new FullTextIndex<LinkFullTextRecord>("link_index_" + to_string(partition)));
+	}
 
 	LogInfo("Server has started...");
 
@@ -158,12 +172,20 @@ int main(void) {
 		auto query = url.query();
 
 		if (query.find("q") != query.end()) {
-			run_search_query(query["q"], request, hash_table, fti, link_fti);
+			run_search_query(query["q"], request, hash_table, index_array, link_index_array);
 		} else if (query.find("l") != query.end()) {
-			run_link_query(query["l"], request, hash_table_link, link_fti);
+			//run_link_query(query["l"], request, hash_table_link, link_fti);
 		} else if (query.find("u") != query.end()) {
 			run_url_lookup(query["u"], request, hash_table);
 		}
+	}
+
+	for (FullTextIndex<FullTextRecord> *fti : index_array) {
+		delete fti;
+	}
+
+	for (FullTextIndex<LinkFullTextRecord> *fti : link_index_array) {
+		delete fti;
 	}
 
 	cin.rdbuf(cin_streambuf);

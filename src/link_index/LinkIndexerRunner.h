@@ -28,10 +28,11 @@ class LinkIndexerRunner {
 
 public:
 
-	LinkIndexerRunner(const string &db_name, const string &cc_batch, const string &fti_name);
+	LinkIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system,
+		UrlToDomain *url_to_domain);
 	~LinkIndexerRunner();
 
-	void run(size_t offset, size_t limit);
+	void run(size_t partition, size_t max_partitions);
 	void merge();
 	void merge_adjustments();
 	void sort();
@@ -44,7 +45,7 @@ private:
 	const SubSystem *m_sub_system;
 	const string m_cc_batch;
 	const string m_db_name;
-	const string m_fti_name;
+	const string m_hash_table_name;
 	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
 	mutex m_full_text_mutexes[FT_NUM_SHARDS];
 	mutex m_link_mutexes[FT_NUM_SHARDS];
