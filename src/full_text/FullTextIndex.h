@@ -16,7 +16,6 @@ template<typename DataRecord> class FullTextIndex;
 #include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
-#include "Scores.h"
 #include "FullTextRecord.h"
 #include "FullTextShard.h"
 #include "FullTextResultSet.h"
@@ -34,10 +33,6 @@ class FullTextIndex {
 public:
 	FullTextIndex(const string &name);
 	~FullTextIndex();
-
-	void find_score(const string &word, URL &url);
-	float find_lowest_score(const string &word);
-	void read_num_results(const string &word, size_t limit);
 
 	size_t disk_size() const;
 

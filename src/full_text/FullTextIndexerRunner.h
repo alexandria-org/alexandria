@@ -27,6 +27,7 @@ class FullTextIndexerRunner {
 public:
 
 	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system);
+	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch);
 	~FullTextIndexerRunner();
 
 	void run(size_t partition, size_t max_partitions);
@@ -51,6 +52,7 @@ private:
 	mutex m_write_url_to_domain_mutex;
 
 	bool m_run_merge_large;
+	bool m_did_allocate_sub_system;
 
 	string run_merge_large_thread();
 	string run_index_thread(const vector<string> &warc_paths, int id);

@@ -8,10 +8,11 @@
 
 #include "hash_table/HashTable.h"
 
-#include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
+
+#include "search_engine/SearchEngine.h"
 
 #include "link_index/LinkIndex.h"
 #include "link_index/LinkFullTextRecord.h"
@@ -28,11 +29,11 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	struct SearchMetric metric;
 
 	Profiler profiler1("Search links");
-	vector<LinkFullTextRecord> links = FullText::search_link_array(link_index_array, query, 1000, metric);
+	vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
 	profiler1.stop();
 
 	Profiler profiler2("Search urls");
-	vector<FullTextRecord> results = FullText::search_index_array(index_array, links, query, 1000, metric);
+	vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
 	profiler2.stop();
 
 	PostProcessor post_processor(query);
@@ -68,7 +69,7 @@ void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_
 	struct SearchMetric metric;
 
 	size_t total;
-	vector<LinkFullTextRecord> results = FullText::search_link_array(link_index_array, query, 1000, metric);
+	vector<LinkFullTextRecord> results = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
 
 	PostProcessor post_processor(query);
 

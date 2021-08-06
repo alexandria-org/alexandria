@@ -1,6 +1,7 @@
 
 #include "SearchEngine.h"
 #include "text/Text.h"
+#include <cmath>
 
 namespace SearchEngine {
 
@@ -229,7 +230,7 @@ namespace SearchEngine {
 
 		delete_result_vector<FullTextRecord>(result_vector);
 
-		Scores::apply_link_scores(links, flat_result, metric);
+		apply_link_scores(links, flat_result, metric);
 
 		sort_results_by_score<FullTextRecord>(flat_result);
 
@@ -257,6 +258,109 @@ namespace SearchEngine {
 		delete_result_vector<LinkFullTextRecord>(result_vector);
 
 		return flat_result;
+	}
+
+	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
+		const string &query, size_t limit, struct SearchMetric &metric) {
+
+		vector<future<vector<FullTextRecord>>> futures;
+		vector<struct SearchMetric> metrics(index_array.size(), SearchMetric{});
+
+		size_t idx = 0;
+		for (FullTextIndex<FullTextRecord> *index : index_array) {
+			future<vector<FullTextRecord>> future = async(search, index->shards(), links, query, limit, ref(metrics[idx]));
+			futures.push_back(move(future));
+			idx++;
+		}
+
+		vector<FullTextRecord> complete_result;
+		for (auto &future : futures) {
+			vector<FullTextRecord> result = future.get();
+			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		// Sort.
+		sort_results_by_score<FullTextRecord>(complete_result);
+
+		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
+
+		return deduped_result;
+	}
+
+	vector<LinkFullTextRecord> search_link_array(vector<FullTextIndex<LinkFullTextRecord> *> index_array, const string &query, size_t limit,
+		struct SearchMetric &metric) {
+
+		vector<future<vector<LinkFullTextRecord>>> futures;
+		vector<struct SearchMetric> metrics(index_array.size(), SearchMetric{});
+
+		size_t idx = 0;
+		for (FullTextIndex<LinkFullTextRecord> *index : index_array) {
+			future<vector<LinkFullTextRecord>> future = async(search_links, index->shards(), query, limit, ref(metrics[idx]));
+			futures.push_back(move(future));
+			idx++;
+		}
+
+		Profiler profiler1("execute all threads");
+		vector<LinkFullTextRecord> complete_result;
+		for (auto &future : futures) {
+			vector<LinkFullTextRecord> result = future.get();
+			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		sort(complete_result.begin(), complete_result.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			return a.m_target_hash < b.m_target_hash;
+		});
+
+		return complete_result;
+	}
+
+	/*
+		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
+	*/
+	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric) {
+		{
+			Profiler profiler3("Adding domain link scores");
+
+			unordered_map<uint64_t, float> domain_scores;
+			{
+				Profiler profiler_sum("Summing domain link scores");
+				for (const LinkFullTextRecord &link : links) {
+					const float domain_score = expm1(5*link.m_score) + 0.1;
+					domain_scores[link.m_target_domain] += domain_score;
+				}
+			}
+
+			metric.m_link_domain_matches = domain_scores.size();
+
+			// Loop over the results and add the calculated domain scores.
+			for (size_t i = 0; i < results.size(); i++) {
+				const float domain_score = domain_scores[results[i].m_domain_hash];
+				results[i].m_score += domain_score;
+			}
+		}
+
+		{
+			Profiler profiler3("Adding url link scores");
+			size_t i = 0;
+			size_t j = 0;
+			while (i < links.size() && j < results.size()) {
+
+				const uint64_t hash1 = links[i].m_target_hash;
+				const uint64_t hash2 = results[j].m_value;
+
+				if (hash1 < hash2) {
+					i++;
+				} else if (hash1 == hash2) {
+					const float url_score = expm1(10*links[i].m_score) + 0.1;
+
+					results[j].m_score += url_score;
+					metric.m_link_url_matches++;
+					i++;
+				} else {
+					j++;
+				}
+			}
+		}
 	}
 
 }

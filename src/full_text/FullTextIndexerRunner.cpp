@@ -9,9 +9,20 @@ FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string
 : m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
 {
 	m_sub_system = sub_system;
+	m_did_allocate_sub_system = false;
+}
+
+FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch)
+: m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
+{
+	m_sub_system = new SubSystem();
+	m_did_allocate_sub_system = true;
 }
 
 FullTextIndexerRunner::~FullTextIndexerRunner() {
+	if (m_did_allocate_sub_system) {
+		delete m_sub_system;
+	}
 }
 
 void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {

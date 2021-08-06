@@ -42,7 +42,6 @@ set(SRC_CLASSES
 	"src/full_text/FullTextIndexerRunner.cpp"
 	"src/full_text/UrlToDomain.cpp"
 	"src/full_text/FullText.cpp"
-	"src/full_text/Scores.cpp"
 
 	"src/search_engine/SearchEngine.cpp"
 
