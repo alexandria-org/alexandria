@@ -16,8 +16,7 @@ namespace SearchEngine {
 	vector<FullTextRecord> search(const vector<FullTextShard<FullTextRecord> *> &shards, const vector<LinkFullTextRecord> &links,
 		const string &query, size_t limit, struct SearchMetric &metric);
 
-	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query, size_t limit,
-		struct SearchMetric &metric);
+	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query, struct SearchMetric &metric);
 
 	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const string &query, size_t limit, struct SearchMetric &metric);

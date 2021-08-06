@@ -239,8 +239,7 @@ namespace SearchEngine {
 		return deduped_result;
 	}
 
-	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query, size_t limit,
-		struct SearchMetric &metric) {
+	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query, struct SearchMetric &metric) {
 
 		vector<LinkFullTextRecord> flat_result;
 
@@ -263,14 +262,21 @@ namespace SearchEngine {
 	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const string &query, size_t limit, struct SearchMetric &metric) {
 
+		metric.m_links_handled = links.size();
+
 		vector<future<vector<FullTextRecord>>> futures;
-		vector<struct SearchMetric> metrics(index_array.size(), SearchMetric{});
+		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
 		for (FullTextIndex<FullTextRecord> *index : index_array) {
-			future<vector<FullTextRecord>> future = async(search, index->shards(), links, query, limit, ref(metrics[idx]));
+			future<vector<FullTextRecord>> future = async(search, index->shards(), links, query, limit, ref(metrics_vector[idx]));
 			futures.push_back(move(future));
 			idx++;
+		}
+
+		metric.m_total_found = 0;
+		for (const struct SearchMetric &m : metrics_vector) {
+			metric.m_total_found += m.m_total_found;
 		}
 
 		vector<FullTextRecord> complete_result;
@@ -291,13 +297,18 @@ namespace SearchEngine {
 		struct SearchMetric &metric) {
 
 		vector<future<vector<LinkFullTextRecord>>> futures;
-		vector<struct SearchMetric> metrics(index_array.size(), SearchMetric{});
+		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
 		for (FullTextIndex<LinkFullTextRecord> *index : index_array) {
-			future<vector<LinkFullTextRecord>> future = async(search_links, index->shards(), query, limit, ref(metrics[idx]));
+			future<vector<LinkFullTextRecord>> future = async(search_links, index->shards(), query, ref(metrics_vector[idx]));
 			futures.push_back(move(future));
 			idx++;
+		}
+
+		metric.m_total_found = 0;
+		for (const struct SearchMetric &m : metrics_vector) {
+			metric.m_total_found += m.m_total_found;
 		}
 
 		Profiler profiler1("execute all threads");
@@ -305,6 +316,13 @@ namespace SearchEngine {
 		for (auto &future : futures) {
 			vector<LinkFullTextRecord> result = future.get();
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		if (complete_result.size() > limit) {
+			sort(complete_result.begin(), complete_result.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+				return a.m_score > b.m_score;
+			});
+			complete_result.resize(limit);
 		}
 
 		sort(complete_result.begin(), complete_result.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
