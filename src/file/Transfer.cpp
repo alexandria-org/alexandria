@@ -41,9 +41,16 @@ namespace Transfer {
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stringstream_writer);
 
 			res = curl_easy_perform(curl);
-			curl_easy_cleanup(curl);
 
-			if (res == CURLE_OK) error = OK;
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code == 200) {
+					error = OK;
+				}
+			}
+
+			curl_easy_cleanup(curl);
 
 			return response.str();
 		}
@@ -66,15 +73,21 @@ namespace Transfer {
 
 			res = curl_easy_perform(curl);
 
-			curl_easy_cleanup(curl);
-
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(response);
 
 			const string response_str = string(istreambuf_iterator<char>(decompress_stream), {});
 
-			if (res == CURLE_OK) error = OK;
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code == 200) {
+					error = OK;
+				}
+			}
+
+			curl_easy_cleanup(curl);
 
 			return response_str;
 		}
@@ -96,9 +109,16 @@ namespace Transfer {
 
 			res = curl_easy_perform(curl);
 
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code == 200) {
+					error = OK;
+				}
+			}
+
 			curl_easy_cleanup(curl);
 
-			if (res == CURLE_OK) error = OK;
 		}
 	}
 
@@ -117,7 +137,13 @@ namespace Transfer {
 
 			res = curl_easy_perform(curl);
 
-			curl_easy_cleanup(curl);
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code == 200) {
+					error = OK;
+				}
+			}
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
@@ -125,7 +151,7 @@ namespace Transfer {
 
 			output_stream << decompress_stream.rdbuf();
 
-			if (res == CURLE_OK) error = OK;
+			curl_easy_cleanup(curl);
 		}
 	}
 }

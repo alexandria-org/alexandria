@@ -52,6 +52,7 @@ public:
 
 	size_t size() const;
 	bool eof() const;
+	bool is_open() const;
 	string get_line();
 
 protected:

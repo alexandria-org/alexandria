@@ -6,6 +6,8 @@
 #include "test5.h"
 #include "test6.h"
 
+#include "File.h"
+
 string read_test_file(const string &file_name) {
 	ifstream file("../tests/data/" + file_name);
 	if (file.is_open()) {
@@ -20,6 +22,7 @@ string read_test_file(const string &file_name) {
 	return "";
 }
 
+/*
 int main(int argc, const char **argv) {
 
 	string run_tests = "all";
@@ -34,7 +37,7 @@ int main(int argc, const char **argv) {
 		3,
 		3,
 		4,
-		3,
+		4,
 		3,
 		5
 	};
@@ -61,7 +64,8 @@ int main(int argc, const char **argv) {
 	int (* testSuite4 [])() = {
 		test4_1,
 		test4_2,
-		test4_3
+		test4_3,
+		test4_4
 	};
 
 	int (* testSuite5 [])() = {
@@ -121,3 +125,4 @@ int main(int argc, const char **argv) {
 
 	return 0;
 }
+*/

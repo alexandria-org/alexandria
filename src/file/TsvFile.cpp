@@ -224,6 +224,10 @@ bool TsvFile::eof() const {
 	return m_file.eof();
 }
 
+bool TsvFile::is_open() const {
+	return m_file.is_open();
+}
+
 string TsvFile::get_line() {
 	string line;
 	getline(m_file, line);

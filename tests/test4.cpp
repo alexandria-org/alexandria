@@ -2,6 +2,7 @@
 
 #include "test4.h"
 #include "file/Transfer.h"
+#include "file/TsvFileRemote.h"
 #include "parser/URL.h"
 #include "text/Text.h"
 #include "full_text/FullText.h"
@@ -87,6 +88,30 @@ int test4_3(void) {
 		ok = ok && partition.size() == 2;
 		ok = ok && partition[0] == "file1";
 		ok = ok && partition[1] == "file4";
+	}
+
+	return ok;
+}
+
+/*
+ * Test tsv files
+ * */
+int test4_4(void) {
+	int ok = 1;
+
+	{
+		TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
+		vector<string> warc_paths;
+		manual_paths_file.read_column_into(0, warc_paths);
+
+		ok = ok && manual_paths_file.is_open();
+		ok = ok && warc_paths.size() > 0;
+		ok = ok && warc_paths[0] == "/crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz";
+	}
+
+	{
+		TsvFileRemote manual_paths_file("non-existing-file.gz");
+		ok = ok && !manual_paths_file.is_open();
 	}
 
 	return ok;

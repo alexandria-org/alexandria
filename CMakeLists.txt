@@ -11,7 +11,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(aws-lambda-runtime REQUIRED)
 find_package(AWSSDK COMPONENTS s3 transfer)
-find_package(Boost REQUIRED COMPONENTS system iostreams filesystem)
+find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
 find_package(ZLIB)
 find_package(fcgi)
 

@@ -1,5 +1,6 @@
 
 #include "TsvFileRemote.h"
+#include "system/Logger.h"
 
 TsvFileRemote::TsvFileRemote(const string &file_name) {
 	// Check if the file exists.
@@ -8,11 +9,11 @@ TsvFileRemote::TsvFileRemote(const string &file_name) {
 
 	ifstream infile(get_path());
 
-	if (!infile.good()) {
-		download_file();
+	if (download_file() == Transfer::OK) {
+		set_file_name(get_path());
+	} else {
+		infile.close();
 	}
-
-	set_file_name(get_path());
 }
 
 TsvFileRemote::~TsvFileRemote() {
@@ -36,20 +37,22 @@ int TsvFileRemote::download_file() {
 	create_directory();
 	ofstream outfile(get_path(), ios::trunc);
 
-	int error;
+	int error = Transfer::ERROR;
 	if (outfile.good()) {
 		if (m_is_gzipped) {
 			Transfer::gz_file_to_stream(m_file_name, outfile, error);
 		} else {
 			Transfer::file_to_stream(m_file_name, outfile, error);
 		}
-	} else {
-		return CC_ERROR;
+
+		if (error == Transfer::ERROR) {
+			LogInfo("Download failed...");
+		}
 	}
 
 	cout << "Done downloading file with key: " << m_file_name << endl;
 
-	return CC_OK;
+	return error;
 }
 
 void TsvFileRemote::create_directory() {

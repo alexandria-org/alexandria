@@ -29,11 +29,8 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	truncate();
 
-	string manual_paths_url = "manual-files.txt";
-	TsvFileS3 manual_paths_file(m_sub_system->s3_client(), "alexandria-cc-output", manual_paths_url);
-
-	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
-	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
+	TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
+	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
 
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw, 45000);
