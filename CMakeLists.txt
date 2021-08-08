@@ -81,15 +81,6 @@ set(SRC_COMMON
 	"src/text/Text.cpp"
 )
 
-set(SRC_TESTS
-	"tests/test1.cpp"
-	"tests/test2.cpp"
-	"tests/test3.cpp"
-	"tests/test4.cpp"
-	"tests/test5.cpp"
-	"tests/test6.cpp"
-)
-
 add_executable(cc_parser 
 	"src/main.cpp"
 	${SRC_CLASSES}
@@ -106,10 +97,9 @@ add_executable(cc_full_text
 	${SRC_COMMON}
 )
 add_executable(run_tests
-	"tests/test.cpp"
+	"tests/main.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
-	${SRC_TESTS}
 )
 add_executable(server
 	"src/server.cpp"

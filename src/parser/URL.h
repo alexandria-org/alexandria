@@ -22,17 +22,22 @@ public:
 
 	void set_url_string(const string &url);
 	string str() const;
+
 	uint64_t hash() const;
 	uint64_t host_hash() const;
 	uint64_t link_hash(const URL &target_url, const string &link_text) const;
+
 	string host() const;
+	string scheme() const;
 	string path() const;
+	string path_with_query() const;
 	map<string, string> query() const;
-	float harmonic(const SubSystem *sub_system) const;
 	string host_reverse() const;
 	string unescape(const string &str) const;
 	string domain_without_tld() const;
 	uint32_t size() const;
+
+	float harmonic(const SubSystem *sub_system) const;
 
 	friend istream &operator >>(istream &ss, URL &url);
 	friend ostream &operator <<(ostream& os, const URL& url);
@@ -43,6 +48,7 @@ private:
 	string m_url_string;
 	string m_host;
 	string m_host_reverse;
+	string m_scheme;
 	string m_path;
 	string m_query;
 	int m_status;

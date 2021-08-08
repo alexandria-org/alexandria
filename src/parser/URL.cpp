@@ -56,12 +56,24 @@ string URL::host() const {
 	return m_host;
 }
 
+string URL::scheme() const {
+	return m_scheme;
+}
+
 string URL::host_reverse() const {
 	return m_host_reverse;
 }
 
 string URL::path() const {
 	return m_path;
+}
+
+string URL::path_with_query() const {
+	if (m_query.size() > 0) {
+		return m_path + "?" + m_query;
+	} else {
+		return m_path;
+	}
 }
 
 map<string, string> URL::query() const {
@@ -186,6 +198,13 @@ int URL::parse() {
 		curl_free(chost);
 	}
 
+	char *scheme;
+	uc = curl_url_get(h, CURLUPART_SCHEME, &scheme, 0);
+	if (!uc) {
+		m_scheme = scheme;
+		curl_free(scheme);
+	}
+
 	char *cpath;
 	uc = curl_url_get(h, CURLUPART_PATH, &cpath, 0);
 	if (!uc) {
@@ -197,7 +216,6 @@ int URL::parse() {
 	uc = curl_url_get(h, CURLUPART_QUERY, &cquery, 0);
 	if (!uc) {
 		m_query = cquery;
-		m_path += "?" + m_query;
 		curl_free(cquery);
 	}
 
