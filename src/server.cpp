@@ -29,7 +29,7 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	struct SearchMetric metric;
 
 	Profiler profiler1("Search links");
-	vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
+	vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000000, metric);
 	profiler1.stop();
 
 	Profiler profiler2("Search urls");
