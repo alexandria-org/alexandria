@@ -274,15 +274,19 @@ namespace SearchEngine {
 			idx++;
 		}
 
-		metric.m_total_found = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_found += m.m_total_found;
-		}
-
 		vector<FullTextRecord> complete_result;
 		for (auto &future : futures) {
 			vector<FullTextRecord> result = future.get();
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		metric.m_total_found = 0;
+		metric.m_link_domain_matches = 0;
+		metric.m_link_url_matches = 0;
+		for (const struct SearchMetric &m : metrics_vector) {
+			metric.m_total_found += m.m_total_found;
+			metric.m_link_domain_matches += m.m_link_domain_matches;
+			metric.m_link_url_matches += m.m_link_url_matches;
 		}
 
 		// Sort.
@@ -306,16 +310,16 @@ namespace SearchEngine {
 			idx++;
 		}
 
-		metric.m_total_found = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_found += m.m_total_found;
-		}
-
 		Profiler profiler1("execute all threads");
 		vector<LinkFullTextRecord> complete_result;
 		for (auto &future : futures) {
 			vector<LinkFullTextRecord> result = future.get();
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		metric.m_total_links_found = 0;
+		for (const struct SearchMetric &m : metrics_vector) {
+			metric.m_total_links_found += m.m_total_found;
 		}
 
 		if (complete_result.size() > limit) {
@@ -340,20 +344,23 @@ namespace SearchEngine {
 			Profiler profiler3("Adding domain link scores");
 
 			unordered_map<uint64_t, float> domain_scores;
+			unordered_map<uint64_t, int> domain_counts;
 			{
 				Profiler profiler_sum("Summing domain link scores");
 				for (const LinkFullTextRecord &link : links) {
 					const float domain_score = expm1(5*link.m_score) + 0.1;
 					domain_scores[link.m_target_domain] += domain_score;
+					domain_counts[link.m_target_domain]++;
 				}
 			}
 
-			metric.m_link_domain_matches = domain_scores.size();
 
 			// Loop over the results and add the calculated domain scores.
 			for (size_t i = 0; i < results.size(); i++) {
 				const float domain_score = domain_scores[results[i].m_domain_hash];
 				results[i].m_score += domain_score;
+
+				metric.m_link_domain_matches += domain_counts[results[i].m_domain_hash];
 			}
 		}
 

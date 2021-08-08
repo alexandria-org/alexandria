@@ -1,11 +1,15 @@
 
 #include "full_text/FullText.h"
 #include "parser/URL.h"
+#include "hash_table/HashTable.h"
+#include "full_text/FullText.h"
+#include "full_text/UrlToDomain.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
+#include "link_index/LinkIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
 
-BOOST_AUTO_TEST_SUITE(full_text_tests)
+BOOST_AUTO_TEST_SUITE(full_text)
 
 BOOST_AUTO_TEST_CASE(make_partition_from_files) {
 	{
@@ -133,8 +137,8 @@ BOOST_AUTO_TEST_CASE(indexer_runner_2) {
 		FullTextIndex<FullTextRecord> fti(ft_db_name);
 
 		struct SearchMetric metric;
-		vector<FullTextRecord> result = SearchEngine::search(fti.shards(), {}, "Ariel Rockmore - ELA Study Skills - North Clayton Middle School", 1000,
-			metric);
+		vector<FullTextRecord> result = SearchEngine::search(fti.shards(), {}, "Ariel Rockmore - ELA Study Skills - North Clayton Middle School",
+			1000, metric);
 
 		BOOST_CHECK(result.size() > 0 &&
 			result[0].m_value == URL("http://017ccps.ss10.sharpschool.com/cms/One.aspx?portalId=64627&pageId=22360441").hash());
@@ -170,6 +174,59 @@ BOOST_AUTO_TEST_CASE(indexer_runner_2) {
 		BOOST_CHECK(contains_url);
 
 	}
+}
+
+BOOST_AUTO_TEST_CASE(indexer) {
+
+	{
+		// Index full text
+		HashTable hash_table("test_main_index");
+		hash_table.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-01", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Make searches.
+		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+
+		const string query = "Url1.com";
+		struct SearchMetric metric;
+
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
+
+		BOOST_CHECK_EQUAL(links.size(), 1);
+		BOOST_CHECK_EQUAL(results.size(), 1);
+		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
+		BOOST_CHECK_EQUAL(metric.m_total_links_found, 1);
+		BOOST_CHECK_EQUAL(metric.m_links_handled, 1);
+		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 1);
+		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 1);
+		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
+
+		FullText::delete_index_array<FullTextRecord>(index_array);
+		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+	}
+
 }
 
 BOOST_AUTO_TEST_SUITE_END();

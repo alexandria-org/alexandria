@@ -1,7 +1,7 @@
 
 #include "parser/Unicode.h"
 
-BOOST_AUTO_TEST_SUITE(unicode_tests)
+BOOST_AUTO_TEST_SUITE(unicode)
 
 BOOST_AUTO_TEST_CASE(unicode) {
 	BOOST_CHECK_EQUAL(Unicode::encode("hej jag heter josef"), "hej jag heter josef");

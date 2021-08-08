@@ -1,7 +1,7 @@
 
 #include "parser/URL.h"
 
-BOOST_AUTO_TEST_SUITE(url_tests)
+BOOST_AUTO_TEST_SUITE(url)
 
 BOOST_AUTO_TEST_CASE(url_parsing) {
 

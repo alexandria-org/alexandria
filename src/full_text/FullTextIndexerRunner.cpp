@@ -34,7 +34,7 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw, 45000);
-	manual_paths_file.read_column_into(0, warc_paths_raw);
+	//manual_paths_file.read_column_into(0, warc_paths_raw);
 
 	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
 

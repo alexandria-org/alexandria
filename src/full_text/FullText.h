@@ -29,4 +29,24 @@ namespace FullText {
 	*/
 	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric);
 
+	template<typename DataRecord>
+	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name, size_t partitions) {
+
+		vector<FullTextIndex<DataRecord> *> index_array;
+		for (size_t partition = 0; partition < partitions; partition++) {
+			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + to_string(partition)));
+		}
+
+		return index_array;
+	}
+
+	template<typename DataRecord>
+	void delete_index_array(vector<FullTextIndex<DataRecord> *> &index_array) {
+
+		for (FullTextIndex<DataRecord> *index : index_array) {
+			delete index;
+		}
+
+	}
+
 }

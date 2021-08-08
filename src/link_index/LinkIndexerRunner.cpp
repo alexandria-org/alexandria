@@ -20,8 +20,7 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	//truncate();
 
-	string warc_paths_url = string("crawl-data/") + m_cc_batch + "/warc.paths.gz";
-	TsvFileS3 warc_paths_file(m_sub_system->s3_client(), "commoncrawl", warc_paths_url);
+	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
 
 	vector<string> warc_paths_raw;
 	warc_paths_file.read_column_into(0, warc_paths_raw);

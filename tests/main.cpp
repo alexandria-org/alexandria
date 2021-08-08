@@ -10,11 +10,11 @@
 
 using namespace std;
 
-#include "file_tests.h"
-#include "url_tests.h"
-#include "html_parser_tests.h"
-#include "unicode_tests.h"
-#include "text_tests.h"
-#include "sub_system_tests.h"
-#include "full_text_tests.h"
+#include "file.h"
+#include "url.h"
+#include "html_parser.h"
+#include "unicode.h"
+#include "text.h"
+#include "sub_system.h"
+#include "full_text.h"
 

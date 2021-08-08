@@ -61,7 +61,7 @@ int main(int argc, const char **argv) {
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-17", sub_system,
 				url_to_domain);
 			indexer.run(partition_num, 8);

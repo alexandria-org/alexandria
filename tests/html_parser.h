@@ -2,7 +2,7 @@
 #include "parser/HtmlParser.h"
 #include "file/File.h"
 
-BOOST_AUTO_TEST_SUITE(html_parser_tests)
+BOOST_AUTO_TEST_SUITE(html_parser)
 
 BOOST_AUTO_TEST_CASE(html_parse1) {
 	HtmlParser parser;

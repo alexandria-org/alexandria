@@ -1,7 +1,7 @@
 
 #include "text/Text.h"
 
-BOOST_AUTO_TEST_SUITE(text_tests)
+BOOST_AUTO_TEST_SUITE(text)
 
 BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
 	vector<string> words = Text::get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\

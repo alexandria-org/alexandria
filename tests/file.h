@@ -3,7 +3,7 @@
 #include "text/Text.h"
 #include "file/TsvFileRemote.h"
 
-BOOST_AUTO_TEST_SUITE(file_tests)
+BOOST_AUTO_TEST_SUITE(file)
 
 BOOST_AUTO_TEST_CASE(transfer_test) {
 	int error;
