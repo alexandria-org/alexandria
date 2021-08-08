@@ -32,8 +32,6 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 	vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
 	profiler1.stop();
 
-	metric.m_total_links_found = metric.m_total_found;
-
 	Profiler profiler2("Search urls");
 	vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
 	profiler2.stop();
