@@ -10,7 +10,7 @@ project(cc_parser LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(aws-lambda-runtime REQUIRED)
-find_package(AWSSDK COMPONENTS s3 transfer)
+find_package(AWSSDK COMPONENTS s3 transfer lambda)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
 find_package(ZLIB)
 find_package(fcgi)
@@ -71,6 +71,8 @@ set(SRC_CLASSES
 	"src/system/System.cpp"
 	"src/system/SubSystem.cpp"
 	"src/system/Logger.cpp"
+
+	"src/aws/Lambda.cpp"
 )
 
 set(SRC_COMMON

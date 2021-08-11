@@ -17,4 +17,5 @@ using namespace std;
 #include "text.h"
 #include "sub_system.h"
 #include "full_text.h"
+#include "invoke.h"
 

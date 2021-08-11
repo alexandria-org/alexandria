@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include <aws/core/Aws.h>
+#include <aws/lambda/LambdaClient.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <aws/core/client/ClientConfiguration.h>
@@ -33,6 +34,7 @@ public:
 	const Dictionary *full_text_dictionary() const;
 	const vector<string> words() const;
 	const Aws::S3::S3Client s3_client() const;
+	const Aws::Lambda::LambdaClient lambda_client() const;
 
 	string download_to_string(const string &bucket, const string &key) const;
 	bool download_to_stream(const string &bucket, const string &key, ofstream &output_stream) const;
@@ -48,6 +50,7 @@ private:
 	Dictionary *m_dictionary;
 	Dictionary *m_full_text_dictionary;
 	Aws::S3::S3Client *m_s3_client;
+	Aws::Lambda::LambdaClient *m_lambda_client;
 	vector<string> m_words;
 
 	void init_aws_api();

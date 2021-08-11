@@ -54,7 +54,9 @@ int main(int argc, const char **argv) {
 
 	if (arg == "link") {
 
-		LogInfo("Running link indexer");
+		const string cc_batch(argv[2]);
+
+		LogInfo("Running link indexer on " + cc_batch);
 
 		LogInfo("Reading UrlToDomain map");
 		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
@@ -62,7 +64,7 @@ int main(int argc, const char **argv) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-17", sub_system,
+			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", cc_batch, sub_system,
 				url_to_domain);
 			indexer.run(partition_num, 8);
 		}

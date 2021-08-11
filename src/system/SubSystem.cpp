@@ -9,6 +9,7 @@ SubSystem::SubSystem() {
 	setenv("AWS_EC2_METADATA_DISABLED", "true", 1);
 	auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>("asd");
 	m_s3_client = new Aws::S3::S3Client(credentialsProvider, get_s3_config());
+	m_lambda_client = new Aws::Lambda::LambdaClient(credentialsProvider, get_s3_config());
 
 	LogInfo("download domain_info.tsv");
 	TsvFileRemote domain_index(System::domain_index_filename());
@@ -29,6 +30,7 @@ SubSystem::~SubSystem() {
 	delete m_dictionary;
 	delete m_domain_index;
 	delete m_s3_client;
+	delete m_lambda_client;
 
 	//deinit_aws_api();
 }
@@ -49,6 +51,9 @@ const Aws::S3::S3Client SubSystem::s3_client() const {
 	return *m_s3_client;
 }
 
+const Aws::Lambda::LambdaClient SubSystem::lambda_client() const {
+	return *m_lambda_client;
+}
 
 string SubSystem::download_to_string(const string &bucket, const string &key) const {
 

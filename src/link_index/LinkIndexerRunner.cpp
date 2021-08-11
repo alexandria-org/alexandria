@@ -33,7 +33,6 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 	ThreadPool pool(LI_NUM_THREADS_INDEXING);
 	std::vector<std::future<string>> results;
 
-	map<int, vector<string>> shard_files;
 	int id = 1;
 	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
 
@@ -52,7 +51,6 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 	}
 
 	merge();
-	//merge_adjustments();
 	sort();
 
 }
