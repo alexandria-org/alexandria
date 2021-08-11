@@ -103,7 +103,7 @@ void FullTextIndexerRunner::sort() {
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		HashTableShard *shard = new HashTableShard(m_hash_table_name, shard_id);
+		HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
 	}
@@ -226,11 +226,6 @@ void FullTextIndexerRunner::truncate() {
 		delete shard_builder;
 	}
 
-	for (size_t bucket_id = 1; bucket_id < 8; bucket_id++) {
-		const string file_name = "/mnt/"+to_string(bucket_id)+"/full_text/url_to_domain_"+m_db_name+".fti";
-		ofstream outfile(file_name, ios::binary | ios::trunc);
-		outfile.close();
-	}
 }
 
 string FullTextIndexerRunner::run_merge_large_thread() {

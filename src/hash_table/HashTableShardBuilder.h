@@ -28,6 +28,7 @@ private:
 	const string m_db_name;
 	size_t m_shard_id;
 	const size_t m_cache_limit;
+	map<uint64_t, size_t> m_sort_pos;
 
 	string filename_data() const;
 	string filename_pos() const;

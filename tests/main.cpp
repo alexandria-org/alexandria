@@ -16,6 +16,7 @@ using namespace std;
 #include "unicode.h"
 #include "text.h"
 #include "sub_system.h"
+#include "hash_table.h"
 #include "full_text.h"
 #include "invoke.h"
 

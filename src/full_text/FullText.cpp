@@ -1,10 +1,35 @@
 
 #include "FullText.h"
+#include "FullTextShardBuilder.h"
 #include "search_engine/SearchEngine.h"
 
 namespace FullText {
 
 	hash<string> hasher;
+
+	void truncate_url_to_domain(const string &index_name) {
+
+		for (size_t bucket_id = 1; bucket_id < 8; bucket_id++) {
+			const string file_name = "/mnt/"+to_string(bucket_id)+"/full_text/url_to_domain_"+index_name+".fti";
+			ofstream outfile(file_name, ios::binary | ios::trunc);
+			outfile.close();
+		}
+
+	}
+
+	void truncate_index(const string &index_name, size_t partitions) {
+		for (size_t partition = 0; partition < partitions; partition++) {
+
+			const string db_name = index_name + "_" + to_string(partition);
+
+			for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+				FullTextShardBuilder<struct FullTextRecord> *shard_builder =
+					new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
+				shard_builder->truncate();
+				delete shard_builder;
+			}
+		}
+	}
 
 	map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system) {
 

@@ -57,6 +57,36 @@ void HashTableShardBuilder::truncate() {
 
 void HashTableShardBuilder::sort() {
 
+	ifstream infile(filename_pos(), ios::binary);
+	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);
+	const size_t buffer_len = record_len * 10000;
+	char buffer[buffer_len];
+	size_t latest_pos = 0;
+
+	if (infile.is_open()) {
+		do {
+			infile.read(buffer, buffer_len);
+
+			size_t read_bytes = infile.gcount();
+
+			for (size_t i = 0; i < read_bytes; i += record_len) {
+				const uint64_t key = *((uint64_t *)&buffer[i]);
+				const size_t pos = *((size_t *)&buffer[i + HT_KEY_SIZE]);
+				m_sort_pos[key] = pos;
+			}
+
+		} while (!infile.eof());
+	}
+	infile.close();
+
+	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
+	for (const auto &iter : m_sort_pos) {
+		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
+		outfile_pos.write((char *)&iter.second, sizeof(size_t));
+	}
+	outfile_pos.close();
+	m_sort_pos.clear();
+
 }
 
 void HashTableShardBuilder::add(uint64_t key, const string &value) {

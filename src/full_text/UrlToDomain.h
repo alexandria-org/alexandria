@@ -17,6 +17,10 @@ public:
 	void read();
 	void write(size_t indexer_id);
 
+	size_t size() const {
+		return m_url_to_domain.size();
+	}
+
 	bool has_url(uint64_t url_hash) {
 		return m_url_to_domain.count(url_hash) > 0;
 	}

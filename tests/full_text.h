@@ -2,6 +2,7 @@
 #include "full_text/FullText.h"
 #include "parser/URL.h"
 #include "hash_table/HashTable.h"
+#include "hash_table/HashTableHelper.h"
 #include "full_text/FullText.h"
 #include "full_text/UrlToDomain.h"
 #include "full_text/FullTextIndex.h"
@@ -183,6 +184,9 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		HashTable hash_table("test_main_index");
 		hash_table.truncate();
 
+		HashTable hash_table_link("test_link_index");
+		hash_table_link.truncate();
+
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
@@ -204,6 +208,13 @@ BOOST_AUTO_TEST_CASE(indexer) {
 	}
 
 	{
+		// Count elements in hash tables.
+		HashTable hash_table("test_main_index");
+		HashTable hash_table_link("test_link_index");
+
+		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+		BOOST_CHECK_EQUAL(hash_table_link.size(), 8);
+
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
@@ -222,6 +233,93 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 1);
 		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 1);
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
+
+		FullText::delete_index_array<FullTextRecord>(index_array);
+		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_link_index", 8);
+
+	{
+		// Index full text
+		HashTable hash_table("test_main_index");
+		hash_table.truncate();
+
+		HashTable hash_table_link("test_link_index");
+		hash_table_link.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-01", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+
+	}
+
+	{
+		// Index more links and see if they get added with deduplication.
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-02", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+
+	}
+
+	{
+		// Count elements in hash tables.
+		HashTable hash_table("test_main_index");
+		HashTable hash_table_link("test_link_index");
+
+		hash_table_link.print_all_items();
+
+		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+		BOOST_CHECK_EQUAL(hash_table_link.size(), 12);
+
+		// Make searches.
+		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+
+		const string query = "Url8.com";
+		struct SearchMetric metric;
+
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
+
+		BOOST_CHECK_EQUAL(links.size(), 2);
+		BOOST_CHECK_EQUAL(results.size(), 1);
+		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
+		BOOST_CHECK_EQUAL(metric.m_total_links_found, 2);
+		BOOST_CHECK_EQUAL(metric.m_links_handled, 2);
+		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 2);
+		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 2);
+		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url8.com/test").hash());
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
 		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);

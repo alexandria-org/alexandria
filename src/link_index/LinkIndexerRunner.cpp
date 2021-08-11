@@ -130,7 +130,7 @@ void LinkIndexerRunner::sort() {
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
-		HashTableShard *shard = new HashTableShard(m_hash_table_name, shard_id);
+		HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
 	}

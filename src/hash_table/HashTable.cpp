@@ -54,6 +54,10 @@ string HashTable::find(uint64_t key) {
 	return m_shards[key % HT_NUM_SHARDS]->find(key);
 }
 
+size_t HashTable::size() const {
+	return m_num_items;
+}
+
 void HashTable::upload(const SubSystem *sub_system) {
 	const size_t num_threads_downloading = 100;
 	ThreadPool pool(num_threads_downloading);
@@ -90,10 +94,9 @@ void HashTable::download(const SubSystem *sub_system) {
 	}
 }
 
-void HashTable::sort() {
-
+void HashTable::print_all_items() const {
 	for (HashTableShard *shard : m_shards) {
-		shard->sort();
+		shard->print_all_items();
 	}
 }
 

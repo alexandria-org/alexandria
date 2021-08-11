@@ -54,6 +54,7 @@ set(SRC_CLASSES
 	"src/hash_table/HashTable.cpp"
 	"src/hash_table/HashTableShard.cpp"
 	"src/hash_table/HashTableShardBuilder.cpp"
+	"src/hash_table/HashTableHelper.cpp"
 
 	"src/index/CCIndexMerger.cpp"
 	"src/index/CCIndexRunner.cpp"

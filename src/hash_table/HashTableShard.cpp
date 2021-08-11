@@ -45,32 +45,7 @@ string HashTableShard::find(uint64_t key) {
 	}
 	if (pos == string::npos) return "";
 
-	ifstream infile(filename_data(), ios::binary);
-	infile.seekg(pos, ios::beg);
-
-	// Read key
-	uint64_t read_key;
-	infile.read((char *)&read_key, sizeof(uint64_t));
-
-	// Read data length.
-	size_t data_len;
-	infile.read((char *)&data_len, sizeof(size_t));
-
-	char *buffer = new char[data_len];
-
-	infile.read(buffer, data_len);
-	stringstream ss(string(buffer, data_len));
-
-	filtering_istream decompress_stream;
-	decompress_stream.push(gzip_decompressor());
-	decompress_stream.push(ss);
-
-	stringstream decompressed;
-	decompressed << decompress_stream.rdbuf();
-
-	delete buffer;
-
-	return decompressed.str();
+	return data_at_position(pos);
 }
 
 string HashTableShard::filename_data() const {
@@ -90,42 +65,6 @@ size_t HashTableShard::shard_id() const {
 size_t HashTableShard::size() const {
 	return m_size;
 }
-
-void HashTableShard::sort() {
-	ifstream infile(filename_pos(), ios::binary);
-	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);
-	const size_t buffer_len = record_len * 10000;
-	char buffer[buffer_len];
-	size_t latest_pos = 0;
-
-	if (infile.is_open()) {
-		do {
-			infile.read(buffer, buffer_len);
-
-			size_t read_bytes = infile.gcount();
-
-			for (size_t i = 0; i < read_bytes; i += record_len) {
-				const uint64_t key = *((uint64_t *)&buffer[i]);
-				const size_t pos = *((size_t *)&buffer[i + HT_KEY_SIZE]);
-				m_sort_pos[key] = pos;
-			}
-
-		} while (!infile.eof());
-	}
-	infile.close();
-
-	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
-	for (const auto &iter : m_sort_pos) {
-		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
-		outfile_pos.write((char *)&iter.second, sizeof(size_t));
-	}
-	outfile_pos.close();
-	m_sort_pos.clear();
-
-	//LogInfo("Sorted shard " + to_string(m_shard_id));
-
-}
-
 
 void HashTableShard::load() {
 	m_loaded = true;
@@ -166,5 +105,65 @@ void HashTableShard::load() {
 	}
 
 	//LogInfo("Loaded shard " + to_string(m_shard_id));
+}
+
+void HashTableShard::print_all_items() {
+
+	ifstream infile(filename_pos(), ios::binary);
+	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);
+	const size_t buffer_len = record_len * 10000;
+	char buffer[buffer_len];
+	size_t latest_pos = 0;
+
+	vector<uint64_t> keys;
+	vector<size_t> positions;
+	if (infile.is_open()) {
+		do {
+			infile.read(buffer, buffer_len);
+
+			size_t read_bytes = infile.gcount();
+
+			for (size_t i = 0; i < read_bytes; i += record_len) {
+				keys.push_back(*((uint64_t *)&buffer[i]));
+				positions.push_back(*((size_t *)&buffer[i + HT_KEY_SIZE]));
+			}
+
+		} while (!infile.eof());
+	}
+	infile.close();
+
+	for (size_t i = 0; i < keys.size(); i++) {
+		cout << keys[i] << " => " << data_at_position(positions[i]) << endl;
+	}
+}
+
+string HashTableShard::data_at_position(size_t pos) {
+
+	ifstream infile(filename_data(), ios::binary);
+	infile.seekg(pos, ios::beg);
+
+	// Read key
+	uint64_t read_key;
+	infile.read((char *)&read_key, sizeof(uint64_t));
+
+	// Read data length.
+	size_t data_len;
+	infile.read((char *)&data_len, sizeof(size_t));
+
+	char *buffer = new char[data_len];
+
+	infile.read(buffer, data_len);
+	stringstream ss(string(buffer, data_len));
+
+	filtering_istream decompress_stream;
+	decompress_stream.push(gzip_decompressor());
+	decompress_stream.push(ss);
+
+	stringstream decompressed;
+	decompressed << decompress_stream.rdbuf();
+
+	delete buffer;
+
+	return decompressed.str();
 }
 

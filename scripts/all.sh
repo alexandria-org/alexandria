@@ -4,18 +4,27 @@ cd `dirname $0`
 cd ..
 mkdir -p tmp
 
+CC_BATCH=CC-MAIN-2021-21
+if [ $# -eq 1 ]; then
+	CC_BATCH=$1
+fi
+
+echo "Running $CC_BATCH";
+
 cd tmp
 rm warc.paths.gz
-wget https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-04/warc.paths.gz
+wget https://commoncrawl.s3.amazonaws.com/crawl-data/$CC_BATCH/warc.paths.gz
 gunzip -f warc.paths.gz
 cd ..
 
-numProc=100
+num_proc=100
+offset_start=1
+offset_end=100000
 procs=( )
 
 id=1
 
-for key in `awk 'NR >= 1 && NR <= 100000' tmp/warc.paths`; do
+for key in `awk "NR >= $offset_start && NR <= $offset_end" tmp/warc.paths`; do
 
 	echo "Starting $key"
 
@@ -26,7 +35,7 @@ for key in `awk 'NR >= 1 && NR <= 100000' tmp/warc.paths`; do
 	procs+=( $! )
 	id=$((id+1))
 
-	if [ ${#procs[@]} -eq $numProc ] ; then
+	if [ ${#procs[@]} -eq $num_proc ] ; then
 		for proc in "${procs[@]}"; do
 			echo "Waiting for"
 			echo $proc

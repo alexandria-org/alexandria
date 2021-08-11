@@ -29,10 +29,11 @@ public:
 	void add(uint64_t key, const string &value);
 	void truncate();
 	string find(uint64_t key);
+	size_t size() const;
+	void print_all_items() const;
 
 	void upload(const SubSystem *sub_system);
 	void download(const SubSystem *sub_system);
-	void sort();
 
 private:
 
