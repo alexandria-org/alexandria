@@ -13,6 +13,7 @@
 #include "index/CCLinkIndex.h"
 #include "system/Profiler.h"
 
+#include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
 #include "full_text/FullTextIndexerRunner.h"
@@ -70,53 +71,15 @@ int main(int argc, const char **argv) {
 		}
 		Profiler::print_memory_status();
 
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
 		return 0;
 	}
 
-	if (arg == "link2") {
+	if (arg == "truncate_link") {
+		FullText::truncate_index("link_index", 8);
+		HashTable hash_table("link_index");
 
-		LogInfo("Running link indexer");
+		hash_table.truncate();
 
-		LogInfo("Reading UrlToDomain map");
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-10", sub_system,
-				url_to_domain);
-			indexer.run(partition_num, 8);
-		}
-		Profiler::print_memory_status();
-
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
-		return 0;
-	}
-
-	if (arg == "link3") {
-
-		LogInfo("Running link indexer");
-
-		LogInfo("Reading UrlToDomain map");
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 1; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "link_index", "CC-MAIN-2021-04", sub_system,
-				url_to_domain);
-			indexer.run(partition_num, 8);
-		}
-		Profiler::print_memory_status();
-
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-17", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-10", "main_index");
-		//LinkIndexerRunner indexer("link_index", "CC-MAIN-2021-04", "main_index");
 		return 0;
 	}
 
