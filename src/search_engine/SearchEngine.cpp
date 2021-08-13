@@ -164,6 +164,22 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
+	void sort_by_value(vector<DataRecord> &results) {
+		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_value < b.m_value;
+		});
+	}
+
+	template<typename DataRecord>
+	void deduplicate_by_value(vector<DataRecord> &results) {
+		auto last = unique(results.begin(), results.end(),
+			[](const DataRecord &a, const DataRecord &b) {
+			return a.m_value == b.m_value;
+		});
+		results.erase(last, results.end());
+	}
+
+	template<typename DataRecord>
 	bool result_has_many_domains(const vector<DataRecord> &results) {
 
 		if (results.size() == 0) return false;
@@ -262,6 +278,10 @@ namespace SearchEngine {
 	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const string &query, size_t limit, struct SearchMetric &metric) {
 
+		if (links.size() == 0) {
+			reset_search_metric(metric);
+		}
+
 		metric.m_links_handled = links.size();
 
 		vector<future<vector<FullTextRecord>>> futures;
@@ -280,6 +300,9 @@ namespace SearchEngine {
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
 		}
 
+		sort_by_value<FullTextRecord>(complete_result);
+		deduplicate_by_value<FullTextRecord>(complete_result);
+
 		metric.m_total_found = 0;
 		metric.m_link_domain_matches = 0;
 		metric.m_link_url_matches = 0;
@@ -293,6 +316,10 @@ namespace SearchEngine {
 		sort_results_by_score<FullTextRecord>(complete_result);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
+
+		if (deduped_result.size() < limit) {
+			metric.m_total_found = deduped_result.size();
+		}
 
 		return deduped_result;
 	}

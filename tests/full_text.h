@@ -327,4 +327,56 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 
 }
 
+BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
+
+	FullText::truncate_url_to_domain("main_index");
+
+	{
+		// Index full text
+		HashTable hash_table("test_main_index");
+		hash_table.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-03", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Count elements in hash tables.
+		HashTable hash_table("test_main_index");
+
+		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+
+		// Make searches.
+		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
+
+		const string query = "my first url";
+		struct SearchMetric metric;
+
+		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, {}, query, 1000, metric);
+
+		BOOST_CHECK_EQUAL(results.size(), 1);
+		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
+		BOOST_CHECK_EQUAL(metric.m_total_links_found, 0);
+		BOOST_CHECK_EQUAL(metric.m_links_handled, 0);
+		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
+		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 0);
+		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
+
+		results = SearchEngine::search_index_array(index_array, {}, "my second url", 1000, metric);
+		BOOST_CHECK_EQUAL(results.size(), 1);
+		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
+		BOOST_CHECK_EQUAL(metric.m_total_links_found, 0);
+		BOOST_CHECK_EQUAL(metric.m_links_handled, 0);
+		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
+		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 0);
+		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url2.com/test").hash());
+
+		FullText::delete_index_array<FullTextRecord>(index_array);
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
