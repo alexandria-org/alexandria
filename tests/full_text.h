@@ -297,8 +297,6 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		HashTable hash_table("test_main_index");
 		HashTable hash_table_link("test_link_index");
 
-		hash_table_link.print_all_items();
-
 		BOOST_CHECK_EQUAL(hash_table.size(), 8);
 		BOOST_CHECK_EQUAL(hash_table_link.size(), 12);
 

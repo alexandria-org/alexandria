@@ -25,6 +25,7 @@ set(SRC_CLASSES
 	"src/abstract/BasicUrlData.cpp"
 	"src/abstract/TextBase.cpp"
 	
+	"src/api/Api.cpp"
 	"src/api/ApiResponse.cpp"
 	"src/api/ApiLink.cpp"
 	"src/api/ResultWithSnippet.cpp"
