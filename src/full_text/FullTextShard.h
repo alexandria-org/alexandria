@@ -40,6 +40,7 @@ public:
 	~FullTextShard();
 
 	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
+	size_t total_num_results(uint64_t key);
 	void read_keys();
 
 	string mountpoint() const;
@@ -143,6 +144,31 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 			kk++;
 		}
 	}
+}
+
+template<typename DataRecord>
+size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
+
+	if (!m_keys_read) read_keys();
+
+	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
+
+	if (iter == m_keys.end() || *iter > key) {
+		return 0;
+	}
+
+	size_t key_pos = iter - m_keys.begin();
+
+	ifstream reader(filename(), ios::binary);
+
+	char buffer[64];
+
+	// Read total num results.
+	reader.seekg(m_total_start + key_pos * 8, ios::beg);
+	reader.read(buffer, 8);
+	size_t total_num_results = *((size_t *)(&buffer[0]));
+
+	return total_num_results;
 }
 
 template<typename DataRecord>

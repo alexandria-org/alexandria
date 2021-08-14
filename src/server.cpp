@@ -12,7 +12,7 @@
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
 
-#include "search_engine/SearchEngine.h"
+#include "api/Api.h"
 
 #include "link_index/LinkIndex.h"
 #include "link_index/LinkFullTextRecord.h"
@@ -21,32 +21,7 @@
 
 using namespace std;
 
-void run_search_query(const string &query, FCGX_Request &request, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array) {
-
-	Profiler profiler("total");
-
-	struct SearchMetric metric;
-
-	Profiler profiler1("Search links");
-	vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000000, metric);
-	profiler1.stop();
-
-	Profiler profiler2("Search urls");
-	vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
-	profiler2.stop();
-
-	PostProcessor post_processor(query);
-
-	vector<ResultWithSnippet> with_snippets;
-	for (FullTextRecord &res : results) {
-		const string tsv_data = hash_table.find(res.m_value);
-		with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
-	}
-
-	post_processor.run(with_snippets);
-
-	ApiResponse response(with_snippets, metric, profiler.get());
+void output_response(FCGX_Request &request, stringstream &response) {
 
 	fcgi_streambuf cin_fcgi_streambuf(request.in);
 	fcgi_streambuf cout_fcgi_streambuf(request.out);
@@ -58,78 +33,8 @@ void run_search_query(const string &query, FCGX_Request &request, HashTable &has
 
 	os << "Content-type: application/json\r\n"
 	     << "\r\n"
-	     << response;
+	     << response.str();
 
-}
-
-void run_link_query(const string &query, FCGX_Request &request, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array) {
-
-	Profiler profiler("total");
-
-	struct SearchMetric metric;
-
-	size_t total;
-	vector<LinkFullTextRecord> results = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
-
-	PostProcessor post_processor(query);
-
-	vector<ResultWithSnippet> with_snippets;
-	for (LinkFullTextRecord &res : results) {
-		const string tsv_data = hash_table.find(res.m_value);
-		cout << res.m_value << ": " << tsv_data << endl;
-		//with_snippets.emplace_back(ResultWithSnippet(tsv_data, res.m_score));
-	}
-
-	post_processor.run(with_snippets);
-
-	/*ApiResponse response(with_snippets, total, profiler.get());
-
-	streambuf *cin_streambuf  = cin.rdbuf();
-	streambuf *cout_streambuf = cout.rdbuf();
-	streambuf *cerr_streambuf = cerr.rdbuf();
-
-	fcgi_streambuf cin_fcgi_streambuf(request.in);
-	fcgi_streambuf cout_fcgi_streambuf(request.out);
-	fcgi_streambuf cerr_fcgi_streambuf(request.err);
-
-	cin.rdbuf(&cin_fcgi_streambuf);
-	cout.rdbuf(&cout_fcgi_streambuf);
-	cerr.rdbuf(&cerr_fcgi_streambuf);
-
-	cout << "Content-type: application/json\r\n"
-	     << "\r\n"
-	     << response;
-
-	cin.rdbuf(cin_streambuf);
-	cout.rdbuf(cout_streambuf);
-	cerr.rdbuf(cerr_streambuf);*/
-}
-
-void run_url_lookup(const string &url_str, FCGX_Request &request, HashTable &hash_table) {
-
-	URL url(url_str);
-
-	const string response = hash_table.find(url.hash());
-
-	streambuf *cin_streambuf  = cin.rdbuf();
-	streambuf *cout_streambuf = cout.rdbuf();
-	streambuf *cerr_streambuf = cerr.rdbuf();
-
-	fcgi_streambuf cin_fcgi_streambuf(request.in);
-	fcgi_streambuf cout_fcgi_streambuf(request.out);
-	fcgi_streambuf cerr_fcgi_streambuf(request.err);
-
-	cin.rdbuf(&cin_fcgi_streambuf);
-	cout.rdbuf(&cout_fcgi_streambuf);
-	cerr.rdbuf(&cerr_fcgi_streambuf);
-
-	cout << "Content-type: text/html\r\n"
-	     << "\r\n"
-	     << response;
-
-	cin.rdbuf(cin_streambuf);
-	cout.rdbuf(cout_streambuf);
-	cerr.rdbuf(cerr_streambuf);
 }
 
 int main(void) {
@@ -174,13 +79,15 @@ int main(void) {
 
 		auto query = url.query();
 
+		stringstream response_stream;
+
 		if (query.find("q") != query.end()) {
-			run_search_query(query["q"], request, hash_table, index_array, link_index_array);
-		} else if (query.find("l") != query.end()) {
-			//run_link_query(query["l"], request, hash_table_link, link_fti);
-		} else if (query.find("u") != query.end()) {
-			run_url_lookup(query["u"], request, hash_table);
+			Api::search(query["q"], hash_table, index_array, link_index_array, response_stream);
+		} else if (query.find("s") != query.end()) {
+			Api::word_stats(query["q"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
 		}
+
+		output_response(request, response_stream);
 	}
 
 	for (FullTextIndex<FullTextRecord> *fti : index_array) {
