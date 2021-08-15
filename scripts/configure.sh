@@ -6,7 +6,7 @@ cd ..
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
 
-sudo apt-get install zip make cmake gcc-10 g++-10 libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev libfcgi-dev spawn-fcgi nginx
+sudo apt-get install -y zip make cmake gcc-10 g++-10 libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev libfcgi-dev spawn-fcgi nginx
 
 rel_path=`pwd`
 base_path=`realpath $rel_path`
