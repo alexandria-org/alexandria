@@ -5,6 +5,7 @@ cd ..
 
 for shard in `cat shards`; do
 	rm -r $shard/*
+	mkdir $shard
 	mkdir "$shard/input";
 	mkdir "$shard/output";
 	mkdir "$shard/upload";
