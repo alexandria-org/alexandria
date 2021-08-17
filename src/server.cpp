@@ -88,7 +88,7 @@ int main(void) {
 		} else if (query.find("u") != query.end()) {
 			Api::url(query["u"], hash_table, response_stream);
 		} else if (query.find("l") != query.end()) {
-			Api::search_links(query["u"], hash_table_link, link_index_array, response_stream);
+			Api::search_links(query["l"], hash_table_link, link_index_array, response_stream);
 		}
 
 		output_response(request, response_stream);
