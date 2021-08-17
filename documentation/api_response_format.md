@@ -34,7 +34,7 @@ curl http://node0002.alexandria.org/?l=the%20beatles
   "results":	[{
     "source_url":	"https://www.example.com/",
     "target_url":	"https://www.alexandria.org/",
-    "snippet":	"This is a great search engine",
+    "link_text":	"This is a great search engine",
     "score":	182.51408386230469,
     "link_hash":	"2892282071861106665"
   }]
