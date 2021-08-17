@@ -13,6 +13,8 @@ using namespace std;
 
 namespace FullText {
 
+	size_t num_shards();
+
 	void truncate_url_to_domain(const string &index_name);
 	void truncate_index(const string &index_name, size_t partitions);
 

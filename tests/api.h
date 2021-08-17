@@ -220,7 +220,160 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+}
 
+BOOST_AUTO_TEST_CASE(api_hash_table) {
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_link_index", 8);
+
+	{
+		// Index full text
+		HashTable hash_table("test_main_index");
+		hash_table.truncate();
+
+		HashTable hash_table_link("test_link_index");
+		hash_table_link.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-04", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+
+	}
+
+	HashTable hash_table("test_main_index");
+
+	{
+		stringstream response_stream;
+		Api::url("http://url1.com/my_test_url", hash_table, response_stream);
+
+		string response = response_stream.str();
+
+		Aws::Utils::Json::JsonValue json(response);
+
+		auto v = json.View();
+
+		BOOST_CHECK(v.ValueExists("status"));
+		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+
+		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(v.ValueExists("response"));
+
+		BOOST_CHECK_EQUAL(v.GetString("response"), "http://url1.com/my_test_url	test test		test test test test	");
+	}
+
+	{
+		stringstream response_stream;
+		Api::url("http://non-existing-url.com", hash_table, response_stream);
+
+		string response = response_stream.str();
+
+		Aws::Utils::Json::JsonValue json(response);
+
+		auto v = json.View();
+
+		BOOST_CHECK(v.ValueExists("status"));
+		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+
+		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(v.ValueExists("response"));
+
+		BOOST_CHECK_EQUAL(v.GetString("response"), "");
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(api_links) {
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_link_index", 8);
+
+	{
+		// Index full text
+		HashTable hash_table("test_main_index");
+		hash_table.truncate();
+
+		HashTable hash_table_link("test_link_index");
+		hash_table_link.truncate();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-04", sub_system,
+				url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+
+	}
+
+	HashTable link_hash_table("test_link_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+
+	{
+		stringstream response_stream;
+		Api::search_links("star trek guinan", link_hash_table, link_index_array, response_stream);
+
+		string response = response_stream.str();
+
+		Aws::Utils::Json::JsonValue json(response);
+
+		auto v = json.View();
+
+		BOOST_CHECK(v.ValueExists("status"));
+		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+
+		BOOST_CHECK(v.ValueExists("results"));
+		BOOST_CHECK(v.GetArray("results")[0].ValueExists("source_url"));
+		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 1);
+		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("source_url"), "http://214th.blogspot.com/2016/03/from-potemkin-pictures-battle-cruiser.html");
+		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("target_url"), "http://url1.com/my_test_url");
+		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("link_text"), "Star Trek Guinan");
+	}
+
+	{
+		stringstream response_stream;
+		Api::search_links("non existing link", link_hash_table, link_index_array, response_stream);
+
+		string response = response_stream.str();
+
+		Aws::Utils::Json::JsonValue json(response);
+
+		auto v = json.View();
+
+		BOOST_CHECK(v.ValueExists("status"));
+		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+
+		BOOST_CHECK(v.ValueExists("results"));
+		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
+	}
+
+	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 }
 
 BOOST_AUTO_TEST_SUITE_END();

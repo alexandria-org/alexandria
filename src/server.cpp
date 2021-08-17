@@ -85,6 +85,10 @@ int main(void) {
 			Api::search(query["q"], hash_table, index_array, link_index_array, response_stream);
 		} else if (query.find("s") != query.end()) {
 			Api::word_stats(query["s"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
+		} else if (query.find("u") != query.end()) {
+			Api::url(query["u"], hash_table, response_stream);
+		} else if (query.find("l") != query.end()) {
+			Api::search_links(query["u"], hash_table_link, link_index_array, response_stream);
 		}
 
 		output_response(request, response_stream);

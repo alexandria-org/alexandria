@@ -29,6 +29,7 @@ set(SRC_CLASSES
 	"src/api/ApiResponse.cpp"
 	"src/api/ApiLink.cpp"
 	"src/api/ResultWithSnippet.cpp"
+	"src/api/LinkResult.cpp"
 
 	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"
@@ -47,8 +48,6 @@ set(SRC_CLASSES
 	"src/search_engine/SearchEngine.cpp"
 
 	"src/link_index/Link.cpp"
-	"src/link_index/LinkResult.cpp"
-	"src/link_index/LinkResultSet.cpp"
 	"src/link_index/LinkIndexer.cpp"
 	"src/link_index/LinkIndexerRunner.cpp"
 
@@ -117,6 +116,9 @@ add_executable(hash_test
 )
 
 target_compile_definitions(run_tests PUBLIC CC_TESTING)
+target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
+target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
+target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	AWS::aws-lambda-runtime 

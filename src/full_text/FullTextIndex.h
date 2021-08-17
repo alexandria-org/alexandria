@@ -1,7 +1,10 @@
 
 #pragma once
 
-#define FT_NUM_SHARDS 1024
+#ifndef FT_NUM_SHARDS
+	#define FT_NUM_SHARDS 1024
+#endif
+
 #define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
 #define FT_INDEXER_MAX_CACHE_GB 30
 #define FT_NUM_THREADS_INDEXING 48

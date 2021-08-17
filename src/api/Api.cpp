@@ -10,6 +10,7 @@
 #include "stats/Stats.h"
 
 #include "link_index/LinkIndex.h"
+#include "LinkResult.h"
 
 #include "system/Logger.h"
 #include "system/Profiler.h"
@@ -39,6 +40,54 @@ namespace Api {
 		ApiResponse response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
+	}
+
+	Aws::Utils::Json::JsonValue build_link_results(const vector<LinkResult> &link_results) {
+
+		Aws::Utils::Json::JsonValue results;
+		Aws::Utils::Array<Aws::Utils::Json::JsonValue> result_array(link_results.size());
+
+		size_t idx = 0;
+		for (const LinkResult &res : link_results) {
+			Aws::Utils::Json::JsonValue result_item;
+			Aws::Utils::Json::JsonValue string;
+			Aws::Utils::Json::JsonValue number;
+
+			result_item.WithObject("source_url", string.AsString(res.source_url().str()));
+			result_item.WithObject("target_url", string.AsString(res.target_url().str()));
+			result_item.WithObject("link_text", string.AsString(res.link_text()));
+			result_item.WithObject("score", number.AsDouble(res.score()));
+
+			result_array[idx] = result_item;
+			idx++;
+		}
+
+		results.AsArray(result_array);
+
+		return results;
+	}
+
+	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
+		stringstream &response_stream) {
+
+		Profiler profiler("total");
+
+		struct SearchMetric metric;
+
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
+
+		vector<LinkResult> link_results;
+		for (LinkFullTextRecord &res : links) {
+			const string tsv_data = hash_table.find(res.m_value);
+			link_results.emplace_back(LinkResult(tsv_data, res));
+		}
+
+		Aws::Utils::Json::JsonValue message("{}"), json_string;
+		message.WithObject("status", json_string.AsString("success"));
+		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
+		message.WithObject("results", build_link_results(link_results));
+
+		response_stream << message.View().WriteReadable();
 	}
 
 	Aws::Utils::Json::JsonValue generate_word_stats_json(const map<string, double> word_map) {
@@ -73,6 +122,19 @@ namespace Api {
 		message.WithObject("time_ms", json_string.AsDouble(time_ms));
 		message.WithObject("index", generate_index_stats_json(word_stats, index_size));
 		message.WithObject("link_index", generate_index_stats_json(link_word_stats, link_index_size));
+
+		response_stream << message.View().WriteReadable();
+	}
+
+	void url(const string &url_str, HashTable &hash_table, stringstream &response_stream) {
+		Profiler profiler("total");
+
+		URL url(url_str);
+
+		Aws::Utils::Json::JsonValue message("{}"), json_string;
+		message.WithObject("status", json_string.AsString("success"));
+		message.WithObject("response", json_string.AsString(hash_table.find(url.hash())));
+		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
 
 		response_stream << message.View().WriteReadable();
 	}
