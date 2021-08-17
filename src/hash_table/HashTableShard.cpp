@@ -27,7 +27,7 @@ string HashTableShard::find(uint64_t key) {
 
 	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);
 	const size_t byte_len = len_in_posfile * record_len;
-	const size_t pos_buffer_len = 30000;
+	const size_t pos_buffer_len = 50000;
 	char pos_buffer[pos_buffer_len];
 	if (byte_len > pos_buffer_len) {
 		throw error("byte_len ("+to_string(byte_len)+") larger than pos_buffer_len ("+to_string(pos_buffer_len)+")");
