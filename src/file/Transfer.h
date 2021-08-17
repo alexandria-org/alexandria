@@ -1,7 +1,12 @@
 
 #pragma once
 
+#ifndef FILE_SERVER
+	#define FILE_SERVER "http://node0003.alexandria.org"
+#endif
+
 #include <curl/curl.h>
+#include <iostream>
 #include <sstream>
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -11,7 +16,7 @@ using namespace std;
 
 namespace Transfer {
 
-	const string file_server = "http://node0003.alexandria.org";
+	const string file_server = FILE_SERVER;
 	const string username = "alexandria";
 	const string password = "wmXN6U4u";
 

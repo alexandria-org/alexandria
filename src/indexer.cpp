@@ -22,7 +22,6 @@
 #include "link_index/LinkIndex.h"
 #include "link_index/LinkIndexer.h"
 #include "link_index/LinkIndexerRunner.h"
-#include "link_index/LinkResult.h"
 
 using namespace std;
 using namespace Aws::Utils::Json;

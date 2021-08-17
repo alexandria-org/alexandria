@@ -29,7 +29,7 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	truncate();
 
-	TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
+	//TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
 	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
 
 	vector<string> warc_paths_raw;
