@@ -33,7 +33,7 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
 
 	vector<string> warc_paths_raw;
-	warc_paths_file.read_column_into(0, warc_paths_raw, 45000);
+	warc_paths_file.read_column_into(0, warc_paths_raw, 50000);
 	//manual_paths_file.read_column_into(0, warc_paths_raw);
 
 	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);

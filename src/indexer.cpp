@@ -44,7 +44,7 @@ int main(int argc, const char **argv) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			FullTextIndexerRunner indexer("main_index_" + to_string(partition_num), "main_index", "CC-MAIN-2021-17", sub_system);
+			FullTextIndexerRunner indexer("main_index_" + to_string(partition_num), "main_index", "CC-MAIN-2021-31", sub_system);
 			indexer.run(partition_num, 8);
 		}
 		Profiler::print_memory_status();
