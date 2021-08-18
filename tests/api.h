@@ -1,4 +1,5 @@
 
+#include "hash_table/HashTableHelper.h"
 #include "api/Api.h"
 
 BOOST_AUTO_TEST_SUITE(api)
@@ -8,14 +9,12 @@ BOOST_AUTO_TEST_CASE(api_search) {
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_link_index", 8);
 
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
 	{
 		// Index full text
-		HashTable hash_table("test_main_index");
-		hash_table.truncate();
-
-		HashTable hash_table_link("test_link_index");
-		hash_table_link.truncate();
-
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
@@ -32,8 +31,8 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-01", sub_system,
-				url_to_domain);
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
+				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
 			indexer.run(partition_num, 8);
 		}
 
@@ -129,14 +128,12 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_link_index", 8);
 
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
 	{
 		// Index full text
-		HashTable hash_table("test_main_index");
-		hash_table.truncate();
-
-		HashTable hash_table_link("test_link_index");
-		hash_table_link.truncate();
-
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-02", sub_system);
@@ -153,7 +150,8 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-02", sub_system,
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
+				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-02", sub_system,
 				url_to_domain);
 			indexer.run(partition_num, 8);
 		}
@@ -227,14 +225,12 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_link_index", 8);
 
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
 	{
 		// Index full text
-		HashTable hash_table("test_main_index");
-		hash_table.truncate();
-
-		HashTable hash_table_link("test_link_index");
-		hash_table_link.truncate();
-
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
@@ -249,7 +245,8 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-04", sub_system,
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
+				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system,
 				url_to_domain);
 			indexer.run(partition_num, 8);
 		}
@@ -303,14 +300,12 @@ BOOST_AUTO_TEST_CASE(api_links) {
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_link_index", 8);
 
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
 	{
 		// Index full text
-		HashTable hash_table("test_main_index");
-		hash_table.truncate();
-
-		HashTable hash_table_link("test_link_index");
-		hash_table_link.truncate();
-
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
 			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
@@ -325,8 +320,8 @@ BOOST_AUTO_TEST_CASE(api_links) {
 
 		SubSystem *sub_system = new SubSystem();
 		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_link_index", "ALEXANDRIA-TEST-04", sub_system,
-				url_to_domain);
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
+				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system, url_to_domain);
 			indexer.run(partition_num, 8);
 		}
 
