@@ -26,6 +26,7 @@ public:
 	uint64_t hash() const;
 	uint64_t host_hash() const;
 	uint64_t link_hash(const URL &target_url, const string &link_text) const;
+	uint64_t domain_link_hash(const URL &target_url, const string &link_text) const;
 
 	string host() const;
 	string scheme() const;

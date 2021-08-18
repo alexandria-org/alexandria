@@ -8,6 +8,7 @@
 #include "full_text/FullTextShard.h"
 #include "full_text/SearchMetric.h"
 #include "link_index/LinkFullTextRecord.h"
+#include "link_index/DomainLinkFullTextRecord.h"
 
 using namespace std;
 
@@ -23,6 +24,9 @@ namespace SearchEngine {
 
 	vector<LinkFullTextRecord> search_link_array(vector<FullTextIndex<LinkFullTextRecord> *> index_array, const string &query, size_t limit,
 		struct SearchMetric &metric);
+
+	vector<DomainLinkFullTextRecord> search_domain_link_array(vector<FullTextIndex<DomainLinkFullTextRecord> *> index_array, const string &query,
+		size_t limit, struct SearchMetric &metric);
 
 	/*
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.

@@ -24,6 +24,7 @@ public:
 	~LinkIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
+	void add_domain_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
 	void write_cache(mutex *write_mutexes);
 	void flush_cache(mutex *write_mutexes);
 

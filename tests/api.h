@@ -112,11 +112,11 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		BOOST_CHECK(v.ValueExists("link_index"));
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("more"), 2.0/8.0);
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 1.0/8.0);
+		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("more"), 2.0/11.0);
+		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 1.0/11.0);
 
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 8);
+		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 11);
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);

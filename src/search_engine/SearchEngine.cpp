@@ -255,7 +255,8 @@ namespace SearchEngine {
 		return deduped_result;
 	}
 
-	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query, struct SearchMetric &metric) {
+	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query,
+		struct SearchMetric &metric) {
 
 		vector<LinkFullTextRecord> flat_result;
 
@@ -271,6 +272,27 @@ namespace SearchEngine {
 		merge_results_to_vector<LinkFullTextRecord>(result_vector, flat_result);
 
 		delete_result_vector<LinkFullTextRecord>(result_vector);
+
+		return flat_result;
+	}
+
+	vector<DomainLinkFullTextRecord> search_domain_links(const vector<FullTextShard<DomainLinkFullTextRecord> *> &shards, const string &query,
+		struct SearchMetric &metric) {
+
+		vector<DomainLinkFullTextRecord> flat_result;
+
+		reset_search_metric(metric);
+
+		vector<string> words = Text::get_full_text_words(query);
+		if (words.size() == 0) return {};
+
+		vector<FullTextResultSet<DomainLinkFullTextRecord> *> result_vector = search_shards<DomainLinkFullTextRecord>(shards, words);
+
+		set_total_found<DomainLinkFullTextRecord>(result_vector, metric);
+
+		merge_results_to_vector<DomainLinkFullTextRecord>(result_vector, flat_result);
+
+		delete_result_vector<DomainLinkFullTextRecord>(result_vector);
 
 		return flat_result;
 	}
@@ -344,6 +366,10 @@ namespace SearchEngine {
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
 		}
 
+		// deduplicate.
+		sort_by_value<LinkFullTextRecord>(complete_result);
+		deduplicate_by_value<LinkFullTextRecord>(complete_result);
+
 		metric.m_total_links_found = 0;
 		for (const struct SearchMetric &m : metrics_vector) {
 			metric.m_total_links_found += m.m_total_found;
@@ -360,6 +386,57 @@ namespace SearchEngine {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
+		if (complete_result.size() < limit) {
+			metric.m_total_links_found = complete_result.size();
+		}
+
+		return complete_result;
+	}
+
+	vector<DomainLinkFullTextRecord> search_domain_link_array(vector<FullTextIndex<DomainLinkFullTextRecord> *> index_array, const string &query,
+		size_t limit, struct SearchMetric &metric) {
+
+		vector<future<vector<DomainLinkFullTextRecord>>> futures;
+		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
+
+		size_t idx = 0;
+		for (FullTextIndex<DomainLinkFullTextRecord> *index : index_array) {
+			future<vector<DomainLinkFullTextRecord>> future = async(search_domain_links, index->shards(), query, ref(metrics_vector[idx]));
+			futures.push_back(move(future));
+			idx++;
+		}
+
+		Profiler profiler1("execute all threads");
+		vector<DomainLinkFullTextRecord> complete_result;
+		for (auto &future : futures) {
+			vector<DomainLinkFullTextRecord> result = future.get();
+			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		}
+
+		// deduplicate.
+		sort_by_value<DomainLinkFullTextRecord>(complete_result);
+		deduplicate_by_value<DomainLinkFullTextRecord>(complete_result);
+
+		metric.m_total_links_found = 0;
+		for (const struct SearchMetric &m : metrics_vector) {
+			metric.m_total_links_found += m.m_total_found;
+		}
+
+		if (complete_result.size() > limit) {
+			sort(complete_result.begin(), complete_result.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
+				return a.m_score > b.m_score;
+			});
+			complete_result.resize(limit);
+		}
+
+		sort(complete_result.begin(), complete_result.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
+			return a.m_target_domain < b.m_target_domain;
+		});
+
+		if (complete_result.size() < limit) {
+			metric.m_total_links_found = complete_result.size();
+		}
+
 		return complete_result;
 	}
 
@@ -367,7 +444,7 @@ namespace SearchEngine {
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
 	*/
 	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric) {
-		{
+		/*{
 			Profiler profiler3("Adding domain link scores");
 
 			unordered_map<uint64_t, float> domain_scores;
@@ -389,7 +466,7 @@ namespace SearchEngine {
 
 				metric.m_link_domain_matches += domain_counts[results[i].m_domain_hash];
 			}
-		}
+		}*/
 
 		{
 			Profiler profiler3("Adding url link scores");
