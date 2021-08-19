@@ -6,11 +6,16 @@
 #include "full_text/FullTextRecord.h"
 
 #include "link_index/LinkFullTextRecord.h"
+#include "link_index/DomainLinkFullTextRecord.h"
 
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, stringstream &response_stream);
+
+	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		stringstream &response_stream);
 
 	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
 		stringstream &response_stream);

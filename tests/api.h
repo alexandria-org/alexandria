@@ -35,7 +35,6 @@ BOOST_AUTO_TEST_CASE(api_search) {
 				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
 			indexer.run(partition_num, 8);
 		}
-
 	}
 
 	HashTable hash_table("test_main_index");
@@ -59,7 +58,6 @@ BOOST_AUTO_TEST_CASE(api_search) {
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
 		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("url"), "http://url1.com/test");
-
 	}
 
 	{
@@ -120,6 +118,69 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+}
+
+BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_link_index", 8);
+
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
+	{
+		// Index full text
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		url_to_domain->read();
+
+		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
+
+		SubSystem *sub_system = new SubSystem();
+		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
+			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
+				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
+			indexer.run(partition_num, 8);
+		}
+	}
+
+	HashTable hash_table("test_main_index");
+	HashTable link_hash_table("test_link_index");
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
+		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index", 8);
+
+	{
+		stringstream response_stream;
+		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+
+		string response = response_stream.str();
+
+		Aws::Utils::Json::JsonValue json(response);
+
+		auto v = json.View();
+
+		BOOST_CHECK(v.ValueExists("status"));
+		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+
+		BOOST_CHECK(v.ValueExists("results"));
+		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
+		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("url"), "http://url1.com/test");
+	}
+
+	FullText::delete_index_array<FullTextRecord>(index_array);
+	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
 
 }
 
@@ -155,7 +216,6 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 				url_to_domain);
 			indexer.run(partition_num, 8);
 		}
-
 	}
 
 	HashTable hash_table("test_main_index");
@@ -250,7 +310,6 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 				url_to_domain);
 			indexer.run(partition_num, 8);
 		}
-
 	}
 
 	HashTable hash_table("test_main_index");
@@ -324,7 +383,6 @@ BOOST_AUTO_TEST_CASE(api_links) {
 				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system, url_to_domain);
 			indexer.run(partition_num, 8);
 		}
-
 	}
 
 	HashTable link_hash_table("test_link_index");

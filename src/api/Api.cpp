@@ -42,6 +42,33 @@ namespace Api {
 		response_stream << response;
 	}
 
+	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		stringstream &response_stream) {
+
+		Profiler profiler("total");
+
+		struct SearchMetric metric;
+
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000000, metric);
+		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 1000000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
+
+		PostProcessor post_processor(query);
+
+		vector<ResultWithSnippet> with_snippets;
+		for (FullTextRecord &res : results) {
+			const string tsv_data = hash_table.find(res.m_value);
+			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+		}
+
+		post_processor.run(with_snippets);
+
+		ApiResponse response(with_snippets, metric, profiler.get());
+
+		response_stream << response;
+	}
+
 	Aws::Utils::Json::JsonValue build_link_results(const vector<LinkResult> &link_results) {
 
 		Aws::Utils::Json::JsonValue results;

@@ -8,6 +8,7 @@
 
 #include "hash_table/HashTable.h"
 
+#include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
@@ -56,16 +57,12 @@ int main(void) {
 
 	HashTable hash_table("main_index");
 	HashTable hash_table_link("link_index");
+	HashTable hash_table_domain_link("domain_link_index");
 
-	vector<FullTextIndex<FullTextRecord> *> index_array;
-	for (size_t partition = 0; partition < 8; partition++) {
-		index_array.push_back(new FullTextIndex<FullTextRecord>("main_index_" + to_string(partition)));
-	}
-
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array;
-	for (size_t partition = 0; partition < 8; partition++) {
-		link_index_array.push_back(new FullTextIndex<LinkFullTextRecord>("link_index_" + to_string(partition)));
-	}
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", 8);
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("link_index", 8);
+	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", 8);
 
 	LogInfo("Server has started...");
 
@@ -82,7 +79,7 @@ int main(void) {
 		stringstream response_stream;
 
 		if (query.find("q") != query.end()) {
-			Api::search(query["q"], hash_table, index_array, link_index_array, response_stream);
+			Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
 		} else if (query.find("s") != query.end()) {
 			Api::word_stats(query["s"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
 		} else if (query.find("u") != query.end()) {
@@ -94,13 +91,9 @@ int main(void) {
 		output_response(request, response_stream);
 	}
 
-	for (FullTextIndex<FullTextRecord> *fti : index_array) {
-		delete fti;
-	}
-
-	for (FullTextIndex<LinkFullTextRecord> *fti : link_index_array) {
-		delete fti;
-	}
+	FullText::delete_index_array<FullTextRecord>(index_array);
+	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
 
 	cin.rdbuf(cin_streambuf);
 	cout.rdbuf(cout_streambuf);
