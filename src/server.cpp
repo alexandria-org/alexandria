@@ -86,6 +86,8 @@ int main(void) {
 			Api::url(query["u"], hash_table, response_stream);
 		} else if (query.find("l") != query.end()) {
 			Api::search_links(query["l"], hash_table_link, link_index_array, response_stream);
+		} else if (query.find("d") != query.end()) {
+			Api::search_domain_links(query["d"], hash_table_domain_link, domain_link_index_array, response_stream);
 		}
 
 		output_response(request, response_stream);

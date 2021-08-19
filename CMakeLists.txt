@@ -30,6 +30,7 @@ set(SRC_CLASSES
 	"src/api/ApiLink.cpp"
 	"src/api/ResultWithSnippet.cpp"
 	"src/api/LinkResult.cpp"
+	"src/api/DomainLinkResult.cpp"
 
 	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"

@@ -11,6 +11,7 @@
 
 #include "link_index/LinkIndex.h"
 #include "LinkResult.h"
+#include "DomainLinkResult.h"
 
 #include "system/Logger.h"
 #include "system/Profiler.h"
@@ -69,13 +70,14 @@ namespace Api {
 		response_stream << response;
 	}
 
-	Aws::Utils::Json::JsonValue build_link_results(const vector<LinkResult> &link_results) {
+	template<typename ResultType>
+	Aws::Utils::Json::JsonValue build_link_results(const vector<ResultType> &link_results) {
 
 		Aws::Utils::Json::JsonValue results;
 		Aws::Utils::Array<Aws::Utils::Json::JsonValue> result_array(link_results.size());
 
 		size_t idx = 0;
-		for (const LinkResult &res : link_results) {
+		for (const ResultType &res : link_results) {
 			Aws::Utils::Json::JsonValue result_item;
 			Aws::Utils::Json::JsonValue string;
 			Aws::Utils::Json::JsonValue number;
@@ -112,7 +114,30 @@ namespace Api {
 		Aws::Utils::Json::JsonValue message("{}"), json_string;
 		message.WithObject("status", json_string.AsString("success"));
 		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
-		message.WithObject("results", build_link_results(link_results));
+		message.WithObject("results", build_link_results<LinkResult>(link_results));
+
+		response_stream << message.View().WriteReadable();
+	}
+
+	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		stringstream &response_stream) {
+
+		Profiler profiler("total");
+
+		struct SearchMetric metric;
+
+		vector<DomainLinkFullTextRecord> links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 1000, metric);
+
+		vector<DomainLinkResult> link_results;
+		for (DomainLinkFullTextRecord &res : links) {
+			const string tsv_data = hash_table.find(res.m_value);
+			link_results.emplace_back(DomainLinkResult(tsv_data, res));
+		}
+
+		Aws::Utils::Json::JsonValue message("{}"), json_string;
+		message.WithObject("status", json_string.AsString("success"));
+		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
+		message.WithObject("results", build_link_results<DomainLinkResult>(link_results));
 
 		response_stream << message.View().WriteReadable();
 	}
