@@ -37,7 +37,7 @@ namespace SearchEngine {
 	/*
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
 	*/
-	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric);
-	void apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric);
+	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results);
+	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, vector<FullTextRecord> &results);
 
 }

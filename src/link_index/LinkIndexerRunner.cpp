@@ -1,6 +1,7 @@
 
 #include "LinkIndexerRunner.h"
 #include "LinkIndexer.h"
+#include "DomainLinkIndexer.h"
 #include <math.h>
 #include "system/Logger.h"
 #include "full_text/FullText.h"
@@ -116,7 +117,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 	}
 
 	LinkIndexer indexer(id, m_db_name, m_sub_system, m_url_to_domain);
-	LinkIndexer domain_link_indexer(id, m_domain_db_name, m_sub_system, m_url_to_domain);
+	DomainLinkIndexer domain_link_indexer(id, m_domain_db_name, m_sub_system, m_url_to_domain);
 	size_t idx = 1;
 	for (const string &raw_warc_path : warc_paths) {
 
@@ -133,7 +134,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 			}
 			{
 				stringstream stream(data);
-				domain_link_indexer.add_domain_link_stream(domain_shard_builders, stream);
+				domain_link_indexer.add_stream(domain_shard_builders, stream);
 				domain_link_indexer.write_cache(m_domain_link_mutexes);
 			}
 		}

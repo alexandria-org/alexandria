@@ -49,6 +49,7 @@ set(SRC_CLASSES
 
 	"src/link_index/Link.cpp"
 	"src/link_index/LinkIndexer.cpp"
+	"src/link_index/DomainLinkIndexer.cpp"
 	"src/link_index/LinkIndexerRunner.cpp"
 
 	"src/hash_table/HashTable.cpp"

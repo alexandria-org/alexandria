@@ -21,4 +21,5 @@ using namespace std;
 #include "full_text.h"
 #include "invoke.h"
 #include "api.h"
+#include "search_engine.h"
 

@@ -246,7 +246,7 @@ namespace SearchEngine {
 
 		delete_result_vector<FullTextRecord>(result_vector);
 
-		apply_link_scores(links, flat_result, metric);
+		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
 		sort_results_by_score<FullTextRecord>(flat_result);
 
@@ -273,8 +273,8 @@ namespace SearchEngine {
 
 		delete_result_vector<FullTextRecord>(result_vector);
 
-		apply_domain_link_scores(domain_links, flat_result, metric);
-		apply_link_scores(links, flat_result, metric);
+		metric.m_link_domain_matches = apply_domain_link_scores(domain_links, flat_result);
+		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
 		sort_results_by_score<FullTextRecord>(flat_result);
 
@@ -521,55 +521,57 @@ namespace SearchEngine {
 	/*
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
 	*/
-	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric) {
-		{
-			Profiler profiler3("Adding url link scores");
-			size_t i = 0;
-			size_t j = 0;
-			while (i < links.size() && j < results.size()) {
+	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results) {
+		size_t applied_links = 0;
 
-				const uint64_t hash1 = links[i].m_target_hash;
-				const uint64_t hash2 = results[j].m_value;
+		Profiler profiler3("Adding url link scores");
+		size_t i = 0;
+		size_t j = 0;
+		while (i < links.size() && j < results.size()) {
 
-				if (hash1 < hash2) {
-					i++;
-				} else if (hash1 == hash2) {
-					const float url_score = expm1(10*links[i].m_score) + 0.1;
+			const uint64_t hash1 = links[i].m_target_hash;
+			const uint64_t hash2 = results[j].m_value;
 
-					results[j].m_score += url_score;
-					metric.m_link_url_matches++;
-					i++;
-				} else {
-					j++;
-				}
+			if (hash1 < hash2) {
+				i++;
+			} else if (hash1 == hash2) {
+				const float url_score = expm1(10*links[i].m_score) + 0.1;
+
+				results[j].m_score += url_score;
+				applied_links++;
+				i++;
+			} else {
+				j++;
 			}
 		}
+
+		return applied_links;
 	}
 
-	void apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric) {
-		/*{
-			Profiler profiler3("Adding domain link scores");
-
+	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, vector<FullTextRecord> &results) {
+		size_t applied_links = 0;
+		{
 			unordered_map<uint64_t, float> domain_scores;
 			unordered_map<uint64_t, int> domain_counts;
 			{
-				Profiler profiler_sum("Summing domain link scores");
-				for (const LinkFullTextRecord &link : links) {
+				for (const DomainLinkFullTextRecord &link : links) {
 					const float domain_score = expm1(5*link.m_score) + 0.1;
 					domain_scores[link.m_target_domain] += domain_score;
 					domain_counts[link.m_target_domain]++;
 				}
 			}
 
-
 			// Loop over the results and add the calculated domain scores.
 			for (size_t i = 0; i < results.size(); i++) {
 				const float domain_score = domain_scores[results[i].m_domain_hash];
 				results[i].m_score += domain_score;
+				applied_links += domain_counts[results[i].m_domain_hash];
 
-				metric.m_link_domain_matches += domain_counts[results[i].m_domain_hash];
+				//metric.m_link_domain_matches += domain_counts[results[i].m_domain_hash];
 			}
-		}*/
+		}
+
+		return applied_links;
 
 	}
 

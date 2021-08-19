@@ -400,11 +400,19 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
 			vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 1000, metric);
 
+			vector<FullTextRecord> results_no_domainlinks = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
 			vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 3);
 			BOOST_CHECK_EQUAL(domain_links.size(), 2);
+			BOOST_CHECK_EQUAL(results.size(), 2);
+			BOOST_CHECK_EQUAL(results_no_domainlinks.size(), 2);
 			BOOST_CHECK_EQUAL(links[0].m_value, URL("http://url6.com/").link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
+
+			BOOST_CHECK(results_no_domainlinks[0].m_score < results[0].m_score);
+
 		}
 
 		FullText::delete_index_array<FullTextRecord>(index_array);

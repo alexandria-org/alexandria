@@ -9,11 +9,10 @@
 int main() {
 
 	hash<string> hasher;
-	URL url("http://heroes.thelazy.net/index.php/List_of_heroes");
+	URL url("http://url6.com/test");
 
-	FullTextIndex<FullTextRecord> fti("main_index_0");
-
-	//fti.read_num_results("the", 3000000);
+	cout << url.hash() << endl;
+	cout << url.host_hash() << endl;
 
 	return 0;
 }
