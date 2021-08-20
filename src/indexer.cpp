@@ -74,10 +74,18 @@ int main(int argc, const char **argv) {
 	}
 
 	if (arg == "truncate_link") {
-		FullText::truncate_index("link_index", 8);
-		HashTable hash_table("link_index");
+		{
+			HashTable hash_table("link_index");
+			hash_table.truncate();
+		}
 
-		hash_table.truncate();
+		{
+			HashTable hash_table("domain_link_index");
+			hash_table.truncate();
+		}
+
+		FullText::truncate_index("link_index", 8);
+		FullText::truncate_index("domain_link_index", 8);
 
 		return 0;
 	}

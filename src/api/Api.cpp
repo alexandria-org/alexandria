@@ -126,7 +126,11 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<DomainLinkFullTextRecord> links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 1000, metric);
+		vector<DomainLinkFullTextRecord> links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
+
+		sort(links.begin(), links.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
+			return a.m_score > b.m_score;
+		});
 
 		vector<DomainLinkResult> link_results;
 		for (DomainLinkFullTextRecord &res : links) {

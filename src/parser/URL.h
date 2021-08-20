@@ -29,6 +29,7 @@ public:
 	uint64_t domain_link_hash(const URL &target_url, const string &link_text) const;
 
 	string host() const;
+	string host_top_domain() const;
 	string scheme() const;
 	string path() const;
 	string path_with_query() const;

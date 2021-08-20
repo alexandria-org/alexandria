@@ -157,7 +157,7 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void sort_results_by_score(vector<DataRecord> &results) {
+	void sort_by_score(vector<DataRecord> &results) {
 		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_score > b.m_score;
 		});
@@ -248,7 +248,7 @@ namespace SearchEngine {
 
 		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
-		sort_results_by_score<FullTextRecord>(flat_result);
+		sort_by_score<FullTextRecord>(flat_result);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(flat_result, limit);
 
@@ -276,7 +276,7 @@ namespace SearchEngine {
 		metric.m_link_domain_matches = apply_domain_link_scores(domain_links, flat_result);
 		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
-		sort_results_by_score<FullTextRecord>(flat_result);
+		sort_by_score<FullTextRecord>(flat_result);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(flat_result, limit);
 
@@ -363,7 +363,7 @@ namespace SearchEngine {
 		}
 
 		// Sort.
-		sort_results_by_score<FullTextRecord>(complete_result);
+		sort_by_score<FullTextRecord>(complete_result);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
 
@@ -413,7 +413,7 @@ namespace SearchEngine {
 		}
 
 		// Sort.
-		sort_results_by_score<FullTextRecord>(complete_result);
+		sort_by_score<FullTextRecord>(complete_result);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
 
@@ -507,9 +507,7 @@ namespace SearchEngine {
 			complete_result.resize(limit);
 		}
 
-		sort(complete_result.begin(), complete_result.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
-			return a.m_target_domain < b.m_target_domain;
-		});
+		sort_by_score<DomainLinkFullTextRecord>(complete_result);
 
 		if (complete_result.size() < limit) {
 			metric.m_total_links_found = complete_result.size();
@@ -535,10 +533,11 @@ namespace SearchEngine {
 			if (hash1 < hash2) {
 				i++;
 			} else if (hash1 == hash2) {
-				const float url_score = expm1(10*links[i].m_score) + 0.1;
 
+				const float url_score = expm1(8*links[i].m_score);
 				results[j].m_score += url_score;
 				applied_links++;
+
 				i++;
 			} else {
 				j++;
@@ -555,9 +554,14 @@ namespace SearchEngine {
 			unordered_map<uint64_t, int> domain_counts;
 			{
 				for (const DomainLinkFullTextRecord &link : links) {
-					const float domain_score = expm1(5*link.m_score) + 0.1;
+
+					const float domain_score = expm1(5*link.m_score);
 					domain_scores[link.m_target_domain] += domain_score;
 					domain_counts[link.m_target_domain]++;
+
+					if (link.m_target_domain == 7257282649867119541ull) {
+						cout << "found domain link for 7257282649867119541: " << link.m_value << " with score " << link.m_score << " gave " << domain_score << endl;
+					}
 				}
 			}
 
@@ -566,8 +570,6 @@ namespace SearchEngine {
 				const float domain_score = domain_scores[results[i].m_domain_hash];
 				results[i].m_score += domain_score;
 				applied_links += domain_counts[results[i].m_domain_hash];
-
-				//metric.m_link_domain_matches += domain_counts[results[i].m_domain_hash];
 			}
 		}
 

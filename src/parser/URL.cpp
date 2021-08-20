@@ -47,20 +47,33 @@ uint64_t URL::host_hash() const {
 
 uint64_t URL::link_hash(const URL &target_url, const string &link_text) const {
 	const size_t host_bits = 20;
-	const uint64_t hash = m_hasher(host() + target_url.str() + link_text);
+	const uint64_t hash = m_hasher(host_top_domain() + target_url.str() + link_text);
 	const uint64_t host_part = (target_url.host_hash() >> (64 - host_bits)) << (64 - host_bits);
 	return (hash >> host_bits) | host_part;
 }
 
 uint64_t URL::domain_link_hash(const URL &target_url, const string &link_text) const {
 	const size_t host_bits = 20;
-	const uint64_t hash = m_hasher(host() + target_url.host() + link_text);
+	const uint64_t hash = m_hasher(host_top_domain() + target_url.host() + link_text);
 	const uint64_t host_part = (target_url.host_hash() >> (64 - host_bits)) << (64 - host_bits);
 	return (hash >> host_bits) | host_part;
 }
 
 string URL::host() const {
 	return m_host;
+}
+
+string URL::host_top_domain() const {
+	/*
+	 * This algorithm is OK since we only run on these tlds:
+	 * {"se", "com", "nu", "net", "org", "gov", "edu", "info"}
+	 * */
+	vector<string> parts;
+	boost::split(parts, m_host, boost::is_any_of("."));
+	if (parts.size() > 2) {
+		parts = {parts[parts.size() - 2], parts[parts.size() - 1]};
+	}
+	return boost::algorithm::join(parts, ".");
 }
 
 string URL::scheme() const {

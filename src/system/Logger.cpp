@@ -76,7 +76,7 @@ void Logger::log_message(const string &type, const string &file, int line, const
 
 void Logger::log_string(const string &message) {
 	if (m_verbose) {
-		cerr << message << endl;
+		cout << message << endl;
 	}
 	m_lock.lock();
 	m_file << message << endl;

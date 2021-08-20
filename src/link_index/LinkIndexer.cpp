@@ -34,7 +34,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 		URL target_url(col_values[2], col_values[3]);
 		float target_harmonic = target_url.harmonic(m_sub_system);
 
-		const string link_text = col_values[4];
+		const string link_text = col_values[4].substr(0, 1000);
 
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
@@ -42,14 +42,12 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-			//add_url_link(col_values[4], link);
-
-			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + col_values[4]);
+			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
 
 			const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
 
 			add_data_to_shards(link_hash, source_url, target_url, link_colon, source_harmonic);
-			add_expanded_data_to_shards(link_hash, source_url, target_url, col_values[4], source_harmonic);			
+			add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
 		}
 
 	}

@@ -34,17 +34,17 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 		URL target_url(col_values[2], col_values[3]);
 		float target_harmonic = target_url.harmonic(m_sub_system);
 
-		const string link_text = col_values[4];
+		const string link_text = col_values[4].substr(0, 1000);
 
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
-		if (m_url_to_domain->has_domain(target_url.host_hash())) {
+		if (source_harmonic > 0.1 && m_url_to_domain->has_domain(target_url.host_hash())) {
 
 			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
 			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, line);
 
-			add_expanded_data_to_shards(link_hash, source_url, target_url, col_values[4], source_harmonic);			
+			add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
 		}
 
 	}
