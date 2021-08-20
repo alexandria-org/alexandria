@@ -96,7 +96,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
 		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
-			.m_target_hash = target_url.hash()});
+			.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
 	}
 }
 
@@ -110,7 +110,7 @@ void LinkIndexer::add_expanded_data_to_shards(uint64_t link_hash, const URL &sou
 		const size_t shard_id = word_hash % FT_NUM_SHARDS;
 
 		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
-			.m_target_hash = target_url.hash()});
+			.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
 	}
 }
 

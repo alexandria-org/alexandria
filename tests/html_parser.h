@@ -191,4 +191,9 @@ BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 	BOOST_CHECK(parser.is_exotic_language("Ремонт Принтеров Hp в Спб Адреса | Ремонт принтеров"));
 }
 
+/*
+	test these links: <a href="http://skatteverket.se/">Skatteverket</A>
+	here: http://nomell.se/2009/03/24/prisa-gud-har-kommer-skatteaterbaringen/
+*/
+
 BOOST_AUTO_TEST_SUITE_END();
