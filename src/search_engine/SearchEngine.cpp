@@ -525,6 +525,7 @@ namespace SearchEngine {
 		Profiler profiler3("Adding url link scores");
 		size_t i = 0;
 		size_t j = 0;
+		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
 		while (i < links.size() && j < results.size()) {
 
 			const uint64_t hash1 = links[i].m_target_hash;
@@ -534,9 +535,12 @@ namespace SearchEngine {
 				i++;
 			} else if (hash1 == hash2) {
 
-				const float url_score = expm1(8*links[i].m_score);
-				results[j].m_score += url_score;
-				applied_links++;
+				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
+					const float url_score = expm1(8*links[i].m_score);
+					results[j].m_score += url_score;
+					applied_links++;
+					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
+				}
 
 				i++;
 			} else {
@@ -552,15 +556,17 @@ namespace SearchEngine {
 		{
 			unordered_map<uint64_t, float> domain_scores;
 			unordered_map<uint64_t, int> domain_counts;
+			map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
 			{
 				for (const DomainLinkFullTextRecord &link : links) {
 
-					const float domain_score = expm1(5*link.m_score);
-					domain_scores[link.m_target_domain] += domain_score;
-					domain_counts[link.m_target_domain]++;
+					if (domain_unique.count(make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
 
-					if (link.m_target_domain == 7257282649867119541ull) {
-						cout << "found domain link for 7257282649867119541: " << link.m_value << " with score " << link.m_score << " gave " << domain_score << endl;
+						const float domain_score = expm1(5*link.m_score);
+						domain_scores[link.m_target_domain] += domain_score;
+						domain_counts[link.m_target_domain]++;
+						domain_unique[make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;
+
 					}
 				}
 			}
