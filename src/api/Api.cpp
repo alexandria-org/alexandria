@@ -51,8 +51,8 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000000, metric);
-		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 1000000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 500000, metric);
+		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
 		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
 
 		PostProcessor post_processor(query);
@@ -103,7 +103,11 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 10000, metric);
+
+		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			return a.m_score > b.m_score;
+		});
 
 		vector<LinkResult> link_results;
 		for (LinkFullTextRecord &res : links) {

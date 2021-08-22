@@ -84,8 +84,8 @@ int main(int argc, const char **argv) {
 			hash_table.truncate();
 		}
 
-		FullText::truncate_index("link_index", 8);
-		FullText::truncate_index("domain_link_index", 8);
+		//FullText::truncate_index("link_index", 8);
+		//FullText::truncate_index("domain_link_index", 8);
 
 		return 0;
 	}

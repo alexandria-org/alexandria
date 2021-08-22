@@ -536,7 +536,7 @@ namespace SearchEngine {
 			} else if (hash1 == hash2) {
 
 				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
-					const float url_score = expm1(8*links[i].m_score);
+					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					results[j].m_score += url_score;
 					applied_links++;
 					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
@@ -562,7 +562,7 @@ namespace SearchEngine {
 
 					if (domain_unique.count(make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
 
-						const float domain_score = expm1(5*link.m_score);
+						const float domain_score = expm1(25.0f*link.m_score) / 50.0f;
 						domain_scores[link.m_target_domain] += domain_score;
 						domain_counts[link.m_target_domain]++;
 						domain_unique[make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;

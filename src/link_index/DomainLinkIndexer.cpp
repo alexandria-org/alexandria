@@ -42,7 +42,7 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
-			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, line);
+			//shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, line);
 
 			add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
 		}
