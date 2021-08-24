@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "LinkIndexer.h"
 #include "system/Logger.h"
 #include "text/Text.h"
@@ -8,9 +9,9 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
-			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
+			new FullTextShardBuilder<LinkFullTextRecord>(m_db_name, shard_id, Config::li_cached_bytes_per_shard);
 		m_shards.push_back(shard_builder);
 	}
 }
@@ -43,7 +44,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
 #ifdef COMPILE_WITH_LINK_INDEX
-			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
+			shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
 
 			const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
 			add_data_to_shards(link_hash, source_url, target_url, link_colon, source_harmonic);
@@ -94,7 +95,7 @@ void LinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source_url, 
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+		const size_t shard_id = word_hash % Config::ft_num_shards;
 
 		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
 			.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
@@ -108,7 +109,7 @@ void LinkIndexer::add_expanded_data_to_shards(uint64_t link_hash, const URL &sou
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+		const size_t shard_id = word_hash % Config::ft_num_shards;
 
 		m_shards[shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
 			.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});

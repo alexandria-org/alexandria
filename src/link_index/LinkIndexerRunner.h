@@ -45,11 +45,11 @@ private:
 	const string m_domain_db_name;
 	const string m_hash_table_name;
 	const string m_domain_hash_table_name;
-	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
-	mutex m_domain_hash_table_mutexes[HT_NUM_SHARDS];
-	mutex m_full_text_mutexes[FT_NUM_SHARDS];
-	mutex m_link_mutexes[FT_NUM_SHARDS];
-	mutex m_domain_link_mutexes[FT_NUM_SHARDS];
+	mutex m_hash_table_mutexes[Config::ht_num_shards];
+	mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
+	mutex m_full_text_mutexes[Config::ft_num_shards];
+	mutex m_link_mutexes[Config::ft_num_shards];
+	mutex m_domain_link_mutexes[Config::ft_num_shards];
 
 	UrlToDomain *m_url_to_domain;
 

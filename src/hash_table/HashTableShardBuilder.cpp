@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "HashTableShardBuilder.h"
 #include "system/Logger.h"
 
@@ -23,7 +24,7 @@ void HashTableShardBuilder::write() {
 	size_t last_pos = outfile.tellp();
 
 	for (const auto &iter : m_cache) {
-		outfile.write((char *)&iter.first, HT_KEY_SIZE);
+		outfile.write((char *)&iter.first, Config::ht_key_size);
 
 		// Compress data
 		stringstream ss(iter.second);
@@ -42,9 +43,9 @@ void HashTableShardBuilder::write() {
 
 		outfile.write(compressed_string.c_str(), data_len);
 
-		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
+		outfile_pos.write((char *)&iter.first, Config::ht_key_size);
 		outfile_pos.write((char *)&last_pos, sizeof(size_t));
-		last_pos += data_len + HT_KEY_SIZE + sizeof(size_t);
+		last_pos += data_len + Config::ht_key_size + sizeof(size_t);
 	}
 
 	m_cache.clear();
@@ -58,7 +59,7 @@ void HashTableShardBuilder::truncate() {
 void HashTableShardBuilder::sort() {
 
 	ifstream infile(filename_pos(), ios::binary);
-	const size_t record_len = HT_KEY_SIZE + sizeof(size_t);
+	const size_t record_len = Config::ht_key_size + sizeof(size_t);
 	const size_t buffer_len = record_len * 10000;
 	char buffer[buffer_len];
 	size_t latest_pos = 0;
@@ -71,7 +72,7 @@ void HashTableShardBuilder::sort() {
 
 			for (size_t i = 0; i < read_bytes; i += record_len) {
 				const uint64_t key = *((uint64_t *)&buffer[i]);
-				const size_t pos = *((size_t *)&buffer[i + HT_KEY_SIZE]);
+				const size_t pos = *((size_t *)&buffer[i + Config::ht_key_size]);
 				m_sort_pos[key] = pos;
 			}
 
@@ -81,7 +82,7 @@ void HashTableShardBuilder::sort() {
 
 	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
 	for (const auto &iter : m_sort_pos) {
-		outfile_pos.write((char *)&iter.first, HT_KEY_SIZE);
+		outfile_pos.write((char *)&iter.first, Config::ht_key_size);
 		outfile_pos.write((char *)&iter.second, sizeof(size_t));
 	}
 	outfile_pos.close();

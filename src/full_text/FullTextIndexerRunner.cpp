@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "FullTextIndexerRunner.h"
 #include "FullText.h"
 #include "FullTextIndexer.h"
@@ -39,9 +40,9 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
 
 	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / FT_NUM_THREADS_INDEXING), warc_path_chunks);
+	vector_chunk(warc_paths, ceil((float)warc_paths.size() / Config::ft_num_threads_indexing), warc_path_chunks);
 
-	ThreadPool pool(FT_NUM_THREADS_INDEXING);
+	ThreadPool pool(Config::ft_num_threads_indexing);
 	std::vector<std::future<string>> results;
 
 	int id = 1;
@@ -72,13 +73,13 @@ void FullTextIndexerRunner::merge() {
 
 	const size_t merge_batch_size = 500;
 
-	ThreadPool merge_pool(FT_NUM_THREADS_MERGING);
+	ThreadPool merge_pool(Config::ft_num_threads_merging);
 	std::vector<std::future<string>> merge_results;
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; ) {
 
-		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+		while (shard_id < Config::ft_num_shards && merge_results.size() < merge_batch_size) {
 
 			merge_results.emplace_back(
 				merge_pool.enqueue([this, shard_id] {
@@ -102,7 +103,7 @@ void FullTextIndexerRunner::sort() {
 	Profiler profiler("Sorting");
 
 	// Loop over hash table shards and merge them.
-	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 		HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
@@ -112,7 +113,7 @@ void FullTextIndexerRunner::sort() {
 void FullTextIndexerRunner::index_text(const string &text) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
@@ -124,7 +125,7 @@ void FullTextIndexerRunner::index_text(const string &text) {
 	indexer.write_cache(m_full_text_mutexes);
 	indexer.flush_cache(m_full_text_mutexes);
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders[i]->write();
 	}
 
@@ -140,7 +141,7 @@ void FullTextIndexerRunner::index_text(const string &text) {
 void FullTextIndexerRunner::index_text(const string &key, const string &text, float score) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
@@ -150,7 +151,7 @@ void FullTextIndexerRunner::index_text(const string &key, const string &text, fl
 	indexer.write_cache(m_full_text_mutexes);
 	indexer.flush_cache(m_full_text_mutexes);
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders[i]->write();
 	}
 
@@ -166,7 +167,7 @@ void FullTextIndexerRunner::index_text(const string &key, const string &text, fl
 void FullTextIndexerRunner::index_warc_path(const string warc_path) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
@@ -179,7 +180,7 @@ void FullTextIndexerRunner::index_warc_path(const string warc_path) {
 		indexer.flush_cache(m_full_text_mutexes);
 	}
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders[i]->write();
 	}
 
@@ -196,7 +197,7 @@ void FullTextIndexerRunner::index_warc_path(const string warc_path) {
 void FullTextIndexerRunner::index_stream(ifstream &infile) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
@@ -205,7 +206,7 @@ void FullTextIndexerRunner::index_stream(ifstream &infile) {
 	indexer.add_stream(shard_builders, infile, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
 	indexer.flush_cache(m_full_text_mutexes);
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders[i]->write();
 	}
 
@@ -219,7 +220,7 @@ void FullTextIndexerRunner::index_stream(ifstream &infile) {
 }
 
 void FullTextIndexerRunner::truncate() {
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id);
 		shard_builder->truncate();
@@ -244,7 +245,7 @@ string FullTextIndexerRunner::run_merge_large_thread() {
 string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
@@ -264,10 +265,10 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		Transfer::gz_file_to_stream(warc_path, stream, error);
 		if (error == Transfer::OK) {
 			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1});
-			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << FT_NUM_SHARDS << " shards" << endl;
+			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards" << endl;
 		}
 
-		for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		for (size_t i = 0; i < Config::ht_num_shards; i++) {
 			if (shard_builders[i]->full()) {
 				m_hash_table_mutexes[i].lock();
 				shard_builders[i]->write();
@@ -281,7 +282,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 	}
 	indexer.flush_cache(m_full_text_mutexes);
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		m_hash_table_mutexes[i].lock();
 		shard_builders[i]->write();
 		m_hash_table_mutexes[i].unlock();

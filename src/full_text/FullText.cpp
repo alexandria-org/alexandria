@@ -22,7 +22,7 @@ namespace FullText {
 
 			const string db_name = index_name + "_" + to_string(partition);
 
-			for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+			for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 				FullTextShardBuilder<struct FullTextRecord> *shard_builder =
 					new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
 				shard_builder->truncate();

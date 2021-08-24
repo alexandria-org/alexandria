@@ -2,13 +2,6 @@
 
 #pragma once
 
-#ifndef HT_NUM_SHARDS
-	#define HT_NUM_SHARDS 16384
-#endif
-
-#define HT_NUM_BUCKETS 8
-#define HT_KEY_SIZE 8
-
 #include <iostream>
 #include <thread>
 #include <vector>

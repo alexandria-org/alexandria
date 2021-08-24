@@ -18,8 +18,6 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-//#define FT_NUM_THREADS_INDEXING 128
-
 using namespace std;
 
 class FullTextIndexerRunner {
@@ -47,8 +45,8 @@ private:
 	const string m_hash_table_name;
 	const string m_db_name;
 
-	mutex m_hash_table_mutexes[HT_NUM_SHARDS];
-	mutex m_full_text_mutexes[FT_NUM_SHARDS];
+	mutex m_hash_table_mutexes[Config::ht_num_shards];
+	mutex m_full_text_mutexes[Config::ft_num_shards];
 	mutex m_write_url_to_domain_mutex;
 
 	bool m_run_merge_large;

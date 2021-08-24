@@ -29,7 +29,7 @@ namespace SearchEngine {
 
 			uint64_t word_hash = hasher(word);
 			FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
-			shards[word_hash % FT_NUM_SHARDS]->find(word_hash, results);
+			shards[word_hash % Config::ft_num_shards]->find(word_hash, results);
 
 			result_vector.push_back(results);
 		}

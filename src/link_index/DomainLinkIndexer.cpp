@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "DomainLinkIndexer.h"
 #include "system/Logger.h"
 #include "text/Text.h"
@@ -8,9 +9,9 @@ DomainLinkIndexer::DomainLinkIndexer(int id, const string &db_name, const SubSys
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<DomainLinkFullTextRecord> *shard_builder =
-			new FullTextShardBuilder<DomainLinkFullTextRecord>(m_db_name, shard_id, LI_INDEXER_CACHE_BYTES_PER_SHARD);
+			new FullTextShardBuilder<DomainLinkFullTextRecord>(m_db_name, shard_id, Config::li_cached_bytes_per_shard);
 		m_shards.push_back(shard_builder);
 	}
 }
@@ -43,7 +44,7 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
 #ifdef COMPILE_WITH_LINK_INDEX
-			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, line);
+			shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, line);
 #endif
 
 			add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
@@ -92,7 +93,7 @@ void DomainLinkIndexer::add_data_to_shards(uint64_t link_hash, const URL &source
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+		const size_t shard_id = word_hash % Config::ft_num_shards;
 
 		m_shards[shard_id]->add(word_hash, DomainLinkFullTextRecord{.m_value = link_hash, .m_score = score,
 			.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});
@@ -106,7 +107,7 @@ void DomainLinkIndexer::add_expanded_data_to_shards(uint64_t link_hash, const UR
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+		const size_t shard_id = word_hash % Config::ft_num_shards;
 
 		m_shards[shard_id]->add(word_hash, DomainLinkFullTextRecord{.m_value = link_hash, .m_score = score,
 			.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});

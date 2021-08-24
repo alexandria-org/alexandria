@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "HashTableHelper.h"
 
 namespace HashTableHelper {
@@ -15,7 +16,7 @@ namespace HashTableHelper {
 
 	vector<HashTableShardBuilder *> create_shard_builders(const string &hash_table_name) {
 		vector<HashTableShardBuilder *> shards;
-		for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+		for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 			shards.push_back(new HashTableShardBuilder(hash_table_name, shard_id));
 		}
 
@@ -31,7 +32,7 @@ namespace HashTableHelper {
 	}
 
 	void add_data(vector<HashTableShardBuilder *> &shards, uint64_t key, const string &value) {
-		shards[key % HT_NUM_SHARDS]->add(key, value);
+		shards[key % Config::ht_num_shards]->add(key, value);
 	}
 
 	void write(vector<HashTableShardBuilder *> &shards) {

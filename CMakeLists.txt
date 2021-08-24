@@ -15,6 +15,7 @@ find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_fra
 find_package(ZLIB)
 find_package(fcgi)
 
+include_directories(./)
 include_directories(src/)
 include_directories(tests/)
 

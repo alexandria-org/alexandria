@@ -8,7 +8,7 @@ FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem 
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
 			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
 		m_shards.push_back(shard_builder);
@@ -35,7 +35,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		m_url_to_domain->add_url(url.hash(), url.host_hash());
 
 		uint64_t key_hash = url.hash();
-		shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, line);
+		shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line);
 
 		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
@@ -50,7 +50,7 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		}
 		for (const auto &iter : word_map) {
 			const uint64_t word_hash = iter.first;
-			const size_t shard_id = word_hash % FT_NUM_SHARDS;
+			const size_t shard_id = word_hash % Config::ft_num_shards;
 			m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
 		}
 		word_map.clear();
@@ -71,7 +71,7 @@ void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_bui
 		URL target_url(col_values[2], col_values[3]);
 
 		uint64_t key_hash = target_url.hash();
-		//shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, target_url.str());
+		//shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, target_url.str());
 
 		const string site_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
 		add_data_to_shards(target_url, site_colon, source_harmonic);
@@ -90,7 +90,7 @@ void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, 
 
 	URL url(key);
 	uint64_t key_hash = url.hash();
-	shard_builders[key_hash % HT_NUM_SHARDS]->add(key_hash, key);
+	shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, key);
 
 	add_data_to_shards(url, text, score);
 
@@ -189,7 +189,7 @@ void FullTextIndexer::add_data_to_shards(const URL &url, const string &text, flo
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % FT_NUM_SHARDS;
+		const size_t shard_id = word_hash % Config::ft_num_shards;
 
 		m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = url.hash(), .m_score = score, .m_domain_hash = url.host_hash()});
 	}

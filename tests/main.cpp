@@ -22,4 +22,5 @@ using namespace std;
 #include "invoke.h"
 #include "api.h"
 #include "search_engine.h"
+#include "configuration.h"
 

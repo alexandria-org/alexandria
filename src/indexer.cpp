@@ -7,6 +7,7 @@
 #include <memory>
 #include <unistd.h>
 
+#include "config.h"
 #include "index/CCUrlIndex.h"
 #include "index/CCIndexRunner.h"
 #include "index/CCIndexMerger.h"
@@ -34,7 +35,7 @@ int main(int argc, const char **argv) {
 	shard.merge();
 	return 0;*/
 
-	cout << "FT_INDEXER_CACHE_BYTES_PER_SHARD: " << FT_INDEXER_CACHE_BYTES_PER_SHARD << endl;
+	cout << "FT_INDEXER_CACHE_BYTES_PER_SHARD: " << Config::ft_cached_bytes_per_shard << endl;
 
 	if (argc == 1) {
 

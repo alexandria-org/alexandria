@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "config.h"
 #include <iostream>
 #include <map>
 #include <unordered_map>
@@ -202,7 +203,7 @@ void FullTextShard<DataRecord>::read_keys() {
 
 	m_num_keys = *((uint64_t *)(&buffer[0]));
 
-	if (m_num_keys > FULL_TEXT_MAX_KEYS) {
+	if (m_num_keys > Config::ft_max_keys) {
 		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
 	}
 

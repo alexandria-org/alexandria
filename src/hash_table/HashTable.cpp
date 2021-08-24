@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "HashTable.h"
 #include "HashTableShardBuilder.h"
 #include "system/Logger.h"
@@ -7,7 +8,7 @@ HashTable::HashTable(const string &db_name)
 : m_db_name(db_name)
 {
 	m_num_items = 0;
-	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 		auto shard = new HashTableShard(m_db_name, shard_id);
 		m_num_items += shard->size();
 		m_shards.push_back(shard);
@@ -25,7 +26,7 @@ HashTable::~HashTable() {
 
 void HashTable::add(uint64_t key, const string &value) {
 
-	const size_t shard_id = key % HT_NUM_SHARDS;
+	const size_t shard_id = key % Config::ht_num_shards;
 	HashTableShardBuilder builder(m_db_name, shard_id);
 
 	builder.add(key, value);
@@ -44,14 +45,14 @@ void HashTable::truncate() {
 			exit(0);
 		}
 	}
-	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 		HashTableShardBuilder builder(m_db_name, shard_id);
 		builder.truncate();
 	}
 }
 
 string HashTable::find(uint64_t key) {
-	return m_shards[key % HT_NUM_SHARDS]->find(key);
+	return m_shards[key % Config::ht_num_shards]->find(key);
 }
 
 size_t HashTable::size() const {

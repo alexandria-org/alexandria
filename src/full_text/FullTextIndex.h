@@ -1,21 +1,12 @@
 
 #pragma once
 
-#ifndef FT_NUM_SHARDS
-	#define FT_NUM_SHARDS 1024
-#endif
-
-#define FULL_TEXT_MAX_KEYS 0xFFFFFFFF
-#define FT_INDEXER_MAX_CACHE_GB 30
-#define FT_NUM_THREADS_INDEXING 48
-#define FT_NUM_THREADS_MERGING 24
-#define FT_INDEXER_CACHE_BYTES_PER_SHARD ((FT_INDEXER_MAX_CACHE_GB * 1000ul*1000ul*1000ul) / (FT_NUM_SHARDS * FT_NUM_THREADS_INDEXING))
-
 template<typename DataRecord> class FullTextIndex;
 
 #include <iostream>
 #include <vector>
 
+#include "config.h"
 #include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
@@ -52,7 +43,7 @@ template<typename DataRecord>
 FullTextIndex<DataRecord>::FullTextIndex(const string &db_name)
 : m_db_name(db_name)
 {
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		m_shards.push_back(new FullTextShard<DataRecord>(m_db_name, shard_id));
 	}
 }

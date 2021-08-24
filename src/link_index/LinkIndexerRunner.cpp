@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include "LinkIndexerRunner.h"
 #include "LinkIndexer.h"
 #include "DomainLinkIndexer.h"
@@ -28,9 +29,9 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
 
 	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / LI_NUM_THREADS_INDEXING), warc_path_chunks);
+	vector_chunk(warc_paths, ceil((float)warc_paths.size() / Config::li_num_threads_indexing), warc_path_chunks);
 
-	ThreadPool pool(LI_NUM_THREADS_INDEXING);
+	ThreadPool pool(Config::li_num_threads_indexing);
 	std::vector<std::future<string>> results;
 
 	int id = 1;
@@ -61,13 +62,13 @@ void LinkIndexerRunner::merge() {
 
 	const size_t merge_batch_size = 250;
 
-	ThreadPool merge_pool(LI_NUM_THREADS_MERGING);
+	ThreadPool merge_pool(Config::li_num_threads_merging);
 	std::vector<std::future<string>> merge_results;
 
 	// Loop over shards and merge them.
-	for (size_t shard_id = 0; shard_id < FT_NUM_SHARDS; ) {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; ) {
 
-		while (shard_id < FT_NUM_SHARDS && merge_results.size() < merge_batch_size) {
+		while (shard_id < Config::ft_num_shards && merge_results.size() < merge_batch_size) {
 
 			merge_results.emplace_back(
 				merge_pool.enqueue([this, shard_id] {
@@ -92,12 +93,12 @@ void LinkIndexerRunner::sort() {
 	Profiler profiler("Sorting...");
 
 	// Loop over hash table shards and merge them.
-	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 		HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
 	}
-	for (size_t shard_id = 0; shard_id < HT_NUM_SHARDS; shard_id++) {
+	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
 		HashTableShardBuilder *shard = new HashTableShardBuilder(m_domain_hash_table_name, shard_id);
 		shard->sort();
 		delete shard;
@@ -107,12 +108,12 @@ void LinkIndexerRunner::sort() {
 string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
 
 	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
 	vector<HashTableShardBuilder *> domain_shard_builders;
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		domain_shard_builders.push_back(new HashTableShardBuilder(m_domain_hash_table_name, i));
 	}
 
@@ -139,7 +140,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 			}
 		}
 
-		for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		for (size_t i = 0; i < Config::ht_num_shards; i++) {
 			if (shard_builders[i]->full()) {
 				m_hash_table_mutexes[i].lock();
 				shard_builders[i]->write();
@@ -147,7 +148,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 			}
 		}
 
-		for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+		for (size_t i = 0; i < Config::ht_num_shards; i++) {
 			if (domain_shard_builders[i]->full()) {
 				m_domain_hash_table_mutexes[i].lock();
 				domain_shard_builders[i]->write();
@@ -162,13 +163,13 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 	indexer.flush_cache(m_link_mutexes);
 	domain_link_indexer.flush_cache(m_domain_link_mutexes);
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		m_hash_table_mutexes[i].lock();
 		shard_builders[i]->write();
 		m_hash_table_mutexes[i].unlock();
 	}
 
-	for (size_t i = 0; i < HT_NUM_SHARDS; i++) {
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		m_domain_hash_table_mutexes[i].lock();
 		domain_shard_builders[i]->write();
 		m_domain_hash_table_mutexes[i].unlock();

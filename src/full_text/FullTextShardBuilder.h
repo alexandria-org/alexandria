@@ -84,7 +84,7 @@ private:
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(FT_INDEXER_CACHE_BYTES_PER_SHARD / sizeof(DataRecord)) {
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)) {
 	m_records.push_back(new DataRecord[m_max_cache_size]);
 	m_keys.push_back(new uint64_t[m_max_cache_size]);
 	m_records_position = 0;
@@ -471,7 +471,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 
 	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
-	if (num_keys > FULL_TEXT_MAX_KEYS) {
+	if (num_keys > Config::ft_max_keys) {
 		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(num_keys));
 	}
 
