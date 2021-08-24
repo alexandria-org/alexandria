@@ -15,7 +15,6 @@ find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_fra
 find_package(ZLIB)
 find_package(fcgi)
 
-include_directories(./)
 include_directories(src/)
 include_directories(tests/)
 
@@ -97,23 +96,14 @@ add_executable(cc_indexer
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
-add_executable(cc_full_text
-	"src/full_text.cpp"
-	${SRC_CLASSES}
-	${SRC_COMMON}
-)
 add_executable(run_tests
 	"tests/main.cpp"
+	"config/test_config/config.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
 add_executable(server
 	"src/server.cpp"
-	${SRC_CLASSES}
-	${SRC_COMMON}
-)
-add_executable(hash_test
-	"src/hash_test.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -124,13 +114,15 @@ target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
+target_include_directories(cc_parser PUBLIC ./config)
+target_include_directories(cc_indexer PUBLIC ./config)
+target_include_directories(run_tests PUBLIC ./config/test_config)
+target_include_directories(server PUBLIC ./config)
+
+target_link_libraries(cc_parser PUBLIC
 	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(cc_indexer PUBLIC
-	AWS::aws-lambda-runtime 
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-target_link_libraries(cc_full_text PUBLIC
 	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(run_tests PUBLIC
@@ -140,9 +132,6 @@ target_link_libraries(server PUBLIC
 	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-target_link_libraries(hash_test PUBLIC
-	AWS::aws-lambda-runtime 
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 
 aws_lambda_package_target(${PROJECT_NAME})

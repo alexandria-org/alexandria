@@ -1,5 +1,6 @@
 
 #include "FullTextIndexer.h"
+#include "FullText.h"
 #include "system/Logger.h"
 #include "text/Text.h"
 #include <math.h>
@@ -30,30 +31,34 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 		URL url(col_values[0]);
-		float harmonic = url.harmonic(m_sub_system);
 
-		m_url_to_domain->add_url(url.hash(), url.host_hash());
+		if (FullText::should_index_url(url)) {
 
-		uint64_t key_hash = url.hash();
-		shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line);
+			float harmonic = url.harmonic(m_sub_system);
 
-		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+			m_url_to_domain->add_url(url.hash(), url.host_hash());
 
-		size_t score_index = 0;
-		map<uint64_t, float> word_map;
+			uint64_t key_hash = url.hash();
+			shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line);
 
-		add_data_to_word_map(word_map, site_colon, 20*harmonic);
+			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
-		for (size_t col_index : cols) {
-			add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
-			score_index++;
+			size_t score_index = 0;
+			map<uint64_t, float> word_map;
+
+			add_data_to_word_map(word_map, site_colon, 20*harmonic);
+
+			for (size_t col_index : cols) {
+				add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
+				score_index++;
+			}
+			for (const auto &iter : word_map) {
+				const uint64_t word_hash = iter.first;
+				const size_t shard_id = word_hash % Config::ft_num_shards;
+				m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
+			}
+			word_map.clear();
 		}
-		for (const auto &iter : word_map) {
-			const uint64_t word_hash = iter.first;
-			const size_t shard_id = word_hash % Config::ft_num_shards;
-			m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
-		}
-		word_map.clear();
 	}
 
 }

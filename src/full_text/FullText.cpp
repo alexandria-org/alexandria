@@ -80,4 +80,8 @@ namespace FullText {
 		return ret;
 	}
 
+	bool should_index_url(const URL &url) {
+		return (url.host_hash() % Config::nodes_in_cluster == Config::node_id);
+	}
+
 }

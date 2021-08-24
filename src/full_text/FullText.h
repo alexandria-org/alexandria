@@ -23,16 +23,7 @@ namespace FullText {
 
 	vector<string> make_partition_from_files(const vector<string> &files, size_t partition, size_t max_partitions);
 
-	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
-		const string &query, size_t limit, struct SearchMetric &metric);
-
-	vector<LinkFullTextRecord> search_link_array(vector<FullTextIndex<LinkFullTextRecord> *> index_array, const string &query, size_t limit,
-		struct SearchMetric &metric);
-
-	/*
-		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
-	*/
-	void apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results, struct SearchMetric &metric);
+	bool should_index_url(const URL &url);
 
 	template<typename DataRecord>
 	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name, size_t partitions) {

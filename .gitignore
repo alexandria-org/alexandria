@@ -4,7 +4,7 @@ tmp/*
 src/*.o
 tests/*.o
 build/*
-config.h
+config/config.h
 response.txt
 cc_parser.zip
 cc_parser

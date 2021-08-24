@@ -4,8 +4,9 @@
 namespace Config {
 
 	// Cluster config
-	const unsigned long long nodes_in_cluster = 3;
-	const unsigned long long node_id = 0;
+	// Not const since we need to modify them for tests.
+	extern unsigned long long nodes_in_cluster;
+	extern unsigned long long node_id;
 
 	// Full text indexer config
 	const unsigned long long ft_num_shards = 1024;
