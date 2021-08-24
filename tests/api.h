@@ -82,8 +82,10 @@ BOOST_AUTO_TEST_CASE(api_search) {
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
 
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK(v.ValueExists("link_index"));
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
+#endif
 	}
 
 	{
@@ -107,6 +109,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
 
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK(v.ValueExists("link_index"));
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("more"), 2.0/11.0);
@@ -114,6 +117,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 11);
+#endif
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -245,12 +249,14 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
 
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK(v.ValueExists("link_index"));
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 0.0);
 
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 4);
+#endif
 	}
 
 	{
@@ -268,12 +274,14 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		BOOST_CHECK(v.ValueExists("time_ms"));
 
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK(v.ValueExists("link_index"));
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("test07.links.gz"), 1.0/4.0);
 
 		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 4);
+#endif
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -399,6 +407,8 @@ BOOST_AUTO_TEST_CASE(api_links) {
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
+
+#ifdef COMPILE_WITH_LINK_SEARCH
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
@@ -407,6 +417,9 @@ BOOST_AUTO_TEST_CASE(api_links) {
 		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("source_url"), "http://214th.blogspot.com/2016/03/from-potemkin-pictures-battle-cruiser.html");
 		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("target_url"), "http://url1.com/my_test_url");
 		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("link_text"), "Star Trek Guinan");
+#else
+		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
+#endif
 	}
 
 	{
@@ -420,10 +433,14 @@ BOOST_AUTO_TEST_CASE(api_links) {
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
+#ifdef COMPILE_WITH_LINK_SEARCH
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
+#else
+		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
+#endif
 	}
 
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
@@ -475,11 +492,16 @@ BOOST_AUTO_TEST_CASE(api_domain_links) {
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
+
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK(v.GetArray("results")[0].ValueExists("source_url"));
 		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 1);
+#else
+		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
+#endif
 	}
 
 	{
@@ -493,10 +515,15 @@ BOOST_AUTO_TEST_CASE(api_domain_links) {
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
+
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
+#else
+		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
+#endif
 	}
 
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);

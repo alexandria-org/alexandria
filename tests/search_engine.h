@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(apply_link_scores) {
 
 	BOOST_CHECK_EQUAL(links_applied, 1);
 	BOOST_CHECK(results[0].m_score > score_before);
-	BOOST_REQUIRE_CLOSE(results[0].m_score, 0.1 + expm1(10*0.1) + 0.1, 0.0001);
+	BOOST_REQUIRE_CLOSE(results[0].m_score, 0.1 + expm1(25*0.1) / 50.0f, 0.0001);
 }
 
 BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 
 	BOOST_CHECK_EQUAL(links_applied, 1);
 	BOOST_CHECK(results[0].m_score > score_before);
-	BOOST_REQUIRE_CLOSE(results[0].m_score, 0.1 + expm1(5*0.1) + 0.1, 0.0001);
+	BOOST_REQUIRE_CLOSE(results[0].m_score, 0.1 + expm1(25*0.1) / 50.0f, 0.0001);
 }
 
 BOOST_AUTO_TEST_SUITE_END();

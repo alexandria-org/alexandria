@@ -96,6 +96,7 @@ namespace Api {
 		return results;
 	}
 
+#ifdef COMPILE_WITH_LINK_INDEX
 	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
 		stringstream &response_stream) {
 
@@ -122,7 +123,19 @@ namespace Api {
 
 		response_stream << message.View().WriteReadable();
 	}
+#else
+	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
+		stringstream &response_stream) {
 
+		Aws::Utils::Json::JsonValue message("{}"), json_string;
+		message.WithObject("status", json_string.AsString("error"));
+		message.WithObject("reason", json_string.AsString("link search not available"));
+
+		response_stream << message.View().WriteReadable();
+	}
+#endif
+
+#ifdef COMPILE_WITH_LINK_INDEX
 	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
 		stringstream &response_stream) {
 
@@ -149,6 +162,17 @@ namespace Api {
 
 		response_stream << message.View().WriteReadable();
 	}
+#else
+	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		stringstream &response_stream) {
+
+		Aws::Utils::Json::JsonValue message("{}"), json_string;
+		message.WithObject("status", json_string.AsString("error"));
+		message.WithObject("reason", json_string.AsString("domain link search not available"));
+
+		response_stream << message.View().WriteReadable();
+	}
+#endif
 
 	Aws::Utils::Json::JsonValue generate_word_stats_json(const map<string, double> word_map) {
 		Aws::Utils::Json::JsonValue result;

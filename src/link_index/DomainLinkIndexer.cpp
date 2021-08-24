@@ -38,7 +38,7 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
-		if (source_harmonic > 0.1 && m_url_to_domain->has_domain(target_url.host_hash())) {
+		if (m_url_to_domain->has_domain(target_url.host_hash())) {
 
 			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 

@@ -179,6 +179,10 @@ BOOST_AUTO_TEST_CASE(indexer_runner_2) {
 
 BOOST_AUTO_TEST_CASE(indexer) {
 
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_main_index", 8);
+	FullText::truncate_index("test_link_index", 8);
+
 	HashTableHelper::truncate("test_main_index");
 	HashTableHelper::truncate("test_link_index");
 	HashTableHelper::truncate("test_domain_link_index");
@@ -211,7 +215,9 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		HashTable hash_table_link("test_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(hash_table_link.size(), 11);
+#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
@@ -294,7 +300,9 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		HashTable hash_table_link("test_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(hash_table_link.size(), 15);
+#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
@@ -372,8 +380,10 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 		HashTable hash_table_domain_link("test_domain_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 10);
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(hash_table_link.size(), 14);
 		BOOST_CHECK_EQUAL(hash_table_domain_link.size(), 12);
+#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
@@ -408,8 +418,8 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			BOOST_CHECK_EQUAL(results.size(), 2);
 			BOOST_CHECK_EQUAL(results_no_domainlinks.size(), 2);
 			BOOST_CHECK_EQUAL(links[0].m_value, URL("http://url6.com/").link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
-			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
-			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
 
 			BOOST_CHECK(results_no_domainlinks[0].m_score < results[0].m_score);
 
