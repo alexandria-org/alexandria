@@ -121,6 +121,7 @@ target_compile_definitions(run_tests PUBLIC CC_TESTING)
 target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
+target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	AWS::aws-lambda-runtime 

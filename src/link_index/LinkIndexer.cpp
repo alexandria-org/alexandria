@@ -42,11 +42,12 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-			//shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
+#ifdef COMPILE_WITH_LINK_INDEX
+			shard_builders[link_hash % HT_NUM_SHARDS]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
 
-			//const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
-
-			//add_data_to_shards(link_hash, source_url, target_url, link_colon, source_harmonic);
+			const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
+			add_data_to_shards(link_hash, source_url, target_url, link_colon, source_harmonic);
+#endif
 			add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
 		}
 

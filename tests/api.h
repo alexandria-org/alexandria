@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(api_links) {
 
 		BOOST_CHECK(v.ValueExists("status"));
 
-#ifdef COMPILE_WITH_LINK_SEARCH
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(api_links) {
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
-#ifdef COMPILE_WITH_LINK_SEARCH
+#ifdef COMPILE_WITH_LINK_INDEX
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
