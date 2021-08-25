@@ -120,12 +120,13 @@ namespace FullText {
 		const size_t limit = 5000;
 		size_t offset = 0;
 
-		do {
+		while (true) {
 			vector<string> files = download_batch(batch, limit, offset);
+			if (files.size() == 0) break;
 			index_files(db_name, hash_table_name, files, sub_system);
 			Transfer::delete_downloaded_files(files);
 			offset += files.size();
-		} while (files.size() > 0);
+		}
 
 	}
 

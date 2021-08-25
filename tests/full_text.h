@@ -35,6 +35,32 @@ BOOST_AUTO_TEST_CASE(should_index_url) {
 	Config::nodes_in_cluster = 2;
 
 	BOOST_CHECK(FullText::should_index_hash(0, 0));
+	BOOST_CHECK(FullText::should_index_hash(1, 1));
+	BOOST_CHECK(FullText::should_index_hash(2, 2));
+	BOOST_CHECK(FullText::should_index_hash(3, 3));
+	BOOST_CHECK(FullText::should_index_hash(4, 4));
+	BOOST_CHECK(FullText::should_index_hash(5, 5));
+	BOOST_CHECK(FullText::should_index_hash(6, 6));
+	BOOST_CHECK(FullText::should_index_hash(7, 7));
+
+	BOOST_CHECK(!FullText::should_index_hash(8, 0));
+	BOOST_CHECK(!FullText::should_index_hash(9, 1));
+	BOOST_CHECK(!FullText::should_index_hash(10, 2));
+	BOOST_CHECK(!FullText::should_index_hash(11, 3));
+	BOOST_CHECK(!FullText::should_index_hash(12, 4));
+	BOOST_CHECK(!FullText::should_index_hash(13, 5));
+	BOOST_CHECK(!FullText::should_index_hash(14, 6));
+	BOOST_CHECK(!FullText::should_index_hash(15, 7));
+
+	BOOST_CHECK(FullText::should_index_hash(16, 0));
+	BOOST_CHECK(FullText::should_index_hash(17, 1));
+	BOOST_CHECK(FullText::should_index_hash(18, 2));
+	BOOST_CHECK(FullText::should_index_hash(19, 3));
+	BOOST_CHECK(FullText::should_index_hash(20, 4));
+	BOOST_CHECK(FullText::should_index_hash(21, 5));
+	BOOST_CHECK(FullText::should_index_hash(22, 6));
+	BOOST_CHECK(FullText::should_index_hash(23, 7));
+
 	BOOST_CHECK(!FullText::should_index_hash(0, 1));
 	BOOST_CHECK(!FullText::should_index_hash(8, 0));
 
@@ -43,6 +69,59 @@ BOOST_AUTO_TEST_CASE(should_index_url) {
 	BOOST_CHECK(!FullText::should_index_hash(0, 0));
 	BOOST_CHECK(!FullText::should_index_hash(0, 1));
 	BOOST_CHECK(FullText::should_index_hash(8, 0));
+
+	Config::nodes_in_cluster = 3;
+	Config::node_id = 1;
+
+	BOOST_CHECK(FullText::should_index_hash(3607951403407044584ull, 0));
+	BOOST_CHECK(!FullText::should_index_hash(3607951403407044583ull, 7));
+
+	vector<size_t> items;
+	const size_t num_items = 1000000;
+
+	Config::node_id = 0;
+	for (size_t i = 0; i < num_items; i++) {
+		for (size_t partition = 0; partition < 8; partition++) {
+			if (FullText::should_index_hash(i, partition)) {
+				items.push_back(i);
+			}
+		}
+	}
+
+	Config::node_id = 1;
+	for (size_t i = 0; i < num_items; i++) {
+		for (size_t partition = 0; partition < 8; partition++) {
+			if (FullText::should_index_hash(i, partition)) {
+				items.push_back(i);
+			}
+		}
+	}
+
+	Config::node_id = 2;
+	for (size_t i = 0; i < num_items; i++) {
+		for (size_t partition = 0; partition < 8; partition++) {
+			if (FullText::should_index_hash(i, partition)) {
+				items.push_back(i);
+			}
+		}
+	}
+
+	sort(items.begin(), items.end());
+
+	bool all_right = true;
+	for (size_t i = 0; i < num_items; i++) {
+		if (i != items[i]) {
+			all_right = false;
+			break;
+		}
+	}
+
+	BOOST_CHECK(all_right);
+
+	BOOST_CHECK_EQUAL(items.size(), num_items);
+
+	Config::node_id = 0;
+	BOOST_CHECK(FullText::should_index_hash(3607951403407044583ull, 7));
 
 	// Reset.
 	Config::nodes_in_cluster = 1;
