@@ -26,16 +26,15 @@ public:
 
 	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system);
 	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch);
+	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const SubSystem *sub_system);
 	~FullTextIndexerRunner();
 
 	void run(size_t partition, size_t max_partitions);
+	void run(const vector<string> local_files, size_t partition);
 	void run_link();
 	void merge();
 	void sort();
-	void index_text(const string &text);
-	void index_text(const string &key, const string &text, float score);
-	void index_warc_path(const string warc_path);
-	void index_stream(ifstream &infile);
+	void truncate_cache();
 	void truncate();
 
 private:
@@ -53,7 +52,8 @@ private:
 	bool m_did_allocate_sub_system;
 
 	string run_merge_large_thread();
-	string run_index_thread(const vector<string> &warc_paths, int id);
+	string run_index_thread(const vector<string> &warc_paths, int id, size_t partition);
+	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	int download_file(const string &bucket, const string &key, stringstream &stream);

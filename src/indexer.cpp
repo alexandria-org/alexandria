@@ -14,6 +14,8 @@
 #include "index/CCLinkIndex.h"
 #include "system/Profiler.h"
 
+#include "hash_table/HashTableHelper.h"
+
 #include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
@@ -39,15 +41,9 @@ int main(int argc, const char **argv) {
 
 	if (argc == 1) {
 
-		HashTable hash_table("main_index");
-		hash_table.truncate();
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			FullTextIndexerRunner indexer("main_index_" + to_string(partition_num), "main_index", "CC-MAIN-2021-31", sub_system);
-			indexer.run(partition_num, 8);
-		}
+		FullText::index_all_batches("main_index", "main_index");
 		Profiler::print_memory_status();
+
 		return 0;
 	}
 
@@ -75,18 +71,26 @@ int main(int argc, const char **argv) {
 	}
 
 	if (arg == "truncate_link") {
-		{
-			HashTable hash_table("link_index");
-			hash_table.truncate();
-		}
 
-		{
-			HashTable hash_table("domain_link_index");
-			hash_table.truncate();
-		}
+		HashTableHelper::truncate("link_index");
+		HashTableHelper::truncate("domain_link_index");
 
 		//FullText::truncate_index("link_index", 8);
 		//FullText::truncate_index("domain_link_index", 8);
+
+		return 0;
+	}
+
+	if (arg == "truncate") {
+
+		FullText::truncate_url_to_domain("main_index");
+		FullText::truncate_index("main_index", 8);
+		FullText::truncate_index("link_index", 8);
+		FullText::truncate_index("domain_link_index", 8);
+
+		HashTableHelper::truncate("main_index");
+		HashTableHelper::truncate("link_index");
+		HashTableHelper::truncate("domain_link_index");
 
 		return 0;
 	}

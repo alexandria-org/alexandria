@@ -20,6 +20,13 @@ FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string
 	m_did_allocate_sub_system = true;
 }
 
+FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const SubSystem *sub_system)
+: m_cc_batch("none"), m_db_name(db_name), m_hash_table_name(hash_table_name)
+{
+	m_sub_system = sub_system;
+	m_did_allocate_sub_system = false;
+}
+
 FullTextIndexerRunner::~FullTextIndexerRunner() {
 	if (m_did_allocate_sub_system) {
 		delete m_sub_system;
@@ -28,7 +35,7 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 
 void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 
-	truncate();
+	truncate_cache();
 
 	//TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
 	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
@@ -49,8 +56,8 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
 
 		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk, id] {
-				return run_index_thread(warc_paths_chunk, id);
+			pool.enqueue([this, warc_paths_chunk, id, partition] {
+				return run_index_thread(warc_paths_chunk, id, partition);
 			})
 		);
 
@@ -65,6 +72,37 @@ void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
 	merge();
 	sort();
 
+}
+
+void FullTextIndexerRunner::run(const vector<string> local_files, size_t partition) {
+
+	truncate_cache();
+
+	ThreadPool pool(Config::ft_num_threads_indexing);
+	std::vector<std::future<string>> results;
+
+	vector<vector<string>> chunks;
+	vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
+
+	int id = 1;
+	for (const vector<string> &chunk : chunks) {
+
+		results.emplace_back(
+			pool.enqueue([this, chunk, id, partition] {
+				return run_index_thread_with_local_files(chunk, id, partition);
+			})
+		);
+
+		id++;
+
+	}
+
+	for(auto && result: results) {
+		result.get();
+	}
+
+	merge();
+	sort();
 }
 
 void FullTextIndexerRunner::merge() {
@@ -110,113 +148,14 @@ void FullTextIndexerRunner::sort() {
 	}
 }
 
-void FullTextIndexerRunner::index_text(const string &text) {
-
-	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
-	}
-
-	stringstream ss(text);
-
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
-	indexer.add_stream(shard_builders, ss, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
-	indexer.write_cache(m_full_text_mutexes);
-	indexer.flush_cache(m_full_text_mutexes);
-
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders[i]->write();
-	}
-
-	m_write_url_to_domain_mutex.lock();
-	indexer.write_url_to_domain();
-	m_write_url_to_domain_mutex.unlock();
-
-	for (HashTableShardBuilder *shard_builder : shard_builders) {
-		delete shard_builder;
-	}
-}
-
-void FullTextIndexerRunner::index_text(const string &key, const string &text, float score) {
-
-	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
-	}
-
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
-	indexer.add_text(shard_builders, key, text, score);
-	indexer.write_cache(m_full_text_mutexes);
-	indexer.flush_cache(m_full_text_mutexes);
-
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders[i]->write();
-	}
-
-	m_write_url_to_domain_mutex.lock();
-	indexer.write_url_to_domain();
-	m_write_url_to_domain_mutex.unlock();
-
-	for (HashTableShardBuilder *shard_builder : shard_builders) {
-		delete shard_builder;
-	}
-}
-
-void FullTextIndexerRunner::index_warc_path(const string warc_path) {
-
-	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
-	}
-
-	stringstream stream;
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
-	if (download_file("alexandria-cc-output", warc_path, stream) == 0) {
-		indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
-		indexer.write_cache(m_full_text_mutexes);
-		indexer.flush_cache(m_full_text_mutexes);
-	}
-
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders[i]->write();
-	}
-
-	m_write_url_to_domain_mutex.lock();
-	indexer.write_url_to_domain();
-	m_write_url_to_domain_mutex.unlock();
-
-	for (HashTableShardBuilder *shard_builder : shard_builders) {
+void FullTextIndexerRunner::truncate_cache() {
+	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
+			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id);
+		shard_builder->truncate_cache_files();
 		delete shard_builder;
 	}
 
-}
-
-void FullTextIndexerRunner::index_stream(ifstream &infile) {
-
-	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
-	}
-
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
-	indexer.add_stream(shard_builders, infile, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1.0});
-	indexer.flush_cache(m_full_text_mutexes);
-
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders[i]->write();
-	}
-
-	m_write_url_to_domain_mutex.lock();
-	indexer.write_url_to_domain();
-	m_write_url_to_domain_mutex.unlock();
-
-	for (HashTableShardBuilder *shard_builder : shard_builders) {
-		delete shard_builder;
-	}
 }
 
 void FullTextIndexerRunner::truncate() {
@@ -242,7 +181,7 @@ string FullTextIndexerRunner::run_merge_large_thread() {
 	return "done";
 }
 
-string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
+string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id, size_t partition) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < Config::ht_num_shards; i++) {
@@ -264,7 +203,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		int error;
 		Transfer::gz_file_to_stream(warc_path, stream, error);
 		if (error == Transfer::OK) {
-			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1});
+			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition);
 			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards" << endl;
 		}
 
@@ -277,6 +216,58 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		}
 
 		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()) + " for " + m_db_name);
+
+		idx++;
+	}
+	indexer.flush_cache(m_full_text_mutexes);
+
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
+		m_hash_table_mutexes[i].lock();
+		shard_builders[i]->write();
+		m_hash_table_mutexes[i].unlock();
+	}
+
+	m_write_url_to_domain_mutex.lock();
+	indexer.write_url_to_domain();
+	m_write_url_to_domain_mutex.unlock();
+
+	for (HashTableShardBuilder *shard_builder : shard_builders) {
+		delete shard_builder;
+	}
+
+	return "";
+}
+
+string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition) {
+
+	vector<HashTableShardBuilder *> shard_builders;
+	for (size_t i = 0; i < Config::ht_num_shards; i++) {
+		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
+	}
+
+	UrlToDomain url_to_domain("main_index");
+	FullTextIndexer indexer(id, m_db_name, m_sub_system, &url_to_domain);
+	size_t idx = 1;
+	for (const string &local_file : local_files) {
+
+		ifstream stream(local_file, ios::in);
+
+		if (stream.is_open()) {
+			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition);
+			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards" << endl;
+		}
+
+		stream.close();
+
+		for (size_t i = 0; i < Config::ht_num_shards; i++) {
+			if (shard_builders[i]->full()) {
+				m_hash_table_mutexes[i].lock();
+				shard_builders[i]->write();
+				m_hash_table_mutexes[i].unlock();
+			}
+		}
+
+		LogInfo("Done " + to_string(idx) + " out of " + to_string(local_files.size()) + " for " + m_db_name);
 
 		idx++;
 	}

@@ -29,6 +29,7 @@ namespace Stats {
 
 			uint64_t word_hash = hasher(word);
 			result[word] = shards[word_hash % Config::ft_num_shards]->total_num_results(word_hash);
+			cout << "found word count: " << result[word] << " for " << word << " at shard " << word_hash % Config::ft_num_shards << endl;
 		}
 
 		return result;

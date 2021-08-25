@@ -34,4 +34,7 @@ namespace Transfer {
 	void file_to_stream(const string &file_path, ostream &output_stream, int &error);
 	void gz_file_to_stream(const string &file_path, ostream &output_stream, int &error);
 
+	vector<string> download_gz_files_to_disk(const vector<string> files_to_download);
+	void delete_downloaded_files(const vector<string> &files);
+
 }

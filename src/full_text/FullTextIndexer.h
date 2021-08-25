@@ -30,7 +30,7 @@ public:
 	~FullTextIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-		const vector<size_t> &cols, const vector<float> &scores);
+		const vector<size_t> &cols, const vector<float> &scores, size_t partition);
 	void add_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
 	void add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
 		float score);

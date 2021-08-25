@@ -1,7 +1,13 @@
 
+#include "config.h"
 #include "Transfer.h"
+#include <fstream>
+#include "system/ThreadPool.h"
+#include <stdio.h>
 
 namespace Transfer {
+
+	hash<string> hasher;
 
 	size_t curl_stringstream_writer(void *ptr, size_t size, size_t nmemb, stringstream *ss) {
 		size_t byte_size = size * nmemb;
@@ -156,6 +162,48 @@ namespace Transfer {
 			output_stream << decompress_stream.rdbuf();
 
 			curl_easy_cleanup(curl);
+		}
+	}
+
+	string run_gz_download_thread(const string &file_path) {
+		size_t hash = hasher(file_path);
+		const string target_filename = "/mnt/" + to_string(hash % 8) + "/tmp/tmp_" + to_string(hash);
+		ofstream target_file(target_filename, ios::binary | ios::trunc);
+		int error;
+		gz_file_to_stream(file_path, target_file, error);
+		if (error != OK) {
+			return "";
+		}
+		return target_filename;
+	}
+
+	vector<string> download_gz_files_to_disk(const vector<string> files_to_download) {
+		
+		ThreadPool pool(Config::num_async_file_transfers);
+		std::vector<std::future<string>> results;
+
+		for (const string &file : files_to_download) {
+			results.emplace_back(
+				pool.enqueue([file] {
+					return run_gz_download_thread(file);
+				})
+			);
+		}
+
+		vector<string> local_filenames;
+		for(auto && result: results) {
+			const string filename = result.get();
+			if (filename != "") {
+				local_filenames.push_back(filename);
+			}
+		}
+
+		return local_filenames;
+	}
+
+	void delete_downloaded_files(const vector<string> &files) {
+		for (const string &file : files) {
+			remove(file.c_str());
 		}
 	}
 }

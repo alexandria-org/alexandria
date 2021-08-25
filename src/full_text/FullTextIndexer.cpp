@@ -23,7 +23,7 @@ FullTextIndexer::~FullTextIndexer() {
 }
 
 void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-	const vector<size_t> &cols, const vector<float> &scores) {
+	const vector<size_t> &cols, const vector<float> &scores, size_t partition) {
 
 	string line;
 	while (getline(stream, line)) {
@@ -32,7 +32,9 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 
 		URL url(col_values[0]);
 
-		if (FullText::should_index_url(url)) {
+		if (FullText::should_index_url(url, partition)) {
+
+			cout << "url " << url.str() << " was added to partition " << partition << " on node " << Config::node_id << "/" << Config::nodes_in_cluster << endl;
 
 			float harmonic = url.harmonic(m_sub_system);
 

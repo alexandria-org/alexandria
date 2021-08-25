@@ -1,6 +1,7 @@
 
 #include "FullText.h"
 #include "FullTextShardBuilder.h"
+#include "FullTextIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
 
 namespace FullText {
@@ -80,8 +81,63 @@ namespace FullText {
 		return ret;
 	}
 
-	bool should_index_url(const URL &url) {
-		return (url.host_hash() % Config::nodes_in_cluster == Config::node_id);
+	void index_files(const string &db_name, const string &hash_table_name, const vector<string> files, const SubSystem *sub_system) {
+		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
+			FullTextIndexerRunner indexer(db_name + "_" + to_string(partition_num), hash_table_name, sub_system);
+			indexer.run(files, partition_num);
+		}
+	}
+
+	vector<string> download_batch(const string &batch, size_t limit, size_t offset) {
+		
+		TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		vector<string> warc_paths;
+		warc_paths_file.read_column_into(0, warc_paths);
+
+		vector<string> files_to_download;
+		for (size_t i = offset; i < warc_paths.size(); i++) {
+			string warc_path = warc_paths[i];
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".gz");
+			}
+			files_to_download.push_back(warc_path);
+		}
+
+		return Transfer::download_gz_files_to_disk(files_to_download);
+	}
+
+	void index_all_batches(const string &db_name, const string &hash_table_name) {
+		SubSystem *sub_system = new SubSystem();
+		for (const string &batch : Config::batches) {
+			index_batch(db_name, hash_table_name, batch, sub_system);
+		}
+	}
+
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
+
+		vector<string> files;
+		const size_t limit = 5000;
+		size_t offset = 0;
+
+		do {
+			vector<string> files = download_batch(batch, limit, offset);
+			index_files(db_name, hash_table_name, files, sub_system);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
+		} while (files.size() > 0);
+
+	}
+
+	bool should_index_url(const URL &url, size_t partition) {
+		return should_index_hash(url.host_hash(), partition);
+	}
+
+	bool should_index_hash(size_t hash, size_t partition) {
+		size_t mod = hash % (Config::nodes_in_cluster * Config::ft_num_partitions);
+		bool in_partition = (mod % Config::ft_num_partitions) == partition;
+		bool in_node = (mod / Config::ft_num_partitions) == Config::node_id;
+		return in_partition && in_node;
 	}
 
 }

@@ -11,4 +11,5 @@ for shard in `cat shards`; do
 	mkdir "$shard/upload";
 	mkdir "$shard/hash_table";
 	mkdir "$shard/full_text";
+	mkdir "$shard/tmp";
 done
