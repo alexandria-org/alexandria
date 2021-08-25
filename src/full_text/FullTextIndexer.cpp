@@ -22,10 +22,11 @@ FullTextIndexer::~FullTextIndexer() {
 	}
 }
 
-void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
+size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
 	const vector<size_t> &cols, const vector<float> &scores, size_t partition) {
 
 	string line;
+	size_t added_urls = 0;
 	while (getline(stream, line)) {
 		vector<string> col_values;
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -33,8 +34,6 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 		URL url(col_values[0]);
 
 		if (FullText::should_index_url(url, partition)) {
-
-			cout << "url " << url.str() << " was added to partition " << partition << " on node " << Config::node_id << "/" << Config::nodes_in_cluster << endl;
 
 			float harmonic = url.harmonic(m_sub_system);
 
@@ -60,9 +59,12 @@ void FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders
 				m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
 			}
 			word_map.clear();
+
+			added_urls++;
 		}
 	}
 
+	return added_urls;
 }
 
 void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream) {

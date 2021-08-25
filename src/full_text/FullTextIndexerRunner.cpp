@@ -253,8 +253,8 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 		ifstream stream(local_file, ios::in);
 
 		if (stream.is_open()) {
-			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition);
-			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards" << endl;
+			size_t added_urls = indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition);
+			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards and added " << added_urls << " to partition " << partition << endl;
 		}
 
 		stream.close();

@@ -95,7 +95,7 @@ namespace FullText {
 		warc_paths_file.read_column_into(0, warc_paths);
 
 		vector<string> files_to_download;
-		for (size_t i = offset; i < warc_paths.size(); i++) {
+		for (size_t i = offset; i < warc_paths.size() && i < (offset + limit); i++) {
 			string warc_path = warc_paths[i];
 			const size_t pos = warc_path.find(".warc.gz");
 			if (pos != string::npos) {
