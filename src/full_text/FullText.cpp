@@ -117,7 +117,7 @@ namespace FullText {
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
 
 		vector<string> files;
-		const size_t limit = 5000;
+		const size_t limit = 15000;
 		size_t offset = 0;
 
 		while (true) {
