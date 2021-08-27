@@ -2,6 +2,7 @@
 #include "FullText.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndexerRunner.h"
+#include "link_index/LinkIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
 
 namespace FullText {
@@ -128,6 +129,48 @@ namespace FullText {
 			offset += files.size();
 		}
 
+	}
+
+	void index_single_batch(const string &db_name, const string &hash_table_name, const string &batch) {
+
+		SubSystem *sub_system = new SubSystem();
+		index_batch(db_name, hash_table_name, batch, sub_system);
+
+	}
+
+	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+			const string &domain_hash_table_name) {
+
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		SubSystem *sub_system = new SubSystem();
+
+		url_to_domain->read();
+
+		for (const string &batch : Config::link_batches) {
+			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
+		}
+	}
+
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
+
+		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
+			LinkIndexerRunner indexer(db_name + "_" + to_string(partition_num), domain_db_name + "_" + to_string(partition_num),
+				hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
+			indexer.run(partition_num, Config::ft_num_partitions);
+		}
+
+	}
+
+	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+		const string &domain_hash_table_name, const string &batch) {
+
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		SubSystem *sub_system = new SubSystem();
+
+		url_to_domain->read();
+
+		index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
 	}
 
 	bool should_index_url(const URL &url, size_t partition) {

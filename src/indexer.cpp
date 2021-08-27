@@ -47,20 +47,7 @@ int main(int argc, const char **argv) {
 
 	if (arg == "link") {
 
-		const string cc_batch(argv[2]);
-
-		LogInfo("Running link indexer on " + cc_batch);
-
-		LogInfo("Reading UrlToDomain map");
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("link_index_" + to_string(partition_num), "domain_link_index_" + to_string(partition_num),
-				"link_index", "domain_link_index", cc_batch, sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
 		Profiler::print_memory_status();
 
 		return 0;

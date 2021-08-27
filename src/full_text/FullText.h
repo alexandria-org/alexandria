@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "parser/URL.h"
 #include "text/Text.h"
+#include "UrlToDomain.h"
 #include "FullTextRecord.h"
 #include "FullTextIndex.h"
 
@@ -26,6 +27,13 @@ namespace FullText {
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset);
 	void index_all_batches(const string &db_name, const string &hash_table_name);
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system);
+	void index_single_batch(const string &db_name, const string &domain_db_name, const string &batch);
+	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+			const string &domain_hash_table_name);
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+		const string &domain_hash_table_name, const string &batch);
 	bool should_index_url(const URL &url, size_t partition);
 	bool should_index_hash(size_t hash, size_t partition);
 

@@ -156,21 +156,13 @@ BOOST_AUTO_TEST_CASE(indexer) {
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		FullText::index_single_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01");
 	}
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
+			"ALEXANDRIA-TEST-01");
 	}
 
 	{
@@ -230,29 +222,15 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
 
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
+			"ALEXANDRIA-TEST-01");
 
 	}
 
 	{
 		// Index more links and see if they get added with deduplication.
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
-
-		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-02", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
-
+		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
+			"ALEXANDRIA-TEST-02");
 	}
 
 	{
