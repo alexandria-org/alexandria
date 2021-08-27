@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(html_parse1) {
 BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	string html;
-	vector<ApiLink> links;
+	vector<HtmlLink> links;
 
 	string test2_html = File::read_test_file("test2.html");
 

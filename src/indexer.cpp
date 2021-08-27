@@ -8,10 +8,6 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "index/CCUrlIndex.h"
-#include "index/CCIndexRunner.h"
-#include "index/CCIndexMerger.h"
-#include "index/CCLinkIndex.h"
 #include "system/Profiler.h"
 
 #include "hash_table/HashTableHelper.h"

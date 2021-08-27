@@ -6,12 +6,12 @@
 
 using namespace std;
 
-class ApiLink {
+class HtmlLink {
 
 public:
-	ApiLink(const string &host, const string &path, const string &target_host, const string &target_path,
+	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path,
 		const string &text);
-	~ApiLink();
+	~HtmlLink();
 
 	string host() const;
 	string path() const;

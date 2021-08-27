@@ -19,15 +19,9 @@ include_directories(src/)
 include_directories(tests/)
 
 set(SRC_CLASSES
-	"src/abstract/BasicData.cpp"
-	"src/abstract/BasicIndexer.cpp"
-	"src/abstract/BasicLinkData.cpp"
-	"src/abstract/BasicUrlData.cpp"
-	"src/abstract/TextBase.cpp"
 	
 	"src/api/Api.cpp"
 	"src/api/ApiResponse.cpp"
-	"src/api/ApiLink.cpp"
 	"src/api/ResultWithSnippet.cpp"
 	"src/api/LinkResult.cpp"
 	"src/api/DomainLinkResult.cpp"
@@ -58,14 +52,10 @@ set(SRC_CLASSES
 	"src/hash_table/HashTableShardBuilder.cpp"
 	"src/hash_table/HashTableHelper.cpp"
 
-	"src/index/CCIndexMerger.cpp"
-	"src/index/CCIndexRunner.cpp"
-	"src/index/CCLinkIndex.cpp"
-	"src/index/CCUrlIndex.cpp"
-
 	"src/post_processor/PostProcessor.cpp"
 	
 	"src/parser/entities.cpp"
+	"src/parser/HtmlLink.cpp"
 	"src/parser/HtmlParser.cpp"
 	"src/parser/Unicode.cpp"
 	"src/parser/URL.cpp"
