@@ -56,8 +56,8 @@ int main(int argc, const char **argv) {
 		HashTableHelper::truncate("link_index");
 		HashTableHelper::truncate("domain_link_index");
 
-		//FullText::truncate_index("link_index", 8);
-		//FullText::truncate_index("domain_link_index", 8);
+		FullText::truncate_index("link_index", 8);
+		FullText::truncate_index("domain_link_index", 8);
 
 		return 0;
 	}
