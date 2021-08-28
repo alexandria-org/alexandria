@@ -10,7 +10,6 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
 #include "full_text/UrlToDomain.h"
-#include "LinkIndex.h"
 #include "LinkFullTextRecord.h"
 #include "DomainLinkFullTextRecord.h"
 #include "full_text/FullTextRecord.h"

@@ -16,9 +16,7 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
 #include "full_text/FullTextIndexerRunner.h"
-#include "full_text/FullTextResult.h"
 
-#include "link_index/LinkIndex.h"
 #include "link_index/LinkIndexer.h"
 #include "link_index/LinkIndexerRunner.h"
 

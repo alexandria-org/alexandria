@@ -9,7 +9,6 @@
 #include "search_engine/SearchEngine.h"
 #include "stats/Stats.h"
 
-#include "link_index/LinkIndex.h"
 #include "LinkResult.h"
 #include "DomainLinkResult.h"
 

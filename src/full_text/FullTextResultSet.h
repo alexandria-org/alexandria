@@ -2,7 +2,6 @@
 #pragma once
 
 #include <iostream>
-#include "FullTextResult.h"
 
 using namespace std;
 

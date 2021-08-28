@@ -33,8 +33,6 @@ set(SRC_CLASSES
 	"src/file/TsvRow.cpp"
 
 	"src/full_text/FullTextShard.cpp"
-	"src/full_text/FullTextResult.cpp"
-	"src/full_text/FullTextResultSet.cpp"
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
 	"src/full_text/UrlToDomain.cpp"

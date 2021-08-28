@@ -7,7 +7,6 @@
 #include <mutex>
 #include "common/common.h"
 
-#include "LinkIndex.h"
 #include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"

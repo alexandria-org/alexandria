@@ -12,7 +12,6 @@ template<typename DataRecord> class FullTextShardBuilder;
 
 #include "FullTextIndexer.h"
 #include "FullTextIndex.h"
-#include "FullTextResult.h"
 #include "parser/URL.h"
 #include "FullTextRecord.h"
 #include "UrlToDomain.h"

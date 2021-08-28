@@ -13,7 +13,6 @@
 template<typename DataRecord> class FullTextShard;
 
 #include "FullTextIndex.h"
-#include "FullTextResult.h"
 #include "FullTextResultSet.h"
 
 #include "system/Profiler.h"

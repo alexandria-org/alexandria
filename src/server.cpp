@@ -15,7 +15,6 @@
 
 #include "api/Api.h"
 
-#include "link_index/LinkIndex.h"
 #include "link_index/LinkFullTextRecord.h"
 
 #include "system/Logger.h"
