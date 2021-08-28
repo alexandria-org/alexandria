@@ -68,5 +68,9 @@
 		"typeindex": "cpp",
 		"typeinfo": "cpp",
 		"variant": "cpp"
+	},
+	"cmake.configureSettings": {
+		"CMAKE_BUILD_TYPE": "Debug",
+		"CMAKE_PREFIX_PATH": "./deps/out"
 	}
 }
