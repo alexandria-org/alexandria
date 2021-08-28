@@ -126,18 +126,23 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 		warc_path.replace(warc_path.find(".warc.gz"), 8, ".links.gz");
 
 		int error;
-		const string data = Transfer::gz_file_to_string(warc_path, error);
-		if (error == Transfer::OK) {
-			{
-				stringstream stream(data);
-				indexer.add_stream(shard_builders, stream);
-				indexer.write_cache(m_link_mutexes);
+		for (size_t retry = 0; retry < 3; retry++) {
+			const string data = Transfer::gz_file_to_string(warc_path, error);
+			if (error == Transfer::OK) {
+				{
+					stringstream stream(data);
+					indexer.add_stream(shard_builders, stream);
+					indexer.write_cache(m_link_mutexes);
+				}
+				{
+					stringstream stream(data);
+					domain_link_indexer.add_stream(domain_shard_builders, stream);
+					domain_link_indexer.write_cache(m_domain_link_mutexes);
+				}
+				break;
 			}
-			{
-				stringstream stream(data);
-				domain_link_indexer.add_stream(domain_shard_builders, stream);
-				domain_link_indexer.write_cache(m_domain_link_mutexes);
-			}
+			LogInfo("Transfer returned error for " + warc_path + " retrying no: " + to_string(retry));
+			sleep(1);
 		}
 
 		for (size_t i = 0; i < Config::ht_num_shards; i++) {

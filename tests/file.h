@@ -48,6 +48,36 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 	}
 }
 
+BOOST_AUTO_TEST_CASE(handle_errors) {
+	int error;
+	{
+		string result = Transfer::file_to_string("/non-existing.txt", error);
+		BOOST_CHECK(error == Transfer::ERROR);
+	}
+
+	{
+		string result = Transfer::gz_file_to_string("/non-existing.txt.gz", error);
+		BOOST_CHECK(error == Transfer::ERROR);
+	}
+
+	{
+		stringstream ss;
+		Transfer::file_to_stream("/non-existing.txt", ss, error);
+		BOOST_CHECK(error == Transfer::ERROR);
+	}
+
+	{
+		stringstream ss;
+		Transfer::gz_file_to_stream("/non-existing.txt.gz", ss, error);
+		BOOST_CHECK(error == Transfer::ERROR);
+	}
+
+	{
+		vector<string> downloaded = Transfer::download_gz_files_to_disk({"/non-existing.txt.gz"});
+		BOOST_CHECK(downloaded.size() == 0);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(tsv_file_exists) {
 	TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
 	vector<string> warc_paths;

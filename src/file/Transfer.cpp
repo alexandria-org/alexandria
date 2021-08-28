@@ -81,11 +81,19 @@ namespace Transfer {
 
 			res = curl_easy_perform(curl);
 
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(response);
+			string response_str;
+			try {
+				boost::iostreams::filtering_istream decompress_stream;
+				decompress_stream.push(boost::iostreams::gzip_decompressor());
+				decompress_stream.push(response);
 
-			const string response_str = string(istreambuf_iterator<char>(decompress_stream), {});
+				response_str = string(istreambuf_iterator<char>(decompress_stream), {});
+			} catch (...) {
+				curl_easy_cleanup(curl);
+				error = ERROR;
+				return "";
+			}
+
 
 			if (res == CURLE_OK) {
 				long response_code;
@@ -155,11 +163,15 @@ namespace Transfer {
 				}
 			}
 
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(response);
+			try {
+				boost::iostreams::filtering_istream decompress_stream;
+				decompress_stream.push(boost::iostreams::gzip_decompressor());
+				decompress_stream.push(response);
 
-			output_stream << decompress_stream.rdbuf();
+				output_stream << decompress_stream.rdbuf();
+			} catch(...) {
+				error = ERROR;
+			}
 
 			curl_easy_cleanup(curl);
 		}
