@@ -51,6 +51,14 @@ int main(int argc, const char **argv) {
 		return 0;
 	}
 
+	if (arg == "optimize") {
+
+		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
+		HashTableHelper::optimize(shards);
+
+		return 0;
+	}
+
 	if (arg == "truncate_link") {
 
 		HashTableHelper::truncate("link_index");

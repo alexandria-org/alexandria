@@ -1,6 +1,7 @@
 
 #include "config.h"
 #include "HashTableHelper.h"
+#include "system/Logger.h"
 
 namespace HashTableHelper {
 
@@ -44,6 +45,14 @@ namespace HashTableHelper {
 	void sort(vector<HashTableShardBuilder *> &shards) {
 		for (HashTableShardBuilder *shard : shards) {
 			shard->sort();
+		}
+	}
+
+	void optimize(vector<HashTableShardBuilder *> &shards) {
+		for (HashTableShardBuilder *shard : shards) {
+			LogInfo("Optimizing shard: " + shard->filename_data());
+			shard->optimize();
+			break;
 		}
 	}
 

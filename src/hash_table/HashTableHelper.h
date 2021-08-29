@@ -15,5 +15,6 @@ namespace HashTableHelper {
 	void add_data(vector<HashTableShardBuilder *> &shards, uint64_t key, const string &value);
 	void write(vector<HashTableShardBuilder *> &shards);
 	void sort(vector<HashTableShardBuilder *> &shards);
+	void optimize(vector<HashTableShardBuilder *> &shards);
 
 }

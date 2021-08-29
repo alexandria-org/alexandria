@@ -23,6 +23,11 @@ public:
 
 	void add(uint64_t key, const string &value);
 
+	string filename_data() const;
+	string filename_pos() const;
+	string filename_data_tmp() const;
+	string filename_pos_tmp() const;
+
 private:
 
 	map<uint64_t, string> m_cache;
@@ -31,10 +36,6 @@ private:
 	const size_t m_cache_limit;
 	map<uint64_t, size_t> m_sort_pos;
 
-	string filename_data() const;
-	string filename_pos() const;
-	string filename_data_tmp() const;
-	string filename_pos_tmp() const;
 	void read_keys();
 
 };
