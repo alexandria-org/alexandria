@@ -67,6 +67,12 @@ size_t HashTableShard::size() const {
 	return m_size;
 }
 
+size_t HashTableShard::file_size() const {
+	ifstream infile(filename_data(), ios::ate | ios::binary);
+	size_t file_size = infile.tellg();
+	return file_size;
+}
+
 void HashTableShard::load() {
 	m_loaded = true;
 	ifstream infile(filename_pos(), ios::binary);

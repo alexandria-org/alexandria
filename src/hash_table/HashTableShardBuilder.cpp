@@ -2,6 +2,7 @@
 #include "config.h"
 #include "HashTableShardBuilder.h"
 #include "system/Logger.h"
+#include "file/File.h"
 
 HashTableShardBuilder::HashTableShardBuilder(const string &db_name, size_t shard_id)
 : m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(25 + rand() % 10)
@@ -58,6 +59,93 @@ void HashTableShardBuilder::truncate() {
 
 void HashTableShardBuilder::sort() {
 
+	read_keys();
+
+	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
+	for (const auto &iter : m_sort_pos) {
+		outfile_pos.write((char *)&iter.first, Config::ht_key_size);
+		outfile_pos.write((char *)&iter.second, sizeof(size_t));
+	}
+	outfile_pos.close();
+	m_sort_pos.clear();
+}
+
+void HashTableShardBuilder::optimize() {
+
+	ifstream infile(filename_data(), ios::binary);
+
+	const size_t buffer_len = 1024*1024*10;
+	char *buffer = new char[buffer_len];
+
+	ofstream outfile_data(filename_data_tmp(), ios::binary | ios::trunc);
+	ofstream outfile_pos(filename_pos_tmp(), ios::binary | ios::trunc);
+
+	map<size_t, size_t> keys;
+	size_t last_pos = 0;
+	while (!infile.eof()) {
+		size_t key;
+		infile.read((char *)&key, Config::ht_key_size);
+
+		size_t data_len;
+		infile.read((char *)&data_len, sizeof(size_t));
+
+		if (data_len > buffer_len) {
+			LogInfo("len is larger than buffer_len");
+			infile.seekg(data_len, ios::cur);
+			continue;
+		} else {
+			infile.read(buffer, data_len);
+		}
+
+		if (keys.find(key) == keys.end()) {
+			outfile_data.write((char *)&key, Config::ht_key_size);
+			outfile_data.write((char *)&data_len, sizeof(size_t));
+			outfile_data.write(buffer, data_len);
+
+			outfile_pos.write((char *)&key, Config::ht_key_size);
+			outfile_pos.write((char *)&last_pos, sizeof(size_t));
+			keys[key] = last_pos;
+			last_pos += data_len + Config::ht_key_size + sizeof(size_t);
+		}
+
+	}
+
+	outfile_data.close();
+	outfile_pos.close();
+
+	File::copy_file(filename_data_tmp(), filename_data());
+	File::copy_file(filename_pos_tmp(), filename_pos());
+	File::delete_file(filename_data_tmp());
+	File::delete_file(filename_pos_tmp());
+
+	sort();
+}
+
+void HashTableShardBuilder::add(uint64_t key, const string &value) {
+	m_cache[key] = value;
+}
+
+string HashTableShardBuilder::filename_data() const {
+	size_t disk_shard = m_shard_id % 8;
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
+}
+
+string HashTableShardBuilder::filename_pos() const {
+	size_t disk_shard = m_shard_id % 8;
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
+}
+
+string HashTableShardBuilder::filename_data_tmp() const {
+	size_t disk_shard = m_shard_id % 8;
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data.tmp";
+}
+
+string HashTableShardBuilder::filename_pos_tmp() const {
+	size_t disk_shard = m_shard_id % 8;
+	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos.tmp";
+}
+
+void HashTableShardBuilder::read_keys() {
 	ifstream infile(filename_pos(), ios::binary);
 	const size_t record_len = Config::ht_key_size + sizeof(size_t);
 	const size_t buffer_len = record_len * 10000;
@@ -79,28 +167,5 @@ void HashTableShardBuilder::sort() {
 		} while (!infile.eof());
 	}
 	infile.close();
-
-	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
-	for (const auto &iter : m_sort_pos) {
-		outfile_pos.write((char *)&iter.first, Config::ht_key_size);
-		outfile_pos.write((char *)&iter.second, sizeof(size_t));
-	}
-	outfile_pos.close();
-	m_sort_pos.clear();
-
-}
-
-void HashTableShardBuilder::add(uint64_t key, const string &value) {
-	m_cache[key] = value;
-}
-
-string HashTableShardBuilder::filename_data() const {
-	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
-}
-
-string HashTableShardBuilder::filename_pos() const {
-	size_t disk_shard = m_shard_id % 8;
-	return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
 }
 

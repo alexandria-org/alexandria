@@ -27,6 +27,7 @@ public:
 	string filename_pos() const;
 	size_t shard_id() const;
 	size_t size() const;
+	size_t file_size() const;
 	void print_all_items();
 
 private:

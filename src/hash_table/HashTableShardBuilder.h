@@ -19,6 +19,7 @@ public:
 	void write();
 	void truncate();
 	void sort();
+	void optimize();
 
 	void add(uint64_t key, const string &value);
 
@@ -32,5 +33,8 @@ private:
 
 	string filename_data() const;
 	string filename_pos() const;
+	string filename_data_tmp() const;
+	string filename_pos_tmp() const;
+	void read_keys();
 
 };

@@ -26,6 +26,7 @@ set(SRC_CLASSES
 	"src/api/LinkResult.cpp"
 	"src/api/DomainLinkResult.cpp"
 
+	"src/file/File.cpp"
 	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"
 	"src/file/TsvFileS3.cpp"

@@ -3,7 +3,7 @@
 #include "Transfer.h"
 #include <fstream>
 #include "system/ThreadPool.h"
-#include <stdio.h>
+#include "File.h"
 
 namespace Transfer {
 
@@ -215,7 +215,7 @@ namespace Transfer {
 
 	void delete_downloaded_files(const vector<string> &files) {
 		for (const string &file : files) {
-			remove(file.c_str());
+			File::delete_file(file);
 		}
 	}
 }
