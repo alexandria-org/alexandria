@@ -1,9 +1,11 @@
 
+#include "config.h"
 #include "File.h"
 
 namespace File {
 	string read_test_file(const string &file_name) {
-		ifstream file("../tests/data/" + file_name);
+
+		ifstream file(Config::test_data_path + file_name);
 		if (file.is_open()) {
 			string ret;
 			file.seekg(0, ios::end);

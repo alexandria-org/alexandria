@@ -82,9 +82,10 @@ namespace FullText {
 		return ret;
 	}
 
-	void index_files(const string &db_name, const string &hash_table_name, const vector<string> files, const SubSystem *sub_system) {
+	void index_files(const string &batch, const string &db_name, const string &hash_table_name, const vector<string> files,
+			const SubSystem *sub_system) {
 		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
-			FullTextIndexerRunner indexer(db_name + "_" + to_string(partition_num), hash_table_name, sub_system);
+			FullTextIndexerRunner indexer(db_name + "_" + to_string(partition_num), hash_table_name, batch, sub_system);
 			indexer.run(files, partition_num);
 		}
 	}
@@ -124,7 +125,7 @@ namespace FullText {
 		while (true) {
 			vector<string> files = download_batch(batch, limit, offset);
 			if (files.size() == 0) break;
-			index_files(db_name, hash_table_name, files, sub_system);
+			index_files(batch, db_name, hash_table_name, files, sub_system);
 			Transfer::delete_downloaded_files(files);
 			offset += files.size();
 		}

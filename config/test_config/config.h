@@ -37,6 +37,7 @@ namespace Config {
 
 	// Other constants.
 	const unsigned long long num_async_file_transfers = 48;
+	inline const std::string test_data_path = "/var/www/html/node0003.alexandria.org/test-data/";
 
 }
 

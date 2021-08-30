@@ -23,7 +23,7 @@ FullTextIndexer::~FullTextIndexer() {
 }
 
 size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-	const vector<size_t> &cols, const vector<float> &scores, size_t partition) {
+	const vector<size_t> &cols, const vector<float> &scores, size_t partition, const string &batch) {
 
 	string line;
 	size_t added_urls = 0;
@@ -40,7 +40,7 @@ size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 			m_url_to_domain->add_url(url.hash(), url.host_hash());
 
 			uint64_t key_hash = url.hash();
-			shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line);
+			shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line + "\t" + batch);
 
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 

@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(tsv_file_dont_exists) {
 
 BOOST_AUTO_TEST_CASE(local_tsv_files) {
 
-	TsvFile my_file("../tests/data/tsvtest.tsv");
+	TsvFile my_file(Config::test_data_path + "tsvtest.tsv");
 
 	BOOST_CHECK_EQUAL(my_file.find_first_position("aaa"), 0);
 	BOOST_CHECK_EQUAL(my_file.find_first_position("aab"), 126);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(local_tsv_files) {
 	BOOST_CHECK_EQUAL(my_file.find_last_position("aab"), 126);
 	BOOST_CHECK_EQUAL(my_file.find_last_position("european"), string::npos);
 
-	TsvFile my_file2("../tests/data/tsvtest2.tsv");
+	TsvFile my_file2(Config::test_data_path + "tsvtest2.tsv");
 
 	BOOST_CHECK_EQUAL(my_file2.find_first_position("aaa"), 0);
 	BOOST_CHECK(my_file2.find_first_position("aab") > 0);

@@ -449,7 +449,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 		BOOST_CHECK(v.ValueExists("time_ms"));
 		BOOST_CHECK(v.ValueExists("response"));
 
-		BOOST_CHECK_EQUAL(v.GetString("response"), "http://url1.com/my_test_url	test test		test test test test	");
+		BOOST_CHECK_EQUAL(v.GetString("response"), "http://url1.com/my_test_url	test test		test test test test		ALEXANDRIA-TEST-04");
 	}
 
 	{

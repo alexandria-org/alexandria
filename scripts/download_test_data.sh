@@ -22,4 +22,5 @@ wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-MANUAL-
 wget -r --no-parent http://node0003.alexandria.org/dev_files/ --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/example.txt --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/example.txt.gz --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/test-data/ --http-user=alexandria --http-password=wmXN6U4u
 

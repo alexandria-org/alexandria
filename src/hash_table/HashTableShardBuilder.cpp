@@ -80,8 +80,7 @@ void HashTableShardBuilder::optimize() {
 	ofstream outfile_data(filename_data_tmp(), ios::binary | ios::trunc);
 	ofstream outfile_pos(filename_pos_tmp(), ios::binary | ios::trunc);
 
-	map<size_t, size_t> keys;
-	size_t last_pos = 0;
+	map<size_t, string> hash_map;
 	while (!infile.eof()) {
 		size_t key;
 		infile.read((char *)&key, Config::ht_key_size);
@@ -97,17 +96,21 @@ void HashTableShardBuilder::optimize() {
 			infile.read(buffer, data_len);
 		}
 
-		if (keys.find(key) == keys.end()) {
-			outfile_data.write((char *)&key, Config::ht_key_size);
-			outfile_data.write((char *)&data_len, sizeof(size_t));
-			outfile_data.write(buffer, data_len);
+		hash_map[key] = string(buffer, data_len);
+	}
 
-			outfile_pos.write((char *)&key, Config::ht_key_size);
-			outfile_pos.write((char *)&last_pos, sizeof(size_t));
-			keys[key] = last_pos;
-			last_pos += data_len + Config::ht_key_size + sizeof(size_t);
-		}
+	size_t last_pos = 0;
+	for (const auto &iter : hash_map) {
+		const size_t key = iter.first;
+		const size_t data_len = iter.second.size();
+		outfile_data.write((char *)&key, Config::ht_key_size);
+		outfile_data.write((char *)&data_len, sizeof(size_t));
+		outfile_data.write(iter.second.c_str(), data_len);
 
+		outfile_pos.write((char *)&key, Config::ht_key_size);
+		outfile_pos.write((char *)&last_pos, sizeof(size_t));
+
+		last_pos += data_len + Config::ht_key_size + sizeof(size_t);
 	}
 
 	outfile_data.close();
