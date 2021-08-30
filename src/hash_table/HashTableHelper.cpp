@@ -52,7 +52,6 @@ namespace HashTableHelper {
 		for (HashTableShardBuilder *shard : shards) {
 			LogInfo("Optimizing shard: " + shard->filename_data());
 			shard->optimize();
-			break;
 		}
 	}
 
