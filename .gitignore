@@ -14,7 +14,6 @@ cc_api.zip
 cc_api
 cc_full_text.zip
 cc_full_text
-frontend/node_modules
 run_tests
 CMakeCache.txt
 CMakeFiles
