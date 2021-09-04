@@ -100,3 +100,30 @@ curl http://node0002.alexandria.org/status
 }
 ```
 
+### Combined api response (api.alexandria.org)
+```
+curl https://api.alexandria.org/?q=the%20beatles&p=1
+{
+  "status":	"success",
+  "time_ms":	35.876,
+  "total_found":	245436,
+  "page_max": 10,
+  "results":	[{
+    "url":	"https://www.example.com/",
+    "display_url": "https://www.example.com/",
+    "title":	"Example dot com",
+    "snippet":	"Lorem ipsum dolor esit",
+    "score":	182.51408386230469,
+    "domain_hash":	"2892282071861106665",
+    "url_hash":	"2892281418178079567",
+    "exact_match": 1,
+    "phrase_match": 1,
+    "year": 3300,
+    "is_old": 0,
+    "is_subdomain": 0,
+    "domain": "www.example.com"
+  },
+  ...
+  ]
+}
+```
