@@ -50,9 +50,17 @@ namespace Api {
 
 		struct SearchMetric metric;
 
+		Profiler profiler_links("SearchEngine::search_link_array");
 		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 500000, metric);
+		profiler_links.stop();
+
+		Profiler profiler_domain_links("SearchEngine::search_domain_link_array");
 		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
+		profiler_domain_links.stop();
+
+		Profiler profiler_index("SearchEngine::search_index_array");
 		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
+		profiler_index.stop();
 
 		PostProcessor post_processor(query);
 

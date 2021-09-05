@@ -113,6 +113,44 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
+	void delete_result_vector(vector<FullTextResultSet<DataRecord> *> results) {
+
+		for (FullTextResultSet<DataRecord> *result_object : results) {
+			delete result_object;
+		}
+	}
+
+	template<typename DataRecord>
+	void limit_results(vector<DataRecord> &results, size_t limit) {
+		if (results.size() > limit) {
+			results.resize(limit);
+		}
+	}
+
+	template<typename DataRecord>
+	void sort_by_score(vector<DataRecord> &results) {
+		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_score > b.m_score;
+		});
+	}
+
+	template<typename DataRecord>
+	void sort_by_value(vector<DataRecord> &results) {
+		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
+			return a.m_value < b.m_value;
+		});
+	}
+
+	template<typename DataRecord>
+	void deduplicate_by_value(vector<DataRecord> &results) {
+		auto last = unique(results.begin(), results.end(),
+			[](const DataRecord &a, const DataRecord &b) {
+			return a.m_value == b.m_value;
+		});
+		results.erase(last, results.end());
+	}
+
+	template<typename DataRecord>
 	void flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,	const vector<size_t> &indices,
 		vector<DataRecord> &flat_result) {
 
@@ -141,6 +179,9 @@ namespace SearchEngine {
 			}
 
 		} else {
+			/*
+				This is just a copy from a c vector to a c++ vector. It takes time and we are not adding any value, should be optimized.
+			*/
 			const DataRecord *record_arr = results[0]->record_pointer();
 			for (size_t i = 0; i < results[0]->len(); i++) {
 				merged.push_back(record_arr[i]);
@@ -149,34 +190,44 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void delete_result_vector(vector<FullTextResultSet<DataRecord> *> results) {
+	void merge_results_to_vector(const vector<FullTextResultSet<DataRecord> *> results, vector<DataRecord> &merged, vector<float> &score_vector) {
+		merged.clear();
+		if (results.size() > 1) {
+			size_t shortest_vector;
+			vector<vector<float>> score_parts;
+			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector, score_parts);
 
-		for (FullTextResultSet<DataRecord> *result_object : results) {
-			delete result_object;
+			{
+				FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
+				flatten_results<DataRecord>(shortest, score_vector, result_ids, merged);
+			}
+
+		} else {
+			const DataRecord *record_arr = results[0]->record_pointer();
+			for (size_t i = 0; i < results[0]->len(); i++) {
+				merged.push_back(record_arr[i]);
+				score_vector.push_back(record_arr[i].m_score);
+			}
 		}
 	}
 
 	template<typename DataRecord>
-	void sort_by_score(vector<DataRecord> &results) {
-		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
-			return a.m_score > b.m_score;
-		});
-	}
+	vector<DataRecord> get_results_with_top_scores_vector(const vector<DataRecord> results, vector<float> &scores, size_t limit) {
 
-	template<typename DataRecord>
-	void sort_by_value(vector<DataRecord> &results) {
-		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
-		});
-	}
+		nth_element(scores.begin(), scores.begin() + (limit - 1), scores.end(), greater{});
+		const float nth = scores[limit - 1];
 
-	template<typename DataRecord>
-	void deduplicate_by_value(vector<DataRecord> &results) {
-		auto last = unique(results.begin(), results.end(),
-			[](const DataRecord &a, const DataRecord &b) {
-			return a.m_value == b.m_value;
-		});
-		results.erase(last, results.end());
+		vector<DataRecord> top_results;
+		for (const DataRecord &res : results) {
+			if (res.m_score >= nth) {
+				top_results.push_back(res);
+			}
+		}
+
+		sort_by_score(top_results);
+		limit_results(top_results, limit);
+
+		return top_results;
 	}
 
 	template<typename DataRecord>
@@ -276,9 +327,12 @@ namespace SearchEngine {
 		metric.m_link_domain_matches = apply_domain_link_scores(domain_links, flat_result);
 		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
-		sort_by_score<FullTextRecord>(flat_result);
+		// Narrow down results directly to top 200K
+		vector<float> scores;
+		for (const FullTextRecord &res : flat_result) scores.push_back(res.m_score);
+		vector<FullTextRecord> top_results = get_results_with_top_scores_vector<FullTextRecord>(flat_result, scores, 200000);
 
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(flat_result, limit);
+		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, limit);
 
 		return deduped_result;
 	}
@@ -305,7 +359,7 @@ namespace SearchEngine {
 	}
 
 	vector<DomainLinkFullTextRecord> search_domain_links(const vector<FullTextShard<DomainLinkFullTextRecord> *> &shards, const string &query,
-		struct SearchMetric &metric) {
+		size_t limit, struct SearchMetric &metric) {
 
 		vector<DomainLinkFullTextRecord> flat_result;
 
@@ -318,11 +372,13 @@ namespace SearchEngine {
 
 		set_total_found<DomainLinkFullTextRecord>(result_vector, metric);
 
-		merge_results_to_vector<DomainLinkFullTextRecord>(result_vector, flat_result);
+		vector<float> scores;
+		merge_results_to_vector<DomainLinkFullTextRecord>(result_vector, flat_result, scores);
+		vector<DomainLinkFullTextRecord> top_results = get_results_with_top_scores_vector<DomainLinkFullTextRecord>(flat_result, scores, limit);
 
 		delete_result_vector<DomainLinkFullTextRecord>(result_vector);
 
-		return flat_result;
+		return top_results;
 	}
 
 	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
@@ -479,21 +535,16 @@ namespace SearchEngine {
 
 		size_t idx = 0;
 		for (FullTextIndex<DomainLinkFullTextRecord> *index : index_array) {
-			future<vector<DomainLinkFullTextRecord>> future = async(search_domain_links, index->shards(), query, ref(metrics_vector[idx]));
+			future<vector<DomainLinkFullTextRecord>> future = async(search_domain_links, index->shards(), query, limit, ref(metrics_vector[idx]));
 			futures.push_back(move(future));
 			idx++;
 		}
 
-		Profiler profiler1("execute all threads");
 		vector<DomainLinkFullTextRecord> complete_result;
 		for (auto &future : futures) {
 			vector<DomainLinkFullTextRecord> result = future.get();
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
 		}
-
-		// deduplicate.
-		sort_by_value<DomainLinkFullTextRecord>(complete_result);
-		deduplicate_by_value<DomainLinkFullTextRecord>(complete_result);
 
 		metric.m_total_links_found = 0;
 		for (const struct SearchMetric &m : metrics_vector) {
