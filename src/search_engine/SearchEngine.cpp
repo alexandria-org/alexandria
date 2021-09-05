@@ -336,6 +336,8 @@ namespace SearchEngine {
 		for (const FullTextRecord &res : flat_result) scores.push_back(res.m_score);
 		vector<FullTextRecord> top_results = get_results_with_top_scores_vector<FullTextRecord>(flat_result, scores, 200000);
 
+		sort_by_score<FullTextRecord>(top_results);
+
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, limit);
 
 		return deduped_result;
