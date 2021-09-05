@@ -214,20 +214,24 @@ namespace SearchEngine {
 	template<typename DataRecord>
 	vector<DataRecord> get_results_with_top_scores_vector(const vector<DataRecord> results, vector<float> &scores, size_t limit) {
 
-		nth_element(scores.begin(), scores.begin() + (limit - 1), scores.end(), greater{});
-		const float nth = scores[limit - 1];
+		if (results.size() > limit) {
+			nth_element(scores.begin(), scores.begin() + (limit - 1), scores.end(), greater{});
+			const float nth = scores[limit - 1];
 
-		vector<DataRecord> top_results;
-		for (const DataRecord &res : results) {
-			if (res.m_score >= nth) {
-				top_results.push_back(res);
+			vector<DataRecord> top_results;
+			for (const DataRecord &res : results) {
+				if (res.m_score >= nth) {
+					top_results.push_back(res);
+				}
 			}
+
+			sort_by_score(top_results);
+			limit_results(top_results, limit);
+			return top_results;
+		} else {
+			return results;
 		}
 
-		sort_by_score(top_results);
-		limit_results(top_results, limit);
-
-		return top_results;
 	}
 
 	template<typename DataRecord>
