@@ -28,7 +28,7 @@ make -j24
 ```
 
 3. Download test data to local server.
-To run the test suite without having to download all the test data while running the test suite you need to install nginx and pre-download all the data.
+To run the test suite you need to install nginx and pre-download all the data.
 [Configure local nginx test data server](/documentation/configure_local_nginx.md)
 
 4. Create output directories. Note, this will create a bunch of directories in the /mnt so make sure you don't have anything there.
