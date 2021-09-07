@@ -6,8 +6,7 @@
 3. [API Response format](/documentation/api_response_format.md)
 
 ## How to build
-1. Configure the system
-Tested on Ubuntu 20.04.
+1. Configure the system (Tested on Ubuntu 20.04)
 ```
 # Will alter your system and install dependencies with apt.
 ./scripts/install-deps.sh
@@ -25,7 +24,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
 or
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
 
-make
+make -j24
 ```
 
 3. Download test data to local server.
@@ -40,6 +39,7 @@ To run the test suite without having to download all the test data while running
 5. Run the test suite
 ```
 cd build
+make run_tests -j24
 ./run_tests
 ```
 
