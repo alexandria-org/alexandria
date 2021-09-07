@@ -44,5 +44,9 @@ namespace Config {
 	inline const unsigned long long num_async_file_transfers = 48;
 	inline const std::string test_data_path = "/var/www/html/node0003.alexandria.org/test-data/";
 
+	// Commoncrawl parser.
+	inline const std::string cc_target_output = "alexandria-cc-output";
+	inline const bool cc_run_on_lambda = true;
+
 }
 

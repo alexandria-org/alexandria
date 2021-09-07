@@ -75,7 +75,7 @@ set(SRC_COMMON
 )
 
 add_executable(cc_parser 
-	"src/main.cpp"
+	"src/cc_parser.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )

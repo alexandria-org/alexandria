@@ -6,8 +6,6 @@ cd ..
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
 
-sudo apt-get install -y zip make cmake gcc-10 g++-10 libcurl4-openssl-dev libssl-dev libcrypto++-dev libboost-iostreams-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev libfcgi-dev spawn-fcgi nginx
-
 rel_path=`pwd`
 base_path=`realpath $rel_path`
 cd $base_path
@@ -44,7 +42,4 @@ cd build
 cmake .. -DBUILD_ONLY="s3;transfer;lambda" -DBUILD_SHARED_LIBS=OFF -DENABLE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../out -DENABLE_TESTING=OFF -DBUILD_DEPS=ON -DCPP_STANDARD=17 -DAWS_LIBCRYPTO_LOG_RESOLVE=0
 make -j8
 make install
-
-# Install nginx config.
-
 

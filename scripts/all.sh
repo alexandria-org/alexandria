@@ -29,8 +29,6 @@ for key in `awk "NR >= $offset_start && NR <= $offset_end" tmp/warc.paths`; do
 	echo "Starting $key"
 
 	aws lambda invoke --function-name cc-parser --invocation-type Event --payload '{"s3bucket":"commoncrawl", "s3key": "'"$key"'"}' response.txt &
-	#echo '{"s3bucket":"alexandria-cc-output", "s3key": "'"$key"'", "id": "'"$id"'"}'
-	#aws lambda invoke --function-name cc-indexer --invocation-type Event --payload '{"s3bucket":"alexandria-cc-output", "s3key": "'"$key"'", "id": '"$id"'}' response.txt &
 
 	procs+=( $! )
 	id=$((id+1))

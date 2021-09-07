@@ -1,5 +1,6 @@
 
 // main.cpp
+#include "config.h"
 #include "parser/HtmlParser.h"
 #include <iterator>
 #include <aws/core/Aws.h>
@@ -33,12 +34,9 @@ namespace io = boost::iostreams;
 
 char const TAG[] = "LAMBDA_ALLOC";
 
-#define RUN_ON_LAMBDA 1
 #define CC_PARSER_CHUNK 1024*1024*600
-//#define CC_PARSER_CHUNK 0
 #define CC_PARSER_ZLIB_IN 1024*1024*16
 #define CC_PARSER_ZLIB_OUT 1024*1024*16
-#define CC_TARGET_BUCKET "alexandria-cc-output"
 
 class CCParser {
 
@@ -395,7 +393,7 @@ string CCParser::get_warc_record(const string &record, const string &key, int &o
 void CCParser::upload_result() {
 
 	Aws::S3::Model::PutObjectRequest request;
-	request.SetBucket(CC_TARGET_BUCKET);
+	request.SetBucket(Config::cc_target_output);
 	string key = m_key;
 	key.replace(key.find(".warc.gz"), 8, string(".gz"));
 	request.SetKey(key);
@@ -415,7 +413,7 @@ void CCParser::upload_result() {
 
 	if (outcome.IsSuccess()) {
 
-	    std::cout << "Added object '" << m_key << "' to bucket '" << CC_TARGET_BUCKET << "'.";
+	    std::cout << "Added object '" << m_key << "' to bucket '" << Config::cc_target_output << "'.";
 	} else {
 		std::cout << "Error: PutObject: " <<
 			outcome.GetError().GetMessage() << std::endl;
@@ -425,7 +423,7 @@ void CCParser::upload_result() {
 void CCParser::upload_links() {
 
 	Aws::S3::Model::PutObjectRequest request;
-	request.SetBucket(CC_TARGET_BUCKET);
+	request.SetBucket(Config::cc_target_output);
 	string key = m_key;
 	key.replace(key.find(".warc.gz"), 8, string(".links.gz"));
 	request.SetKey(key);
@@ -445,7 +443,7 @@ void CCParser::upload_links() {
 
 	if (outcome.IsSuccess()) {
 
-	    std::cout << "Added object '" << m_key << "' to bucket '" << CC_TARGET_BUCKET << "'.";
+	    std::cout << "Added object '" << m_key << "' to bucket '" << Config::cc_target_output << "'.";
 	} else {
 	    std::cout << "Error: PutObject: " <<
 	        outcome.GetError().GetMessage() << std::endl;
@@ -531,11 +529,11 @@ int main(int argc, const char **argv) {
 	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
 	Aws::InitAPI(options);
 
-	if (RUN_ON_LAMBDA) {
+	if (Config::cc_run_on_lambda) {
 		run_lambda_handler();
 	} else {
-		//CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-10/segments/1614178361510.12/warc/CC-MAIN-20210228145113-20210228175113-00135.warc.gz");
-		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl", "crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz");
+		CCParser parser(Aws::S3::S3Client(getS3Config()), "commoncrawl",
+			"crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz");
 		string response;
 		for (int retry = 1; retry <= 1; retry++) {
 			if (parser.run(response)) {

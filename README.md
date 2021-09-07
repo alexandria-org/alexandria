@@ -5,15 +5,15 @@
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
 3. [API Response format](/documentation/api_response_format.md)
 
-## Notes
-
-This is a pretty nice open source font: https://rsms.me/inter/
-Found it here: https://news.ycombinator.com/item?id=28009042
-
-## How to build and deploy
+## How to build
 1. Configure the system
+Tested on Ubuntu 20.04.
 ```
-./configure
+# Will alter your system and install dependencies with apt.
+./scripts/install-deps.sh
+
+# Will download and build zlib, aws-lambda-cpp and aws-sdk-cpp will only alter the local directory.
+./scripts/configure.sh
 ```
 
 2. Build with cmake
@@ -26,17 +26,15 @@ or
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
 
 make
-make run_tests
 ```
 
-3. Deploy to lambda/ec2/alexandria
+3. Download test data to local server.
+To run the test suite without having to download all the test data while running the test suite you need to install nginx and pre-download all the data.
+[Configure local nginx test data server](/documentation/configure_local_nginx.md)
+
+4. Run the test suite
 ```
-./scripts/deploy.sh lambda
-./scripts/deploy.sh ec2
-./scripts/deploy.sh alexandria
+cd build
+./run_tests
 ```
 
-## Launch ec2
-```
-./scripts/launch_ec2.sh
-```
