@@ -11,7 +11,6 @@ cd $base_path
 
 mkdir -p deps
 cd deps
-#rm -rf ./*
 
 curl https://zlib.net/zlib-1.2.11.tar.gz > zlib-1.2.11.tar.gz
 gunzip zlib-1.2.11.tar.gz
