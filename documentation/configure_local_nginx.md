@@ -26,6 +26,6 @@ server {
 
 3. Download test data to /var/www/html
 ```
-./scripts/download_test_data.sh /var/www/html
+./scripts/download-test-data.sh /var/www/html
 ```
 

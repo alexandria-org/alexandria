@@ -5,14 +5,49 @@
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
 3. [API Response format](/documentation/api_response_format.md)
 
-## How to build
+## Build with docker
+1. Build docker image
+```
+docker build . -t alexandria
+```
+
+2. Run container
+```
+docker container run --name alexandria -v $PWD:/alexandria:ro -it -d alexandria
+```
+3. Attach to container.
+```
+docker exec -it alexandria /bin/bash
+```
+4. Initialize docker
+```
+/alexandria/scripts/init-docker.sh
+```
+5. Download and build dependencies.
+```
+/alexandria/scripts/download-deps.sh
+/alexandria/scripts/build-deps.sh
+```
+6. Configure with cmake and build tests.
+```
+mkdir /alexandria/build
+cd /alexandria/build
+
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
+or
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
+
+make -j4 run_tests
+```
+
+## How to build manually
 1. Configure the system (Tested on Ubuntu 20.04)
 ```
 # Will alter your system and install dependencies with apt.
 ./scripts/install-deps.sh
 
 # Will download and build zlib, aws-lambda-cpp and aws-sdk-cpp will only alter the local directory.
-./scripts/configure.sh
+./scripts/build-deps.sh
 ```
 
 2. Build with cmake
