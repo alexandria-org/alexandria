@@ -49,4 +49,50 @@ BOOST_AUTO_TEST_CASE(hash) {
 	BOOST_CHECK(hash4 == hash5);
 }
 
+BOOST_AUTO_TEST_CASE(unescape) {
+
+	{
+		URL url("https://github.com/?q=test%20test");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["q"], "test test");
+	}
+	{
+		URL url("https://github.com/?q=test%2020");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["q"], "test 20");
+	}
+	{
+		URL url("https://github.com/search?q=targumical&cp=0&hl=en-US&pq=%targumical%&sourceid=chrome&ie=UTF-8");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["pq"], "%targumical%");
+	}
+
+	{
+		URL url("https://github.com/search?q=stress%%c3%C3%a5%C3%A4%c3%b6%0G");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["q"], "stress%c3åäö%0G");
+	}
+
+	{
+		// Test double encoding.
+		URL url("https://github.com/search?q=%25C3%25A5%25C3%25A4%25C3%25B6");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["q"], "%C3%A5%C3%A4%C3%B6");
+	}
+
+	{
+		// Test double encoding.
+		URL url("https://github.com/search?q=%josef%0");
+		map<string, string> query = url.query();
+
+		BOOST_CHECK_EQUAL(query["q"], "%josef%0");
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();

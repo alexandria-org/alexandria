@@ -2,6 +2,7 @@
 #include "URL.h"
 #include <curl/curl.h>
 #include "text/Text.h"
+#include "parser.h"
 
 URL::URL() {
 	m_status = CC_OK;
@@ -104,7 +105,7 @@ map<string, string> URL::query() const {
 		vector<string> pair;
 		boost::split(pair, part, boost::is_any_of("="));
 		if (pair.size() > 1) {
-			ret[pair[0]] = unescape(pair[1]);
+			ret[pair[0]] = Parser::urldecode(pair[1]);
 		}
 	}
 
@@ -151,28 +152,6 @@ string URL::host_reverse_top_domain(const string &host) {
 	}
 	reverse(parts.begin(), parts.end());
 	return boost::algorithm::join(parts, ".");
-}
-
-string URL::unescape(const string &str) const {
-	const size_t len = str.size();
-	const char *cstr = str.c_str();
-	char *ret = new char[len + 1];
-	size_t j = 0;
-	for (size_t i = 0; i < len; i++) {
-		if (cstr[i] == '%' && i < len - 2) {
-			ret[j++] = (char)stoi(string(&cstr[i + 1], 2), NULL, 16);
-			i += 2;
-		} else {
-			ret[j++] = cstr[i];
-		}
-	}
-	ret[j] = '\0';
-
-	string ret_str(ret);
-
-	delete ret;
-
-	return ret_str;
 }
 
 string URL::domain_without_tld() const {

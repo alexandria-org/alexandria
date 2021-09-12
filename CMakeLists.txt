@@ -52,6 +52,7 @@ set(SRC_CLASSES
 
 	"src/post_processor/PostProcessor.cpp"
 	
+	"src/parser/Parser.cpp"
 	"src/parser/entities.cpp"
 	"src/parser/HtmlLink.cpp"
 	"src/parser/HtmlParser.cpp"

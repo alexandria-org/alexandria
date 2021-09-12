@@ -35,7 +35,6 @@ public:
 	string path_with_query() const;
 	map<string, string> query() const;
 	string host_reverse() const;
-	string unescape(const string &str) const;
 	string domain_without_tld() const;
 	uint32_t size() const;
 
