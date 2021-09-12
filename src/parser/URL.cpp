@@ -2,7 +2,7 @@
 #include "URL.h"
 #include <curl/curl.h>
 #include "text/Text.h"
-#include "parser.h"
+#include "Parser.h"
 
 URL::URL() {
 	m_status = CC_OK;
