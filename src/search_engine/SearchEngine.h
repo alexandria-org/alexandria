@@ -54,8 +54,6 @@ namespace SearchEngine {
 	vector<size_t> value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets,
 		size_t &shortest_vector_position, vector<float> &scores, vector<vector<float>> &score_parts) {
 
-		Profiler value_intersection("FullTextIndex<DataRecord>::value_intersection");
-		
 		if (result_sets.size() == 0) return {};
 
 		shortest_vector_position = 0;

@@ -1,5 +1,6 @@
 
 #include "sort/Sort.h"
+#include "system/Profiler.h"
 
 BOOST_AUTO_TEST_SUITE(performance)
 
@@ -20,7 +21,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 
 	vector<DomainLinkFullTextRecord> correct_result;
 	{
-		Profiler profile2("total");
+		Profiler::instance profile2("total");
 		vector<vector<DomainLinkFullTextRecord>> flat_results;
 		for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
 			FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
@@ -56,7 +57,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	}
 
 
-	Profiler profile("total");
+	Profiler::instance profile("total");
 	vector<vector<DomainLinkFullTextRecord>> flat_results;
 	for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
 		FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();

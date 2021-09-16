@@ -15,7 +15,6 @@ template<typename DataRecord> class FullTextShard;
 #include "FullTextIndex.h"
 #include "FullTextResultSet.h"
 
-#include "system/Profiler.h"
 #include "system/Logger.h"
 
 using namespace std;

@@ -17,25 +17,30 @@
 
 using namespace std;
 
-class Profiler {
+namespace Profiler {
 
-public:
+	class instance {
 
-	Profiler(const string &name);
-	~Profiler();
+	public:
 
-	void enable();
-	double get() const;
-	double get_micro() const;
-	void stop();
-	void print();
-	uint64_t get_cycles() const;
+		instance(const string &name);
+		instance();
+		~instance();
 
-	static void print_memory_status();
+		void enable();
+		double get() const;
+		double get_micro() const;
+		void stop();
+		void print();
 
-private:
-	bool m_enabled = true;
-	bool m_has_stopped = false;
-	string m_name;
-	std::chrono::_V2::system_clock::time_point m_start_time;
-};
+	private:
+		string m_name;
+		bool m_enabled = true;
+		bool m_has_stopped = false;
+		std::chrono::_V2::system_clock::time_point m_start_time;
+	};
+
+	void print_memory_status();
+	uint64_t get_cycles();
+
+}

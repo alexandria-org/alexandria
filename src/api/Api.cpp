@@ -20,7 +20,7 @@ namespace Api {
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, stringstream &response_stream) {
 
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		struct SearchMetric metric;
 
@@ -46,19 +46,19 @@ namespace Api {
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
 		stringstream &response_stream) {
 
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		struct SearchMetric metric;
 
-		Profiler profiler_links("SearchEngine::search_link_array");
+		Profiler::instance profiler_links("SearchEngine::search_link_array");
 		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 500000, metric);
 		profiler_links.stop();
 
-		Profiler profiler_domain_links("SearchEngine::search_domain_link_array");
+		Profiler::instance profiler_domain_links("SearchEngine::search_domain_link_array");
 		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
 		profiler_domain_links.stop();
 
-		Profiler profiler_index("SearchEngine::search_index_array");
+		Profiler::instance profiler_index("SearchEngine::search_index_array");
 		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
 		profiler_index.stop();
 
@@ -107,7 +107,7 @@ namespace Api {
 	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
 		stringstream &response_stream) {
 
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		struct SearchMetric metric;
 
@@ -146,7 +146,7 @@ namespace Api {
 	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
 		stringstream &response_stream) {
 
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		struct SearchMetric metric;
 
@@ -201,7 +201,7 @@ namespace Api {
 	void word_stats(const string &query, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, stringstream &response_stream) {
 
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		map<string, double> word_stats = Stats::word_stats<FullTextRecord>(index_array, query, index_size);
 		map<string, double> link_word_stats = Stats::word_stats<LinkFullTextRecord>(link_index_array, query, link_index_size);
@@ -218,7 +218,7 @@ namespace Api {
 	}
 
 	void url(const string &url_str, HashTable &hash_table, stringstream &response_stream) {
-		Profiler profiler("total");
+		Profiler::instance profiler;
 
 		URL url(url_str);
 

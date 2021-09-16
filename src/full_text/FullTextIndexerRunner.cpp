@@ -107,7 +107,6 @@ void FullTextIndexerRunner::run(const vector<string> local_files, size_t partiti
 
 void FullTextIndexerRunner::merge() {
 	LogInfo("Merging...");
-	Profiler profiler("Merging");
 
 	const size_t merge_batch_size = 500;
 
@@ -138,7 +137,6 @@ void FullTextIndexerRunner::merge() {
 
 void FullTextIndexerRunner::sort() {
 	LogInfo("Sorting...");
-	Profiler profiler("Sorting");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {

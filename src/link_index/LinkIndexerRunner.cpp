@@ -58,7 +58,6 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 void LinkIndexerRunner::merge() {
 	LogInfo("Merging...");
-	Profiler profiler("Merging...");
 
 	const size_t merge_batch_size = 250;
 
@@ -90,7 +89,6 @@ void LinkIndexerRunner::merge() {
 
 void LinkIndexerRunner::sort() {
 	LogInfo("Sorting...");
-	Profiler profiler("Sorting...");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {

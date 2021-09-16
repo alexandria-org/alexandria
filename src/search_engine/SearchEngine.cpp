@@ -313,7 +313,6 @@ namespace SearchEngine {
 			idx++;
 		}
 
-		Profiler profiler1("execute all threads");
 		vector<LinkFullTextRecord> complete_result;
 		for (auto &future : futures) {
 			vector<LinkFullTextRecord> result = future.get();
@@ -393,7 +392,6 @@ namespace SearchEngine {
 	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results) {
 		size_t applied_links = 0;
 
-		Profiler profiler3("Adding url link scores");
 		size_t i = 0;
 		size_t j = 0;
 		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
