@@ -4,8 +4,6 @@
 
 BOOST_AUTO_TEST_SUITE(performance)
 
-#if PROFILE_CPU_CYCLES
-
 BOOST_AUTO_TEST_CASE(domain_index) {
 
 	vector<FullTextShard<DomainLinkFullTextRecord> *> shards;
@@ -18,13 +16,6 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	shards.push_back(new FullTextShard<DomainLinkFullTextRecord>("domain_link_index_5", 859));
 	shards.push_back(new FullTextShard<DomainLinkFullTextRecord>("domain_link_index_6", 859));
 	shards.push_back(new FullTextShard<DomainLinkFullTextRecord>("domain_link_index_7", 859));
-
-	// Base cpu cycles per 100ms.
-	size_t base_cycle_start = Profiler::get_cycles();
-	usleep(100*1000);
-	size_t base_cycles_per_100ms = Profiler::get_cycles() - base_cycle_start;
-
-	cout << "base_cycles_per_100ms: " << base_cycles_per_100ms << endl;
 
 	const uint64_t key = 10850050818246762331ull;
 
@@ -122,7 +113,5 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	BOOST_CHECK(all_equal);
 	BOOST_CHECK(num_cycles < 700000000);
 }
-
-#endif
 
 BOOST_AUTO_TEST_SUITE_END();

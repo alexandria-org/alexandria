@@ -73,7 +73,7 @@ namespace Profiler {
 	double base_performance = 1.0;
 	void measure_base_performance() {
 		instance p;
-		for (size_t i = 0; i < 100; i++) {
+		for (size_t i = 0; i < 1000; i++) {
 			vector<int> vec;
 			for (size_t j = 0; j < 10000; j++) {
 				vec.push_back(rand());
