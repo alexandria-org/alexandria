@@ -19,6 +19,8 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 
 	const uint64_t key = 10850050818246762331ull;
 
+	Profiler::measure_base_performance();
+
 	vector<DomainLinkFullTextRecord> correct_result;
 	{
 		Profiler::instance profile2("total");
@@ -97,7 +99,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		if (a.m_score == b.m_score) return a.m_value < b.m_value;
 		return a.m_score > b.m_score;
 	});
-	cout << "took " << profile.get() << " ms" << endl;
+	cout << "took " << Profiler::get_absolute_performance(profile.get()) << " units" << endl;
 
 	bool all_equal = true;
 	for (size_t i = 0; i < top_results.size(); i++) {

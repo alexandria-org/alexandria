@@ -42,5 +42,7 @@ namespace Profiler {
 
 	void print_memory_status();
 	uint64_t get_cycles();
+	void measure_base_performance();
+	double get_absolute_performance(double elapsed_ms);
 
 }

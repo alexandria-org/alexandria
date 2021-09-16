@@ -1,5 +1,6 @@
 
 #include "Profiler.h"
+#include <vector>
 
 namespace Profiler {
 
@@ -67,6 +68,24 @@ namespace Profiler {
 		return __rdtsc();
 		#endif
 		return 0ull;
+	}
+
+	double base_performance = 1.0;
+	void measure_base_performance() {
+		instance p;
+		for (size_t i = 0; i < 100; i++) {
+			vector<int> vec;
+			for (size_t j = 0; j < 10000; j++) {
+				vec.push_back(rand());
+			}
+
+			sort(vec.begin(), vec.end());
+		}
+		base_performance = p.get();
+	}
+
+	double get_absolute_performance(double elapsed_ms) {
+		return elapsed_ms/base_performance;
 	}
 
 }
