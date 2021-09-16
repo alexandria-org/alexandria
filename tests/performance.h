@@ -4,6 +4,8 @@
 
 BOOST_AUTO_TEST_SUITE(performance)
 
+#if PROFILE_CPU_CYCLES
+
 BOOST_AUTO_TEST_CASE(domain_index) {
 
 	vector<FullTextShard<DomainLinkFullTextRecord> *> shards;
@@ -22,6 +24,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	vector<DomainLinkFullTextRecord> correct_result;
 	{
 		Profiler::instance profile2("total");
+		size_t cycle_start = Profiler::get_cycles();
 		vector<vector<DomainLinkFullTextRecord>> flat_results;
 		for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
 			FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
@@ -39,7 +42,6 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 			delete result_set;
 		}
 
-
 		vector<DomainLinkFullTextRecord> complete_result;
 		for (const auto &result : flat_results) {
 			complete_result.insert(complete_result.end(), result.begin(), result.end());
@@ -51,13 +53,14 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		});
 		complete_result.resize(10000);
 
+		cout << "CYCLE COUNT: " << Profiler::get_cycles() - cycle_start << endl;
 		cout << "took " << profile2.get() << " ms" << endl;
 
 		correct_result = complete_result;
 	}
 
-
 	Profiler::instance profile("total");
+	size_t cycle_start = Profiler::get_cycles();
 	vector<vector<DomainLinkFullTextRecord>> flat_results;
 	for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
 		FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
@@ -97,6 +100,8 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		if (a.m_score == b.m_score) return a.m_value < b.m_value;
 		return a.m_score > b.m_score;
 	});
+	size_t num_cycles = Profiler::get_cycles() - cycle_start;
+	cout << "CYCLE COUNT: " << Profiler::get_cycles() - cycle_start << endl;
 	cout << "took " << profile.get() << " ms" << endl;
 
 	bool all_equal = true;
@@ -105,6 +110,9 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	}
 
 	BOOST_CHECK(all_equal);
+	BOOST_CHECK(num_cycles < 700000000);
 }
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END();
