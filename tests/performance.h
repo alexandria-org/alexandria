@@ -106,6 +106,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	}
 
 	BOOST_CHECK(all_equal);
+	//BOOST_CHECK(num_cycles < 700000000);
 }
 
 BOOST_AUTO_TEST_SUITE_END();
