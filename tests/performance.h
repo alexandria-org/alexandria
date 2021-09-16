@@ -19,6 +19,13 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	shards.push_back(new FullTextShard<DomainLinkFullTextRecord>("domain_link_index_6", 859));
 	shards.push_back(new FullTextShard<DomainLinkFullTextRecord>("domain_link_index_7", 859));
 
+	// Base cpu cycles per 100ms.
+	size_t base_cycle_start = Profiler::get_cycles();
+	usleep(100*1000);
+	size_t base_cycles_per_100ms = Profiler::get_cycles() - base_cycle_start;
+
+	cout << "base_cycles_per_100ms: " << base_cycles_per_100ms << endl;
+
 	const uint64_t key = 10850050818246762331ull;
 
 	vector<DomainLinkFullTextRecord> correct_result;
@@ -59,8 +66,6 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		correct_result = complete_result;
 	}
 
-	Profiler::instance profile("total");
-	size_t cycle_start = Profiler::get_cycles();
 	vector<vector<DomainLinkFullTextRecord>> flat_results;
 	for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
 		FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
@@ -75,6 +80,8 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 
 		delete result_set;
 	}
+	Profiler::instance profile("total");
+	size_t cycle_start = Profiler::get_cycles();
 
 	vector<DomainLinkFullTextRecord> complete_result;
 
@@ -101,7 +108,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		return a.m_score > b.m_score;
 	});
 	size_t num_cycles = Profiler::get_cycles() - cycle_start;
-	cout << "CYCLE COUNT: " << Profiler::get_cycles() - cycle_start << endl;
+	cout << "CYCLE COUNT: " << num_cycles << endl;
 	cout << "took " << profile.get() << " ms" << endl;
 
 	bool all_equal = true;
