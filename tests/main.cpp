@@ -24,4 +24,6 @@ using namespace std;
 #include "api.h"
 #include "search_engine.h"
 #include "configuration.h"
+#include "performance.h"
+#include "sort.h"
 

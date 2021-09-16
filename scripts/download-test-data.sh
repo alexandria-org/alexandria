@@ -24,3 +24,12 @@ wget -r --no-parent http://node0003.alexandria.org/example.txt --http-user=alexa
 wget -r --no-parent http://node0003.alexandria.org/example.txt.gz --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/test-data/ --http-user=alexandria --http-password=wmXN6U4u
 
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_0_859.idx -O /mnt/1/full_text/fti_domain_link_index_0_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_1_859.idx -O /mnt/6/full_text/fti_domain_link_index_1_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_2_859.idx -O /mnt/1/full_text/fti_domain_link_index_2_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_3_859.idx -O /mnt/5/full_text/fti_domain_link_index_3_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_4_859.idx -O /mnt/4/full_text/fti_domain_link_index_4_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_5_859.idx -O /mnt/5/full_text/fti_domain_link_index_5_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_6_859.idx -O /mnt/0/full_text/fti_domain_link_index_6_859.idx --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_7_859.idx -O /mnt/0/full_text/fti_domain_link_index_7_859.idx --http-user=alexandria --http-password=wmXN6U4u
+

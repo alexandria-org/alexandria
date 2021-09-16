@@ -54,3 +54,10 @@ void Profiler::print_memory_status() {
 	}
 }
 
+uint64_t Profiler::get_cycles() const {
+	#if PROFILE_CPU_CYCLES
+	return __rdtsc();
+	#endif
+	return 0ull;
+}
+

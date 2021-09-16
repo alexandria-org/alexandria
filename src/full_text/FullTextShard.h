@@ -42,6 +42,7 @@ public:
 	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
 	size_t total_num_results(uint64_t key);
 	void read_keys();
+	vector<uint64_t> keys();
 
 	string mountpoint() const;
 	string filename() const;
@@ -221,7 +222,12 @@ void FullTextShard<DataRecord>::read_keys() {
 	m_len_start = m_pos_start + m_num_keys * 8;
 	m_total_start = m_len_start + m_num_keys * 8;
 	m_data_start = m_total_start + m_num_keys * 8;
+}
 
+template<typename DataRecord>
+vector<uint64_t> FullTextShard<DataRecord>::keys() {
+	if (!m_keys_read) read_keys();
+	return m_keys;
 }
 
 template<typename DataRecord>

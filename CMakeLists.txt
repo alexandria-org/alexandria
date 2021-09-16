@@ -65,6 +65,8 @@ set(SRC_CLASSES
 	"src/system/Logger.cpp"
 
 	"src/aws/Lambda.cpp"
+
+	"src/sort/Sort.cpp"
 )
 
 set(SRC_COMMON
