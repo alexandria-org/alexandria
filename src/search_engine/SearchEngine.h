@@ -287,10 +287,11 @@ namespace SearchEngine {
 			span<DataRecord> *arr = result->span_pointer();
 			nth_element(arr->begin(), arr->begin() + (n - 1), arr->end(), SearchEngine::comparator_class{});
 
-			sort(arr->begin(), arr->begin() + (n - 1), [](const DataRecord &a, const DataRecord &b) {
+			sort(arr->begin(), arr->begin() + n, [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
 
+			result->resize(n);
 		}
 
 	}

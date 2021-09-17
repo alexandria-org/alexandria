@@ -4,6 +4,21 @@
 
 BOOST_AUTO_TEST_SUITE(performance)
 
+BOOST_AUTO_TEST_CASE(domain_index_sharp) {
+
+	struct SearchMetric metric;
+	string query = "facebook";
+
+	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", 8);
+	
+	Profiler::instance profiler_domain_links("SearchEngine::search_domain_link_array");
+	vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
+	profiler_domain_links.stop();
+
+	
+}
+
 BOOST_AUTO_TEST_CASE(domain_index) {
 
 	vector<FullTextShard<DomainLinkFullTextRecord> *> shards;

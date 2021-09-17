@@ -23,6 +23,12 @@ public:
 	size_t total_num_results() const { return m_total_num_results ; };
 	void set_total_num_results(size_t total_num_results);
 
+	void resize(size_t n) {
+		delete m_span;
+		m_span = new span<DataRecord>(m_data_pointer, n);
+		m_size = n;
+	}
+
 private:
 
 	FullTextResultSet(const FullTextResultSet &res) = delete;

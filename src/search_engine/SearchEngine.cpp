@@ -2,6 +2,7 @@
 #include "SearchEngine.h"
 #include "text/Text.h"
 #include "sort/Sort.h"
+#include "system/Profiler.h"
 #include <cmath>
 
 namespace SearchEngine {
@@ -357,6 +358,7 @@ namespace SearchEngine {
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
+		Profiler::instance asd1("asd1");
 		for (FullTextIndex<DomainLinkFullTextRecord> *index : index_array) {
 			future<FullTextResultSet<DomainLinkFullTextRecord> *> future =
 				async(search_domain_links, index->shards(), query, limit, ref(metrics_vector[idx]));
@@ -369,11 +371,16 @@ namespace SearchEngine {
 			FullTextResultSet<DomainLinkFullTextRecord> *result = future.get();
 			result_arrays.push_back(result->span_pointer());
 		}
+		asd1.stop();
 
 		vector<DomainLinkFullTextRecord> complete_result;
+		Profiler::instance asd2("asd2");
 		Sort::merge_arrays(result_arrays, [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
 			return a.m_score > b.m_score;
 		}, complete_result);
+		asd2.stop();
+
+		Profiler::instance asd3("asd3");
 
 		metric.m_total_links_found = 0;
 		for (const struct SearchMetric &m : metrics_vector) {
