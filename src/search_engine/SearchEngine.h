@@ -60,8 +60,8 @@ namespace SearchEngine {
 		size_t shortest_len = SIZE_MAX;
 		size_t iter_index = 0;
 		for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-			if (shortest_len > result_set->len()) {
-				shortest_len = result_set->len();
+			if (shortest_len > result_set->size()) {
+				shortest_len = result_set->size();
 				shortest_vector_position = iter_index;
 			}
 			iter_index++;
@@ -70,29 +70,30 @@ namespace SearchEngine {
 		vector<size_t> positions(result_sets.size(), 0);
 		vector<size_t> result_ids;
 
-		uint64_t *value_ptr = result_sets[shortest_vector_position]->value_pointer();
+		const DataRecord *shortest_data = result_sets[shortest_vector_position]->data_pointer();
 		vector<float> score_vec(result_sets.size(), 0.0f);
 
 		while (positions[shortest_vector_position] < shortest_len) {
 
 			bool all_equal = true;
-			uint64_t value = value_ptr[positions[shortest_vector_position]];
+			uint64_t value = shortest_data[positions[shortest_vector_position]].m_value;
 
 			float score_sum = 0.0f;
 			size_t iter_index = 0;
 			for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-				const uint64_t *val_arr = result_set->value_pointer();
-				const float *score_arr = result_set->score_pointer();
-				const size_t len = result_set->len();
+				const DataRecord *data_arr = result_set->data_pointer();
+				const size_t len = result_set->size();
+
 				size_t *pos = &(positions[iter_index]);
-				while (*pos < len && value > val_arr[*pos]) {
+				while (*pos < len && value > data_arr[*pos].m_value) {
 					(*pos)++;
 				}
-				if (*pos < len && value == val_arr[*pos]) {
-					score_sum += score_arr[*pos];
-					score_vec[iter_index] = score_arr[*pos];
+				if (*pos < len && value == data_arr[*pos].m_value) {
+					const float score = data_arr[*pos].m_score;
+					score_sum += score;
+					score_vec[iter_index] = score;
 				}
-				if (*pos < len && value < val_arr[*pos]) {
+				if (*pos < len && value < data_arr[*pos].m_value) {
 					all_equal = false;
 				}
 				if (*pos >= len) {
@@ -154,7 +155,7 @@ namespace SearchEngine {
 	void flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,	const vector<size_t> &indices,
 		vector<DataRecord> &flat_result) {
 
-		const DataRecord *record_arr = results->record_pointer();
+		const DataRecord *record_arr = results->data_pointer();
 		for (size_t i = 0; i < indices.size(); i++) {
 			const DataRecord *record = &record_arr[indices[i]];
 			const float score = scores[i];
@@ -162,6 +163,33 @@ namespace SearchEngine {
 			flat_result.push_back(*record);
 			flat_result.back().m_score = score;
 		}
+	}
+
+	template<typename DataRecord>
+	FullTextResultSet<DataRecord> *merge_results_to_one(const vector<FullTextResultSet<DataRecord> *> results) {
+
+		if (results.size() > 1) {
+			size_t shortest_vector;
+			vector<float> score_vector;
+			vector<vector<float>> score_parts;
+			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector, score_parts);
+
+			FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
+			FullTextResultSet<DataRecord> *merged = new FullTextResultSet<DataRecord>(result_ids.size());
+
+			const DataRecord *source_arr = shortest->data_pointer();
+			DataRecord *dest_arr = merged->data_pointer();
+			for (size_t i = 0; i < result_ids.size(); i++) {
+				const DataRecord *record = &source_arr[result_ids[i]];
+				const float score = score_vector[i];
+
+				dest_arr[i] = *record;
+				dest_arr[i].m_score = score;
+			}
+			return merged;
+		}
+
+		return NULL;
 	}
 
 	template<typename DataRecord>
@@ -182,8 +210,8 @@ namespace SearchEngine {
 			/*
 				This is just a copy from a c vector to a c++ vector. It takes time and we are not adding any value, should be optimized.
 			*/
-			const DataRecord *record_arr = results[0]->record_pointer();
-			for (size_t i = 0; i < results[0]->len(); i++) {
+			const DataRecord *record_arr = results[0]->data_pointer();
+			for (size_t i = 0; i < results[0]->size(); i++) {
 				merged.push_back(record_arr[i]);
 			}
 		}
@@ -203,8 +231,8 @@ namespace SearchEngine {
 			}
 
 		} else {
-			const DataRecord *record_arr = results[0]->record_pointer();
-			for (size_t i = 0; i < results[0]->len(); i++) {
+			const DataRecord *record_arr = results[0]->data_pointer();
+			for (size_t i = 0; i < results[0]->size(); i++) {
 				merged.push_back(record_arr[i]);
 				score_vector.push_back(record_arr[i].m_score);
 			}
@@ -247,6 +275,20 @@ namespace SearchEngine {
 
 			sort(results.begin(), results.begin() + (n - 1), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_value < b.m_value;
+			});
+
+		}
+	}
+
+	template<typename DataRecord>
+	void get_results_with_top_scores2(FullTextResultSet<DomainLinkFullTextRecord> *result, size_t n) {
+
+		if (result->size() > n) {
+			span<DataRecord> *arr = result->span_pointer();
+			nth_element(arr->begin(), arr->begin() + (n - 1), arr->end(), SearchEngine::comparator_class{});
+
+			sort(arr->begin(), arr->begin() + (n - 1), [](const DataRecord &a, const DataRecord &b) {
+				return a.m_score > b.m_score;
 			});
 
 		}

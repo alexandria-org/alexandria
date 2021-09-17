@@ -26,8 +26,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 		Profiler::instance profile("total");
 		vector<vector<DomainLinkFullTextRecord>> flat_results;
 		for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
-			FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
-			shard->find(key, result_set);
+			FullTextResultSet<DomainLinkFullTextRecord> *result_set = shard->find(key);
 
 			vector<float> scores;
 			vector<DomainLinkFullTextRecord> flat_result;
@@ -60,8 +59,7 @@ BOOST_AUTO_TEST_CASE(domain_index) {
 	Profiler::instance profile("total");
 	vector<vector<DomainLinkFullTextRecord>> flat_results;
 	for (FullTextShard<DomainLinkFullTextRecord> *shard : shards) {
-		FullTextResultSet<DomainLinkFullTextRecord> *result_set = new FullTextResultSet<DomainLinkFullTextRecord>();
-		shard->find(key, result_set);
+		FullTextResultSet<DomainLinkFullTextRecord> *result_set = shard->find(key);
 
 		vector<float> scores;
 		vector<DomainLinkFullTextRecord> flat_result;

@@ -12,7 +12,6 @@ template<typename DataRecord> class FullTextIndex;
 #include "system/ThreadPool.h"
 #include "FullTextRecord.h"
 #include "FullTextShard.h"
-#include "FullTextResultSet.h"
 #include "SearchMetric.h"
 #include "link_index/LinkFullTextRecord.h"
 #include "text/Text.h"

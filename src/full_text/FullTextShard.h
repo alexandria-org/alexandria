@@ -38,7 +38,7 @@ public:
 	FullTextShard(const string &db_name, size_t shard_id);
 	~FullTextShard();
 
-	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
+	FullTextResultSet<DataRecord> *find(uint64_t key);
 	size_t total_num_results(uint64_t key);
 	void read_keys();
 	vector<uint64_t> keys();
@@ -86,14 +86,14 @@ FullTextShard<DataRecord>::~FullTextShard() {
 }
 
 template<typename DataRecord>
-void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord> *result_set) {
+FullTextResultSet<DataRecord> *FullTextShard<DataRecord>::find(uint64_t key) {
 
 	if (!m_keys_read) read_keys();
 
 	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
 
 	if (iter == m_keys.end() || *iter > key) {
-		return;
+		return new FullTextResultSet<DataRecord>(0);
 	}
 
 	size_t key_pos = iter - m_keys.begin();
@@ -114,17 +114,14 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	reader.seekg(m_total_start + key_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t total_num_results = *((size_t *)(&buffer[0]));
-	result_set->set_total_num_results(total_num_results);
 
 	reader.seekg(m_data_start + pos, ios::beg);
 
 	const size_t num_records = len / sizeof(DataRecord);
 
-	result_set->allocate(num_records);
+	FullTextResultSet<DataRecord> *result_set = new FullTextResultSet<DataRecord>(num_records);
 
-	uint64_t *value_res = result_set->value_pointer();
-	float *score_res = result_set->score_pointer();
-	DataRecord *record_res = result_set->record_pointer();
+	DataRecord *record_res = result_set->data_pointer();
 
 	size_t read_bytes = 0;
 	size_t kk = 0;
@@ -138,12 +135,14 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 		size_t num_records_read = read_len / sizeof(DataRecord);
 		for (size_t i = 0; i < num_records_read; i++) {
 			DataRecord *item = (DataRecord *)&m_buffer[i * sizeof(DataRecord)];
-			value_res[kk] = item->m_value;
-			score_res[kk] = item->m_score;
 			record_res[kk] = *item;
 			kk++;
 		}
 	}
+
+	result_set->set_total_num_results(total_num_results);
+
+	return result_set;
 }
 
 template<typename DataRecord>

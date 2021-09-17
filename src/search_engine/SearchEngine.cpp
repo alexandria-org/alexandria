@@ -1,6 +1,7 @@
 
 #include "SearchEngine.h"
 #include "text/Text.h"
+#include "sort/Sort.h"
 #include <cmath>
 
 namespace SearchEngine {
@@ -28,8 +29,8 @@ namespace SearchEngine {
 			searched_words.push_back(word);
 
 			uint64_t word_hash = hasher(word);
-			FullTextResultSet<DataRecord> *results = new FullTextResultSet<DataRecord>();
-			shards[word_hash % Config::ft_num_shards]->find(word_hash, results);
+
+			FullTextResultSet<DataRecord> *results = shards[word_hash % Config::ft_num_shards]->find(word_hash);
 
 			result_vector.push_back(results);
 		}
@@ -178,27 +179,30 @@ namespace SearchEngine {
 		return flat_result;
 	}
 
-	vector<DomainLinkFullTextRecord> search_domain_links(const vector<FullTextShard<DomainLinkFullTextRecord> *> &shards, const string &query,
-		size_t limit, struct SearchMetric &metric) {
-
-		vector<DomainLinkFullTextRecord> flat_result;
+	FullTextResultSet<DomainLinkFullTextRecord> *search_domain_links(const vector<FullTextShard<DomainLinkFullTextRecord> *> &shards,
+		const string &query, size_t limit, struct SearchMetric &metric) {
 
 		reset_search_metric(metric);
 
 		vector<string> words = Text::get_full_text_words(query);
-		if (words.size() == 0) return {};
+		if (words.size() == 0) return new FullTextResultSet<DomainLinkFullTextRecord>(0);
 
 		vector<FullTextResultSet<DomainLinkFullTextRecord> *> result_vector = search_shards<DomainLinkFullTextRecord>(shards, words);
 
 		set_total_found<DomainLinkFullTextRecord>(result_vector, metric);
 
-		vector<float> scores;
-		merge_results_to_vector<DomainLinkFullTextRecord>(result_vector, flat_result, scores);
-		vector<DomainLinkFullTextRecord> top_results = get_results_with_top_scores_vector<DomainLinkFullTextRecord>(flat_result, scores, limit);
+		FullTextResultSet<DomainLinkFullTextRecord> *flat_result;
+		if (result_vector.size() > 1) {
+			flat_result = merge_results_to_one<DomainLinkFullTextRecord>(result_vector);
+		} else {
+			flat_result = result_vector[0];
+			result_vector.clear();
+		}
+		get_results_with_top_scores2<DomainLinkFullTextRecord>(flat_result, limit);
 
 		delete_result_vector<DomainLinkFullTextRecord>(result_vector);
 
-		return top_results;
+		return flat_result;
 	}
 
 	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
@@ -349,21 +353,27 @@ namespace SearchEngine {
 	vector<DomainLinkFullTextRecord> search_domain_link_array(vector<FullTextIndex<DomainLinkFullTextRecord> *> index_array, const string &query,
 		size_t limit, struct SearchMetric &metric) {
 
-		vector<future<vector<DomainLinkFullTextRecord>>> futures;
+		vector<future<FullTextResultSet<DomainLinkFullTextRecord> *>> futures;
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
 		for (FullTextIndex<DomainLinkFullTextRecord> *index : index_array) {
-			future<vector<DomainLinkFullTextRecord>> future = async(search_domain_links, index->shards(), query, limit, ref(metrics_vector[idx]));
+			future<FullTextResultSet<DomainLinkFullTextRecord> *> future =
+				async(search_domain_links, index->shards(), query, limit, ref(metrics_vector[idx]));
 			futures.push_back(move(future));
 			idx++;
 		}
 
-		vector<DomainLinkFullTextRecord> complete_result;
+		vector<span<DomainLinkFullTextRecord> *> result_arrays;
 		for (auto &future : futures) {
-			vector<DomainLinkFullTextRecord> result = future.get();
-			complete_result.insert(complete_result.end(), result.begin(), result.end());
+			FullTextResultSet<DomainLinkFullTextRecord> *result = future.get();
+			result_arrays.push_back(result->span_pointer());
 		}
+
+		vector<DomainLinkFullTextRecord> complete_result;
+		Sort::merge_arrays(result_arrays, [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
+			return a.m_score > b.m_score;
+		}, complete_result);
 
 		metric.m_total_links_found = 0;
 		for (const struct SearchMetric &m : metrics_vector) {
@@ -371,13 +381,8 @@ namespace SearchEngine {
 		}
 
 		if (complete_result.size() > limit) {
-			sort(complete_result.begin(), complete_result.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
-				return a.m_score > b.m_score;
-			});
 			complete_result.resize(limit);
 		}
-
-		sort_by_score<DomainLinkFullTextRecord>(complete_result);
 
 		if (complete_result.size() < limit) {
 			metric.m_total_links_found = complete_result.size();
