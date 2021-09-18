@@ -32,7 +32,7 @@ public:
 		const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexerRunner();
 
-	void run(size_t partition, size_t max_partitions);
+	void run(const vector<string> local_files, size_t partition);
 	void merge();
 	void sort();
 
@@ -52,7 +52,7 @@ private:
 
 	UrlToDomain *m_url_to_domain;
 
-	string run_index_thread(const vector<string> &warc_paths, int id);
+	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	string run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id);

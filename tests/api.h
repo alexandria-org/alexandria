@@ -28,11 +28,9 @@ BOOST_AUTO_TEST_CASE(api_search) {
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");
@@ -143,11 +141,9 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");
@@ -265,11 +261,9 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");
@@ -327,12 +321,9 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-02", sub_system,
-				url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-02",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");
@@ -423,12 +414,9 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system,
-				url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");
@@ -495,11 +483,9 @@ BOOST_AUTO_TEST_CASE(api_links) {
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
+			sub_system, url_to_domain);
 	}
 
 	HashTable link_hash_table("test_link_index");
@@ -568,10 +554,8 @@ BOOST_AUTO_TEST_CASE(api_domain_links) {
 	{
 		// Index full text
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			FullTextIndexerRunner indexer("test_main_index_" + to_string(partition_num), "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
 	}
 
 	{
@@ -580,11 +564,9 @@ BOOST_AUTO_TEST_CASE(api_domain_links) {
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
+			sub_system, url_to_domain);
 	}
 
 	HashTable domain_link_hash_table("test_link_index");
@@ -670,11 +652,9 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
-		for (size_t partition_num = 0; partition_num < 8; partition_num++) {
-			LinkIndexerRunner indexer("test_link_index_" + to_string(partition_num), "test_domain_link_index_" + to_string(partition_num),
-				"test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01", sub_system, url_to_domain);
-			indexer.run(partition_num, 8);
-		}
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
+			sub_system, url_to_domain);
 	}
 
 	HashTable hash_table("test_main_index");

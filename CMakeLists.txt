@@ -67,6 +67,8 @@ set(SRC_CLASSES
 	"src/aws/Lambda.cpp"
 
 	"src/sort/Sort.cpp"
+
+	"src/hash/Hash.cpp"
 )
 
 set(SRC_COMMON

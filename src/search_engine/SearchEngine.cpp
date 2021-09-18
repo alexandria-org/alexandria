@@ -18,39 +18,6 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<FullTextResultSet<DataRecord> *> search_shards(const vector<FullTextShard<DataRecord> *> &shards, const vector<string> &words) {
-
-		vector<FullTextResultSet<DataRecord> *> result_vector;
-		vector<string> searched_words;
-		for (const string &word : words) {
-
-			// One word should only be searched once.
-			if (find(searched_words.begin(), searched_words.end(), word) != searched_words.end()) continue;
-			
-			searched_words.push_back(word);
-
-			uint64_t word_hash = hasher(word);
-
-			FullTextResultSet<DataRecord> *results = shards[word_hash % Config::ft_num_shards]->find(word_hash);
-
-			result_vector.push_back(results);
-		}
-
-		return result_vector;
-	}
-
-	template<typename DataRecord>
-	void set_total_found(const vector<FullTextResultSet<DataRecord> *> result_vector, struct SearchMetric &metric) {
-
-		for (FullTextResultSet<DataRecord> *result : result_vector) {
-			if (result->total_num_results() > metric.m_total_found) {
-				metric.m_total_found = result->total_num_results();
-			}
-		}
-
-	}
-
-	template<typename DataRecord>
 	bool result_has_many_domains(const vector<DataRecord> &results) {
 
 		if (results.size() == 0) return false;
@@ -99,48 +66,24 @@ namespace SearchEngine {
 		return deduped_result;
 	}
 
-	vector<FullTextRecord> search(const vector<FullTextShard<FullTextRecord> *> &shards, const vector<LinkFullTextRecord> &links,
-		const string &query, size_t limit, struct SearchMetric &metric) {
-
-		vector<FullTextRecord> flat_result;
-
-		reset_search_metric(metric);
-
-		vector<string> words = Text::get_full_text_words(query);
-		if (words.size() == 0) return {};
-
-		vector<FullTextResultSet<FullTextRecord> *> result_vector = search_shards<FullTextRecord>(shards, words);
-
-		set_total_found<FullTextRecord>(result_vector, metric);
-
-		merge_results_to_vector<FullTextRecord>(result_vector, flat_result);
-
-		delete_result_vector<FullTextRecord>(result_vector);
-
-		metric.m_link_url_matches = apply_link_scores(links, flat_result);
-
-		sort_by_score<FullTextRecord>(flat_result);
-
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(flat_result, limit);
-
-		return deduped_result;
-	}
-
 	vector<FullTextRecord> search_with_domain_links(const vector<FullTextShard<FullTextRecord> *> &shards, const vector<LinkFullTextRecord> &links,
 		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric) {
 
-		vector<FullTextRecord> flat_result;
-
-		reset_search_metric(metric);
-
 		vector<string> words = Text::get_full_text_words(query);
 		if (words.size() == 0) return {};
 
 		vector<FullTextResultSet<FullTextRecord> *> result_vector = search_shards<FullTextRecord>(shards, words);
 
-		set_total_found<FullTextRecord>(result_vector, metric);
+		FullTextResultSet<FullTextRecord> *flat_result;
+		if (result_vector.size() > 1) {
+			flat_result = merge_results_to_one<FullTextRecord>(result_vector);
 
-		merge_results_to_vector<FullTextRecord>(result_vector, flat_result);
+			set_total_found<FullTextRecord>(result_vector, metric, (double)flat_result->size() / largest_result(result_vector));
+		} else {
+			flat_result = result_vector[0];
+			set_total_found<FullTextRecord>(result_vector, metric, 1.0);
+			result_vector.clear();
+		}
 
 		delete_result_vector<FullTextRecord>(result_vector);
 
@@ -148,114 +91,16 @@ namespace SearchEngine {
 		metric.m_link_url_matches = apply_link_scores(links, flat_result);
 
 		// Narrow down results directly to top 200K
-		vector<float> scores;
-		for (const FullTextRecord &res : flat_result) scores.push_back(res.m_score);
-		vector<FullTextRecord> top_results = get_results_with_top_scores_vector<FullTextRecord>(flat_result, scores, 200000);
+		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
 
-		sort_by_score<FullTextRecord>(top_results);
+		vector<FullTextRecord> top_results = vector<FullTextRecord>(flat_result->span_pointer()->begin(), flat_result->span_pointer()->end());
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, limit);
 
 		return deduped_result;
 	}
 
-	vector<LinkFullTextRecord> search_links(const vector<FullTextShard<LinkFullTextRecord> *> &shards, const string &query,
-		struct SearchMetric &metric) {
-
-		vector<LinkFullTextRecord> flat_result;
-
-		reset_search_metric(metric);
-
-		vector<string> words = Text::get_full_text_words(query);
-		if (words.size() == 0) return {};
-
-		vector<FullTextResultSet<LinkFullTextRecord> *> result_vector = search_shards<LinkFullTextRecord>(shards, words);
-
-		set_total_found<LinkFullTextRecord>(result_vector, metric);
-
-		merge_results_to_vector<LinkFullTextRecord>(result_vector, flat_result);
-
-		delete_result_vector<LinkFullTextRecord>(result_vector);
-
-		return flat_result;
-	}
-
-	FullTextResultSet<DomainLinkFullTextRecord> *search_domain_links(const vector<FullTextShard<DomainLinkFullTextRecord> *> &shards,
-		const string &query, size_t limit, struct SearchMetric &metric) {
-
-		reset_search_metric(metric);
-
-		vector<string> words = Text::get_full_text_words(query);
-		if (words.size() == 0) return new FullTextResultSet<DomainLinkFullTextRecord>(0);
-
-		vector<FullTextResultSet<DomainLinkFullTextRecord> *> result_vector = search_shards<DomainLinkFullTextRecord>(shards, words);
-
-		set_total_found<DomainLinkFullTextRecord>(result_vector, metric);
-
-		FullTextResultSet<DomainLinkFullTextRecord> *flat_result;
-		if (result_vector.size() > 1) {
-			flat_result = merge_results_to_one<DomainLinkFullTextRecord>(result_vector);
-		} else {
-			flat_result = result_vector[0];
-			result_vector.clear();
-		}
-		get_results_with_top_scores2<DomainLinkFullTextRecord>(flat_result, limit);
-
-		delete_result_vector<DomainLinkFullTextRecord>(result_vector);
-
-		return flat_result;
-	}
-
-	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
-		const string &query, size_t limit, struct SearchMetric &metric) {
-
-		if (links.size() == 0) {
-			reset_search_metric(metric);
-		}
-
-		metric.m_links_handled = links.size();
-
-		vector<future<vector<FullTextRecord>>> futures;
-		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
-
-		size_t idx = 0;
-		for (FullTextIndex<FullTextRecord> *index : index_array) {
-			future<vector<FullTextRecord>> future = async(search, index->shards(), links, query, limit, ref(metrics_vector[idx]));
-			futures.push_back(move(future));
-			idx++;
-		}
-
-		vector<FullTextRecord> complete_result;
-		for (auto &future : futures) {
-			vector<FullTextRecord> result = future.get();
-			complete_result.insert(complete_result.end(), result.begin(), result.end());
-		}
-
-		sort_by_value<FullTextRecord>(complete_result);
-		deduplicate_by_value<FullTextRecord>(complete_result);
-
-		metric.m_total_found = 0;
-		metric.m_link_domain_matches = 0;
-		metric.m_link_url_matches = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_found += m.m_total_found;
-			metric.m_link_domain_matches += m.m_link_domain_matches;
-			metric.m_link_url_matches += m.m_link_url_matches;
-		}
-
-		// Sort.
-		sort_by_score<FullTextRecord>(complete_result);
-
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
-
-		if (deduped_result.size() < limit) {
-			metric.m_total_found = deduped_result.size();
-		}
-
-		return deduped_result;
-	}
-
-	vector<FullTextRecord> search_index_array(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
+	vector<FullTextRecord> search_with_links(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric) {
 
 		if (links.size() == 0) {
@@ -305,112 +150,20 @@ namespace SearchEngine {
 		return deduped_result;
 	}
 
-	vector<LinkFullTextRecord> search_link_array(vector<FullTextIndex<LinkFullTextRecord> *> index_array, const string &query, size_t limit,
-		struct SearchMetric &metric) {
-
-		vector<future<vector<LinkFullTextRecord>>> futures;
-		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
-
-		size_t idx = 0;
-		for (FullTextIndex<LinkFullTextRecord> *index : index_array) {
-			future<vector<LinkFullTextRecord>> future = async(search_links, index->shards(), query, ref(metrics_vector[idx]));
-			futures.push_back(move(future));
-			idx++;
-		}
-
-		vector<LinkFullTextRecord> complete_result;
-		for (auto &future : futures) {
-			vector<LinkFullTextRecord> result = future.get();
-			complete_result.insert(complete_result.end(), result.begin(), result.end());
-		}
-
-		// deduplicate.
-		sort_by_value<LinkFullTextRecord>(complete_result);
-		deduplicate_by_value<LinkFullTextRecord>(complete_result);
-
-		metric.m_total_links_found = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_links_found += m.m_total_found;
-		}
-
-		if (complete_result.size() > limit) {
-			sort(complete_result.begin(), complete_result.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
-				return a.m_score > b.m_score;
-			});
-			complete_result.resize(limit);
-		}
-
-		sort(complete_result.begin(), complete_result.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
-			return a.m_target_hash < b.m_target_hash;
-		});
-
-		if (complete_result.size() < limit) {
-			metric.m_total_links_found = complete_result.size();
-		}
-
-		return complete_result;
-	}
-
-	vector<DomainLinkFullTextRecord> search_domain_link_array(vector<FullTextIndex<DomainLinkFullTextRecord> *> index_array, const string &query,
-		size_t limit, struct SearchMetric &metric) {
-
-		vector<future<FullTextResultSet<DomainLinkFullTextRecord> *>> futures;
-		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
-
-		size_t idx = 0;
-		Profiler::instance asd1("asd1");
-		for (FullTextIndex<DomainLinkFullTextRecord> *index : index_array) {
-			future<FullTextResultSet<DomainLinkFullTextRecord> *> future =
-				async(search_domain_links, index->shards(), query, limit, ref(metrics_vector[idx]));
-			futures.push_back(move(future));
-			idx++;
-		}
-
-		vector<span<DomainLinkFullTextRecord> *> result_arrays;
-		for (auto &future : futures) {
-			FullTextResultSet<DomainLinkFullTextRecord> *result = future.get();
-			result_arrays.push_back(result->span_pointer());
-		}
-		asd1.stop();
-
-		vector<DomainLinkFullTextRecord> complete_result;
-		Profiler::instance asd2("asd2");
-		Sort::merge_arrays(result_arrays, [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
-			return a.m_score > b.m_score;
-		}, complete_result);
-		asd2.stop();
-
-		Profiler::instance asd3("asd3");
-
-		metric.m_total_links_found = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_links_found += m.m_total_found;
-		}
-
-		if (complete_result.size() > limit) {
-			complete_result.resize(limit);
-		}
-
-		if (complete_result.size() < limit) {
-			metric.m_total_links_found = complete_result.size();
-		}
-
-		return complete_result;
-	}
-
 	/*
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
 	*/
-	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, vector<FullTextRecord> &results) {
+	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results) {
 		size_t applied_links = 0;
 
 		size_t i = 0;
 		size_t j = 0;
 		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
-		while (i < links.size() && j < results.size()) {
+		FullTextRecord *data = results->data_pointer();
+		while (i < links.size() && j < results->size()) {
 
 			const uint64_t hash1 = links[i].m_target_hash;
-			const uint64_t hash2 = results[j].m_value;
+			const uint64_t hash2 = data[j].m_value;
 
 			if (hash1 < hash2) {
 				i++;
@@ -418,7 +171,7 @@ namespace SearchEngine {
 
 				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
-					results[j].m_score += url_score;
+					data[j].m_score += url_score;
 					applied_links++;
 					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
 				}
@@ -432,7 +185,7 @@ namespace SearchEngine {
 		return applied_links;
 	}
 
-	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, vector<FullTextRecord> &results) {
+	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results) {
 		size_t applied_links = 0;
 		{
 			unordered_map<uint64_t, float> domain_scores;
@@ -453,15 +206,15 @@ namespace SearchEngine {
 			}
 
 			// Loop over the results and add the calculated domain scores.
-			for (size_t i = 0; i < results.size(); i++) {
-				const float domain_score = domain_scores[results[i].m_domain_hash];
-				results[i].m_score += domain_score;
-				applied_links += domain_counts[results[i].m_domain_hash];
+			FullTextRecord *data = results->data_pointer();
+			for (size_t i = 0; i < results->size(); i++) {
+				const float domain_score = domain_scores[data[i].m_domain_hash];
+				data[i].m_score += domain_score;
+				applied_links += domain_counts[data[i].m_domain_hash];
 			}
 		}
 
 		return applied_links;
-
 	}
 
 }

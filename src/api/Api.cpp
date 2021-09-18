@@ -24,8 +24,8 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 1000000, metric);
-		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, query, 1000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1000000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, {}, query, 1000, metric);
 
 		PostProcessor post_processor(query);
 
@@ -50,16 +50,16 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		Profiler::instance profiler_links("SearchEngine::search_link_array");
-		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 500000, metric);
+		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 500000, metric);
 		profiler_links.stop();
 
-		Profiler::instance profiler_domain_links("SearchEngine::search_domain_link_array");
-		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
+		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
+		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 10000, metric);
 		profiler_domain_links.stop();
 
-		Profiler::instance profiler_index("SearchEngine::search_index_array");
-		vector<FullTextRecord> results = SearchEngine::search_index_array(index_array, links, domain_links, query, 1000, metric);
+		Profiler::instance profiler_index("SearchEngine::search_with_links");
+		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, domain_links, query, 1000, metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
@@ -111,7 +111,7 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search_link_array(link_index_array, query, 10000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 10000, metric);
 
 		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
 			return a.m_score > b.m_score;
@@ -150,7 +150,7 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		vector<DomainLinkFullTextRecord> links = SearchEngine::search_domain_link_array(domain_link_index_array, query, 10000, metric);
+		vector<DomainLinkFullTextRecord> links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 10000, metric);
 
 		sort(links.begin(), links.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
 			return a.m_score > b.m_score;

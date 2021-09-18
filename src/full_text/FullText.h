@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdint>
 #include "parser/URL.h"
+#include "link_index/Link.h"
 #include "text/Text.h"
 #include "UrlToDomain.h"
 #include "FullTextRecord.h"
@@ -36,6 +37,8 @@ namespace FullText {
 		const string &domain_hash_table_name, const string &batch);
 	bool should_index_url(const URL &url, size_t partition);
 	bool should_index_hash(size_t hash, size_t partition);
+	bool should_index_link(const Link &link, size_t partition);
+	bool should_index_link_hash(size_t hash, size_t partition);
 
 	template<typename DataRecord>
 	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name, size_t partitions) {

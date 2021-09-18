@@ -3,6 +3,7 @@
 #include "DomainLinkIndexer.h"
 #include "system/Logger.h"
 #include "text/Text.h"
+#include "full_text/FullText.h"
 #include <math.h>
 
 DomainLinkIndexer::DomainLinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
@@ -22,7 +23,7 @@ DomainLinkIndexer::~DomainLinkIndexer() {
 	}
 }
 
-void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream) {
+void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream, size_t partition) {
 
 	string line;
 	while (getline(stream, line)) {
@@ -39,9 +40,9 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 		const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
-		if (m_url_to_domain->has_domain(target_url.host_hash())) {
+		uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
-			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
+		if (m_url_to_domain->has_domain(target_url.host_hash()) && FullText::should_index_link_hash(link_hash, partition)) {
 
 #ifdef COMPILE_WITH_LINK_INDEX
 			shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, line);

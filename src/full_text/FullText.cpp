@@ -109,6 +109,25 @@ namespace FullText {
 		return Transfer::download_gz_files_to_disk(files_to_download);
 	}
 
+	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
+		
+		TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		vector<string> warc_paths;
+		warc_paths_file.read_column_into(0, warc_paths);
+
+		vector<string> files_to_download;
+		for (size_t i = offset; i < warc_paths.size() && i < (offset + limit); i++) {
+			string warc_path = warc_paths[i];
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".links.gz");
+			}
+			files_to_download.push_back(warc_path);
+		}
+
+		return Transfer::download_gz_files_to_disk(files_to_download);
+	}
+
 	void index_all_batches(const string &db_name, const string &hash_table_name) {
 		SubSystem *sub_system = new SubSystem();
 		for (const string &batch : Config::batches) {
@@ -151,14 +170,30 @@ namespace FullText {
 			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
 		}
 	}
-
-	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
-		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
+	
+	void index_link_files(const string &batch, const string &db_name, const string &domain_db_name, const string &hash_table_name,
+		const string &domain_hash_table_name, const vector<string> &files, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
 
 		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
 			LinkIndexerRunner indexer(db_name + "_" + to_string(partition_num), domain_db_name + "_" + to_string(partition_num),
 				hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
-			indexer.run(partition_num, Config::ft_num_partitions);
+			indexer.run(files, partition_num);
+		}
+	}
+
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
+
+		vector<string> files;
+		const size_t limit = 15000;
+		size_t offset = 0;
+
+		while (true) {
+			vector<string> files = download_link_batch(batch, limit, offset);
+			if (files.size() == 0) break;
+			index_link_files(batch, db_name, domain_db_name, hash_table_name, domain_hash_table_name, files, sub_system, url_to_domain);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
 		}
 
 	}
@@ -183,6 +218,14 @@ namespace FullText {
 		bool in_partition = (mod % Config::ft_num_partitions) == partition;
 		bool in_node = (mod / Config::ft_num_partitions) == Config::node_id;
 		return in_partition && in_node;
+	}
+
+	bool should_index_link(const Link &link, size_t partition) {
+		return true;
+	}
+
+	bool should_index_link_hash(size_t hash, size_t partition) {
+		return (hash % 8) == partition;
 	}
 
 }

@@ -19,27 +19,20 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &domain
 LinkIndexerRunner::~LinkIndexerRunner() {
 }
 
-void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
+void LinkIndexerRunner::run(const vector<string> local_files, size_t partition) {
 
-	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
-
-	vector<string> warc_paths_raw;
-	warc_paths_file.read_column_into(0, warc_paths_raw);
-
-	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
-
-	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / Config::li_num_threads_indexing), warc_path_chunks);
-
-	ThreadPool pool(Config::li_num_threads_indexing);
+	ThreadPool pool(Config::ft_num_threads_indexing);
 	std::vector<std::future<string>> results;
 
+	vector<vector<string>> chunks;
+	vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
+
 	int id = 1;
-	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
+	for (const vector<string> &chunk : chunks) {
 
 		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk, id] {
-				return run_index_thread(warc_paths_chunk, id);
+			pool.enqueue([this, chunk, id, partition] {
+				return run_index_thread_with_local_files(chunk, id, partition);
 			})
 		);
 
@@ -53,7 +46,6 @@ void LinkIndexerRunner::run(size_t partition, size_t max_partitions) {
 
 	merge();
 	sort();
-
 }
 
 void LinkIndexerRunner::merge() {
@@ -103,7 +95,7 @@ void LinkIndexerRunner::sort() {
 	}
 }
 
-string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id) {
+string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < Config::ht_num_shards; i++) {
@@ -118,30 +110,24 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 	LinkIndexer indexer(id, m_db_name, m_sub_system, m_url_to_domain);
 	DomainLinkIndexer domain_link_indexer(id, m_domain_db_name, m_sub_system, m_url_to_domain);
 	size_t idx = 1;
-	for (const string &raw_warc_path : warc_paths) {
+	for (const string &local_file : local_files) {
 
-		string warc_path = raw_warc_path;
-		warc_path.replace(warc_path.find(".warc.gz"), 8, ".links.gz");
+		ifstream stream(local_file, ios::in);
 
-		int error;
-		for (size_t retry = 0; retry < 3; retry++) {
-			const string data = Transfer::gz_file_to_string(warc_path, error);
-			if (error == Transfer::OK) {
-				{
-					stringstream stream(data);
-					indexer.add_stream(shard_builders, stream);
-					indexer.write_cache(m_link_mutexes);
-				}
-				{
-					stringstream stream(data);
-					domain_link_indexer.add_stream(domain_shard_builders, stream);
-					domain_link_indexer.write_cache(m_domain_link_mutexes);
-				}
-				break;
+		if (stream.is_open()) {
+			{
+				indexer.add_stream(shard_builders, stream, partition);
+				indexer.write_cache(m_link_mutexes);
 			}
-			LogInfo("Transfer returned error for " + warc_path + " retrying no: " + to_string(retry));
-			sleep(1);
+			stream.clear();
+			stream.seekg(0);
+			{
+				domain_link_indexer.add_stream(domain_shard_builders, stream, partition);
+				domain_link_indexer.write_cache(m_domain_link_mutexes);
+			}
 		}
+
+		stream.close();
 
 		for (size_t i = 0; i < Config::ht_num_shards; i++) {
 			if (shard_builders[i]->full()) {
@@ -159,7 +145,7 @@ string LinkIndexerRunner::run_index_thread(const vector<string> &warc_paths, int
 			}
 		}
 
-		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
+		//LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
 
 		idx++;
 	}

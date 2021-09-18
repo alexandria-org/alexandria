@@ -23,7 +23,7 @@ public:
 	DomainLinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~DomainLinkIndexer();
 
-	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
+	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream, size_t partition);
 	void write_cache(mutex *write_mutexes);
 	void flush_cache(mutex *write_mutexes);
 

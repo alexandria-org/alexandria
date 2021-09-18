@@ -33,47 +33,6 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 	}
 }
 
-void FullTextIndexerRunner::run(size_t partition, size_t max_partitions) {
-
-	truncate_cache();
-
-	//TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
-	TsvFileRemote warc_paths_file(string("crawl-data/") + m_cc_batch + "/warc.paths.gz");
-
-	vector<string> warc_paths_raw;
-	warc_paths_file.read_column_into(0, warc_paths_raw, 50000);
-	//manual_paths_file.read_column_into(0, warc_paths_raw);
-
-	vector<string> warc_paths = FullText::make_partition_from_files(warc_paths_raw, partition, max_partitions);
-
-	vector<vector<string>> warc_path_chunks;
-	vector_chunk(warc_paths, ceil((float)warc_paths.size() / Config::ft_num_threads_indexing), warc_path_chunks);
-
-	ThreadPool pool(Config::ft_num_threads_indexing);
-	std::vector<std::future<string>> results;
-
-	int id = 1;
-	for (const vector<string> &warc_paths_chunk : warc_path_chunks) {
-
-		results.emplace_back(
-			pool.enqueue([this, warc_paths_chunk, id, partition] {
-				return run_index_thread(warc_paths_chunk, id, partition);
-			})
-		);
-
-		id++;
-
-	}
-
-	for(auto && result: results) {
-		result.get();
-	}
-
-	merge();
-	sort();
-
-}
-
 void FullTextIndexerRunner::run(const vector<string> local_files, size_t partition) {
 
 	truncate_cache();
