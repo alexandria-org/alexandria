@@ -47,9 +47,9 @@ public:
 	LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexer();
 
-	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream, size_t partition);
-	void write_cache(mutex *write_mutexes);
-	void flush_cache(mutex *write_mutexes);
+	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
+	void write_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]);
+	void flush_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]);
 
 private:
 
@@ -59,11 +59,11 @@ private:
 	int m_indexer_id;
 	hash<string> m_hasher;
 
-	vector<FullTextShardBuilder<LinkFullTextRecord> *> m_shards;
+	map<size_t, vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;
 
-	void add_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
+	void add_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);
-	void add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
+	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);
 
 };

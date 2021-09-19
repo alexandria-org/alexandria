@@ -57,7 +57,7 @@ public:
 		const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexerRunner();
 
-	void run(const vector<string> local_files, size_t partition);
+	void run(const vector<string> local_files);
 	void merge();
 	void sort();
 
@@ -71,13 +71,12 @@ private:
 	const string m_domain_hash_table_name;
 	mutex m_hash_table_mutexes[Config::ht_num_shards];
 	mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
-	mutex m_full_text_mutexes[Config::ft_num_shards];
-	mutex m_link_mutexes[Config::ft_num_shards];
-	mutex m_domain_link_mutexes[Config::ft_num_shards];
+	mutex m_link_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards];
+	mutex m_domain_link_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards];
 
 	UrlToDomain *m_url_to_domain;
 
-	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
+	string run_index_thread_with_local_files(const vector<string> &local_files, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
 	string run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id);

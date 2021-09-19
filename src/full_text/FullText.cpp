@@ -199,11 +199,8 @@ namespace FullText {
 	void index_link_files(const string &batch, const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const vector<string> &files, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
 
-		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
-			LinkIndexerRunner indexer(db_name + "_" + to_string(partition_num), domain_db_name + "_" + to_string(partition_num),
-				hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
-			indexer.run(files, partition_num);
-		}
+		LinkIndexerRunner indexer(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
+		indexer.run(files);
 	}
 
 	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,

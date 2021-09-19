@@ -44,7 +44,7 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &domain
 LinkIndexerRunner::~LinkIndexerRunner() {
 }
 
-void LinkIndexerRunner::run(const vector<string> local_files, size_t partition) {
+void LinkIndexerRunner::run(const vector<string> local_files) {
 
 	ThreadPool pool(Config::ft_num_threads_indexing);
 	std::vector<std::future<string>> results;
@@ -56,8 +56,8 @@ void LinkIndexerRunner::run(const vector<string> local_files, size_t partition) 
 	for (const vector<string> &chunk : chunks) {
 
 		results.emplace_back(
-			pool.enqueue([this, chunk, id, partition] {
-				return run_index_thread_with_local_files(chunk, id, partition);
+			pool.enqueue([this, chunk, id] {
+				return run_index_thread_with_local_files(chunk, id);
 			})
 		);
 
@@ -120,7 +120,7 @@ void LinkIndexerRunner::sort() {
 	}
 }
 
-string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition) {
+string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string> &local_files, int id) {
 
 	vector<HashTableShardBuilder *> shard_builders;
 	for (size_t i = 0; i < Config::ht_num_shards; i++) {
@@ -141,13 +141,13 @@ string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string>
 
 		if (stream.is_open()) {
 			{
-				indexer.add_stream(shard_builders, stream, partition);
+				indexer.add_stream(shard_builders, stream);
 				indexer.write_cache(m_link_mutexes);
 			}
 			stream.clear();
 			stream.seekg(0);
 			{
-				domain_link_indexer.add_stream(domain_shard_builders, stream, partition);
+				domain_link_indexer.add_stream(domain_shard_builders, stream);
 				domain_link_indexer.write_cache(m_domain_link_mutexes);
 			}
 		}
@@ -170,7 +170,7 @@ string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string>
 			}
 		}
 
-		//LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()));
+		LogInfo("Done " + to_string(idx) + " out of " + to_string(local_files.size()));
 
 		idx++;
 	}
@@ -209,14 +209,19 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
 	domain_adjustment_shard.merge();*/
 
-	{
-		FullTextShardBuilder<LinkFullTextRecord> shard(m_db_name, shard_id);
-		shard.merge();
-	}
+	for (size_t partition = 0; partition < Config::ft_num_link_partitions; partition++) {
 
-	{
-		FullTextShardBuilder<LinkFullTextRecord> shard(m_domain_db_name, shard_id);
-		shard.merge();
+		{
+			const string db_name = m_db_name + "_" + to_string(partition);
+			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id);
+			shard.merge();
+		}
+
+		{
+			const string db_name = m_domain_db_name + "_" + to_string(partition);
+			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id);
+			shard.merge();
+		}
 	}
 
 	return "";
