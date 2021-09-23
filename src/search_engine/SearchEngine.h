@@ -326,6 +326,11 @@ namespace SearchEngine {
 			});
 
 			result->resize(n);
+		} else {
+			span<DataRecord> *arr = result->span_pointer();
+			sort(arr->begin(), arr->end(), [](const DataRecord &a, const DataRecord &b) {
+				return a.m_score > b.m_score;
+			});
 		}
 	}
 
