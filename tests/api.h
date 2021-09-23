@@ -69,12 +69,16 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		string response = response_stream.str();
 
+		cout << response << endl;
+
 		Aws::Utils::Json::JsonValue json(response);
 
 		auto v = json.View();
 
 		BOOST_CHECK(v.ValueExists("status"));
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 1);
+		BOOST_CHECK_EQUAL(v.GetInteger("total_links_found"), 1);
 
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
@@ -310,6 +314,8 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 		BOOST_CHECK(v.ValueExists("status"));
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 1);
+		BOOST_CHECK_EQUAL(v.GetInteger("total_links_found"), 2);
 
 		BOOST_CHECK(v.ValueExists("results"));
 		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
