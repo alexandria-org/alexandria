@@ -59,7 +59,8 @@ ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct Search
 	message.WithObject("status", json_string.AsString("success"));
 	message.WithObject("time_ms", json_string.AsDouble(profile));
 	message.WithObject("total_found", json_number.AsInt64(metric.m_total_found));
-	message.WithObject("total_links_found", json_number.AsInt64(metric.m_total_links_found));
+	message.WithObject("total_url_links_found", json_number.AsInt64(metric.m_total_url_links_found));
+	message.WithObject("total_domain_links_found", json_number.AsInt64(metric.m_total_domain_links_found));
 	message.WithObject("links_handled", json_number.AsInt64(metric.m_links_handled));
 	message.WithObject("link_domain_matches", json_number.AsInt64(metric.m_link_domain_matches));
 	message.WithObject("link_url_matches", json_number.AsInt64(metric.m_link_url_matches));

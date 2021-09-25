@@ -287,28 +287,6 @@ namespace SearchEngine {
 		}
 	}
 
-	template<typename DataRecord>
-	vector<DataRecord> get_results_with_top_scores_vector(const vector<DataRecord> results, vector<float> &scores, size_t limit) {
-
-		if (results.size() > limit) {
-			nth_element(scores.begin(), scores.begin() + (limit - 1), scores.end(), greater{});
-			const float nth = scores[limit - 1];
-
-			vector<DataRecord> top_results;
-			for (const DataRecord &res : results) {
-				if (res.m_score >= nth) {
-					top_results.push_back(res);
-				}
-			}
-
-			sort_by_score(top_results);
-			limit_results(top_results, limit);
-			return top_results;
-		} else {
-			return results;
-		}
-	}
-
 	/*
 		puts the top n elements in the first n slots of results. Then sorts those top n elements by value.
 
@@ -331,6 +309,26 @@ namespace SearchEngine {
 			sort(arr->begin(), arr->end(), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
+		}
+	}
+
+	/*
+		puts the top n elements in the first n slots of results. Then sorts those top n elements by value.
+
+		this function assumes that the input results are sorted by value! so it does nothing for n < results.size()
+	*/
+	template<typename DataRecord>
+	void get_unsorted_results_with_top_scores(FullTextResultSet<DataRecord> *result, size_t n) {
+
+		if (result->size() > n) {
+			span<DataRecord> *arr = result->span_pointer();
+			nth_element(arr->begin(), arr->begin() + (n - 1), arr->end(), SearchEngine::comparator_class<DataRecord>{});
+
+			sort(arr->begin(), arr->begin() + n, [](const DataRecord &a, const DataRecord &b) {
+				return a.m_value < b.m_value;
+			});
+
+			result->resize(n);
 		}
 	}
 
@@ -377,7 +375,7 @@ namespace SearchEngine {
 			set_total_found<DataRecord>(result_vector, metric, 1.0);
 			result_vector.clear();
 		}
-		get_results_with_top_scores<DataRecord>(flat_result, limit);
+		get_unsorted_results_with_top_scores<DataRecord>(flat_result, limit);
 
 		delete_result_vector<DataRecord>(result_vector);
 
@@ -406,7 +404,7 @@ namespace SearchEngine {
 
 		vector<DataRecord> complete_result;
 		Sort::merge_arrays(result_arrays, [](const DataRecord &a, const DataRecord &b) {
-			return a.m_score > b.m_score;
+			return a.m_value < b.m_value;
 		}, complete_result);
 
 		metric.m_total_found = 0;

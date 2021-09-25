@@ -17,6 +17,7 @@ wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-TEST-02
 wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-TEST-03/ --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-TEST-04/ --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-TEST-05/ --http-user=alexandria --http-password=wmXN6U4u
+wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-TEST-06/ --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz --http-user=alexandria --http-password=wmXN6U4u
 wget -r --no-parent http://node0003.alexandria.org/dev_files/ --http-user=alexandria --http-password=wmXN6U4u

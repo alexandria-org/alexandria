@@ -384,8 +384,8 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			}
 			BOOST_CHECK(has_link);
 
-			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
-			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
+			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
 
 			BOOST_CHECK(results_no_domainlinks[0].m_score < results[0].m_score);
 

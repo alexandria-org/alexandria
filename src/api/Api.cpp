@@ -51,7 +51,7 @@ namespace Api {
 
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1000000, metric);
 
-		metric.m_total_links_found = metric.m_total_found;
+		metric.m_total_url_links_found = metric.m_total_found;
 
 		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, {}, query, 1000, metric);
 
@@ -78,19 +78,19 @@ namespace Api {
 
 		struct SearchMetric metric;
 
-		metric.m_total_links_found = 0;
-
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 500000, metric);
 		profiler_links.stop();
 
-		metric.m_total_links_found += metric.m_total_found;
+		metric.m_total_url_links_found = metric.m_total_found;
+
+		metric.m_total_found = 0;
 
 		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
 		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 10000, metric);
 		profiler_domain_links.stop();
 
-		metric.m_total_links_found += metric.m_total_found;
+		metric.m_total_domain_links_found = metric.m_total_found;
 
 		Profiler::instance profiler_index("SearchEngine::search_with_links");
 		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, domain_links, query, 1000, metric);
