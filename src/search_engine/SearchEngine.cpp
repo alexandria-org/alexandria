@@ -260,29 +260,30 @@ namespace SearchEngine {
 	*/
 	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results) {
 		size_t applied_links = 0;
-		{
-			unordered_map<uint64_t, float> url_scores;
-			unordered_map<uint64_t, int> url_counts;
-			map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
-			{
-				for (const LinkFullTextRecord &link : links) {
 
-					if (domain_unique.count(make_pair(link.m_source_domain, link.m_target_hash)) == 0) {
+		size_t i = 0;
+		size_t j = 0;
+		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
+		FullTextRecord *data = results->data_pointer();
+		while (i < links.size() && j < results->size()) {
 
-						const float url_score = expm1(25.0f*link.m_score) / 50.0f;
-						url_scores[link.m_target_hash] += url_score;
-						url_counts[link.m_target_hash]++;
-						domain_unique[make_pair(link.m_source_domain, link.m_target_hash)] = link.m_source_domain;
-					}
+			const uint64_t hash1 = links[i].m_target_hash;
+			const uint64_t hash2 = data[j].m_value;
+
+			if (hash1 < hash2) {
+				i++;
+			} else if (hash1 == hash2) {
+
+				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
+					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
+					data[j].m_score += url_score;
+					applied_links++;
+					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
 				}
-			}
 
-			// Loop over the results and add the calculated domain scores.
-			FullTextRecord *data = results->data_pointer();
-			for (size_t i = 0; i < results->size(); i++) {
-				const float url_score = url_scores[data[i].m_value];
-				data[i].m_score += url_score;
-				applied_links += url_counts[data[i].m_value];
+				i++;
+			} else {
+				j++;
 			}
 		}
 

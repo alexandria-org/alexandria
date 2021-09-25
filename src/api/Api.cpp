@@ -82,6 +82,10 @@ namespace Api {
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 500000, metric);
 		profiler_links.stop();
 
+		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			return a.m_target_hash < b.m_target_hash;
+		});
+
 		metric.m_total_url_links_found = metric.m_total_found;
 
 		metric.m_total_found = 0;
@@ -122,6 +126,10 @@ namespace Api {
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 500000, metric);
 		profiler_links.stop();
+
+		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			return a.m_target_hash < b.m_target_hash;
+		});
 
 		metric.m_total_url_links_found = metric.m_total_found;
 
