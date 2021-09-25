@@ -9,7 +9,8 @@ curl http://node0002.alexandria.org/?q=the%20beatles
   "status":	"success",
   "time_ms":	35.876,
   "total_found":	245436,
-  "total_links_found":	4092,
+  "total_url_links_found":	4092,
+  "total_domain_links_found":	4092,
   "links_handled":	674,
   "link_domain_matches":	18059,
   "link_url_matches":	589,
@@ -22,23 +23,14 @@ curl http://node0002.alexandria.org/?q=the%20beatles
     "url_hash":	"2892281418178079567"
   }]
 }
-```
 
-### Perform link search
-```
-curl http://node0002.alexandria.org/?l=the%20beatles
-{
-  "status":	"success",
-  "time_ms":	35.876,
-  "total_found":	245436,
-  "results":	[{
-    "source_url":	"https://www.example.com/",
-    "target_url":	"https://www.alexandria.org/",
-    "link_text":	"This is a great search engine",
-    "score":	182.51408386230469,
-    "link_hash":	"2892282071861106665"
-  }]
-}
+The url flag d can be used to control deduplication:
+curl http://node0002.alexandria.org/?q=the%20beatles&d=a
+curl http://node0002.alexandria.org/?q=the%20beatles&d=d
+
+d=a // No deduplication, show all results
+d=d // Deduplication
+Default value is d=d
 ```
 
 ### Perform url lookup
@@ -107,6 +99,11 @@ curl https://api.alexandria.org/?q=the%20beatles&p=1
   "status":	"success",
   "time_ms":	35.876,
   "total_found":	245436,
+  "total_url_links_found":	4092,
+  "total_domain_links_found":	4092,
+  "links_handled":	674,
+  "link_domain_matches":	18059,
+  "link_url_matches":	589,
   "page_max": 10,
   "results":	[{
     "url":	"https://www.example.com/",
