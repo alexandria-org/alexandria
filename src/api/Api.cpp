@@ -111,6 +111,47 @@ namespace Api {
 		response_stream << response;
 	}
 
+	void search_all(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		stringstream &response_stream) {
+
+		Profiler::instance profiler;
+
+		struct SearchMetric metric;
+
+		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 500000, metric);
+		profiler_links.stop();
+
+		metric.m_total_url_links_found = metric.m_total_found;
+
+		metric.m_total_found = 0;
+
+		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
+		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 10000, metric);
+		profiler_domain_links.stop();
+
+		metric.m_total_domain_links_found = metric.m_total_found;
+
+		Profiler::instance profiler_index("SearchEngine::search_with_links");
+		vector<FullTextRecord> results = SearchEngine::search_all_with_links(index_array, links, domain_links, query, 1000, metric);
+		profiler_index.stop();
+
+		PostProcessor post_processor(query);
+
+		vector<ResultWithSnippet> with_snippets;
+		for (FullTextRecord &res : results) {
+			const string tsv_data = hash_table.find(res.m_value);
+			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+		}
+
+		post_processor.run(with_snippets);
+
+		ApiResponse response(with_snippets, metric, profiler.get());
+
+		response_stream << response;
+	}
+
 	template<typename ResultType>
 	Aws::Utils::Json::JsonValue build_link_results(const vector<ResultType> &link_results) {
 
