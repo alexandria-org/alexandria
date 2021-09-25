@@ -102,8 +102,17 @@ int main(void) {
 
 		stringstream response_stream;
 
-		if (query.find("q") != query.end()) {
+		bool deduplicate = true;
+		if (query.find("d") != query.end()) {
+			if (query["d"] == "a") {
+				deduplicate = false;
+			}
+		}
+
+		if (query.find("q") != query.end() && deduplicate) {
 			Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+		} else if (query.find("q") != query.end() && !deduplicate) {
+			Api::search_all(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
 		} else if (query.find("s") != query.end()) {
 			Api::word_stats(query["s"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
 		} else if (query.find("u") != query.end()) {
