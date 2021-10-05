@@ -4,6 +4,7 @@
 1. [Index file format (.fti)](/documentation/index_file_format.md)
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
 3. [API Response format](/documentation/api_response_format.md)
+4. [Caching](/documentation/caching.md)
 
 ## Build with docker
 1. Build docker image
