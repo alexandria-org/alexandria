@@ -424,6 +424,11 @@ inline string HtmlParser::get_text_after_h1(const string &html) {
 				interval++;
 				continue;
 			}
+			// Insert a space, because we don't want to concatenate words.
+			m_long_str_buf[j] = ' ';
+			if (copy && !last_was_space) j++;
+			last_was_space = true;
+
 			copy = false;
 		}
 		if (isspace(html_s[i])) {
