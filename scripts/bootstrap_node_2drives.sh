@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apt-get update
-apt-get -y install vim parted
+apt-get -y install vim parted screen zip
 
 _mkpart() { 
 	disc=$1
