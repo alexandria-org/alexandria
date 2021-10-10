@@ -37,6 +37,43 @@ Percentage of the requests served within a certain time (ms)
  100%   2911 (longest request)
 ```
 
+2021-10-10, AX61-NVME with two discs
+```
+Server Software:        nginx/1.18.0
+Server Hostname:        node0002.alexandria.org
+Server Port:            80
+
+Concurrency Level:      5
+Time taken for tests:   328.051 seconds
+Complete requests:      2000
+Failed requests:        0
+Write errors:           0
+Total transferred:      255881934 bytes
+HTML transferred:       255605934 bytes
+Requests per second:    6.10 [#/sec] (mean)
+Time per request:       820.128 [ms] (mean)
+Time per request:       164.026 [ms] (mean, across all concurrent requests)
+Transfer rate:          761.73 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       12   52  95.6     25    1560
+Processing:    16  767 558.9    689    3961
+Waiting:       15  638 427.9    594    2631
+Total:         32  819 558.5    742    4113
+
+Percentage of the requests served within a certain time (ms)
+  50%    742
+  66%    982
+  75%   1159
+  80%   1260
+  90%   1560
+  95%   1831
+  98%   2186
+  99%   2470
+ 100%   4113 (longest request)
+```
+
 2021-10-10, AX41-NVMe with four discs
 ```
 Server Software:        nginx/1.18.0
@@ -72,4 +109,41 @@ Percentage of the requests served within a certain time (ms)
   98%   2415
   99%   3439
  100%  10159 (longest request)
+```
+
+2021-10-10, AX41-NVMe with four discs
+```
+Server Software:        nginx/1.18.0
+Server Hostname:        65.21.238.146
+Server Port:            80
+
+Concurrency Level:      5
+Time taken for tests:   252.503 seconds
+Complete requests:      2000
+Failed requests:        0
+Write errors:           0
+Total transferred:      230349918 bytes
+HTML transferred:       230073780 bytes
+Requests per second:    7.92 [#/sec] (mean)
+Time per request:       631.258 [ms] (mean)
+Time per request:       126.252 [ms] (mean, across all concurrent requests)
+Transfer rate:          890.88 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       12   54  78.2     27    1068
+Processing:    15  576 519.3    436    3659
+Waiting:       15  421 325.7    354    2421
+Total:         30  631 527.6    491    3728
+
+Percentage of the requests served within a certain time (ms)
+  50%    491
+  66%    707
+  75%    861
+  80%    988
+  90%   1355
+  95%   1736
+  98%   2100
+  99%   2419
+ 100%   3728 (longest request)
 ```
