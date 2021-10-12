@@ -37,11 +37,19 @@ namespace Config {
 
 	inline const std::vector<std::string> batches = {
 		"ALEXANDRIA-MANUAL-01",
-		"CC-MAIN-2021-31"
+		"CC-MAIN-2021-25",
+		"CC-MAIN-2021-31",
 	};
 
 	inline const std::vector<std::string> link_batches = {
-		"CC-MAIN-2021-31"
+		"CC-MAIN-2021-31",
+		"CC-MAIN-2021-25",
+		"CC-MAIN-2021-21",
+		"CC-MAIN-2021-17",
+		"CC-MAIN-2021-10",
+		"CC-MAIN-2021-04",
+		"CC-MAIN-2020-50",
+		"CC-MAIN-2020-45",
 	};
 
 	// Full text indexer config
@@ -62,9 +70,12 @@ namespace Config {
 	inline const unsigned long long li_indexer_max_cache_size = 500;
 
 	// Hash table indexer config
-	inline const unsigned long long ht_num_shards = 16384;
+	inline const unsigned long long ht_num_shards = 1024;
 	inline const unsigned long long ht_num_buckets = 8;
 	inline const unsigned long long ht_key_size = 8;
+
+	// Server config
+	inline const unsigned int worker_count = 8;
 
 	// Other constants.
 	inline const unsigned long long num_async_file_transfers = 48;
