@@ -221,3 +221,77 @@ Percentage of the requests served within a certain time (ms)
   99%   2104
  100%   3805 (longest request)
 ```
+
+2021-10-12, AX61-NVME with four discs and 8 partitions
+```
+Server Software:        nginx/1.18.0
+Server Hostname:        135.181.182.4
+Server Port:            80
+
+Concurrency Level:      5
+Time taken for tests:   264.412 seconds
+Complete requests:      2000
+Failed requests:        0
+Write errors:           0
+Total transferred:      274309399 bytes
+HTML transferred:       274033261 bytes
+Requests per second:    7.56 [#/sec] (mean)
+Time per request:       661.029 [ms] (mean)
+Time per request:       132.206 [ms] (mean, across all concurrent requests)
+Transfer rate:          1013.12 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       13   27  16.1     25     348
+Processing:    14  633 449.6    565    2996
+Waiting:        0  590 425.7    520    2545
+Total:         34  661 450.3    594    3014
+
+Percentage of the requests served within a certain time (ms)
+  50%    594
+  66%    772
+  75%    905
+  80%   1000
+  90%   1271
+  95%   1510
+  98%   1834
+  99%   1997
+ 100%   3014 (longest request)
+```
+
+2021-10-12, AX61-NVME with four discs and 8 partitions
+```
+Server Software:        nginx/1.18.0
+Server Hostname:        135.181.182.4
+Server Port:            80
+
+Concurrency Level:      5
+Time taken for tests:   233.408 seconds
+Complete requests:      2000
+Failed requests:        0
+Write errors:           0
+Total transferred:      272488725 bytes
+HTML transferred:       272213277 bytes
+Requests per second:    8.57 [#/sec] (mean)
+Time per request:       583.519 [ms] (mean)
+Time per request:       116.704 [ms] (mean, across all concurrent requests)
+Transfer rate:          1140.07 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       12   25  10.1     24     187
+Processing:    15  558 402.0    487    2727
+Waiting:        0  512 377.0    440    2051
+Total:         33  583 402.8    512    2757
+
+Percentage of the requests served within a certain time (ms)
+  50%    512
+  66%    695
+  75%    806
+  80%    882
+  90%   1114
+  95%   1373
+  98%   1621
+  99%   1779
+ 100%   2757 (longest request)
+```
