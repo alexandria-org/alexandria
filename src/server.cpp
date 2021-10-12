@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include "fcgio.h"
+#include "config.h"
 #include "parser/URL.h"
 
 #include "post_processor/PostProcessor.h"
@@ -46,51 +47,52 @@
 
 using namespace std;
 
+struct Worker {
+
+	int socket_id;
+	int thread_id;
+
+};
+
 void output_response(FCGX_Request &request, stringstream &response) {
 
-	fcgi_streambuf cin_fcgi_streambuf(request.in);
-	fcgi_streambuf cout_fcgi_streambuf(request.out);
-	fcgi_streambuf cerr_fcgi_streambuf(request.err);
-
-	istream is{&cin_fcgi_streambuf};
-	ostream os{&cout_fcgi_streambuf};
-	ostream errs{&cerr_fcgi_streambuf};
-
-	os << "Content-type: application/json\r\n"
-	     << "\r\n"
-	     << response.str();
+	FCGX_FPrintF(request.out, "Content-type: application/json\r\n\r\n");
+	FCGX_FPrintF(request.out, response.str().c_str());
 
 }
 
-int main(void) {
-
-	streambuf *cin_streambuf = cin.rdbuf();
-	streambuf *cout_streambuf = cout.rdbuf();
-	streambuf *cerr_streambuf = cerr.rdbuf();
+static void *run_worker(void *data) {
+	Worker *worker = (Worker *)data;
+	int rc, i, thread_id = worker->thread_id;
+	pid_t pid = getpid();
 
 	FCGX_Request request;
 
-	FCGX_Init();
-
-	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
-	if (socket_id < 0) {
-		LogInfo("Could not open socket, exiting");
-		return 1;
-	}
-	FCGX_InitRequest(&request, socket_id, 0);
+	FCGX_InitRequest(&request, worker->socket_id, 0);
 
 	HashTable hash_table("main_index");
 	HashTable hash_table_link("link_index");
 	HashTable hash_table_domain_link("domain_link_index");
 
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", Config::ft_num_partitions);
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
+		FullText::create_index_array<LinkFullTextRecord>("link_index", Config::ft_num_link_partitions);
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", 8);
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", Config::ft_num_link_partitions);
 
 	LogInfo("Server has started...");
 
-	while (FCGX_Accept_r(&request) == 0) {
+	while (true) {
+
+		static pthread_mutex_t accept_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+		pthread_mutex_lock(&accept_mutex);
+		int accept_response = FCGX_Accept_r(&request);
+		pthread_mutex_unlock(&accept_mutex);
+
+		if (accept_response < 0) {
+			break;
+		}
 
 		string uri = FCGX_GetParam("REQUEST_URI", request.envp);
 
@@ -124,16 +126,41 @@ int main(void) {
 		}
 
 		output_response(request, response_stream);
+
+		FCGX_Finish_r(&request);
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
 
-	cin.rdbuf(cin_streambuf);
-	cout.rdbuf(cout_streambuf);
-	cerr.rdbuf(cerr_streambuf);
+	return NULL;
+}
 
+int main(void) {
+
+	FCGX_Init();
+
+	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
+	if (socket_id < 0) {
+		LogInfo("Could not open socket, exiting");
+		return 1;
+	}
+
+	pthread_t thread_ids[Config::worker_count];
+
+	Worker *workers = new Worker[Config::worker_count];
+	for (int i = 0; i < Config::worker_count; i++) {
+		workers[i].socket_id = socket_id;
+		workers[i].thread_id = i;
+
+		pthread_create(&thread_ids[i], NULL, run_worker, &workers[i]);
+	}
+
+	for (int i = 0; i < Config::worker_count; i++) {
+		pthread_join(thread_ids[i], NULL);
+	}
+	
 	return 0;
 }
 
