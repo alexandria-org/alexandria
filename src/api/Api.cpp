@@ -92,12 +92,14 @@ namespace Api {
 
 		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
 		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 10000, metric);
+		//vector<DomainLinkFullTextRecord> domain_links;
 		profiler_domain_links.stop();
 
 		metric.m_total_domain_links_found = metric.m_total_found;
 
 		Profiler::instance profiler_index("SearchEngine::search_with_links");
 		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, domain_links, query, 1000, metric);
+		//vector<FullTextRecord> results;
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);

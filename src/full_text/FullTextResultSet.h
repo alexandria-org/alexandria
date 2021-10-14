@@ -79,7 +79,7 @@ FullTextResultSet<DataRecord>::FullTextResultSet(size_t size)
 template<typename DataRecord>
 FullTextResultSet<DataRecord>::~FullTextResultSet() {
 	delete m_span;
-	delete m_data_pointer;
+	delete []m_data_pointer;
 }
 
 template<typename DataRecord>

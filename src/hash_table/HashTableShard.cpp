@@ -40,6 +40,8 @@ HashTableShard::~HashTableShard() {
 
 string HashTableShard::find(uint64_t key) {
 
+	if (!m_loaded) load();
+
 	const uint64_t key_significant = key >> (64-m_significant);
 	auto iter = m_pos.find(key_significant);
 	if (iter == m_pos.end()) return "";
@@ -53,7 +55,7 @@ string HashTableShard::find(uint64_t key) {
 
 	const size_t record_len = Config::ht_key_size + sizeof(size_t);
 	const size_t byte_len = len_in_posfile * record_len;
-	const size_t pos_buffer_len = 50000;
+	const size_t pos_buffer_len = 200000;
 	char pos_buffer[pos_buffer_len];
 	if (byte_len > pos_buffer_len) {
 		throw error("byte_len ("+to_string(byte_len)+") larger than pos_buffer_len ("+to_string(pos_buffer_len)+")");
@@ -194,7 +196,7 @@ string HashTableShard::data_at_position(size_t pos) {
 	stringstream decompressed;
 	decompressed << decompress_stream.rdbuf();
 
-	delete buffer;
+	delete []buffer;
 
 	return decompressed.str();
 }

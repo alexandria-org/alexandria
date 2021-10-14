@@ -71,7 +71,7 @@ std::string Unicode::encode(const std::string &str) {
 	}
 
 	std::string ret(target, len);
-	delete target;
+	delete []target;
 	if (utf8_len) {
 		return ret.substr(0, last_unicode);
 	} else {

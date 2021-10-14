@@ -123,6 +123,8 @@ namespace SearchEngine {
 
 		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, limit);
 
+		delete flat_result;
+
 		return deduped_result;
 	}
 
@@ -155,6 +157,8 @@ namespace SearchEngine {
 		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
 
 		vector<FullTextRecord> top_results = vector<FullTextRecord>(flat_result->span_pointer()->begin(), flat_result->span_pointer()->end());
+
+		delete flat_result;
 
 		return top_results;
 	}

@@ -400,8 +400,10 @@ namespace SearchEngine {
 		}
 
 		vector<span<DataRecord> *> result_arrays;
+		vector<FullTextResultSet<DataRecord> *> result_pointers;
 		for (auto &future : futures) {
 			FullTextResultSet<DataRecord> *result = future.get();
+			result_pointers.push_back(result);
 			result_arrays.push_back(result->span_pointer());
 		}
 
@@ -409,6 +411,11 @@ namespace SearchEngine {
 		Sort::merge_arrays(result_arrays, [](const DataRecord &a, const DataRecord &b) {
 			return a.m_value < b.m_value;
 		}, complete_result);
+
+		// Delete result.
+		for (FullTextResultSet<DataRecord> *result : result_pointers) {
+			delete result;
+		}
 
 		metric.m_total_found = 0;
 		for (const struct SearchMetric &m : metrics_vector) {

@@ -57,7 +57,7 @@ struct Worker {
 void output_response(FCGX_Request &request, stringstream &response) {
 
 	FCGX_FPrintF(request.out, "Content-type: application/json\r\n\r\n");
-	FCGX_FPrintF(request.out, response.str().c_str());
+	FCGX_FPrintF(request.out, "%s", response.str().c_str());
 
 }
 
@@ -138,6 +138,26 @@ static void *run_worker(void *data) {
 }
 
 int main(void) {
+
+	/*
+	stringstream response_stream;
+	HashTable hash_table("main_index");
+	HashTable hash_table_link("link_index");
+	HashTable hash_table_domain_link("domain_link_index");
+
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", Config::ft_num_partitions);
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
+		FullText::create_index_array<LinkFullTextRecord>("link_index", Config::ft_num_link_partitions);
+	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", Config::ft_num_link_partitions);
+
+	Api::search("cullhed", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+
+	FullText::delete_index_array<FullTextRecord>(index_array);
+	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+
+	return 0;*/
 
 	FCGX_Init();
 
