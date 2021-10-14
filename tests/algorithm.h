@@ -24,32 +24,52 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#include "algorithm/Algorithm.h"
 
-#include <boost/test/unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(algorithm)
 
-#include "config.h"
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
+BOOST_AUTO_TEST_CASE(intersection) {
 
-using namespace std;
+	{
+		const vector<int> result = Algorithm::intersection({
+			{1, 2, 3},
+			{2, 3},
+			{2, 3, 4}
+		});
 
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
+		BOOST_CHECK_EQUAL(2, result.size());
+		BOOST_CHECK_EQUAL(2, result[0]);
+		BOOST_CHECK_EQUAL(3, result[1]);
+	}
 
+	{
+		const vector<int> result = Algorithm::intersection({
+			{1, 2, 3, 5},
+			{2, 3, 5, 7},
+			{2, 3, 4, 5}
+		});
+
+		BOOST_CHECK_EQUAL(3, result.size());
+		BOOST_CHECK_EQUAL(2, result[0]);
+		BOOST_CHECK_EQUAL(3, result[1]);
+		BOOST_CHECK_EQUAL(5, result[2]);
+	}
+
+	{
+		const vector<int> result = Algorithm::intersection({});
+
+		BOOST_CHECK_EQUAL(0, result.size());
+	}
+
+	{
+		const vector<int> result = Algorithm::intersection({
+			{1, 2, 3, 5, 6, 7, 8},
+			{9, 10},
+			{1, 2, 3, 4, 5}
+		});
+
+		BOOST_CHECK_EQUAL(0, result.size());
+	}
+}
+
+BOOST_AUTO_TEST_SUITE_END();
