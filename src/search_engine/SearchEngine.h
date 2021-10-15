@@ -102,8 +102,8 @@ namespace SearchEngine {
 	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results);
 
 	template<typename DataRecord>
-	vector<size_t> value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets,
-		size_t &shortest_vector_position, vector<float> &scores, vector<vector<float>> &score_parts) {
+	vector<size_t> value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, size_t &shortest_vector_position,
+		vector<float> &scores) {
 
 		if (result_sets.size() == 0) return {};
 
@@ -122,7 +122,6 @@ namespace SearchEngine {
 		vector<size_t> result_ids;
 
 		const DataRecord *shortest_data = result_sets[shortest_vector_position]->data_pointer();
-		vector<float> score_vec(result_sets.size(), 0.0f);
 
 		while (positions[shortest_vector_position] < shortest_len) {
 
@@ -142,19 +141,15 @@ namespace SearchEngine {
 				if (*pos < len && value == data_arr[*pos].m_value) {
 					const float score = data_arr[*pos].m_score;
 					score_sum += score;
-					score_vec[iter_index] = score;
 				}
-				if (*pos < len && value < data_arr[*pos].m_value) {
+				if ((*pos < len && value < data_arr[*pos].m_value) || *pos >= len) {
 					all_equal = false;
-				}
-				if (*pos >= len) {
-					all_equal = false;
+					break;
 				}
 				iter_index++;
 			}
 			if (all_equal) {
 				scores.push_back(score_sum / result_sets.size());
-				score_parts.push_back(score_vec);
 				result_ids.push_back(positions[shortest_vector_position]);
 			}
 
@@ -222,8 +217,7 @@ namespace SearchEngine {
 		if (results.size() > 1) {
 			size_t shortest_vector;
 			vector<float> score_vector;
-			vector<vector<float>> score_parts;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector, score_parts);
+			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
 
 			FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
 			FullTextResultSet<DataRecord> *merged = new FullTextResultSet<DataRecord>(result_ids.size());
@@ -249,8 +243,7 @@ namespace SearchEngine {
 		if (results.size() > 1) {
 			size_t shortest_vector;
 			vector<float> score_vector;
-			vector<vector<float>> score_parts;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector, score_parts);
+			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
 
 			{
 				FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
@@ -273,8 +266,7 @@ namespace SearchEngine {
 		merged.clear();
 		if (results.size() > 1) {
 			size_t shortest_vector;
-			vector<vector<float>> score_parts;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector, score_parts);
+			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
 
 			{
 				FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
