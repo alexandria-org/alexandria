@@ -31,15 +31,6 @@
 #include <fstream>
 #include <unistd.h>
 
-#if __has_include("x86intrin.h")
-
-	#define PROFILE_CPU_CYCLES true
-	#include <x86intrin.h>
-
-#else
-	#define PROFILE_CPU_CYCLES false
-#endif
-
 using namespace std;
 
 namespace Profiler {
@@ -66,8 +57,10 @@ namespace Profiler {
 	};
 
 	void print_memory_status();
-	uint64_t get_cycles();
-	void measure_base_performance();
-	double get_absolute_performance(double elapsed_ms);
+
+	void tick(const string &name, const string &section);
+	void report_reset();
+	void report_print();
+	double now_micro();
 
 }

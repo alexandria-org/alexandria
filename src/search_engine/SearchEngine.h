@@ -67,6 +67,16 @@ namespace SearchEngine {
 		}
 	};
 
+	template<typename DataRecord>
+	struct SearchArguments {
+		string query;
+		size_t limit;
+		const vector<FullTextShard<DataRecord> *> *shards;
+		struct SearchMetric *metric;
+		const vector<LinkFullTextRecord> *links;
+		const vector<DomainLinkFullTextRecord> *domain_links;
+	};
+
 	void reset_search_metric(struct SearchMetric &metric);
 
 	template<typename DataRecord>
@@ -350,51 +360,62 @@ namespace SearchEngine {
 	}
 
 	template <typename DataRecord>
-	FullTextResultSet<DataRecord> *general_search(const vector<FullTextShard<DataRecord> *> &shards, const string &query, size_t limit,
-        struct SearchMetric &metric) {
+	void *general_search(void *ptr) {
 
-		reset_search_metric(metric);
+		struct SearchArguments<DataRecord> *input = (struct SearchArguments<DataRecord> *)ptr;
 
-		vector<string> words = Text::get_full_text_words(query);
+		reset_search_metric(*(input->metric));
+
+		vector<string> words = Text::get_full_text_words(input->query);
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
-		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(shards, words);
+		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(*(input->shards), words);
 
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
 			flat_result = merge_results_to_one<DataRecord>(result_vector);
 
-			set_total_found<DataRecord>(result_vector, metric, (double)flat_result->size() / largest_result(result_vector));
+			set_total_found<DataRecord>(result_vector, *(input->metric), (double)flat_result->size() / largest_result(result_vector));
 		} else {
 			flat_result = result_vector[0];
-			set_total_found<DataRecord>(result_vector, metric, 1.0);
+			set_total_found<DataRecord>(result_vector, *(input->metric), 1.0);
 			result_vector.clear();
 		}
-		get_unsorted_results_with_top_scores<DataRecord>(flat_result, limit);
+		get_unsorted_results_with_top_scores<DataRecord>(flat_result, input->limit);
 
 		delete_result_vector<DataRecord>(result_vector);
 
-		return flat_result;
+		return (void *)flat_result;
 	}
 
 	template<typename DataRecord>
 	vector<DataRecord> search(vector<FullTextIndex<DataRecord> *> index_array, const string &query, size_t limit, struct SearchMetric &metric) {
 
-		vector<future<FullTextResultSet<DataRecord> *>> futures;
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
+
+		vector<pthread_t> threads;
+		vector<struct SearchArguments<DataRecord>> args(index_array.size(), SearchArguments<DataRecord>{
+			.query = query,
+			.limit = limit
+		});
 
 		size_t idx = 0;
 		for (FullTextIndex<DataRecord> *index : index_array) {
-			future<FullTextResultSet<DataRecord> *> future = async(general_search<DataRecord>, index->shards(), query, limit,
-				ref(metrics_vector[idx]));
-			futures.push_back(move(future));
+			pthread_t thread;
+
+			args[idx].shards = index->shard_ptr();
+			args[idx].metric = &metrics_vector[idx];
+
+			pthread_create(&thread, NULL, general_search<DataRecord>, (void *)&(args[idx]));
+			threads.push_back(thread);
 			idx++;
 		}
 
 		vector<span<DataRecord> *> result_arrays;
 		vector<FullTextResultSet<DataRecord> *> result_pointers;
-		for (auto &future : futures) {
-			FullTextResultSet<DataRecord> *result = future.get();
+		for (auto &thread : threads) {
+			FullTextResultSet<DataRecord> *result;
+			pthread_join(thread, (void **)&result);
 			result_pointers.push_back(result);
 			result_arrays.push_back(result->span_pointer());
 		}

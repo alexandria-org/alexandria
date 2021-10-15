@@ -55,6 +55,7 @@ public:
 	size_t disk_size() const;
 
 	const vector<FullTextShard<DataRecord> *> &shards() { return m_shards; };
+	const vector<FullTextShard<DataRecord> *> *shard_ptr() { return &m_shards; };
 
 private:
 

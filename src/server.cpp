@@ -111,6 +111,7 @@ static void *run_worker(void *data) {
 			}
 		}
 
+		Profiler::tick("request", "initialize_request");
 		if (query.find("q") != query.end() && deduplicate) {
 			Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
 		} else if (query.find("q") != query.end() && !deduplicate) {
@@ -124,6 +125,7 @@ static void *run_worker(void *data) {
 		} else if (query.find("d") != query.end()) {
 			Api::search_domain_links(query["d"], hash_table_domain_link, domain_link_index_array, response_stream);
 		}
+		Profile::end("request");
 
 		output_response(request, response_stream);
 

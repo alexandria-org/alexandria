@@ -92,40 +92,50 @@ namespace SearchEngine {
 		return deduped_result;
 	}
 
-	vector<FullTextRecord> search_with_domain_links(const vector<FullTextShard<FullTextRecord> *> &shards, const vector<LinkFullTextRecord> &links,
-		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric) {
+	void *search_with_domain_links(void *ptr) {
 
-		vector<string> words = Text::get_full_text_words(query);
+		struct SearchArguments<FullTextRecord> *input = (struct SearchArguments<FullTextRecord> *)ptr;
+
+		vector<string> words = Text::get_full_text_words(input->query);
 		if (words.size() == 0) return {};
 
-		vector<FullTextResultSet<FullTextRecord> *> result_vector = search_shards<FullTextRecord>(shards, words);
+		vector<FullTextResultSet<FullTextRecord> *> result_vector = search_shards<FullTextRecord>(*(input->shards), words);
 
 		FullTextResultSet<FullTextRecord> *flat_result;
 		if (result_vector.size() > 1) {
 			flat_result = merge_results_to_one<FullTextRecord>(result_vector);
 
-			set_total_found<FullTextRecord>(result_vector, metric, (double)flat_result->size() / largest_result(result_vector));
+			set_total_found<FullTextRecord>(result_vector, *(input->metric), (double)flat_result->size() / largest_result(result_vector));
 		} else {
 			flat_result = result_vector[0];
-			set_total_found<FullTextRecord>(result_vector, metric, 1.0);
+			set_total_found<FullTextRecord>(result_vector, *(input->metric), 1.0);
 			result_vector.clear();
 		}
 
 		delete_result_vector<FullTextRecord>(result_vector);
 
-		metric.m_link_domain_matches = apply_domain_link_scores(domain_links, flat_result);
-		metric.m_link_url_matches = apply_link_scores(links, flat_result);
+		input->metric->m_link_domain_matches = apply_domain_link_scores(*(input->domain_links), flat_result);
+		input->metric->m_link_url_matches = apply_link_scores(*(input->links), flat_result);
 
 		// Narrow down results directly to top 200K
 		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
 
 		vector<FullTextRecord> top_results = vector<FullTextRecord>(flat_result->span_pointer()->begin(), flat_result->span_pointer()->end());
 
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, limit);
+		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, input->limit);
 
 		delete flat_result;
 
-		return deduped_result;
+		FullTextResultSet<FullTextRecord> *ret = new FullTextResultSet<FullTextRecord>(deduped_result.size());
+
+		FullTextRecord *data_ptr = ret->data_pointer();
+		size_t idx = 0;
+		for (const FullTextRecord &item : deduped_result) {
+			data_ptr[idx] = item;
+			idx++;
+		}
+
+		return (void *)ret;
 	}
 
 	vector<FullTextRecord> search_all_with_domain_links(const vector<FullTextShard<FullTextRecord> *> &shards,
@@ -172,21 +182,34 @@ namespace SearchEngine {
 
 		metric.m_links_handled = links.size();
 
-		vector<future<vector<FullTextRecord>>> futures;
+		vector<pthread_t> threads;
+		vector<struct SearchArguments<FullTextRecord>> args(index_array.size(), SearchArguments<FullTextRecord>{
+			.query = query,
+			.limit = limit
+		});
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
 		for (FullTextIndex<FullTextRecord> *index : index_array) {
-			future<vector<FullTextRecord>> future = async(search_with_domain_links, index->shards(), links, domain_links, query, limit,
-				ref(metrics_vector[idx]));
-			futures.push_back(move(future));
+			pthread_t thread;
+
+			args[idx].shards = index->shard_ptr();
+			args[idx].metric = &metrics_vector[idx];
+			args[idx].links = &links;
+			args[idx].domain_links = &domain_links;
+
+			pthread_create(&thread, NULL, search_with_domain_links, (void *)&(args[idx]));
+			threads.push_back(thread);
 			idx++;
 		}
 
 		vector<FullTextRecord> complete_result;
-		for (auto &future : futures) {
-			vector<FullTextRecord> result = future.get();
-			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		for (auto &thread : threads) {
+
+			FullTextResultSet<FullTextRecord> *result;
+			pthread_join(thread, (void **)&result);
+			complete_result.insert(complete_result.end(), result->span_pointer()->begin(), result->span_pointer()->end());
+			delete result;
 		}
 
 		sort_by_value<FullTextRecord>(complete_result);

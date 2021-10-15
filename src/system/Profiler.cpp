@@ -29,6 +29,8 @@
 
 namespace Profiler {
 
+	std::chrono::_V2::system_clock::time_point start_time = std::chrono::high_resolution_clock::now();
+
 	instance::instance(const string &name) :
 		m_name(name)
 	{
@@ -88,29 +90,17 @@ namespace Profiler {
 		}
 	}
 
-	uint64_t get_cycles() {
-		#if PROFILE_CPU_CYCLES
-		return __rdtsc();
-		#endif
-		return 0ull;
+	void tick(const string &name, const string &section) {
+
 	}
+	void report_reset();
+	void report_print();
 
-	double base_performance = 1.0;
-	void measure_base_performance() {
-		instance p;
-		for (size_t i = 0; i < 1000; i++) {
-			vector<int> vec;
-			for (size_t j = 0; j < 10000; j++) {
-				vec.push_back(rand());
-			}
+	double now_micro() {
+		auto timer_elapsed = chrono::high_resolution_clock::now() - start_time;
+		auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
 
-			sort(vec.begin(), vec.end());
-		}
-		base_performance = p.get();
-	}
-
-	double get_absolute_performance(double elapsed_ms) {
-		return elapsed_ms/base_performance;
+		return (double)microseconds;
 	}
 
 }
