@@ -44,7 +44,23 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	bool result_has_many_domains(const vector<DataRecord> &results) {
+	bool result_has_many_domains(const FullTextResultSet<DataRecord> *results) {
+
+		if (results->size() == 0) return false;
+
+		const DataRecord *data = results->data_pointer();
+		const uint64_t first_domain_hash = data[0].m_domain_hash;
+		for (size_t i = 0; i < results->size(); i++) {
+			if (data[i].m_domain_hash != first_domain_hash) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	template<typename DataRecord>
+	bool result_has_many_domains_vector(const vector<DataRecord> &results) {
 
 		if (results.size() == 0) return false;
 
@@ -59,7 +75,38 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> deduplicate_domains(const vector<DataRecord> results, size_t results_per_domain, size_t limit) {
+	void deduplicate_domains(FullTextResultSet<DataRecord> *results, size_t results_per_domain, size_t limit) {
+
+		vector<DataRecord> deduplicate;
+		unordered_map<uint64_t, size_t> domain_counts;
+		DataRecord *records = results->data_pointer();
+		size_t j = 0;
+		for (size_t i = 0; i < results->size() && j < limit; i++) {
+			records[j] = records[i];
+			if (domain_counts[records[i].m_domain_hash] < results_per_domain) {
+				j++;
+				domain_counts[records[i].m_domain_hash]++;
+			}
+		}
+		results->resize(j);
+	}
+
+	template<typename DataRecord>
+	void deduplicate_result(FullTextResultSet<DataRecord> *results, size_t limit) {
+
+		bool has_many_domains = result_has_many_domains<DataRecord>(results);
+
+		if (results->size() > 10 && has_many_domains) {
+			deduplicate_domains<DataRecord>(results, 5, limit);
+		} else {
+			if (results->size() > limit) {
+				results->resize(limit);
+			}
+		}
+	}
+
+	template<typename DataRecord>
+	vector<DataRecord> deduplicate_domains_vector(const vector<DataRecord> results, size_t results_per_domain, size_t limit) {
 
 		vector<DataRecord> deduplicate;
 		unordered_map<uint64_t, size_t> domain_counts;
@@ -75,13 +122,13 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> deduplicate_result(const vector<DataRecord> &results, size_t limit) {
+	vector<DataRecord> deduplicate_result_vector(const vector<DataRecord> &results, size_t limit) {
 
 		vector<DataRecord> deduped_result;
-		bool has_many_domains = result_has_many_domains<DataRecord>(results);
+		bool has_many_domains = result_has_many_domains_vector<DataRecord>(results);
 
 		if (results.size() > 10 && has_many_domains) {
-			deduped_result = deduplicate_domains<DataRecord>(results, 5, limit);
+			deduped_result = deduplicate_domains_vector<DataRecord>(results, 5, limit);
 		} else {
 			if (results.size() > limit) {
 				deduped_result.insert(deduped_result.begin(), results.begin(), results.begin() + limit);
@@ -120,57 +167,11 @@ namespace SearchEngine {
 		// Narrow down results directly to top 200K
 		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
 
-		vector<FullTextRecord> top_results = vector<FullTextRecord>(flat_result->span_pointer()->begin(), flat_result->span_pointer()->end());
-
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(top_results, input->limit);
-
-		delete flat_result;
-
-		FullTextResultSet<FullTextRecord> *ret = new FullTextResultSet<FullTextRecord>(deduped_result.size());
-
-		FullTextRecord *data_ptr = ret->data_pointer();
-		size_t idx = 0;
-		for (const FullTextRecord &item : deduped_result) {
-			data_ptr[idx] = item;
-			idx++;
+		if (input->deduplicate) {
+			deduplicate_result<FullTextRecord>(flat_result, input->limit);
 		}
 
-		return (void *)ret;
-	}
-
-	vector<FullTextRecord> search_all_with_domain_links(const vector<FullTextShard<FullTextRecord> *> &shards,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
-		struct SearchMetric &metric) {
-
-		vector<string> words = Text::get_full_text_words(query);
-		if (words.size() == 0) return {};
-
-		vector<FullTextResultSet<FullTextRecord> *> result_vector = search_shards<FullTextRecord>(shards, words);
-
-		FullTextResultSet<FullTextRecord> *flat_result;
-		if (result_vector.size() > 1) {
-			flat_result = merge_results_to_one<FullTextRecord>(result_vector);
-
-			set_total_found<FullTextRecord>(result_vector, metric, (double)flat_result->size() / largest_result(result_vector));
-		} else {
-			flat_result = result_vector[0];
-			set_total_found<FullTextRecord>(result_vector, metric, 1.0);
-			result_vector.clear();
-		}
-
-		delete_result_vector<FullTextRecord>(result_vector);
-
-		metric.m_link_domain_matches = apply_domain_link_scores(domain_links, flat_result);
-		metric.m_link_url_matches = apply_link_scores(links, flat_result);
-
-		// Narrow down results directly to top 200K
-		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
-
-		vector<FullTextRecord> top_results = vector<FullTextRecord>(flat_result->span_pointer()->begin(), flat_result->span_pointer()->end());
-
-		delete flat_result;
-
-		return top_results;
+		return (void *)flat_result;
 	}
 
 	vector<FullTextRecord> search_with_links(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
@@ -185,7 +186,8 @@ namespace SearchEngine {
 		vector<pthread_t> threads;
 		vector<struct SearchArguments<FullTextRecord>> args(index_array.size(), SearchArguments<FullTextRecord>{
 			.query = query,
-			.limit = limit
+			.limit = limit,
+			.deduplicate = true
 		});
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
@@ -203,12 +205,22 @@ namespace SearchEngine {
 			idx++;
 		}
 
-		vector<FullTextRecord> complete_result;
+		vector<span<FullTextRecord> *> result_arrays;
+		vector<FullTextResultSet<FullTextRecord> *> result_pointers;
 		for (auto &thread : threads) {
-
 			FullTextResultSet<FullTextRecord> *result;
 			pthread_join(thread, (void **)&result);
-			complete_result.insert(complete_result.end(), result->span_pointer()->begin(), result->span_pointer()->end());
+			result_pointers.push_back(result);
+			result_arrays.push_back(result->span_pointer());
+		}
+
+		vector<FullTextRecord> complete_result;
+		Sort::merge_arrays(result_arrays, [](const FullTextRecord &a, const FullTextRecord &b) {
+			return a.m_value < b.m_value;
+		}, complete_result);
+
+		// Delete result.
+		for (FullTextResultSet<FullTextRecord> *result : result_pointers) {
 			delete result;
 		}
 
@@ -227,7 +239,7 @@ namespace SearchEngine {
 		// Sort.
 		sort_by_score<FullTextRecord>(complete_result);
 
-		vector<FullTextRecord> deduped_result = deduplicate_result<FullTextRecord>(complete_result, limit);
+		vector<FullTextRecord> deduped_result = deduplicate_result_vector<FullTextRecord>(complete_result, limit);
 
 		if (deduped_result.size() < limit) {
 			metric.m_total_found = deduped_result.size();
@@ -245,22 +257,49 @@ namespace SearchEngine {
 
 		metric.m_links_handled = links.size();
 
-		vector<future<vector<FullTextRecord>>> futures;
+		vector<pthread_t> threads;
+		vector<struct SearchArguments<FullTextRecord>> args(index_array.size(), SearchArguments<FullTextRecord>{
+			.query = query,
+			.limit = limit,
+			.deduplicate = false
+		});
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
 		size_t idx = 0;
 		for (FullTextIndex<FullTextRecord> *index : index_array) {
-			future<vector<FullTextRecord>> future = async(search_all_with_domain_links, index->shards(), links, domain_links, query, limit,
-				ref(metrics_vector[idx]));
-			futures.push_back(move(future));
+			pthread_t thread;
+
+			args[idx].shards = index->shard_ptr();
+			args[idx].metric = &metrics_vector[idx];
+			args[idx].links = &links;
+			args[idx].domain_links = &domain_links;
+
+			pthread_create(&thread, NULL, search_with_domain_links, (void *)&(args[idx]));
+			threads.push_back(thread);
 			idx++;
 		}
 
-		vector<FullTextRecord> complete_result;
-		for (auto &future : futures) {
-			vector<FullTextRecord> result = future.get();
-			complete_result.insert(complete_result.end(), result.begin(), result.end());
+		vector<span<FullTextRecord> *> result_arrays;
+		vector<FullTextResultSet<FullTextRecord> *> result_pointers;
+		for (auto &thread : threads) {
+			FullTextResultSet<FullTextRecord> *result;
+			pthread_join(thread, (void **)&result);
+			result_pointers.push_back(result);
+			result_arrays.push_back(result->span_pointer());
 		}
+
+		vector<FullTextRecord> complete_result;
+		Sort::merge_arrays(result_arrays, [](const FullTextRecord &a, const FullTextRecord &b) {
+			return a.m_value < b.m_value;
+		}, complete_result);
+
+		// Delete result.
+		for (FullTextResultSet<FullTextRecord> *result : result_pointers) {
+			delete result;
+		}
+
+		sort_by_value<FullTextRecord>(complete_result);
+		deduplicate_by_value<FullTextRecord>(complete_result);
 
 		metric.m_total_found = 0;
 		metric.m_link_domain_matches = 0;
@@ -271,13 +310,12 @@ namespace SearchEngine {
 			metric.m_link_url_matches += m.m_link_url_matches;
 		}
 
+		// Sort.
+		sort_by_score<FullTextRecord>(complete_result);
+
 		if (complete_result.size() < limit) {
 			metric.m_total_found = complete_result.size();
 		}
-
-		// Sort.
-		sort_by_score<FullTextRecord>(complete_result);
-		limit_results(complete_result, limit);
 
 		return complete_result;
 	}

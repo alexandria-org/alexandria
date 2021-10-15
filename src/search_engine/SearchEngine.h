@@ -71,6 +71,7 @@ namespace SearchEngine {
 	struct SearchArguments {
 		string query;
 		size_t limit;
+		bool deduplicate;
 		const vector<FullTextShard<DataRecord> *> *shards;
 		struct SearchMetric *metric;
 		const vector<LinkFullTextRecord> *links;
@@ -396,7 +397,8 @@ namespace SearchEngine {
 		vector<pthread_t> threads;
 		vector<struct SearchArguments<DataRecord>> args(index_array.size(), SearchArguments<DataRecord>{
 			.query = query,
-			.limit = limit
+			.limit = limit,
+			.deduplicate = false
 		});
 
 		size_t idx = 0;
