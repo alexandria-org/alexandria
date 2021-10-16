@@ -168,9 +168,9 @@ size_t FullTextShard<DataRecord>::read_key_pos(ifstream &reader, uint64_t key) {
 	uint64_t buffer[21];
 
 	reader.seekg(8 + key_pos * 8, ios::beg);
-	reader.read((char *)buffer, 168);
+	reader.read((char *)buffer, (m_num_keys < 21 ? m_num_keys : 21) * 8);
 
-	for (size_t i = 0; i < 21; i++) {
+	for (size_t i = 0; i < (m_num_keys < 21 ? m_num_keys : 21); i++) {
 		if (buffer[i] == key) return key_pos + i;
 	}
 
