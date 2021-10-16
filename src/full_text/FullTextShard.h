@@ -64,6 +64,7 @@ public:
 	~FullTextShard();
 
 	FullTextResultSet<DataRecord> *find(uint64_t key);
+	size_t read_key_pos(ifstream &reader, uint64_t key);
 	size_t total_num_results(uint64_t key);
 	void read_keys();
 	void unread_keys();
@@ -83,6 +84,7 @@ private:
 
 	// These variables always represent what is in the file.
 	vector<uint64_t> m_keys;
+	const size_t m_key_spread = 20;
 
 	bool m_keys_read;
 	
@@ -99,7 +101,7 @@ template<typename DataRecord>
 FullTextShard<DataRecord>::FullTextShard(const string &db_name, size_t shard)
 : m_shard_id(shard), m_db_name(db_name), m_keys_read(false) {
 	m_filename = "/mnt/"+mountpoint()+"/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
-	//read_keys();
+	read_keys();
 }
 
 template<typename DataRecord>
@@ -109,17 +111,13 @@ FullTextShard<DataRecord>::~FullTextShard() {
 template<typename DataRecord>
 FullTextResultSet<DataRecord> *FullTextShard<DataRecord>::find(uint64_t key) {
 
-	if (!m_keys_read) read_keys();
+	ifstream reader(filename(), ios::binary);
 
-	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
+	size_t key_pos = read_key_pos(reader, key);
 
-	if (iter == m_keys.end() || *iter > key) {
+	if (key_pos == SIZE_MAX) {
 		return new FullTextResultSet<DataRecord>(0);
 	}
-
-	size_t key_pos = iter - m_keys.begin();
-
-	ifstream reader(filename(), ios::binary);
 
 	char buffer[64];
 
@@ -149,6 +147,34 @@ FullTextResultSet<DataRecord> *FullTextShard<DataRecord>::find(uint64_t key) {
 	result_set->set_total_num_results(total_num_results);
 
 	return result_set;
+}
+
+/*
+ * Reads the exact position of the key, returns SIZE_MAX if the key was not found.
+ * */
+template<typename DataRecord>
+size_t FullTextShard<DataRecord>::read_key_pos(ifstream &reader, uint64_t key) {
+
+	auto iter = lower_bound(m_keys.begin(), m_keys.end(), key);
+
+	// The last element of m_keys is the actual last key.
+	if (iter == m_keys.end()) {
+		return SIZE_MAX;
+	}
+
+	size_t key_pos = (iter - m_keys.begin()) * m_key_spread;
+	if (key_pos >= m_key_spread) key_pos -= m_key_spread;
+
+	uint64_t buffer[21];
+
+	reader.seekg(8 + key_pos * 8, ios::beg);
+	reader.read((char *)buffer, 168);
+
+	for (size_t i = 0; i < 21; i++) {
+		if (buffer[i] == key) return key_pos + i;
+	}
+
+	return SIZE_MAX;
 }
 
 template<typename DataRecord>
@@ -207,13 +233,14 @@ void FullTextShard<DataRecord>::read_keys() {
 
 	m_num_keys = *((uint64_t *)(&buffer[0]));
 
-	m_keys.resize(m_num_keys);
+	vector<uint64_t> temp_keys;
+	temp_keys.resize(m_num_keys);
 
 	if (m_num_keys > Config::ft_max_keys) {
 		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
 	}
 
-	uint64_t *key_data = m_keys.data();
+	uint64_t *key_data = temp_keys.data();
 
 	// Read the keys.
 	reader.read((char *)key_data, m_num_keys * sizeof(uint64_t));
@@ -223,6 +250,16 @@ void FullTextShard<DataRecord>::read_keys() {
 	m_len_start = m_pos_start + m_num_keys * 8;
 	m_total_start = m_len_start + m_num_keys * 8;
 	m_data_start = m_total_start + m_num_keys * 8;
+
+	// Throw away keys.
+	if (temp_keys.size() > 0) {
+		for (size_t i = 0; i < temp_keys.size(); i++) {
+			if (i % m_key_spread == 0) {
+				m_keys.push_back(temp_keys[i]);
+			}
+		}
+		if (m_keys.back() != temp_keys.back()) m_keys.push_back(temp_keys.back());
+	}
 }
 
 template<typename DataRecord>
