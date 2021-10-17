@@ -24,33 +24,17 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#include "search_engine/SearchAllocation.h"
+#include "full_text/FullTextRecord.h"
 
-#include <boost/test/unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(search_allocation)
 
-#include "config.h"
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
+BOOST_AUTO_TEST_CASE(create) {
+	SearchAllocation::Storage<FullTextRecord> *search_alloc = SearchAllocation::create_allocation<FullTextRecord>();
 
-using namespace std;
+	BOOST_CHECK(search_alloc->result_sets.size() == Config::ft_num_partitions);
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
+	SearchAllocation::delete_allocation(search_alloc);
+}
 
+BOOST_AUTO_TEST_SUITE_END();

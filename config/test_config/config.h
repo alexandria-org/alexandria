@@ -43,7 +43,7 @@ namespace Config {
 	const unsigned long long ft_num_shards = 1024;
 	const unsigned long long ft_num_partitions = 1;
 	const unsigned long long ft_num_link_partitions = 1;
-	const unsigned long long ft_threads_per_partition = 8;
+	const unsigned long long ft_max_results_per_partition = 100000;
 	const unsigned long long ft_max_keys = 0xFFFFFFFF;
 	const unsigned long long ft_max_cache_gb = 30;
 	const unsigned long long ft_num_threads_indexing = 24;
@@ -62,9 +62,17 @@ namespace Config {
 	const unsigned long long ht_num_buckets = 8;
 	const unsigned long long ht_key_size = 8;
 
+	// Server config
+	const unsigned int worker_count = 8;
+	const unsigned long long query_max_words = 10; // Maximum number of words used in query.
+
 	// Other constants.
 	const unsigned long long num_async_file_transfers = 48;
-	inline const std::string test_data_path = "/var/www/html/node0003.alexandria.org/test-data/";
+	const std::string test_data_path = "/var/www/html/node0003.alexandria.org/test-data/";
+
+	// Commoncrawl parser.
+	const std::string cc_target_output = "alexandria-cc-output";
+	const bool cc_run_on_lambda = true;
 
 }
 
