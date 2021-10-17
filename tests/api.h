@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
 
 		string response = response_stream.str();
 
@@ -106,11 +106,6 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-#endif
 	}
 
 	{
@@ -182,7 +177,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
 
 		string response = response_stream.str();
 
@@ -547,166 +542,6 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 }
 
-BOOST_AUTO_TEST_CASE(api_links) {
-
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index", 8);
-	FullText::truncate_index("test_link_index", 8);
-
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
-
-	{
-		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
-	}
-
-	{
-		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-
-		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
-			sub_system, url_to_domain);
-	}
-
-	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
-
-	{
-		stringstream response_stream;
-		Api::search_links("star trek guinan", link_hash_table, link_index_array, response_stream);
-
-		string response = response_stream.str();
-
-		Aws::Utils::Json::JsonValue json(response);
-
-		auto v = json.View();
-
-		BOOST_CHECK(v.ValueExists("status"));
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK(v.GetArray("results")[0].ValueExists("source_url"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 1);
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("source_url"), "http://214th.blogspot.com/2016/03/from-potemkin-pictures-battle-cruiser.html");
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("target_url"), "http://url1.com/my_test_url");
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("link_text"), "Star Trek Guinan");
-#else
-		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
-#endif
-	}
-
-	{
-		stringstream response_stream;
-		Api::search_links("non existing link", link_hash_table, link_index_array, response_stream);
-
-		string response = response_stream.str();
-
-		Aws::Utils::Json::JsonValue json(response);
-
-		auto v = json.View();
-
-		BOOST_CHECK(v.ValueExists("status"));
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
-#else
-		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
-#endif
-	}
-
-	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
-}
-
-BOOST_AUTO_TEST_CASE(api_domain_links) {
-
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index", 8);
-	FullText::truncate_index("test_link_index", 8);
-
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
-
-	{
-		// Index full text
-		SubSystem *sub_system = new SubSystem();
-
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
-	}
-
-	{
-		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		SubSystem *sub_system = new SubSystem();
-
-		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
-			sub_system, url_to_domain);
-	}
-
-	HashTable domain_link_hash_table("test_link_index");
-	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index", 8);
-
-	{
-		stringstream response_stream;
-		Api::search_domain_links("star trek guinan", domain_link_hash_table, domain_link_index_array, response_stream);
-
-		string response = response_stream.str();
-
-		Aws::Utils::Json::JsonValue json(response);
-
-		auto v = json.View();
-
-		BOOST_CHECK(v.ValueExists("status"));
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK(v.GetArray("results")[0].ValueExists("source_url"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 1);
-#else
-		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
-#endif
-	}
-
-	{
-		stringstream response_stream;
-		Api::search_domain_links("non existing link", domain_link_hash_table, domain_link_index_array, response_stream);
-
-		string response = response_stream.str();
-
-		Aws::Utils::Json::JsonValue json(response);
-
-		auto v = json.View();
-
-		BOOST_CHECK(v.ValueExists("status"));
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
-#else
-		BOOST_CHECK_EQUAL(v.GetString("status"), "error");
-#endif
-	}
-
-	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
-}
-
 BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
 	FullText::truncate_url_to_domain("main_index");
@@ -751,7 +586,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
 
 		string response = response_stream.str();
 
@@ -810,7 +645,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search("url2.com", hash_table, index_array, link_index_array, response_stream);
+		Api::search("url2.com", hash_table, index_array, link_index_array, {}, response_stream);
 
 		string response = response_stream.str();
 

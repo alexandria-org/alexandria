@@ -43,41 +43,13 @@
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, stringstream &response_stream) {
-
-		Profiler::instance profiler;
-
-		struct SearchMetric metric;
-
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 1000000, metric);
-
-		metric.m_links_handled = links.size();
-		metric.m_total_url_links_found = metric.m_total_found;
-
-		vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, {}, query, 1000, metric);
-
-		PostProcessor post_processor(query);
-
-		vector<ResultWithSnippet> with_snippets;
-		for (FullTextRecord &res : results) {
-			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
-		}
-
-		post_processor.run(with_snippets);
-
-		ApiResponse response(with_snippets, metric, profiler.get());
-
-		response_stream << response;
-	}
-
-	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
 		stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
 		struct SearchMetric metric;
+		SearchEngine::reset_search_metric(metric);
 
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 500000, metric);
@@ -92,12 +64,14 @@ namespace Api {
 
 		metric.m_total_found = 0;
 
-		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
-		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query,
-			10000, metric);
-		profiler_domain_links.stop();
+		vector<DomainLinkFullTextRecord> domain_links;
+		if (domain_link_index_array.size()) {
+			Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
+			domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query, 10000, metric);
+			profiler_domain_links.stop();
 
-		metric.m_total_domain_links_found = metric.m_total_found;
+			metric.m_total_domain_links_found = metric.m_total_found;
+		}
 
 		Profiler::instance profiler_index("SearchEngine::search_with_links");
 		vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, domain_links, query, 1000, metric);
@@ -125,6 +99,7 @@ namespace Api {
 		Profiler::instance profiler;
 
 		struct SearchMetric metric;
+		SearchEngine::reset_search_metric(metric);
 
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
 		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 500000, metric);
@@ -163,111 +138,6 @@ namespace Api {
 
 		response_stream << response;
 	}
-
-	template<typename ResultType>
-	Aws::Utils::Json::JsonValue build_link_results(const vector<ResultType> &link_results) {
-
-		Aws::Utils::Json::JsonValue results;
-		Aws::Utils::Array<Aws::Utils::Json::JsonValue> result_array(link_results.size());
-
-		size_t idx = 0;
-		for (const ResultType &res : link_results) {
-			Aws::Utils::Json::JsonValue result_item;
-			Aws::Utils::Json::JsonValue string;
-			Aws::Utils::Json::JsonValue number;
-
-			result_item.WithObject("source_url", string.AsString(res.source_url().str()));
-			result_item.WithObject("target_url", string.AsString(res.target_url().str()));
-			result_item.WithObject("link_text", string.AsString(res.link_text()));
-			result_item.WithObject("score", number.AsDouble(res.score()));
-
-			result_array[idx] = result_item;
-			idx++;
-		}
-
-		results.AsArray(result_array);
-
-		return results;
-	}
-
-#ifdef COMPILE_WITH_LINK_INDEX
-	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
-		stringstream &response_stream) {
-
-		Profiler::instance profiler;
-
-		struct SearchMetric metric;
-
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 10000, metric);
-
-		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
-			return a.m_score > b.m_score;
-		});
-
-		vector<LinkResult> link_results;
-		for (LinkFullTextRecord &res : links) {
-			const string tsv_data = hash_table.find(res.m_value);
-			link_results.emplace_back(LinkResult(tsv_data, res));
-		}
-
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("success"));
-		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
-		message.WithObject("results", build_link_results<LinkResult>(link_results));
-
-		response_stream << message.View().WriteReadable();
-	}
-#else
-	void search_links(const string &query, HashTable &hash_table, vector<FullTextIndex<LinkFullTextRecord> *> link_index_array,
-		stringstream &response_stream) {
-
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("error"));
-		message.WithObject("reason", json_string.AsString("link search not available"));
-
-		response_stream << message.View().WriteReadable();
-	}
-#endif
-
-#ifdef COMPILE_WITH_LINK_INDEX
-	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream) {
-
-		Profiler::instance profiler;
-
-		struct SearchMetric metric;
-
-		vector<DomainLinkFullTextRecord> links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query, 10000,
-			metric);
-
-		sort(links.begin(), links.end(), [](const DomainLinkFullTextRecord &a, const DomainLinkFullTextRecord &b) {
-			return a.m_score > b.m_score;
-		});
-
-		vector<DomainLinkResult> link_results;
-		for (DomainLinkFullTextRecord &res : links) {
-			const string tsv_data = hash_table.find(res.m_value);
-			link_results.emplace_back(DomainLinkResult(tsv_data, res));
-		}
-
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("success"));
-		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
-		message.WithObject("results", build_link_results<DomainLinkResult>(link_results));
-
-		response_stream << message.View().WriteReadable();
-	}
-#else
-	void search_domain_links(const string &query, HashTable &hash_table, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream) {
-
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("error"));
-		message.WithObject("reason", json_string.AsString("domain link search not available"));
-
-		response_stream << message.View().WriteReadable();
-	}
-#endif
 
 	Aws::Utils::Json::JsonValue generate_word_stats_json(const map<string, double> word_map) {
 		Aws::Utils::Json::JsonValue result;
