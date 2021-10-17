@@ -45,14 +45,19 @@ namespace SearchEngine {
 		Public interface
 	*/
 
+	/*
+		Our main search routine, no deduplication just raw search.
+	*/
 	template<typename DataRecord>
-	vector<DataRecord> search(vector<FullTextIndex<DataRecord> *> index_array, const string &query, size_t limit, struct SearchMetric &metric);
-
-	vector<FullTextRecord> search_with_links(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
+	vector<DataRecord> search(vector<FullTextIndex<DataRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
 
-	vector<FullTextRecord> search_all_with_links(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
+	/*
+		Only for FullTextRecords since deduplication requires domain hashes.
+	*/
+	vector<FullTextRecord> search_deduplicate(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
 		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
+
 }
 
 namespace SearchEngine {
@@ -250,33 +255,10 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void limit_results(vector<DataRecord> &results, size_t limit) {
-		if (results.size() > limit) {
-			results.resize(limit);
-		}
-	}
-
-	template<typename DataRecord>
 	void sort_by_score(vector<DataRecord> &results) {
 		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_score > b.m_score;
 		});
-	}
-
-	template<typename DataRecord>
-	void sort_by_value(vector<DataRecord> &results) {
-		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
-		});
-	}
-
-	template<typename DataRecord>
-	void deduplicate_by_value(vector<DataRecord> &results) {
-		auto last = unique(results.begin(), results.end(),
-			[](const DataRecord &a, const DataRecord &b) {
-			return a.m_value == b.m_value;
-		});
-		results.erase(last, results.end());
 	}
 
 	template<typename DataRecord>
@@ -317,76 +299,6 @@ namespace SearchEngine {
 		}
 
 		return NULL;
-	}
-
-	template<typename DataRecord>
-	void merge_results_to_vector(const vector<FullTextResultSet<DataRecord> *> results, vector<DataRecord> &merged) {
-		merged.clear();
-		if (results.size() > 1) {
-			size_t shortest_vector;
-			vector<float> score_vector;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
-
-			{
-				FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
-				flatten_results<DataRecord>(shortest, score_vector, result_ids, merged);
-			}
-
-		} else {
-			/*
-				This is just a copy from a c vector to a c++ vector. It takes time and we are not adding any value, should be optimized.
-			*/
-			const DataRecord *record_arr = results[0]->data_pointer();
-			for (size_t i = 0; i < results[0]->size(); i++) {
-				merged.push_back(record_arr[i]);
-			}
-		}
-	}
-
-	template<typename DataRecord>
-	void merge_results_to_vector(const vector<FullTextResultSet<DataRecord> *> results, vector<DataRecord> &merged, vector<float> &score_vector) {
-		merged.clear();
-		if (results.size() > 1) {
-			size_t shortest_vector;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
-
-			{
-				FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
-				flatten_results<DataRecord>(shortest, score_vector, result_ids, merged);
-			}
-
-		} else {
-			const DataRecord *record_arr = results[0]->data_pointer();
-			for (size_t i = 0; i < results[0]->size(); i++) {
-				merged.push_back(record_arr[i]);
-				score_vector.push_back(record_arr[i].m_score);
-			}
-		}
-	}
-
-	/*
-		puts the top n elements in the first n slots of results. Then sorts those top n elements by value.
-
-		this function assumes that the input results are sorted by value! so it does nothing for n < results.size()
-	*/
-	template<typename DataRecord>
-	void get_results_with_top_scores(FullTextResultSet<DataRecord> *result, size_t n) {
-
-		if (result->size() > n) {
-			span<DataRecord> *arr = result->span_pointer();
-			nth_element(arr->begin(), arr->begin() + (n - 1), arr->end(), SearchEngine::comparator_class<DataRecord>{});
-
-			sort(arr->begin(), arr->begin() + n, [](const DataRecord &a, const DataRecord &b) {
-				return a.m_score > b.m_score;
-			});
-
-			result->resize(n);
-		} else {
-			span<DataRecord> *arr = result->span_pointer();
-			sort(arr->begin(), arr->end(), [](const DataRecord &a, const DataRecord &b) {
-				return a.m_score > b.m_score;
-			});
-		}
 	}
 
 	/*
@@ -632,8 +544,5 @@ namespace SearchEngine {
 
 		return complete_result;
 	}
-
-	vector<FullTextRecord> search_deduplicate(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
-		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
 
 }
