@@ -43,102 +43,6 @@ namespace SearchEngine {
 		metric.m_link_url_matches = 0;
 	}
 
-	template<typename DataRecord>
-	bool result_has_many_domains(const FullTextResultSet<DataRecord> *results) {
-
-		if (results->size() == 0) return false;
-
-		const DataRecord *data = results->data_pointer();
-		const uint64_t first_domain_hash = data[0].m_domain_hash;
-		for (size_t i = 0; i < results->size(); i++) {
-			if (data[i].m_domain_hash != first_domain_hash) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	template<typename DataRecord>
-	bool result_has_many_domains_vector(const vector<DataRecord> &results) {
-
-		if (results.size() == 0) return false;
-
-		const uint64_t first_domain_hash = results[0].m_domain_hash;
-		for (const DataRecord &record : results) {
-			if (record.m_domain_hash != first_domain_hash) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	template<typename DataRecord>
-	void deduplicate_domains(FullTextResultSet<DataRecord> *results, size_t results_per_domain, size_t limit) {
-
-		vector<DataRecord> deduplicate;
-		unordered_map<uint64_t, size_t> domain_counts;
-		DataRecord *records = results->data_pointer();
-		size_t j = 0;
-		for (size_t i = 0; i < results->size() && j < limit; i++) {
-			records[j] = records[i];
-			if (domain_counts[records[i].m_domain_hash] < results_per_domain) {
-				j++;
-				domain_counts[records[i].m_domain_hash]++;
-			}
-		}
-		results->resize(j);
-	}
-
-	template<typename DataRecord>
-	void deduplicate_result(FullTextResultSet<DataRecord> *results, size_t limit) {
-
-		bool has_many_domains = result_has_many_domains<DataRecord>(results);
-
-		if (results->size() > 10 && has_many_domains) {
-			deduplicate_domains<DataRecord>(results, 5, limit);
-		} else {
-			if (results->size() > limit) {
-				results->resize(limit);
-			}
-		}
-	}
-
-	template<typename DataRecord>
-	vector<DataRecord> deduplicate_domains_vector(const vector<DataRecord> results, size_t results_per_domain, size_t limit) {
-
-		vector<DataRecord> deduplicate;
-		unordered_map<uint64_t, size_t> domain_counts;
-		for (const DataRecord &record : results) {
-			if (deduplicate.size() >= limit) break;
-			if (domain_counts[record.m_domain_hash] < results_per_domain) {
-				deduplicate.push_back(record);
-				domain_counts[record.m_domain_hash]++;
-			}
-		}
-
-		return deduplicate;
-	}
-
-	template<typename DataRecord>
-	vector<DataRecord> deduplicate_result_vector(const vector<DataRecord> &results, size_t limit) {
-
-		vector<DataRecord> deduped_result;
-		bool has_many_domains = result_has_many_domains_vector<DataRecord>(results);
-
-		if (results.size() > 10 && has_many_domains) {
-			deduped_result = deduplicate_domains_vector<DataRecord>(results, 5, limit);
-		} else {
-			if (results.size() > limit) {
-				deduped_result.insert(deduped_result.begin(), results.begin(), results.begin() + limit);
-			} else {
-				deduped_result = results;
-			}
-		}
-		return deduped_result;
-	}
-
 	void *search_with_domain_links(void *ptr) {
 
 		struct SearchArguments<FullTextRecord> *input = (struct SearchArguments<FullTextRecord> *)ptr;
@@ -167,10 +71,6 @@ namespace SearchEngine {
 		// Narrow down results directly to top 200K
 		get_results_with_top_scores<FullTextRecord>(flat_result, 200000);
 
-		if (input->deduplicate) {
-			deduplicate_result<FullTextRecord>(flat_result, input->limit);
-		}
-
 		return (void *)flat_result;
 	}
 
@@ -186,8 +86,7 @@ namespace SearchEngine {
 		vector<pthread_t> threads;
 		vector<struct SearchArguments<FullTextRecord>> args(index_array.size(), SearchArguments<FullTextRecord>{
 			.query = query,
-			.limit = limit,
-			.deduplicate = true
+			.limit = limit
 		});
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
@@ -260,8 +159,7 @@ namespace SearchEngine {
 		vector<pthread_t> threads;
 		vector<struct SearchArguments<FullTextRecord>> args(index_array.size(), SearchArguments<FullTextRecord>{
 			.query = query,
-			.limit = limit,
-			.deduplicate = false
+			.limit = limit
 		});
 		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
 
@@ -304,6 +202,7 @@ namespace SearchEngine {
 		metric.m_total_found = 0;
 		metric.m_link_domain_matches = 0;
 		metric.m_link_url_matches = 0;
+		metric.m_links_handled = 0;
 		for (const struct SearchMetric &m : metrics_vector) {
 			metric.m_total_found += m.m_total_found;
 			metric.m_link_domain_matches += m.m_link_domain_matches;
@@ -320,71 +219,18 @@ namespace SearchEngine {
 		return complete_result;
 	}
 
-	/*
-		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
-	*/
-	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results) {
-		size_t applied_links = 0;
+	vector<FullTextRecord> search_deduplicate(vector<FullTextIndex<FullTextRecord> *> index_array, const vector<LinkFullTextRecord> &links,
+		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric) {
 
-		size_t i = 0;
-		size_t j = 0;
-		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
-		FullTextRecord *data = results->data_pointer();
-		while (i < links.size() && j < results->size()) {
+		vector<FullTextRecord> complete_result = search_wrapper(index_array, links, domain_links, query, limit, metric);
 
-			const uint64_t hash1 = links[i].m_target_hash;
-			const uint64_t hash2 = data[j].m_value;
+		vector<FullTextRecord> deduped_result = deduplicate_result_vector<FullTextRecord>(complete_result, limit);
 
-			if (hash1 < hash2) {
-				i++;
-			} else if (hash1 == hash2) {
-
-				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
-					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
-					data[j].m_score += url_score;
-					applied_links++;
-					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
-				}
-
-				i++;
-			} else {
-				j++;
-			}
+		if (deduped_result.size() < limit) {
+			metric.m_total_found = deduped_result.size();
 		}
 
-		return applied_links;
-	}
-
-	size_t apply_domain_link_scores(const vector<DomainLinkFullTextRecord> &links, FullTextResultSet<FullTextRecord> *results) {
-		size_t applied_links = 0;
-		{
-			unordered_map<uint64_t, float> domain_scores;
-			unordered_map<uint64_t, int> domain_counts;
-			map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
-			{
-				for (const DomainLinkFullTextRecord &link : links) {
-
-					if (domain_unique.count(make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
-
-						const float domain_score = expm1(25.0f*link.m_score) / 50.0f;
-						domain_scores[link.m_target_domain] += domain_score;
-						domain_counts[link.m_target_domain]++;
-						domain_unique[make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;
-
-					}
-				}
-			}
-
-			// Loop over the results and add the calculated domain scores.
-			FullTextRecord *data = results->data_pointer();
-			for (size_t i = 0; i < results->size(); i++) {
-				const float domain_score = domain_scores[data[i].m_domain_hash];
-				data[i].m_score += domain_score;
-				applied_links += domain_counts[data[i].m_domain_hash];
-			}
-		}
-
-		return applied_links;
+		return deduped_result;
 	}
 
 }

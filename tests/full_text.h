@@ -215,13 +215,12 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		const string query = "Url1.com";
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1000, metric);
-		vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, {}, query, 1000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, {}, query, 1000, metric);
 
 		BOOST_CHECK_EQUAL(links.size(), 1);
 		BOOST_CHECK_EQUAL(results.size(), 1);
 		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
-		BOOST_CHECK_EQUAL(metric.m_links_handled, 1);
 		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
 		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 1);
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
@@ -285,20 +284,19 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		struct SearchMetric metric;
 
 		{
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1000, metric);
-			vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, {}, query, 1000, metric);
+			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 1000, metric);
+			vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, {}, query, 1000, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 3);
 			BOOST_CHECK_EQUAL(results.size(), 1);
 			BOOST_CHECK_EQUAL(metric.m_total_found, 1);
-			BOOST_CHECK_EQUAL(metric.m_links_handled, 3);
 			BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
 			BOOST_CHECK_EQUAL(metric.m_link_url_matches, 2);
 			BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url8.com/test").hash());
 		}
 
 		{
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1, metric);
+			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 1, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 1);
 			BOOST_CHECK_EQUAL(links[0].m_value, URL("http://url8.com/").link_hash(URL("http://url7.com/test"), "Link to url7.com from url8.com"));
@@ -361,7 +359,8 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			const string query = "Testing the test from test04.links.gz";
 			struct SearchMetric metric;
 
-			vector<DomainLinkFullTextRecord> links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 1000, metric);
+			vector<DomainLinkFullTextRecord> links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query, 1000,
+				metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 1);
 			BOOST_CHECK_EQUAL(links[0].m_value, URL("http://linksource4.com/").domain_link_hash(URL("http://url5.com/test"),
@@ -372,12 +371,12 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			const string query = "Url6.com";
 			struct SearchMetric metric;
 
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, query, 1000, metric);
-			vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, query, 1000,
-				metric);
+			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 1000, metric);
+			vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query,
+				1000, metric);
 
-			vector<FullTextRecord> results_no_domainlinks = SearchEngine::search_with_links(index_array, links, {}, query, 1000, metric);
-			vector<FullTextRecord> results = SearchEngine::search_with_links(index_array, links, domain_links, query, 1000, metric);
+			vector<FullTextRecord> results_no_domainlinks = SearchEngine::search_deduplicate(index_array, links, {}, query, 1000, metric);
+			vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, domain_links, query, 1000, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 3);
 			BOOST_CHECK_EQUAL(domain_links.size(), 2);
@@ -392,8 +391,10 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			}
 			BOOST_CHECK(has_link);
 
-			BOOST_CHECK_EQUAL(domain_links[0].m_value, URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com"));
-			BOOST_CHECK_EQUAL(domain_links[1].m_value, URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com"));
+			const uint64_t hash1 = URL("http://url6.com/").domain_link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com");
+			const uint64_t hash2 = URL("http://url8.com/").domain_link_hash(URL("http://url6.com/test"), "Link to url6.com");
+			BOOST_CHECK(domain_links[0].m_value == hash1 || domain_links[0].m_value == hash2);
+			BOOST_CHECK(domain_links[1].m_value == hash1 || domain_links[1].m_value == hash2);
 
 			BOOST_CHECK(results_no_domainlinks[0].m_score < results[0].m_score);
 
@@ -434,13 +435,13 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 		const string query = "my first url";
 		struct SearchMetric metric;
 
-		vector<FullTextRecord> results = SearchEngine::search<FullTextRecord>(index_array, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search<FullTextRecord>(index_array, {}, {}, query, 1000, metric);
 
 		BOOST_CHECK_EQUAL(results.size(), 1);
 		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
 
-		results = SearchEngine::search<FullTextRecord>(index_array, "my second url", 1000, metric);
+		results = SearchEngine::search<FullTextRecord>(index_array, {}, {}, "my second url", 1000, metric);
 		BOOST_CHECK_EQUAL(results.size(), 1);
 		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url2.com/test").hash());
