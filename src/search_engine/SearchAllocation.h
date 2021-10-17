@@ -24,7 +24,12 @@
  * SOFTWARE.
  */
 
+#pragma once
+
 #include "full_text/FullTextResultSet.h"
+#include "full_text/FullTextRecord.h"
+#include "link_index/LinkFullTextRecord.h"
+#include "link_index/DomainLinkFullTextRecord.h"
 #include "config.h"
 #include <map>
 #include <vector>
@@ -50,8 +55,14 @@ namespace SearchAllocation {
 		FullTextResultSet<DataRecord> *intersected_result;
 	};
 
+	struct Allocation {
+		Storage<FullTextRecord> *full_text_storage;
+		Storage<LinkFullTextRecord> *link_storage;
+		Storage<DomainLinkFullTextRecord> *domain_link_storage;
+	};
+
 	template <typename DataRecord>
-	Storage<DataRecord> *create_allocation() {
+	Storage<DataRecord> *create_storage() {
 		Storage<DataRecord> *storage = new Storage<DataRecord>;
 
 		// Allocate result_sets.
@@ -68,7 +79,7 @@ namespace SearchAllocation {
 	}
 
 	template <typename DataRecord>
-	void delete_allocation(Storage<DataRecord> *storage) {
+	void delete_storage(Storage<DataRecord> *storage) {
 		delete storage->intersected_result;
 
 		// delete result_sets.
@@ -79,6 +90,21 @@ namespace SearchAllocation {
 		}
 
 		delete storage;
+	}
+
+	Allocation *create_allocation() {
+		Allocation *allocation = new Allocation;
+		allocation->full_text_storage = create_storage<FullTextRecord>();
+		allocation->link_storage = create_storage<LinkFullTextRecord>();
+		allocation->domain_link_storage = create_storage<DomainLinkFullTextRecord>();
+		return allocation;
+	}
+
+	void delete_allocation(Allocation *allocation) {
+		delete_storage(allocation->full_text_storage);
+		delete_storage(allocation->link_storage);
+		delete_storage(allocation->domain_link_storage);
+		delete allocation;
 	}
 
 }

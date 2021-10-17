@@ -34,6 +34,7 @@
 #include <fstream>
 #include <streambuf>
 #include <math.h>
+#include "search_engine/SearchAllocation.h"
 
 using namespace std;
 
@@ -53,4 +54,6 @@ using namespace std;
 #include "performance.h"
 #include "sort.h"
 #include "algorithm.h"
+
+
 
