@@ -38,6 +38,7 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
+#include "search_engine/SearchAllocation.h"
 
 #include "api/Api.h"
 
@@ -62,6 +63,9 @@ void output_response(FCGX_Request &request, stringstream &response) {
 }
 
 static void *run_worker(void *data) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
 	Worker *worker = (Worker *)data;
 	int rc, i, thread_id = worker->thread_id;
 	pid_t pid = getpid();
@@ -74,11 +78,11 @@ static void *run_worker(void *data) {
 	HashTable hash_table_link("link_index");
 	HashTable hash_table_domain_link("domain_link_index");
 
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", Config::ft_num_partitions);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index");
 	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
-		FullText::create_index_array<LinkFullTextRecord>("link_index", Config::ft_num_link_partitions);
+		FullText::create_index_array<LinkFullTextRecord>("link_index");
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", Config::ft_num_link_partitions);
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
 
 	LogInfo("Server has started...");
 
@@ -112,17 +116,13 @@ static void *run_worker(void *data) {
 		}
 
 		if (query.find("q") != query.end() && deduplicate) {
-			Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+			Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 		} else if (query.find("q") != query.end() && !deduplicate) {
-			Api::search_all(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+			Api::search_all(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 		} else if (query.find("s") != query.end()) {
 			Api::word_stats(query["s"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
 		} else if (query.find("u") != query.end()) {
 			Api::url(query["u"], hash_table, response_stream);
-		} else if (query.find("l") != query.end()) {
-			Api::search_links(query["l"], hash_table_link, link_index_array, response_stream);
-		} else if (query.find("d") != query.end()) {
-			Api::search_domain_links(query["d"], hash_table_domain_link, domain_link_index_array, response_stream);
 		}
 
 		output_response(request, response_stream);
@@ -133,6 +133,8 @@ static void *run_worker(void *data) {
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+
+	SearchAllocation::delete_allocation(allocation);
 
 	return NULL;
 }

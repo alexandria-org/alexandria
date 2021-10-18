@@ -24,36 +24,23 @@
  * SOFTWARE.
  */
 
-#include "SearchEngine.h"
-#include "text/Text.h"
-#include "sort/Sort.h"
-#include "system/Profiler.h"
-#include <cmath>
+#include "SearchAllocation.h"
 
-namespace SearchEngine {
+namespace SearchAllocation {
 
-	void reset_search_metric(struct SearchMetric &metric) {
-		metric.m_total_found = 0;
-		metric.m_total_url_links_found = 0;
-		metric.m_total_domain_links_found = 0;
-		metric.m_links_handled = 0;
-		metric.m_link_domain_matches = 0;
-		metric.m_link_url_matches = 0;
+	Allocation *create_allocation() {
+		Allocation *allocation = new Allocation;
+		allocation->storage = create_storage<FullTextRecord>();
+		allocation->link_storage = create_storage<LinkFullTextRecord>();
+		allocation->domain_link_storage = create_storage<DomainLinkFullTextRecord>();
+		return allocation;
 	}
 
-	vector<FullTextRecord> search_deduplicate(SearchAllocation::Storage<FullTextRecord> *storage, vector<FullTextIndex<FullTextRecord> *> index_array,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
-		struct SearchMetric &metric) {
-
-		vector<FullTextRecord> complete_result = search_wrapper(storage, index_array, links, domain_links, query, limit, metric);
-
-		vector<FullTextRecord> deduped_result = deduplicate_result_vector<FullTextRecord>(complete_result, limit);
-
-		if (deduped_result.size() < limit) {
-			metric.m_total_found = deduped_result.size();
-		}
-
-		return deduped_result;
+	void delete_allocation(Allocation *allocation) {
+		delete_storage(allocation->storage);
+		delete_storage(allocation->link_storage);
+		delete_storage(allocation->domain_link_storage);
+		delete allocation;
 	}
 
 }

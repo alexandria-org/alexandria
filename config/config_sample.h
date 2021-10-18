@@ -56,6 +56,7 @@ namespace Config {
 	inline const unsigned long long ft_num_shards = 1024;
 	inline const unsigned long long ft_num_partitions = 8;
 	inline const unsigned long long ft_num_link_partitions = 8;
+	inline const unsigned long long ft_max_results_per_partition = 8000000;
 	inline const unsigned long long ft_max_keys = 0xFFFFFFFF;
 	inline const unsigned long long ft_max_cache_gb = 30;
 	inline const unsigned long long ft_num_threads_indexing = 24;
@@ -76,6 +77,7 @@ namespace Config {
 
 	// Server config
 	inline const unsigned int worker_count = 8;
+	inline const unsigned long long query_max_words = 10; // Maximum number of words used in query.
 
 	// Other constants.
 	inline const unsigned long long num_async_file_transfers = 48;

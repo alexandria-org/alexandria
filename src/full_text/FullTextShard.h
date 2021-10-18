@@ -63,7 +63,7 @@ public:
 	FullTextShard(const string &db_name, size_t shard_id);
 	~FullTextShard();
 
-	FullTextResultSet<DataRecord> *find(uint64_t key);
+	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
 	size_t read_key_pos(ifstream &reader, uint64_t key);
 	size_t total_num_results(uint64_t key);
 	void read_keys();
@@ -109,14 +109,15 @@ FullTextShard<DataRecord>::~FullTextShard() {
 }
 
 template<typename DataRecord>
-FullTextResultSet<DataRecord> *FullTextShard<DataRecord>::find(uint64_t key) {
+void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord> *result_set) {
 
 	ifstream reader(filename(), ios::binary);
 
 	size_t key_pos = read_key_pos(reader, key);
 
 	if (key_pos == SIZE_MAX) {
-		return new FullTextResultSet<DataRecord>(0);
+		result_set->resize(0);
+		return;
 	}
 
 	char buffer[64];
@@ -138,15 +139,13 @@ FullTextResultSet<DataRecord> *FullTextShard<DataRecord>::find(uint64_t key) {
 
 	const size_t num_records = len / sizeof(DataRecord);
 
-	FullTextResultSet<DataRecord> *result_set = new FullTextResultSet<DataRecord>(num_records);
+	result_set->resize(num_records);
 
 	DataRecord *record_res = result_set->data_pointer();
 
 	reader.read((char *)&record_res[0], num_records * sizeof(DataRecord));
 
 	result_set->set_total_num_results(total_num_results);
-
-	return result_set;
 }
 
 /*

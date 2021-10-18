@@ -32,16 +32,17 @@
 
 #include "link_index/LinkFullTextRecord.h"
 #include "link_index/DomainLinkFullTextRecord.h"
+#include "search_engine/SearchAllocation.h"
 
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream);
+		SearchAllocation::Allocation *allocation, stringstream &response_stream);
 
 	void search_all(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream);
+		SearchAllocation::Allocation *allocation, stringstream &response_stream);
 
 	void word_stats(const string &query, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, stringstream &response_stream);

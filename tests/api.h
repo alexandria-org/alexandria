@@ -31,6 +31,8 @@ BOOST_AUTO_TEST_SUITE(api)
 
 BOOST_AUTO_TEST_CASE(api_search) {
 
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
 	FullText::truncate_index("test_link_index", 8);
@@ -60,12 +62,12 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -128,23 +130,17 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("more"), 2.0/11.0);
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 1.0/11.0);
-
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 11);
-#endif
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+
+	SearchAllocation::delete_allocation(allocation);
 }
 
 BOOST_AUTO_TEST_CASE(api_search_compact) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
@@ -172,12 +168,12 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -218,11 +214,6 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-#endif
 	}
 
 	{
@@ -245,23 +236,17 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("more"), 2.0/11.0);
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 1.0/11.0);
-
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 11);
-#endif
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+
+	SearchAllocation::delete_allocation(allocation);
 }
 
 BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
@@ -293,14 +278,14 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index", 8);
+		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -321,9 +306,13 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+
+	SearchAllocation::delete_allocation(allocation);
 }
 
 BOOST_AUTO_TEST_CASE(many_links) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
@@ -351,14 +340,14 @@ BOOST_AUTO_TEST_CASE(many_links) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index", 8);
+		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -375,6 +364,8 @@ BOOST_AUTO_TEST_CASE(many_links) {
 	FullText::delete_index_array<FullTextRecord>(index_array);
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+
+	SearchAllocation::delete_allocation(allocation);
 
 }
 
@@ -409,8 +400,8 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 
 	{
 		stringstream response_stream;
@@ -433,15 +424,6 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
 		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("uniq"), 0.0);
-
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 4);
-#endif
 	}
 
 	{
@@ -458,15 +440,6 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("time_ms"));
-
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK(v.ValueExists("link_index"));
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetObject("words").GetDouble("test07.links.gz"), 1.0/4.0);
-
-		BOOST_CHECK(v.GetObject("link_index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("link_index").GetInt64("total"), 4);
-#endif
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -544,6 +517,8 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
 	FullText::truncate_index("test_link_index", 8);
@@ -581,12 +556,12 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, response_stream);
+		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -604,12 +579,16 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 	FullText::delete_index_array(index_array);
 	FullText::delete_index_array(link_index_array);
 
+	SearchAllocation::delete_allocation(allocation);
+
 	// Reset config.
 	Config::nodes_in_cluster = 1;
 	Config::node_id = 0;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_deduplication) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
 	FullText::truncate_index("test_main_index", 8);
@@ -638,14 +617,14 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index", 8);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index", 8);
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index", 8);
+		FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url2.com", hash_table, index_array, link_index_array, {}, response_stream);
+		Api::search("url2.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -662,7 +641,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search_all("site:url2.com", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
+		Api::search_all("site:url2.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -681,6 +660,8 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
 
+	SearchAllocation::delete_allocation(allocation);
+	
 }
 
 BOOST_AUTO_TEST_SUITE_END();

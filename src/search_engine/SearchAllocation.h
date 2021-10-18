@@ -56,7 +56,7 @@ namespace SearchAllocation {
 	};
 
 	struct Allocation {
-		Storage<FullTextRecord> *full_text_storage;
+		Storage<FullTextRecord> *storage;
 		Storage<LinkFullTextRecord> *link_storage;
 		Storage<DomainLinkFullTextRecord> *domain_link_storage;
 	};
@@ -92,19 +92,7 @@ namespace SearchAllocation {
 		delete storage;
 	}
 
-	Allocation *create_allocation() {
-		Allocation *allocation = new Allocation;
-		allocation->full_text_storage = create_storage<FullTextRecord>();
-		allocation->link_storage = create_storage<LinkFullTextRecord>();
-		allocation->domain_link_storage = create_storage<DomainLinkFullTextRecord>();
-		return allocation;
-	}
-
-	void delete_allocation(Allocation *allocation) {
-		delete_storage(allocation->full_text_storage);
-		delete_storage(allocation->link_storage);
-		delete_storage(allocation->domain_link_storage);
-		delete allocation;
-	}
+	Allocation *create_allocation();
+	void delete_allocation(Allocation *allocation);
 
 }

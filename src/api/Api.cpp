@@ -44,7 +44,7 @@ namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream) {
+		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
@@ -52,7 +52,8 @@ namespace Api {
 		SearchEngine::reset_search_metric(metric);
 
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 500000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+			500000, metric);
 		profiler_links.stop();
 
 		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
@@ -67,14 +68,15 @@ namespace Api {
 		vector<DomainLinkFullTextRecord> domain_links;
 		if (domain_link_index_array.size()) {
 			Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
-			domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query, 10000, metric);
+			domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage, domain_link_index_array, {}, {}, query,
+				10000, metric);
 			profiler_domain_links.stop();
 
 			metric.m_total_domain_links_found = metric.m_total_found;
 		}
 
 		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search_deduplicate(index_array, links, domain_links, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index_array, links, domain_links, query, 1000, metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
@@ -94,7 +96,7 @@ namespace Api {
 
 	void search_all(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
-		stringstream &response_stream) {
+		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
@@ -102,7 +104,8 @@ namespace Api {
 		SearchEngine::reset_search_metric(metric);
 
 		Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(link_index_array, {}, {}, query, 500000, metric);
+		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+			500000, metric);
 		profiler_links.stop();
 
 		sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
@@ -114,14 +117,14 @@ namespace Api {
 		metric.m_total_found = 0;
 
 		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
-		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(domain_link_index_array, {}, {}, query, 10000,
-			metric);
+		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage,
+			domain_link_index_array, {}, {}, query, 10000, metric);
 		profiler_domain_links.stop();
 
 		metric.m_total_domain_links_found = metric.m_total_found;
 
 		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search(index_array, links, domain_links, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search(allocation->storage, index_array, links, domain_links, query, 1000, metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);

@@ -39,6 +39,7 @@ set(SRC_CLASSES
 	"src/full_text/FullText.cpp"
 
 	"src/search_engine/SearchEngine.cpp"
+	"src/search_engine/SearchAllocation.cpp"
 
 	"src/link_index/Link.cpp"
 	"src/link_index/LinkIndexer.cpp"

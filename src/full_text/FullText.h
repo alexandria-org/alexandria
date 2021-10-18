@@ -66,10 +66,10 @@ namespace FullText {
 	bool should_index_link_hash(size_t hash, size_t partition);
 
 	template<typename DataRecord>
-	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name, size_t partitions) {
+	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name) {
 
 		vector<FullTextIndex<DataRecord> *> index_array;
-		for (size_t partition = 0; partition < partitions; partition++) {
+		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + to_string(partition)));
 		}
 
