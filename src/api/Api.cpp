@@ -69,7 +69,7 @@ namespace Api {
 		if (domain_link_index_array.size()) {
 			Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
 			domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage, domain_link_index_array, {}, {}, query,
-				10000, metric);
+				100000, metric);
 			profiler_domain_links.stop();
 
 			metric.m_total_domain_links_found = metric.m_total_found;

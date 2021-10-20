@@ -236,7 +236,6 @@ namespace SearchEngine {
 				}
 				if ((*pos < len && value < data_arr[*pos].m_value) || *pos >= len) {
 					all_equal = false;
-					break;
 				}
 				iter_index++;
 			}
