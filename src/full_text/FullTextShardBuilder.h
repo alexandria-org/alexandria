@@ -87,7 +87,6 @@ private:
 
 	mutable ifstream m_reader;
 	ofstream m_writer;
-	const size_t m_max_results = 4000000;
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 	const size_t m_max_cache_size;
@@ -168,12 +167,12 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 
 		m_total_results[iter.first] = iter.second.size();
 
-		// Cap at m_max_results
-		if (iter.second.size() > m_max_results) {
+		// Cap at Config::ft_max_results_per_partition
+		if (iter.second.size() > Config::ft_max_results_per_partition) {
 			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
-			iter.second.resize(m_max_results);
+			iter.second.resize(Config::ft_max_results_per_partition);
 
 			// Order by value again.
 			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
@@ -207,12 +206,12 @@ void FullTextShardBuilder<DataRecord>::sort_cache_with_sum() {
 
 		m_total_results[iter.first] = iter.second.size();
 
-		// Cap at m_max_results
-		if (iter.second.size() > m_max_results) {
+		// Cap at Config::ft_max_results_per_partition
+		if (iter.second.size() > Config::ft_max_results_per_partition) {
 			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
-			iter.second.resize(m_max_results);
+			iter.second.resize(Config::ft_max_results_per_partition);
 
 			// Order by value again.
 			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
