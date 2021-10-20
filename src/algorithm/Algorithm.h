@@ -61,7 +61,7 @@ namespace Algorithm {
 				while (*pos < len && value > vec[*pos]) {
 					(*pos)++;
 				}
-				if ((*pos < len && value < vec[*pos]) || *pos >= len) {
+				if (*pos < len && value < vec[*pos] || *pos >= len) {
 					all_equal = false;
 					break;
 				}

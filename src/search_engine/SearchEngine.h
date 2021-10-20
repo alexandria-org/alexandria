@@ -465,7 +465,7 @@ namespace SearchEngine {
 
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
-			flat_result = input->storage->intersected_result;
+			flat_result = input->storage->intersected_result[input->partition_id];
 			merge_results_to_one<DataRecord>(result_vector, flat_result);
 			set_total_found<DataRecord>(result_vector, *(input->metric), (double)flat_result->size() / largest_result(result_vector));
 		} else {

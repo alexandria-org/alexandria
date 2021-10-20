@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
 
 		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 0);
+		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 1);
 	}
 
 	FullText::delete_index_array(index_array);
