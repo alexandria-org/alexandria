@@ -1,5 +1,84 @@
 ## Performance journal
 
+### File system testing
+Ext2 (noatime,nodiratime,barrier=0)
+```
+$ dd if=/dev/zero of=/tmp/test1.img bs=10G count=1 oflag=dsync
+0+1 records in
+0+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 4.76649 s, 451 MB/s
+
+$ echo 3 > /proc/sys/vm/drop_caches
+
+$ time dd if=/tmp/test1.img of=/dev/null bs=8k
+262143+1 records in
+262143+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 1.43043 s, 1.5 GB/s
+
+real	0m1.435s
+user	0m0.013s
+sys	0m0.763s
+```
+Ext2 (relatime)
+```
+$ dd if=/dev/zero of=/tmp/test1.img bs=10G count=1 oflag=dsync
+0+1 records in
+0+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 5.02563 s, 427 MB/s
+
+$ echo 3 > /proc/sys/vm/drop_caches
+
+$ time dd if=/tmp/test1.img of=/dev/null bs=8k
+262143+1 records in
+262143+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 1.48533 s, 1.4 GB/s
+
+real	0m1.490s
+user	0m0.046s
+sys	0m0.604s
+```
+
+Ext4 (noatime,nodiratime,barrier=0):
+```
+$ dd if=/dev/zero of=/tmp/test1.img bs=10G count=1 oflag=dsync
+0+1 records in
+0+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 2.26469 s, 948 MB/s
+
+$ echo 3 > /proc/sys/vm/drop_caches
+
+$ time dd if=/tmp/test1.img of=/dev/null bs=8k
+262143+1 records in
+262143+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 0.821499 s, 2.6 GB/s
+
+real	0m0.824s
+user	0m0.004s
+sys	0m0.648s
+```
+
+Ext4 (relatime):
+```
+$ dd if=/dev/zero of=/tmp/test1.img bs=10G count=1 oflag=dsync
+0+1 records in
+0+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 2.15461 s, 997 MB/s
+
+$ echo 3 > /proc/sys/vm/drop_caches
+
+$ time dd if=/tmp/test1.img of=/dev/null bs=8k
+262143+1 records in
+262143+1 records out
+2147479552 bytes (2.1 GB, 2.0 GiB) copied, 0.822013 s, 2.6 GB/s
+
+real	0m0.825s
+user	0m0.029s
+sys	0m0.568s
+```
+
+Conclusion. Run ext4
+
+### Software load testing
 2021-10-06, AX61-NVME with two discs
 ```
 Server Software:        nginx/1.18.0
