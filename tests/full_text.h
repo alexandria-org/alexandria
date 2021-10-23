@@ -47,7 +47,6 @@ BOOST_AUTO_TEST_CASE(download_batch) {
 BOOST_AUTO_TEST_CASE(should_index_url) {
 
 	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
-
 	Config::nodes_in_cluster = 8;
 
 	if (Config::ft_num_partitions == 8) {
@@ -182,8 +181,8 @@ BOOST_AUTO_TEST_CASE(indexer) {
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index", 8);
-	FullText::truncate_index("test_link_index", 8);
+	FullText::truncate_index("test_main_index");
+	FullText::truncate_index("test_link_index");
 
 	HashTableHelper::truncate("test_main_index");
 	HashTableHelper::truncate("test_link_index");
@@ -240,9 +239,9 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index", 8);
-	FullText::truncate_index("test_link_index", 8);
-	FullText::truncate_index("test_domain_link_index", 8);
+	FullText::truncate_index("test_main_index");
+	FullText::truncate_index("test_link_index");
+	FullText::truncate_index("test_domain_link_index");
 
 	HashTableHelper::truncate("test_main_index");
 	HashTableHelper::truncate("test_link_index");
@@ -322,8 +321,8 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_link_index", 8);
-	FullText::truncate_index("test_domain_link_index", 8);
+	FullText::truncate_index("test_link_index");
+	FullText::truncate_index("test_domain_link_index");
 
 	HashTableHelper::truncate("test_main_index");
 	HashTableHelper::truncate("test_link_index");
@@ -427,8 +426,8 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index", 8);
-	FullText::truncate_index("test_link_index", 8);
+	FullText::truncate_index("test_main_index");
+	FullText::truncate_index("test_link_index");
 
 	HashTableHelper::truncate("test_main_index");
 	HashTableHelper::truncate("test_link_index");

@@ -58,13 +58,15 @@ namespace Config {
 	const unsigned long long li_indexer_max_cache_size = 500;
 
 	// Hash table indexer config
-	const unsigned long long ht_num_shards = 16384;
+	const unsigned long long ht_num_shards = 1024;
 	const unsigned long long ht_num_buckets = 8;
 	const unsigned long long ht_key_size = 8;
 
 	// Server config
 	const unsigned int worker_count = 8;
 	const unsigned long long query_max_words = 10; // Maximum number of words used in query.
+	const unsigned long long deduplicate_domain_count = 5;
+	const unsigned long long result_limit = 1000;
 
 	// Other constants.
 	const unsigned long long num_async_file_transfers = 48;

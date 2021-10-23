@@ -44,8 +44,8 @@ namespace FullText {
 
 	}
 
-	void truncate_index(const string &index_name, size_t partitions) {
-		for (size_t partition = 0; partition < partitions; partition++) {
+	void truncate_index(const string &index_name) {
+		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 
 			const string db_name = index_name + "_" + to_string(partition);
 

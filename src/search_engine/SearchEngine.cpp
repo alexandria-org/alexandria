@@ -49,10 +49,6 @@ namespace SearchEngine {
 
 		vector<FullTextRecord> deduped_result = deduplicate_result_vector<FullTextRecord>(complete_result, limit);
 
-		if (deduped_result.size() < limit) {
-			metric.m_total_found = deduped_result.size();
-		}
-
 		return deduped_result;
 	}
 

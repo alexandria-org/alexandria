@@ -43,7 +43,7 @@ namespace FullText {
 	size_t num_shards();
 
 	void truncate_url_to_domain(const string &index_name);
-	void truncate_index(const string &index_name, size_t partitions);
+	void truncate_index(const string &index_name);
 
 	map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system);
 	void add_words_to_word_map(const vector<string> &words, float score, map<uint64_t, float> &word_map);

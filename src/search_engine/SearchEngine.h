@@ -376,7 +376,7 @@ namespace SearchEngine {
 		bool has_many_domains = result_has_many_domains<DataRecord>(results);
 
 		if (results->size() > 10 && has_many_domains) {
-			deduplicate_domains<DataRecord>(results, 5, limit);
+			deduplicate_domains<DataRecord>(results, Config::deduplicate_domain_count, limit);
 		} else {
 			if (results->size() > limit) {
 				results->resize(limit);
@@ -403,19 +403,33 @@ namespace SearchEngine {
 	template<typename DataRecord>
 	vector<DataRecord> deduplicate_result_vector(const vector<DataRecord> &results, size_t limit) {
 
-		vector<DataRecord> deduped_result;
-		bool has_many_domains = result_has_many_domains_vector<DataRecord>(results);
+		vector<DataRecord> deduped;
+		vector<DataRecord> non_deduped;
 
-		if (results.size() > 10 && has_many_domains) {
-			deduped_result = deduplicate_domains_vector<DataRecord>(results, 5, limit);
-		} else {
-			if (results.size() > limit) {
-				deduped_result.insert(deduped_result.begin(), results.begin(), results.begin() + limit);
+		map<uint64_t, int> d_count;
+		for (const DataRecord &result : results) {
+			if (d_count[result.m_domain_hash] < Config::deduplicate_domain_count) {
+				deduped.push_back(result);
 			} else {
-				deduped_result = results;
+				non_deduped.push_back(result);
 			}
+			d_count[result.m_domain_hash]++;
 		}
-		return deduped_result;
+		if (deduped.size() < limit) {
+			const size_t num_missing = limit - deduped.size();
+			if (non_deduped.size() > num_missing) {
+				non_deduped.resize(num_missing);
+			}
+			vector<DataRecord> ret;
+			Sort::merge_arrays(deduped, non_deduped, [] (const DataRecord &a, const DataRecord &b) {
+				return a.m_score > b.m_score;
+			}, ret);
+			return ret;
+		}
+
+		deduped.resize(limit);
+
+		return deduped;
 	}
 
 	template<typename DataRecord>
