@@ -67,6 +67,7 @@ namespace Config {
 	const unsigned long long query_max_words = 10; // Maximum number of words used in query.
 	const unsigned long long deduplicate_domain_count = 5;
 	const unsigned long long result_limit = 1000;
+	const unsigned long long pre_result_limit = 200000;
 
 	// Other constants.
 	const unsigned long long num_async_file_transfers = 48;

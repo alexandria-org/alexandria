@@ -45,7 +45,7 @@ namespace SearchEngine {
 		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
-		vector<FullTextRecord> complete_result = search_wrapper(storage, index_array, links, domain_links, query, limit, metric);
+		vector<FullTextRecord> complete_result = search_wrapper(storage, index_array, links, domain_links, query, Config::pre_result_limit, metric);
 
 		vector<FullTextRecord> deduped_result = deduplicate_result_vector<FullTextRecord>(complete_result, limit);
 
