@@ -149,9 +149,9 @@ int main(void) {
 
 	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", Config::ft_num_partitions);
 	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
-		FullText::create_index_array<LinkFullTextRecord>("link_index", Config::ft_num_link_partitions);
+		FullText::create_index_array<LinkFullTextRecord>("link_index");
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index", Config::ft_num_link_partitions);
+		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
 
 	Api::search("cullhed", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
 

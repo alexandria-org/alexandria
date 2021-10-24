@@ -49,8 +49,8 @@ public:
 	~DomainLinkIndexer();
 
 	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
-	void write_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]);
-	void flush_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]);
+	void write_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+	void flush_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
 
 private:
 

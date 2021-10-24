@@ -56,6 +56,7 @@ public:
 
 	void add(uint64_t key, const DataRecord &record);
 	void sort_cache();
+	void order_sections_by_value(vector<DataRecord> &results) const;
 	void sort_cache_with_sum();
 	bool full() const;
 	void append();
@@ -154,6 +155,7 @@ void FullTextShardBuilder<DataRecord>::add(uint64_t key, const DataRecord &recor
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::sort_cache() {
+	const size_t max_results_per_partition = Config::ft_max_results_per_section * Config::ft_max_sections;
 	for (auto &iter : m_cache) {
 		// Make elements unique.
 		sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
@@ -167,25 +169,42 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 
 		m_total_results[iter.first] = iter.second.size();
 
-		// Cap at Config::ft_max_results_per_partition
-		if (iter.second.size() > Config::ft_max_results_per_partition) {
+		if (iter.second.size() > Config::ft_max_results_per_section) {
 			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
-			iter.second.resize(Config::ft_max_results_per_partition);
 
-			// Order by value again.
-			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
-				return a.m_value < b.m_value;
-			});
+			// Cap results at the maximum number of results per partition.
+			if (iter.second.size() > max_results_per_partition) {
+				iter.second.resize(max_results_per_partition);
+			}
+
+			// Order each section by value.
+			order_sections_by_value(iter.second);
 		}
+	}
+}
 
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::order_sections_by_value(vector<DataRecord> &results) const {
+	bool stop = false;
+	for (size_t section = 0; section < Config::ft_max_sections; section++) {
+		const size_t start = section * Config::ft_max_results_per_section;
+		size_t end = start + Config::ft_max_results_per_section;
+		if (end > results.size()) {
+			end = results.size();
+			stop = true;
+		}
+		sort(results.begin() + start, results.begin() + end, [](const DataRecord &a, const DataRecord &b) {
+			return a.m_value < b.m_value;
+		});
+		if (stop) break;
 	}
 }
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::sort_cache_with_sum() {
-	for (auto &iter : m_cache) {
+	/*for (auto &iter : m_cache) {
 		// Make elements unique.
 		sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_value < b.m_value;
@@ -219,7 +238,7 @@ void FullTextShardBuilder<DataRecord>::sort_cache_with_sum() {
 			});
 		}
 
-	}
+	}*/
 }
 
 template<typename DataRecord>

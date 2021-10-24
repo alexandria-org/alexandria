@@ -35,7 +35,7 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
-	for (size_t partition = 0; partition < Config::ft_num_link_partitions; partition++) {
+	for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 			FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
 				new FullTextShardBuilder<LinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, Config::li_cached_bytes_per_shard);
@@ -75,7 +75,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 			uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-			const size_t partition = link_hash % Config::ft_num_link_partitions;
+			const size_t partition = link_hash % Config::ft_num_partitions;
 
 
 #ifdef COMPILE_WITH_LINK_INDEX
@@ -96,7 +96,7 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 	}
 }
 
-void LinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]) {
+void LinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
 	{
 		for (auto &iter : m_shards) {
 			size_t idx = 0;
@@ -113,7 +113,7 @@ void LinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_link_partitions
 	}
 }
 
-void LinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]) {
+void LinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
 	{
 		for (auto &iter : m_shards) {
 			size_t idx = 0;

@@ -55,8 +55,8 @@ namespace Config {
 	// Full text indexer config
 	inline const unsigned long long ft_num_shards = 1024;
 	inline const unsigned long long ft_num_partitions = 4;
-	inline const unsigned long long ft_num_link_partitions = 4;
-	inline const unsigned long long ft_max_results_per_partition = 2000000;
+	inline const unsigned long long ft_max_sections = 4;
+	inline const unsigned long long ft_max_results_per_section = 2000000;
 	inline const unsigned long long ft_max_keys = 0xFFFFFFFF;
 	inline const unsigned long long ft_max_cache_gb = 30;
 	inline const unsigned long long ft_num_threads_indexing = 24;

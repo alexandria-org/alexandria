@@ -35,7 +35,7 @@ DomainLinkIndexer::DomainLinkIndexer(int id, const string &db_name, const SubSys
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
-	for (size_t partition = 0; partition < Config::ft_num_link_partitions; partition++) {
+	for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 			FullTextShardBuilder<DomainLinkFullTextRecord> *shard_builder =
 				new FullTextShardBuilder<DomainLinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id,
@@ -74,7 +74,7 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
-			const size_t partition = link_hash % Config::ft_num_link_partitions;
+			const size_t partition = link_hash % Config::ft_num_partitions;
 
 #ifdef COMPILE_WITH_LINK_INDEX
 			shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, line);
@@ -92,7 +92,7 @@ void DomainLinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 	}
 }
 
-void DomainLinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]) {
+void DomainLinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
 	{
 		for (auto &iter : m_shards) {
 			size_t idx = 0;
@@ -109,7 +109,7 @@ void DomainLinkIndexer::write_cache(mutex write_mutexes[Config::ft_num_link_part
 	}
 }
 
-void DomainLinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards]) {
+void DomainLinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
 	{
 		for (auto &iter : m_shards) {
 			size_t idx = 0;

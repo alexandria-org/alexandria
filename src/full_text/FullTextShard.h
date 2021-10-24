@@ -139,7 +139,7 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	reader.seekg(m_data_start + pos, ios::beg);
 
 	size_t num_records = len / sizeof(DataRecord);
-	if (num_records > Config::ft_max_results_per_partition) num_records = Config::ft_max_results_per_partition;
+	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
 
 	result_set->resize(num_records);
 

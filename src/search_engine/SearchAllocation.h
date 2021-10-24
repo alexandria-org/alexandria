@@ -69,9 +69,9 @@ namespace SearchAllocation {
 		for (size_t i = 0; i < Config::ft_num_partitions; i++) {
 			storage->result_sets[i].resize(Config::query_max_words, NULL);
 			for (size_t j = 0; j < Config::query_max_words; j++) {
-				storage->result_sets[i][j] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_partition);
+				storage->result_sets[i][j] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section);
 			}
-			storage->intersected_result[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_partition);
+			storage->intersected_result[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section);
 		}
 
 		return storage;

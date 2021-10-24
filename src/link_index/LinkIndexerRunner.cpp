@@ -209,7 +209,7 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 	FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
 	domain_adjustment_shard.merge();*/
 
-	for (size_t partition = 0; partition < Config::ft_num_link_partitions; partition++) {
+	for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 
 		{
 			const string db_name = m_db_name + "_" + to_string(partition);

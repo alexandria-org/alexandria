@@ -71,8 +71,8 @@ private:
 	const string m_domain_hash_table_name;
 	mutex m_hash_table_mutexes[Config::ht_num_shards];
 	mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
-	mutex m_link_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards];
-	mutex m_domain_link_mutexes[Config::ft_num_link_partitions][Config::ft_num_shards];
+	mutex m_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
+	mutex m_domain_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
 
 	UrlToDomain *m_url_to_domain;
 
