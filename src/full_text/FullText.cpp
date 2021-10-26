@@ -232,7 +232,7 @@ namespace FullText {
 	}
 
 	bool should_index_url(const URL &url, size_t partition) {
-		return should_index_hash(url.host_hash(), partition);
+		return should_index_hash(url.hash(), partition);
 	}
 
 	bool should_index_hash(size_t hash, size_t partition) {

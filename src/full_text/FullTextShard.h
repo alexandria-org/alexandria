@@ -27,7 +27,6 @@
 #pragma once
 
 #include "config.h"
-#include <fcntl.h>
 #include <iostream>
 #include <map>
 #include <unordered_map>
@@ -138,7 +137,10 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 
 	reader.seekg(m_data_start + pos, ios::beg);
 
-	size_t num_records = len / sizeof(DataRecord);
+	result_set->prepare_segments(filename(), (size_t)reader.tellg(), len);
+	result_set->read_next_segment();
+
+	/*size_t num_records = len / sizeof(DataRecord);
 	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
 
 	result_set->resize(num_records);
@@ -149,7 +151,7 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	posix_fadvise(fd, reader.tellg(), num_records * sizeof(DataRecord), POSIX_FADV_SEQUENTIAL);
 	lseek(fd, reader.tellg(), SEEK_SET);
 	::read(fd, (void *)&record_res[0], (size_t)num_records * sizeof(DataRecord));
-	close(fd);
+	close(fd);*/
 
 	result_set->set_total_num_results(total_num_results);
 }

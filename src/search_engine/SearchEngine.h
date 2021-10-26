@@ -38,6 +38,7 @@
 #include "hash/Hash.h"
 #include "sort/Sort.h"
 #include "SearchAllocation.h"
+#include <cassert>
 
 using namespace std;
 
@@ -194,12 +195,13 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<size_t> value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, size_t &shortest_vector_position,
-		vector<float> &scores) {
+	void value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, FullTextResultSet<DataRecord> *dest) {
 
-		if (result_sets.size() == 0) return {};
+		if (result_sets.size() == 0) {
+			return;
+		}
 
-		shortest_vector_position = 0;
+		size_t shortest_vector_position = 0;
 		size_t shortest_len = SIZE_MAX;
 		size_t iter_index = 0;
 		for (FullTextResultSet<DataRecord> *result_set : result_sets) {
@@ -211,10 +213,11 @@ namespace SearchEngine {
 		}
 
 		vector<size_t> positions(result_sets.size(), 0);
-		vector<size_t> result_ids;
 
 		const DataRecord *shortest_data = result_sets[shortest_vector_position]->data_pointer();
+		DataRecord *dest_data = dest->data_pointer();
 
+		size_t dest_index = dest->size();
 		while (positions[shortest_vector_position] < shortest_len) {
 
 			bool all_equal = true;
@@ -236,18 +239,23 @@ namespace SearchEngine {
 				}
 				if ((*pos < len && value < data_arr[*pos].m_value) || *pos >= len) {
 					all_equal = false;
+					break;
 				}
 				iter_index++;
 			}
 			if (all_equal) {
-				scores.push_back(score_sum / result_sets.size());
-				result_ids.push_back(positions[shortest_vector_position]);
+				dest_data[dest_index] = shortest_data[positions[shortest_vector_position]];
+				dest_data[dest_index].m_score = score_sum / result_sets.size();
+				dest_index++;
+				if (dest_index >= dest->max_size()) {
+					break;
+				}
 			}
 
 			positions[shortest_vector_position]++;
 		}
 
-		return result_ids;
+		dest->resize(dest_index);
 	}
 
 	template<typename DataRecord>
@@ -280,26 +288,24 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void merge_results_to_one(const vector<FullTextResultSet<DataRecord> *> results, FullTextResultSet<DataRecord> *merged) {
+	void load_more_and_intersect(const vector<FullTextResultSet<DataRecord> *> results, FullTextResultSet<DataRecord> *tmp1,
+		FullTextResultSet<DataRecord> *tmp2, FullTextResultSet<DataRecord> *merged) {
 
-		if (results.size() > 1) {
-			size_t shortest_vector;
-			vector<float> score_vector;
-			vector<size_t> result_ids = value_intersection(results, shortest_vector, score_vector);
-
-			FullTextResultSet<DataRecord> *shortest = results[shortest_vector];
-			merged->resize(result_ids.size());
-
-			const DataRecord *source_arr = shortest->data_pointer();
-			DataRecord *dest_arr = merged->data_pointer();
-			for (size_t i = 0; i < result_ids.size(); i++) {
-				const DataRecord *record = &source_arr[result_ids[i]];
-				const float score = score_vector[i];
-
-				dest_arr[i] = *record;
-				dest_arr[i].m_score = score;
+		while (merged->size() < Config::result_limit) {
+			bool loaded_segment = false;
+			for (FullTextResultSet<DataRecord> *result : results) {
+				if (result->has_next_segment()) {
+					result->read_next_segment();
+					loaded_segment = true;
+				}
 			}
+			if (!loaded_segment) break;
+			value_intersection(results, merged);
 		}
+
+		sort(merged->span_pointer()->begin(), merged->span_pointer()->end(), [] (const DataRecord &a, const DataRecord &b) {
+			return a.m_value < b.m_value;
+		});
 	}
 
 	/*
@@ -480,11 +486,19 @@ namespace SearchEngine {
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
 			flat_result = input->storage->intersected_result[input->partition_id];
-			merge_results_to_one<DataRecord>(result_vector, flat_result);
+			flat_result->resize(0);
+			value_intersection<DataRecord>(result_vector, flat_result);
+			load_more_and_intersect(result_vector, input->storage->intersected_result2[input->partition_id],
+				input->storage->intersected_result3[input->partition_id], flat_result);
 			set_total_found<DataRecord>(result_vector, *(input->metric), (double)flat_result->size() / largest_result(result_vector));
 		} else {
 			flat_result = result_vector[0];
 			set_total_found<DataRecord>(result_vector, *(input->metric), 1.0);
+		}
+
+		// Close file pointers.
+		for (FullTextResultSet<DataRecord> *result_set : result_vector) {
+			result_set->close_segments();
 		}
 
 		input->metric->m_link_domain_matches = apply_domain_link_scores(*(input->domain_links), flat_result);

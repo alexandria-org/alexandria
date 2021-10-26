@@ -423,6 +423,10 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 
+	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
+	Config::nodes_in_cluster = 1;
+	Config::node_id = 0;
+
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 	FullText::truncate_url_to_domain("main_index");
@@ -466,6 +470,10 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	}
 
 	SearchAllocation::delete_allocation(allocation);
+
+	// Reset.
+	Config::nodes_in_cluster = initial_nodes_in_cluster;
+	Config::node_id = 0;
 }
 
 BOOST_AUTO_TEST_SUITE_END();
