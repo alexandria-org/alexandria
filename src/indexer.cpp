@@ -89,8 +89,8 @@ int main(int argc, const char **argv) {
 		HashTableHelper::truncate("link_index");
 		HashTableHelper::truncate("domain_link_index");
 
-		FullText::truncate_index("link_index", 8);
-		FullText::truncate_index("domain_link_index", 8);
+		FullText::truncate_index("link_index");
+		FullText::truncate_index("domain_link_index");
 
 		return 0;
 	}
@@ -98,9 +98,9 @@ int main(int argc, const char **argv) {
 	if (arg == "truncate") {
 
 		FullText::truncate_url_to_domain("main_index");
-		FullText::truncate_index("main_index", 8);
-		FullText::truncate_index("link_index", 8);
-		FullText::truncate_index("domain_link_index", 8);
+		FullText::truncate_index("main_index");
+		FullText::truncate_index("link_index");
+		FullText::truncate_index("domain_link_index");
 
 		HashTableHelper::truncate("main_index");
 		HashTableHelper::truncate("link_index");

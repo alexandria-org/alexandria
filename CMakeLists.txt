@@ -70,6 +70,8 @@ set(SRC_CLASSES
 	"src/sort/Sort.cpp"
 
 	"src/hash/Hash.cpp"
+
+	"src/config.cpp"
 )
 
 set(SRC_COMMON
@@ -92,7 +94,6 @@ add_executable(cc_indexer
 )
 add_executable(run_tests
 	"tests/main.cpp"
-	"config/test_config/config.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -107,11 +108,6 @@ target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
-
-target_include_directories(cc_parser PUBLIC ./config)
-target_include_directories(cc_indexer PUBLIC ./config)
-target_include_directories(run_tests PUBLIC ./config/test_config)
-target_include_directories(server PUBLIC ./config)
 
 target_link_libraries(cc_parser PUBLIC
 	AWS::aws-lambda-runtime 

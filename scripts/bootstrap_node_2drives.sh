@@ -3,6 +3,8 @@
 apt-get update
 apt-get -y install vim parted screen zip
 
+echo "\nALEXANDRIA_LIVE=1" >> /etc/environment
+
 _mkpart() { 
 	disc=$1
 	mountpoint1=$2

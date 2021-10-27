@@ -141,26 +141,6 @@ static void *run_worker(void *data) {
 
 int main(void) {
 
-	/*
-	stringstream response_stream;
-	HashTable hash_table("main_index");
-	HashTable hash_table_link("link_index");
-	HashTable hash_table_domain_link("domain_link_index");
-
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index", Config::ft_num_partitions);
-	vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
-		FullText::create_index_array<LinkFullTextRecord>("link_index");
-	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
-
-	Api::search("cullhed", hash_table, index_array, link_index_array, domain_link_index_array, response_stream);
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
-	FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
-
-	return 0;*/
-
 	FCGX_Init();
 
 	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);

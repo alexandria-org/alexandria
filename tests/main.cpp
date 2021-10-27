@@ -29,6 +29,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "config.h"
+
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
