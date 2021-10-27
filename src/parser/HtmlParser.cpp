@@ -163,8 +163,6 @@ int HtmlParser::parse_link(const string &link) {
 
 	if (content == "") return CC_ERROR;
 
-	//cout << "External link: " << href << " with text: " << content << endl;
-
 	m_links.push_back(HtmlLink(m_host, m_path, host, path, content));
 
 	return CC_OK;

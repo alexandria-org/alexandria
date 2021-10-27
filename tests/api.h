@@ -71,8 +71,6 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		string response = response_stream.str();
 
-		cout << response << endl;
-
 		Aws::Utils::Json::JsonValue json(response);
 
 		auto v = json.View();
@@ -191,13 +189,10 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 
-		cout << "hash table size: " << hash_table.size() << endl;
 		stringstream response_stream;
 		Api::word_stats("Meta Description Text", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
-
-		cout << response << endl;
 
 		Aws::Utils::Json::JsonValue json(response);
 

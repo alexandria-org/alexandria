@@ -75,7 +75,7 @@ namespace HashTableHelper {
 
 	void optimize(vector<HashTableShardBuilder *> &shards) {
 		for (HashTableShardBuilder *shard : shards) {
-			LogInfo("Optimizing shard: " + shard->filename_data());
+			LOG_INFO("Optimizing shard: " + shard->filename_data());
 			shard->optimize();
 		}
 	}

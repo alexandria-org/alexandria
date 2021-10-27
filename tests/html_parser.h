@@ -63,8 +63,6 @@ BOOST_AUTO_TEST_CASE(html_parse2) {
 		string("Nya lån 2021 Nya lån 2020 Nya lån 2019 Nya lån 2018 Nya lån 2017 Nya lån 2016 Uppdaterad 2021-10-01.").substr(0, 50));
 
 	parser.parse(File::read_test_file("test6.html"));
-	cout << parser.text() << endl;
-
 }
 
 BOOST_AUTO_TEST_CASE(html_parse_links) {

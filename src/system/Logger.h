@@ -31,8 +31,8 @@
 #include <fstream>
 #include <iostream>
 
-#define LogInfo(msg) Logger::log("info", __FILE__, __LINE__, msg)
-#define LogError(msg) Logger::log("error", __FILE__, __LINE__, msg)
+#define LOG_INFO(msg) Logger::log("info", __FILE__, __LINE__, msg)
+#define LOG_ERROR(msg) Logger::log("error", __FILE__, __LINE__, msg)
 
 #define error(msg) Logger::LoggedException(msg, string(__FILE__), __LINE__)
 

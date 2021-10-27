@@ -35,6 +35,7 @@
 #include "full_text/SearchMetric.h"
 #include "link_index/LinkFullTextRecord.h"
 #include "link_index/DomainLinkFullTextRecord.h"
+#include "system/Logger.h"
 #include "hash/Hash.h"
 #include "sort/Sort.h"
 #include "SearchAllocation.h"
@@ -477,7 +478,7 @@ namespace SearchEngine {
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
 		if (input->storage->result_sets[input->partition_id].size() == 0) {
-			cout << "err" << endl;
+			LOG_ERROR("Non empty result_set passed to search_partition");
 		}
 
 		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(input->storage->result_sets[input->partition_id],

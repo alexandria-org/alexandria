@@ -28,6 +28,7 @@
 #include "Transfer.h"
 #include <fstream>
 #include "system/ThreadPool.h"
+#include "system/Logger.h"
 #include "File.h"
 
 namespace Transfer {
@@ -63,7 +64,7 @@ namespace Transfer {
 		error = ERROR;
 		if (curl) {
 			CURLcode res;
-			cout << "Downloading url: " << make_url(file_path) << endl;
+			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
 			prepare_curl(curl);
@@ -95,7 +96,7 @@ namespace Transfer {
 		error = ERROR;
 		if (curl) {
 			CURLcode res;
-			cout << "Downloading url: " << make_url(file_path) << endl;
+			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
 			prepare_curl(curl);
@@ -141,7 +142,7 @@ namespace Transfer {
 		error = ERROR;
 		if (curl) {
 			CURLcode res;
-			cout << "Downloading url: " << make_url(file_path) << endl;
+			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
 			prepare_curl(curl);
@@ -169,7 +170,7 @@ namespace Transfer {
 		error = ERROR;
 		if (curl) {
 			CURLcode res;
-			cout << "Downloading url: " << make_url(file_path) << endl;
+			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
 			prepare_curl(curl);

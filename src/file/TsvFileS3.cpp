@@ -25,6 +25,7 @@
  */
 
 #include "TsvFileS3.h"
+#include "system/Logger.h"
 
 TsvFileS3::TsvFileS3(const Aws::S3::S3Client &s3_client, const string &file_name) {
 	// Check if the file exists.
@@ -76,7 +77,7 @@ int TsvFileS3::download_file() {
 		m_is_gzipped = false;
 	}
 
-	cout << "Downloading file from " << bucket << " key: " << m_file_name << endl;
+	LOG_INFO("Downloading file from " + bucket + " key: " + m_file_name);
 	request.SetBucket(bucket);
 	request.SetKey(m_file_name);
 
@@ -106,7 +107,7 @@ int TsvFileS3::download_file() {
 		return CC_ERROR;
 	}
 
-	cout << "Done downloading file from " << bucket << " key: " << m_file_name << endl;
+	LOG_INFO("Done downloading file from " + bucket + " key: " + m_file_name);
 
 	return CC_OK;
 }

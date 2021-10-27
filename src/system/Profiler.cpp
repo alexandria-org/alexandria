@@ -25,6 +25,7 @@
  */
 
 #include "Profiler.h"
+#include "Logger.h"
 #include <vector>
 
 namespace Profiler {
@@ -72,12 +73,12 @@ namespace Profiler {
 	void instance::stop() {
 		if (!m_enabled) return;
 		m_has_stopped = true;
-		cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
+		LOG_INFO("Profiler [" + m_name + "] took " + to_string(get()) + "ms");
 	}
 
 	void instance::print() {
 		if (!m_enabled) return;
-		cout << "Profiler [" << m_name << "] took " << get() << "ms" << endl;
+		LOG_INFO("Profiler [" + m_name + "] took " + to_string(get()) + "ms");
 	}
 
 	void print_memory_status() {
@@ -85,7 +86,7 @@ namespace Profiler {
 		if (infile.is_open()) {
 			string line;
 			while (getline(infile, line)) {
-				cout << line << endl;
+				LOG_INFO(line);
 			}
 		}
 	}

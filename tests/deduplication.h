@@ -57,8 +57,6 @@ BOOST_AUTO_TEST_CASE(deduplication) {
 
 		string response = response_stream.str();
 
-	//	cout << response << endl;
-
 		Aws::Utils::Json::JsonValue json(response);
 
 		auto v = json.View();
@@ -94,7 +92,6 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 	Config::node_id = 0;
 
 	URL url("http://url1.com");
-	cout << url.str() << " host hash mod 16: " << (url.host_hash() % 16) << endl;
 
 	// url8.com should be in node 0
 	// url1-7.com should be in node 1

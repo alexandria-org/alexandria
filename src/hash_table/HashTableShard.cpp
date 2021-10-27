@@ -138,7 +138,7 @@ void HashTableShard::load() {
 		idx++;
 	}
 
-	//LogInfo("Loaded shard " + to_string(m_shard_id));
+	//LOG_INFO("Loaded shard " + to_string(m_shard_id));
 }
 
 void HashTableShard::print_all_items() {

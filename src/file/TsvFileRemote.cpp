@@ -57,7 +57,7 @@ int TsvFileRemote::download_file() {
 		m_is_gzipped = false;
 	}
 
-	cout << "Downloading file with key: " << m_file_name << endl;
+	LOG_INFO("Downloading file with key: " + m_file_name);
 
 	create_directory();
 	ofstream outfile(get_path(), ios::trunc);
@@ -71,11 +71,11 @@ int TsvFileRemote::download_file() {
 		}
 
 		if (error == Transfer::ERROR) {
-			LogInfo("Download failed...");
+			LOG_INFO("Download failed...");
 		}
 	}
 
-	cout << "Done downloading file with key: " << m_file_name << endl;
+	LOG_INFO("Done downloading file with key: " + m_file_name);
 
 	return error;
 }

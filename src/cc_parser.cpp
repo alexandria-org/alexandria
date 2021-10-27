@@ -134,7 +134,6 @@ bool CCParser::run(string &response) {
 	bool fatal_error = false;
 	while (!fatal_error) {
 		auto start = std::chrono::high_resolution_clock::now();
-		//cout << "fetching range: " << next_range() << endl;
 
 		if (CC_PARSER_CHUNK) {
 			request.SetRange(next_range());

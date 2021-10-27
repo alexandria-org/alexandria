@@ -39,7 +39,7 @@ HashTable::HashTable(const string &db_name)
 		m_shards.push_back(shard);
 	}
 
-	LogInfo("HashTable contains " + to_string(m_num_items) + " (" + to_string((double)m_num_items/1000000000) + "b) urls");
+	LOG_INFO("HashTable contains " + to_string(m_num_items) + " (" + to_string((double)m_num_items/1000000000) + "b) urls");
 }
 
 HashTable::~HashTable() {

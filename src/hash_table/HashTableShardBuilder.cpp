@@ -114,7 +114,7 @@ void HashTableShardBuilder::optimize() {
 		infile.read((char *)&data_len, sizeof(size_t));
 
 		if (data_len > buffer_len) {
-			LogInfo("len is larger than buffer_len");
+			LOG_INFO("len is larger than buffer_len");
 			infile.seekg(data_len, ios::cur);
 			continue;
 		} else {

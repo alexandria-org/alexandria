@@ -36,11 +36,11 @@ SubSystem::SubSystem() {
 	m_s3_client = new Aws::S3::S3Client(credentialsProvider, get_s3_config());
 	m_lambda_client = new Aws::Lambda::LambdaClient(credentialsProvider, get_s3_config());
 
-	LogInfo("download domain_info.tsv");
+	LOG_INFO("download domain_info.tsv");
 	TsvFileRemote domain_index(System::domain_index_filename());
 	m_domain_index = new Dictionary(domain_index);
 
-	LogInfo("download dictionary.tsv");
+	LOG_INFO("download dictionary.tsv");
 	TsvFileRemote dictionary(System::dictionary_filename());
 	m_dictionary = new Dictionary(dictionary);
 
@@ -83,7 +83,7 @@ const Aws::Lambda::LambdaClient SubSystem::lambda_client() const {
 string SubSystem::download_to_string(const string &bucket, const string &key) const {
 
 	Aws::S3::Model::GetObjectRequest request;
-	LogInfo("Downloading " + bucket + " key: " + key);
+	LOG_INFO("Downloading " + bucket + " key: " + key);
 	request.SetBucket(bucket);
 	request.SetKey(key);
 
@@ -106,7 +106,7 @@ string SubSystem::download_to_string(const string &bucket, const string &key) co
 bool SubSystem::download_to_stream(const string &bucket, const string &key, ofstream &output_stream) const {
 
 	Aws::S3::Model::GetObjectRequest request;
-	LogInfo("Downloading " + bucket + " key: " + key);
+	LOG_INFO("Downloading " + bucket + " key: " + key);
 	request.SetBucket(bucket);
 	request.SetKey(key);
 
@@ -125,7 +125,7 @@ bool SubSystem::download_to_stream(const string &bucket, const string &key, ofst
 
 		return true;
 	} else {
-		LogInfo("NON SUCCESS");
+		LOG_INFO("NON SUCCESS");
 	}
 
 	return false;
@@ -156,7 +156,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 void SubSystem::upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream,
 	size_t retries) const {
 
-	LogInfo("Uploading " + bucket + " key: " + key);
+	LOG_INFO("Uploading " + bucket + " key: " + key);
 
 	Aws::S3::Model::PutObjectRequest request;
 	request.SetBucket(bucket);
@@ -170,7 +170,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 	if (!outcome.IsSuccess()) {
 		// Retry.
 		if (retries > 0) {
-			LogInfo("Upload failed, retrying for word: " + key);
+			LOG_INFO("Upload failed, retrying for word: " + key);
 			compress_stream.seekg(0);
 			upload_from_stream(bucket, key, compress_stream, retries - 1);
 		}
@@ -178,7 +178,7 @@ void SubSystem::upload_from_stream(const string &bucket, const string &key, filt
 }
 
 void SubSystem::init_aws_api() {
-	LogInfo("init aws api");
+	LOG_INFO("init aws api");
 	Aws::SDKOptions options;
 	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Off;
 	options.loggingOptions.logger_create_fn = get_logger_factory();

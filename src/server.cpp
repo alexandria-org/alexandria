@@ -84,7 +84,7 @@ static void *run_worker(void *data) {
 	vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
 		FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
 
-	LogInfo("Server has started...");
+	LOG_INFO("Server has started...");
 
 	while (true) {
 
@@ -100,7 +100,7 @@ static void *run_worker(void *data) {
 
 		string uri = FCGX_GetParam("REQUEST_URI", request.envp);
 
-		LogInfo("Serving request: " + uri);
+		LOG_INFO("Serving request: " + uri);
 
 		URL url("http://alexandria.org" + uri);
 
@@ -145,7 +145,7 @@ int main(void) {
 
 	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
 	if (socket_id < 0) {
-		LogInfo("Could not open socket, exiting");
+		LOG_INFO("Could not open socket, exiting");
 		return 1;
 	}
 

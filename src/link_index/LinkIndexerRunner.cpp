@@ -74,7 +74,7 @@ void LinkIndexerRunner::run(const vector<string> local_files) {
 }
 
 void LinkIndexerRunner::merge() {
-	LogInfo("Merging...");
+	LOG_INFO("Merging...");
 
 	const size_t merge_batch_size = 250;
 
@@ -105,7 +105,7 @@ void LinkIndexerRunner::merge() {
 }
 
 void LinkIndexerRunner::sort() {
-	LogInfo("Sorting...");
+	LOG_INFO("Sorting...");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
@@ -170,7 +170,7 @@ string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string>
 			}
 		}
 
-		LogInfo("Done " + to_string(idx) + " out of " + to_string(local_files.size()));
+		LOG_INFO("Done " + to_string(idx) + " out of " + to_string(local_files.size()));
 
 		idx++;
 	}
@@ -236,7 +236,7 @@ string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *in
 
 	shard1.merge_domain(shard2, shard3, indexer->url_to_domain());
 
-	LogInfo("Merged " + to_string(shard_id));
+	LOG_INFO("Merged " + to_string(shard_id));
 
 	return shard1.filename();*/
 	return "";

@@ -52,12 +52,6 @@ namespace io = boost::iostreams;
 
 int main(int argc, const char **argv) {
 
-	/*FullTextShardBuilder shard("main_index", 2166);
-	shard.merge();
-	return 0;*/
-
-	cout << "FT_INDEXER_CACHE_BYTES_PER_SHARD: " << Config::ft_cached_bytes_per_shard << endl;
-
 	if (argc == 1) {
 
 		FullText::index_all_batches("main_index", "main_index");

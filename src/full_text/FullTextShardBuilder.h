@@ -484,8 +484,6 @@ void FullTextShardBuilder<DataRecord>::merge_domain(FullTextShardBuilder<DataRec
 		m_cache[iter.first] = merged;
 	}
 
-	cout << "DEBUG, added_score_url: " << total_added_url << " (" << num_added_url << ") added_score_domain: " << total_added_domain << " (" << num_added_domain << ")" << endl;
-
 	save_file();
 	urls.truncate();
 	domains.truncate();
@@ -564,7 +562,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 		const size_t read_len = reader.gcount();
 
 		if (read_len == 0) {
-			LogInfo("Data stopped before end. Ignoring shard " + m_shard_id);
+			LOG_INFO("Data stopped before end. Ignoring shard " + m_shard_id);
 			m_cache.clear();
 			break;
 		}

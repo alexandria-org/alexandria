@@ -25,6 +25,7 @@
  */
 
 #include "Dictionary.h"
+#include "system/Logger.h"
 
 Dictionary::Dictionary() {
 
@@ -71,5 +72,5 @@ bool Dictionary::has_key(const string &key) const {
 }
 
 void Dictionary::handle_collision(size_t key, const string &col) {
-	cout << "Collision: " << key << " " << col << endl;
+	LOG_ERROR("Collision: " + to_string(key) + " " + col);
 }

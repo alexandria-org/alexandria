@@ -90,7 +90,7 @@ void FullTextIndexerRunner::run(const vector<string> local_files, size_t partiti
 }
 
 void FullTextIndexerRunner::merge() {
-	LogInfo("Merging...");
+	LOG_INFO("Merging...");
 
 	const size_t merge_batch_size = 500;
 
@@ -120,7 +120,7 @@ void FullTextIndexerRunner::merge() {
 }
 
 void FullTextIndexerRunner::sort() {
-	LogInfo("Sorting...");
+	LOG_INFO("Sorting...");
 
 	// Loop over hash table shards and merge them.
 	for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
@@ -156,7 +156,7 @@ string FullTextIndexerRunner::run_merge_large_thread() {
 	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
 
 	while (m_run_merge_large) {
-		cout << "merged " << indexer.write_large(m_full_text_mutexes) << " large files" << endl;
+		LOG_INFO("merged " + to_string(indexer.write_large(m_full_text_mutexes)) + " large files");
 		sleep(1);
 	}
 
@@ -186,7 +186,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 		Transfer::gz_file_to_stream(warc_path, stream, error);
 		if (error == Transfer::OK) {
 			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition, m_cc_batch);
-			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards" << endl;
+			indexer.write_cache(m_full_text_mutexes);
 		}
 
 		for (size_t i = 0; i < Config::ht_num_shards; i++) {
@@ -197,7 +197,7 @@ string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths,
 			}
 		}
 
-		LogInfo("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()) + " for " + m_db_name);
+		LOG_INFO("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()) + " for " + m_db_name);
 
 		idx++;
 	}
@@ -236,7 +236,7 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 
 		if (stream.is_open()) {
 			size_t added_urls = indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition, m_cc_batch);
-			cout << "wrote " << indexer.write_cache(m_full_text_mutexes) << " out of " << Config::ft_num_shards << " shards and added " << added_urls << " to partition " << partition  << " on node id: " << Config::node_id << "/" << Config::nodes_in_cluster << endl;
+			indexer.write_cache(m_full_text_mutexes);
 		}
 
 		stream.close();
@@ -249,7 +249,7 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 			}
 		}
 
-		LogInfo("Done " + to_string(idx) + " out of " + to_string(local_files.size()) + " for " + m_db_name);
+		LOG_INFO("Done " + to_string(idx) + " out of " + to_string(local_files.size()) + " for " + m_db_name);
 
 		idx++;
 	}
@@ -283,7 +283,7 @@ string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
 int FullTextIndexerRunner::download_file(const string &bucket, const string &key, stringstream &stream) {
 
 	Aws::S3::Model::GetObjectRequest request;
-	cout << "Downloading " << bucket << " key: " << key << endl;
+	LOG_INFO("Downloading " + bucket + " key: " + key);
 	request.SetBucket(bucket);
 	request.SetKey(key);
 

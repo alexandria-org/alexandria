@@ -159,7 +159,7 @@ size_t FullTextIndexer::write_large(mutex *write_mutexes) {
 		if (shard->should_merge()) {
 			write_mutexes[idx].lock();
 			if (shard->should_merge()) {
-				cout << "MERGING shard: " << shard->filename() << endl;
+				LOG_INFO("MERGING shard: " + shard->filename());
 				shard->merge();
 				ret++;
 			}
