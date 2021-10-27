@@ -24,38 +24,26 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
-
-#include <boost/test/unit_test.hpp>
-
+#include "system/Logger.h"
 #include "config.h"
 
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include "search_engine/SearchAllocation.h"
+BOOST_AUTO_TEST_SUITE(logger)
 
-using namespace std;
+BOOST_AUTO_TEST_CASE(logger) {
+	Logger::start_logger_thread();
+	Logger::log_string("test1");
+	Logger::log_string("test2");
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "segments.h"
-#include "logger.h"
+	Logger::join_logger_thread();
 
+	ifstream logfile(Config::log_file_path);
+	logfile.seekg(-12, ios::end);
+	string line1, line2;
+	getline(logfile, line1);
+	getline(logfile, line2);
+
+	BOOST_CHECK_EQUAL(line1, "test1");
+	BOOST_CHECK_EQUAL(line2, "test2");
+}
+
+BOOST_AUTO_TEST_SUITE_END();

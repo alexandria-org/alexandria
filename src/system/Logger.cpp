@@ -25,102 +25,125 @@
  */
 
 #include "Logger.h"
+#include <thread>
+#include <queue>
 
-string Logger::m_filename = "/var/log/alexandria.log";
+namespace Logger {
+	thread m_logger_thread;
+	mutex m_lock;
+	ofstream m_file;
+	chrono::seconds m_reopen_interval = std::chrono::seconds(300);
+	chrono::system_clock::time_point m_last_reopen;
+	bool m_verbose = true;
+	bool m_run_logger = true;
+	bool m_logger_started = false;
+	queue<string> m_queue;
 
-Logger *Logger::instance() {
-	static Logger instance;
-	return &instance;
-}
+	void verbose(bool verbose) {
+		m_verbose = verbose;
+	}
 
-Logger::Logger() {
-	m_verbose = true;
-	m_reopen_interval = std::chrono::seconds(300);
-
-	reopen();
-}
-
-Logger::~Logger() {
-	m_file.close();
-}
-
-void Logger::verbose(bool verbose) {
-	m_verbose = verbose;
-}
-
-void Logger::reopen() {
-	auto now = chrono::system_clock::now();
-	m_lock.lock();
-	if (now - m_last_reopen > m_reopen_interval) {
-		m_last_reopen = now;
-		try {
-			m_file.close();
-		} catch (...) {
-
-		}
-		try {
-			m_file.open(m_filename, ofstream::out | ofstream::app);
-			m_last_reopen = chrono::system_clock::now();
-		} catch (exception &error) {
+	void reopen() {
+		auto now = chrono::system_clock::now();
+		m_lock.lock();
+		if (now - m_last_reopen > m_reopen_interval) {
+			m_last_reopen = now;
 			try {
 				m_file.close();
 			} catch (...) {
-				
+
 			}
-			throw error;
+			try {
+				m_file.open(Config::log_file_path, ofstream::out | ofstream::app);
+				m_last_reopen = chrono::system_clock::now();
+			} catch (exception &error) {
+				try {
+					m_file.close();
+				} catch (...) {
+					
+				}
+				throw error;
+			}
+		}
+		m_lock.unlock();
+	}
+
+	string timestamp() {
+		chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+		time_t tt = std::chrono::system_clock::to_time_t(tp);
+		tm gmt{}; gmtime_r(&tt, &gmt);
+		string buffer(100, 'x');
+		sprintf(&buffer.front(), "%04d-%02d-%02d %02d:%02d:%02d", gmt.tm_year + 1900, (short)gmt.tm_mon + 1,
+			(short)gmt.tm_mday, (short)gmt.tm_hour, (short)gmt.tm_min, (short)gmt.tm_sec);
+		buffer.resize(19);
+		return buffer;
+	}
+
+	string format(const string &type, const string &file, int line, const string &message, const string &meta) {
+		string output;
+		output.append(timestamp());
+		output.append(" [" + type + "]");
+		output.append(" " + file + ":" + to_string(line));
+		output.append(" " + message);
+		output.append(" " + meta);
+		return output;
+	}
+
+	void log_message(const string &type, const string &file, int line, const string &message, const string &meta) {
+		log_string(format(type, file, line, message, meta));
+	}
+
+	void log_string(const string &message) {
+		m_lock.lock();
+		m_queue.push(message);
+		m_lock.unlock();
+	}
+
+	void log(const string &type, const string &file, int line, const string &message) {
+		log_message(type, file, line, message, "");
+	}
+
+	void write_message_to_logfile(const string &message) {
+		m_file << message << endl;
+	}
+
+	void logger_thread() {
+		reopen();
+		while (true) {
+			while (m_queue.empty() && m_run_logger) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}
+
+			if (m_queue.empty()) break;
+
+			m_lock.lock();
+			string message = m_queue.front();
+			m_queue.pop();
+			m_lock.unlock();
+
+			write_message_to_logfile(message);
 		}
 	}
-	m_lock.unlock();
-}
 
-string Logger::timestamp() const {
-	chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-	time_t tt = std::chrono::system_clock::to_time_t(tp);
-	tm gmt{}; gmtime_r(&tt, &gmt);
-	string buffer(100, 'x');
-	sprintf(&buffer.front(), "%04d-%02d-%02d %02d:%02d:%02d", gmt.tm_year + 1900, (short)gmt.tm_mon + 1,
-		(short)gmt.tm_mday, (short)gmt.tm_hour, (short)gmt.tm_min, (short)gmt.tm_sec);
-	buffer.resize(19);
-	return buffer;
-}
-
-string Logger::format(const string &type, const string &file, int line, const string &message, const string &meta)
-	const {
-	string output;
-	output.append(timestamp());
-	output.append(" [" + type + "]");
-	output.append(" " + file + ":" + to_string(line));
-	output.append(" " + message);
-	output.append(" " + meta);
-	return output;
-}
-
-void Logger::log_message(const string &type, const string &file, int line, const string &message, const string &meta) {
-	log_string(format(type, file, line, message, meta));
-}
-
-void Logger::log_string(const string &message) {
-	if (m_verbose) {
-		cout << message << endl;
+	void start_logger_thread() {
+		if (!m_logger_started) {
+			m_logger_thread = thread(logger_thread);
+			m_logger_started = true;
+		}
 	}
-	m_lock.lock();
-	m_file << message << endl;
-	m_file.flush();
-	m_lock.unlock();
-	reopen();
-}
 
-void Logger::log(const string &type, const string &file, int line, const string &message) {
-	Logger::instance()->log_message(type, file, line, message, "");
-}
+	void join_logger_thread() {
+		if (m_logger_started) {
+			m_run_logger = false;
+			m_logger_thread.join();
+			m_logger_started = false;
+		}
+	}
 
-void Logger::log(const string &type, const string &file, int line, const string &message, const string &meta) {
-	Logger::instance()->log_message(type, file, line, message, meta);
-}
-
-LoggedException::LoggedException(const string &message, const string &file, int line)
-: m_message(message), m_file(file), m_line(line)
-{
-	m_formatted_message = Logger::instance()->format("EXCEPTION", m_file, m_line, m_message, "");
+	LoggedException::LoggedException(const string &message, const string &file, int line)
+	: m_message(message), m_file(file), m_line(line)
+	{
+		m_formatted_message = format("EXCEPTION", m_file, m_line, m_message, "");
+	}
 }
 
