@@ -260,32 +260,10 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void delete_result_vector(vector<FullTextResultSet<DataRecord> *> results) {
-
-		for (FullTextResultSet<DataRecord> *result_object : results) {
-			delete result_object;
-		}
-	}
-
-	template<typename DataRecord>
 	void sort_by_score(vector<DataRecord> &results) {
 		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_score > b.m_score;
 		});
-	}
-
-	template<typename DataRecord>
-	void flatten_results(const FullTextResultSet<DataRecord> *results, const vector<float> &scores,	const vector<size_t> &indices,
-		vector<DataRecord> &flat_result) {
-
-		const DataRecord *record_arr = results->data_pointer();
-		for (size_t i = 0; i < indices.size(); i++) {
-			const DataRecord *record = &record_arr[indices[i]];
-			const float score = scores[i];
-
-			flat_result.push_back(*record);
-			flat_result.back().m_score = score;
-		}
 	}
 
 	template<typename DataRecord>
@@ -346,21 +324,6 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	bool result_has_many_domains_vector(const vector<DataRecord> &results) {
-
-		if (results.size() == 0) return false;
-
-		const uint64_t first_domain_hash = results[0].m_domain_hash;
-		for (const DataRecord &record : results) {
-			if (record.m_domain_hash != first_domain_hash) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	template<typename DataRecord>
 	void deduplicate_domains(FullTextResultSet<DataRecord> *results, size_t results_per_domain, size_t limit) {
 
 		vector<DataRecord> deduplicate;
@@ -375,36 +338,6 @@ namespace SearchEngine {
 			}
 		}
 		results->resize(j);
-	}
-
-	template<typename DataRecord>
-	void deduplicate_result(FullTextResultSet<DataRecord> *results, size_t limit) {
-
-		bool has_many_domains = result_has_many_domains<DataRecord>(results);
-
-		if (results->size() > 10 && has_many_domains) {
-			deduplicate_domains<DataRecord>(results, Config::deduplicate_domain_count, limit);
-		} else {
-			if (results->size() > limit) {
-				results->resize(limit);
-			}
-		}
-	}
-
-	template<typename DataRecord>
-	vector<DataRecord> deduplicate_domains_vector(const vector<DataRecord> results, size_t results_per_domain, size_t limit) {
-
-		vector<DataRecord> deduplicate;
-		unordered_map<uint64_t, size_t> domain_counts;
-		for (const DataRecord &record : results) {
-			if (deduplicate.size() >= limit) break;
-			if (domain_counts[record.m_domain_hash] < results_per_domain) {
-				deduplicate.push_back(record);
-				domain_counts[record.m_domain_hash]++;
-			}
-		}
-
-		return deduplicate;
 	}
 
 	template<typename DataRecord>

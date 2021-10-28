@@ -227,18 +227,3 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 	return "";
 }
 
-string LinkIndexerRunner::run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id) {
-
-	/*
-	FullTextShardBuilder<FullTextRecord> shard1("main_index", shard_id);
-	FullTextShardBuilder<FullTextRecord> shard2("adjustments", shard_id);
-	FullTextShardBuilder<FullTextRecord> shard3("domain_adjustments", shard_id);
-
-	shard1.merge_domain(shard2, shard3, indexer->url_to_domain());
-
-	LOG_INFO("Merged " + to_string(shard_id));
-
-	return shard1.filename();*/
-	return "";
-}
-

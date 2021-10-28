@@ -79,6 +79,5 @@ private:
 	string run_index_thread_with_local_files(const vector<string> &local_files, int id);
 	string run_link_index_thread(const vector<string> &warc_paths, int id);
 	string run_merge_thread(size_t shard_id);
-	string run_merge_adjustments_thread(const FullTextIndexer *indexer, size_t shard_id);
 
 };
