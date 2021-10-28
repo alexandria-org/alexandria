@@ -28,6 +28,8 @@
 #include <thread>
 #include <queue>
 
+using namespace std;
+
 namespace Logger {
 	thread m_logger_thread;
 	mutex m_lock;

@@ -244,7 +244,7 @@ void FullTextShard<DataRecord>::read_keys() {
 	temp_keys.resize(m_num_keys);
 
 	if (m_num_keys > Config::ft_max_keys) {
-		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
+		throw LOG_ERROR_EXCEPTION("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(m_num_keys));
 	}
 
 	uint64_t *key_data = temp_keys.data();

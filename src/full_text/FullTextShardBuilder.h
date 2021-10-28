@@ -248,13 +248,13 @@ template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::append() {
 	m_writer.open(filename(), ios::binary | ios::app);
 	if (!m_writer.is_open()) {
-		throw error("Could not open full text shard (" + filename() + "). Error: " +
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " +
 			string(strerror(errno)));
 	}
 
 	ofstream key_writer(key_filename(), ios::binary | ios::app);
 	if (!key_writer.is_open()) {
-		throw error("Could not open full text shard (" + key_filename() + "). Error: " +
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_filename() + "). Error: " +
 			string(strerror(errno)));
 	}
 
@@ -312,12 +312,12 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	// Read the cache into memory.
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	ifstream key_reader(key_filename(), ios::binary);
 	if (!key_reader.is_open()) {
-		throw error("Could not open full text shard (" + key_filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	const size_t buffer_len = 100000;
@@ -427,7 +427,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
 	if (num_keys > Config::ft_max_keys) {
-		throw error("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(num_keys));
+		throw LOG_ERROR_EXCEPTION("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(num_keys));
 	}
 
 	char *vector_buffer = new char[num_keys * 8];
@@ -515,7 +515,7 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 
 	m_writer.open(filename, ios::binary | ios::trunc);
 	if (!m_writer.is_open()) {
-		throw error("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 
 	keys.clear();
@@ -634,7 +634,7 @@ size_t FullTextShardBuilder<DataRecord>::disk_size() const {
 
 	m_reader.open(filename(), ios::binary);
 	if (!m_reader.is_open()) {
-		throw error("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	m_reader.seekg(0, ios::end);

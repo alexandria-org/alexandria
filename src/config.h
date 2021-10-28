@@ -5,14 +5,12 @@
 #include <fstream>
 #include <vector>
 
-using namespace std;
-
 namespace Config {
 
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;
-	extern vector<string> batches;
-	extern vector<string> link_batches;
+	extern std::vector<std::string> batches;
+	extern std::vector<std::string> link_batches;
 	extern size_t worker_count;
 	extern size_t query_max_words;
 	extern size_t query_max_len;
@@ -57,9 +55,9 @@ namespace Config {
 	inline const std::string cc_target_output = "alexandria-cc-output";
 	inline const bool cc_run_on_lambda = true;
 
-	inline const string log_file_path = "/var/log/alexandria.log";
+	inline const std::string log_file_path = "/var/log/alexandria.log";
 
-	void read_config(const string &config_file);
+	void read_config(const std::string &config_file);
 
 }
 

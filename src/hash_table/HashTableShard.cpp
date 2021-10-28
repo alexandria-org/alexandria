@@ -58,7 +58,7 @@ string HashTableShard::find(uint64_t key) {
 	const size_t pos_buffer_len = 200000;
 	char pos_buffer[pos_buffer_len];
 	if (byte_len > pos_buffer_len) {
-		throw error("byte_len ("+to_string(byte_len)+") larger than pos_buffer_len ("+to_string(pos_buffer_len)+")");
+		throw LOG_ERROR_EXCEPTION("byte_len ("+to_string(byte_len)+") larger than pos_buffer_len ("+to_string(pos_buffer_len)+")");
 	}
 
 	infile_pos.read(pos_buffer, byte_len);

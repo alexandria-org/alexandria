@@ -25,6 +25,7 @@ set(SRC_CLASSES
 	"src/api/ResultWithSnippet.cpp"
 	"src/api/LinkResult.cpp"
 	"src/api/DomainLinkResult.cpp"
+	"src/api/Worker.cpp"
 
 	"src/file/File.cpp"
 	"src/file/Transfer.cpp"

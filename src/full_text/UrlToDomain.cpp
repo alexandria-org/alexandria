@@ -75,7 +75,7 @@ void UrlToDomain::write(size_t indexer_id) {
 
 	ofstream outfile(file_name, ios::binary | ios::app);
 	if (!outfile.is_open()) {
-		throw error("Could not open url_to_domain file");
+		throw LOG_ERROR_EXCEPTION("Could not open url_to_domain file");
 	}
 
 	for (const auto &iter : m_url_to_domain) {
