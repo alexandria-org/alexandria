@@ -134,6 +134,15 @@ namespace FullText {
 		return Transfer::download_gz_files_to_disk(files_to_download);
 	}
 
+	bool is_indexed() {
+		// Check if main_index, link_index and domain_link_index has at least one url.
+		FullTextShard<FullTextRecord> shard1("main_index", 0);
+		FullTextShard<LinkFullTextRecord> shard2("link_index", 0);
+		FullTextShard<DomainLinkFullTextRecord> shard3("domain_link_index", 0);
+
+		return shard1.keys().size() > 0 && shard2.keys().size() > 0 && shard3.keys().size() > 0;
+	}
+
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
 		
 		TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -153,13 +162,6 @@ namespace FullText {
 		return Transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	void index_all_batches(const string &db_name, const string &hash_table_name) {
-		SubSystem *sub_system = new SubSystem();
-		for (const string &batch : Config::batches) {
-			index_batch(db_name, hash_table_name, batch, sub_system);
-		}
-	}
-
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
 
 		vector<string> files;
@@ -174,6 +176,56 @@ namespace FullText {
 			offset += files.size();
 		}
 
+	}
+
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system,
+		Worker::Status &status) {
+
+		vector<string> files;
+		const size_t limit = 15000;
+		size_t offset = 0;
+
+		while (true) {
+			vector<string> files = download_batch(batch, limit, offset);
+			if (files.size() == 0) break;
+			index_files(batch, db_name, hash_table_name, files, sub_system);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
+			status.items_indexed += files.size();
+		}
+	}
+
+	size_t total_urls_in_batches() {
+
+		size_t items = 0;
+		for (const string &batch : Config::batches) {
+			TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths);
+			items += warc_paths.size();
+		}
+		for (const string &batch : Config::link_batches) {
+			TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths);
+			items += warc_paths.size();
+		}
+
+		return items;
+	}
+
+	void index_all_batches(const string &db_name, const string &hash_table_name) {
+		SubSystem *sub_system = new SubSystem();
+		for (const string &batch : Config::batches) {
+			index_batch(db_name, hash_table_name, batch, sub_system);
+		}
+	}
+
+	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status) {
+		SubSystem *sub_system = new SubSystem();
+		for (const string &batch : Config::batches) {
+			index_batch(db_name, hash_table_name, batch, sub_system, status);
+		}
 	}
 
 	void index_single_batch(const string &db_name, const string &hash_table_name, const string &batch) {

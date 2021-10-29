@@ -62,5 +62,6 @@ namespace Profiler {
 	void report_reset();
 	void report_print();
 	double now_micro();
+	size_t timestamp();
 
 }

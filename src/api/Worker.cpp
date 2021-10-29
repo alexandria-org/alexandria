@@ -1,5 +1,21 @@
 
 #include "Worker.h"
+#include "fcgio.h"
+#include "config.h"
+#include "parser/URL.h"
+
+#include "post_processor/PostProcessor.h"
+#include "api/ApiResponse.h"
+#include "hash_table/HashTable.h"
+#include "full_text/FullText.h"
+#include "full_text/FullTextIndex.h"
+#include "full_text/FullTextRecord.h"
+#include "full_text/SearchMetric.h"
+#include "search_engine/SearchAllocation.h"
+#include "Api.h"
+#include "ApiStatusResponse.h"
+#include "link_index/LinkFullTextRecord.h"
+#include "system/Logger.h"
 
 namespace Worker {
 
@@ -85,5 +101,69 @@ namespace Worker {
 		SearchAllocation::delete_allocation(allocation);
 
 		return NULL;
+	}
+
+	void start_server() {
+		FCGX_Init();
+
+		int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
+		if (socket_id < 0) {
+			LOG_INFO("Could not open socket, exiting");
+			return;
+		}
+
+		pthread_t thread_ids[Config::worker_count];
+
+		Worker *workers = new Worker[Config::worker_count];
+		for (int i = 0; i < Config::worker_count; i++) {
+			workers[i].socket_id = socket_id;
+			workers[i].thread_id = i;
+
+			pthread_create(&thread_ids[i], NULL, run_worker, &workers[i]);
+		}
+
+		for (int i = 0; i < Config::worker_count; i++) {
+			pthread_join(thread_ids[i], NULL);
+		}
+	}
+
+	void status_server(Status *status) {
+		FCGX_Init();
+
+		int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
+		if (socket_id < 0) {
+			LOG_INFO("Could not open socket, exiting");
+			return;
+		}
+
+		FCGX_Request request;
+		FCGX_InitRequest(&request, socket_id, 0);
+
+		LOG_INFO("Status server has started...");
+
+		while (true) {
+
+			int accept_response = FCGX_Accept_r(&request);
+			if (accept_response < 0) {
+				break;
+			}
+
+			stringstream response_stream;
+
+			ApiStatusResponse api_response(*status);
+
+			response_stream << api_response;
+
+			output_response(request, response_stream);
+
+			FCGX_Finish_r(&request);
+		}
+	}
+
+	thread status_server_thread;
+	void start_status_server(Status &status) {
+
+		status_server_thread = std::move(thread(status_server, &status));
+
 	}
 }

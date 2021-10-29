@@ -29,32 +29,80 @@
 #include "config.h"
 #include "system/Logger.h"
 #include "api/Worker.h"
+#include "hash_table/HashTableHelper.h"
+#include "full_text/FullText.h"
+#include "system/Profiler.h"
 
-using namespace std;
+int main(int argc, const char **argv) {
 
-int main(void) {
+	Config::read_config("config.conf");
 
-	FCGX_Init();
-
-	int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
-	if (socket_id < 0) {
-		LOG_INFO("Could not open socket, exiting");
-		return 1;
+	if (argc == 1 && FullText::is_indexed()) {
+		Worker::start_server();
+		return 0;
 	}
 
-	pthread_t thread_ids[Config::worker_count];
+	if (argc == 1 && !FullText::is_indexed()) {
 
-	Worker::Worker *workers = new Worker::Worker[Config::worker_count];
-	for (int i = 0; i < Config::worker_count; i++) {
-		workers[i].socket_id = socket_id;
-		workers[i].thread_id = i;
+		Worker::Status status;
+		status.items = FullText::total_urls_in_batches();
+		cout << status.items << endl;
+		status.items_indexed = 10;
+		status.start_time = Profiler::timestamp();
+		Worker::start_status_server(status);
 
-		pthread_create(&thread_ids[i], NULL, Worker::run_worker, &workers[i]);
+		FullText::index_all_batches("main_index", "main_index", status);
+		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
+
+		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
+		HashTableHelper::optimize(shards);
+
+		return 0;
 	}
 
-	for (int i = 0; i < Config::worker_count; i++) {
-		pthread_join(thread_ids[i], NULL);
+	const string arg(argv[1]);
+
+	if (arg == "link") {
+
+		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
+
+		return 0;
 	}
+
+	if (arg == "optimize") {
+
+		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
+		HashTableHelper::optimize(shards);
+
+		return 0;
+	}
+
+	if (arg == "truncate_link") {
+
+		HashTableHelper::truncate("link_index");
+		HashTableHelper::truncate("domain_link_index");
+
+		FullText::truncate_index("link_index");
+		FullText::truncate_index("domain_link_index");
+
+		return 0;
+	}
+
+	if (arg == "truncate") {
+
+		FullText::truncate_url_to_domain("main_index");
+		FullText::truncate_index("main_index");
+		FullText::truncate_index("link_index");
+		FullText::truncate_index("domain_link_index");
+
+		HashTableHelper::truncate("main_index");
+		HashTableHelper::truncate("link_index");
+		HashTableHelper::truncate("domain_link_index");
+
+		return 0;
+	}
+
+	
 	
 	return 0;
 }

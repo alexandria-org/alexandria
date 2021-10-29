@@ -24,34 +24,22 @@
  * SOFTWARE.
  */
 
-#include <iterator>
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
+#pragma once
 
 #include <iostream>
-#include <memory>
-#include <unistd.h>
+#include <vector>
+#include "Worker.h"
 
-#include "config.h"
-#include "system/Profiler.h"
+class ApiStatusResponse {
 
+public:
+	ApiStatusResponse(Worker::Status &status);
+	~ApiStatusResponse();
 
-#include "full_text/FullText.h"
-#include "full_text/FullTextIndex.h"
-#include "full_text/FullTextIndexer.h"
-#include "full_text/FullTextIndexerRunner.h"
+	friend std::ostream &operator<<(std::ostream &os, const ApiStatusResponse &api_response);
 
-#include "link_index/LinkIndexer.h"
-#include "link_index/LinkIndexerRunner.h"
+private:
 
-using namespace std;
-using namespace Aws::Utils::Json;
+	std::string m_response;
 
-namespace io = boost::iostreams;
-
-int main(int argc, const char **argv) {
-
-	
-
-	return 0;
-}
+};

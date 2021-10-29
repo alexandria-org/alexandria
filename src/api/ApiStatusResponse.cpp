@@ -24,34 +24,38 @@
  * SOFTWARE.
  */
 
-#include <iterator>
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
-
-#include <iostream>
-#include <memory>
-#include <unistd.h>
-
-#include "config.h"
-#include "system/Profiler.h"
-
-
-#include "full_text/FullText.h"
-#include "full_text/FullTextIndex.h"
-#include "full_text/FullTextIndexer.h"
-#include "full_text/FullTextIndexerRunner.h"
-
-#include "link_index/LinkIndexer.h"
-#include "link_index/LinkIndexerRunner.h"
+#include "ApiStatusResponse.h"
+#include <aws/core/utils/json/JsonSerializer.h>
+#include <system/Profiler.h>
 
 using namespace std;
-using namespace Aws::Utils::Json;
 
-namespace io = boost::iostreams;
+ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 
-int main(int argc, const char **argv) {
+	Aws::Utils::Json::JsonValue message("{}");
 
-	
+	Aws::Utils::Json::JsonValue string;
+	Aws::Utils::Json::JsonValue json_number;
 
-	return 0;
+	message.WithObject("status", string.AsString("indexing"));
+	message.WithObject("progress", json_number.AsDouble((double)status.items_indexed / status.items));
+
+	double time_left = 0.0;
+	if (status.items_indexed > 0) {
+		time_left = (double)status.items * ((double)(Profiler::timestamp() - status.start_time)/status.items_indexed);
+	}
+	message.WithObject("time_left", json_number.AsDouble(time_left));
+
+	//m_response = message.View().WriteCompact();
+	m_response = message.View().WriteReadable();
 }
+
+ApiStatusResponse::~ApiStatusResponse() {
+
+}
+
+ostream &operator<<(ostream &os, const ApiStatusResponse &api_response) {
+	os << api_response.m_response;
+	return os;
+}
+

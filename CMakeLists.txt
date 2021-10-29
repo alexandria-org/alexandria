@@ -22,6 +22,7 @@ set(SRC_CLASSES
 	
 	"src/api/Api.cpp"
 	"src/api/ApiResponse.cpp"
+	"src/api/ApiStatusResponse.cpp"
 	"src/api/ResultWithSnippet.cpp"
 	"src/api/LinkResult.cpp"
 	"src/api/DomainLinkResult.cpp"

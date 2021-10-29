@@ -35,10 +35,12 @@
 #include "UrlToDomain.h"
 #include "FullTextRecord.h"
 #include "FullTextIndex.h"
-
-using namespace std;
+#include "api/Worker.h"
 
 namespace FullText {
+
+	using std::string;
+	using std::vector;
 
 	size_t num_shards();
 
@@ -51,8 +53,12 @@ namespace FullText {
 	vector<string> make_partition_from_files(const vector<string> &files, size_t partition, size_t max_partitions);
 
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset);
+	bool is_indexed();
+	size_t total_urls_in_batches();
+
 	void index_all_batches(const string &db_name, const string &hash_table_name);
-	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system);
+	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status);
+
 	void index_single_batch(const string &db_name, const string &domain_db_name, const string &batch);
 	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 			const string &domain_hash_table_name);
@@ -60,6 +66,7 @@ namespace FullText {
 		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const string &batch);
+
 	bool should_index_url(const URL &url, size_t partition);
 	bool should_index_hash(size_t hash, size_t partition);
 	bool should_index_link(const Link &link, size_t partition);
