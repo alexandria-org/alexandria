@@ -33,6 +33,12 @@ _mkpart() {
 	mount ${disc}p2 $mountpoint2
 	mount ${disc}p3 $mountpoint3
 	mount ${disc}p4 $mountpoint4
+
+	echo "" >> /etc/fstab
+	echo "${disc}p1 $mountpoint1 ext4 noatime,nodiratime,barrier=0 0 0" >> /etc/fstab
+	echo "${disc}p2 $mountpoint2 ext4 noatime,nodiratime,barrier=0 0 0" >> /etc/fstab
+	echo "${disc}p3 $mountpoint3 ext4 noatime,nodiratime,barrier=0 0 0" >> /etc/fstab
+	echo "${disc}p4 $mountpoint4 ext4 noatime,nodiratime,barrier=0 0 0" >> /etc/fstab
 }
 
 mkdir /mnt/0
@@ -41,4 +47,13 @@ mkdir /mnt/2
 mkdir /mnt/3
 
 _mkpart /dev/nvme1n1 /mnt/4 /mnt/5 /mnt/6 /mnt/7
+
+for shard in $(seq 0 7); do
+	mkdir "/mnt/$shard/input";
+	mkdir "/mnt/$shard/output";
+	mkdir "/mnt/$shard/upload";
+	mkdir "/mnt/$shard/hash_table";
+	mkdir "/mnt/$shard/full_text";
+	mkdir "/mnt/$shard/tmp";
+done
 
