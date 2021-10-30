@@ -39,6 +39,7 @@ ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 
 	message.WithObject("status", string.AsString("indexing"));
 	message.WithObject("progress", json_number.AsDouble((double)status.items_indexed / status.items));
+	message.WithObject("items_indexed", json_number.AsInt64(status.items_indexed));
 
 	double time_left = 0.0;
 	if (status.items_indexed > 0) {

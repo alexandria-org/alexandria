@@ -23,6 +23,11 @@ namespace Config {
 		link_batches.clear();
 
 		ifstream in(config_file);
+
+		if (!in.is_open()) {
+			throw runtime_error("Could not find config file " + config_file);
+		}
+
 		string line;
 		while (getline(in, line)) {
 			size_t comment_pos = line.find("#");

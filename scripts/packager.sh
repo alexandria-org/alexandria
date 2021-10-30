@@ -151,23 +151,13 @@ fi
 bootstrap_script_server=$(cat <<EOF
 #!/bin/bash
 set -euo pipefail
-ALEXANDRIA_LIVE=1 ./lib/$PKG_LD --library-path ./lib ./bin/server
-EOF
-)
-
-bootstrap_script_indexer=$(cat <<EOF
-#!/bin/bash
-set -euo pipefail
-ALEXANDRIA_LIVE=1 ./lib/$PKG_LD --library-path ./lib ./bin/indexer
+ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf ./lib/$PKG_LD --library-path ./lib ./bin/server
 EOF
 )
 
 cp "$PKG_BIN_PATH/server" "$PKG_DIR/bin"
-cp "$PKG_BIN_PATH/cc_indexer" "$PKG_DIR/bin"
 echo -e "$bootstrap_script_server" > "$PKG_DIR/server"
-echo -e "$bootstrap_script_indexer" > "$PKG_DIR/indexer"
 chmod +x "$PKG_DIR/server"
-chmod +x "$PKG_DIR/indexer"
 # some shenanigans to create the right layout in the zip file without extraneous directories
 pushd "$PKG_DIR" > /dev/null
 zip --symlinks --recurse-paths "$PKG_BIN_FILENAME".zip -- *

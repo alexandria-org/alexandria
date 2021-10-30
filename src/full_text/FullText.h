@@ -60,10 +60,17 @@ namespace FullText {
 	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status);
 
 	void index_single_batch(const string &db_name, const string &domain_db_name, const string &batch);
+
 	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 			const string &domain_hash_table_name);
+	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+			const string &domain_hash_table_name, Worker::Status &status);
+
 	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
 		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status);
+
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const string &batch);
 

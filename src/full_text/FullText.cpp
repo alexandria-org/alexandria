@@ -247,6 +247,19 @@ namespace FullText {
 			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
 		}
 	}
+
+	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
+			const string &domain_hash_table_name, Worker::Status &status) {
+
+		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		SubSystem *sub_system = new SubSystem();
+
+		url_to_domain->read();
+
+		for (const string &batch : Config::link_batches) {
+			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain, status);
+		}
+	}
 	
 	void index_link_files(const string &batch, const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const vector<string> &files, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
@@ -268,6 +281,23 @@ namespace FullText {
 			index_link_files(batch, db_name, domain_db_name, hash_table_name, domain_hash_table_name, files, sub_system, url_to_domain);
 			Transfer::delete_downloaded_files(files);
 			offset += files.size();
+		}
+	}
+
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status) {
+
+		vector<string> files;
+		const size_t limit = 15000;
+		size_t offset = 0;
+
+		while (true) {
+			vector<string> files = download_link_batch(batch, limit, offset);
+			if (files.size() == 0) break;
+			index_link_files(batch, db_name, domain_db_name, hash_table_name, domain_hash_table_name, files, sub_system, url_to_domain);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
+			status.items_indexed += files.size();
 		}
 
 	}

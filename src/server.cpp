@@ -35,7 +35,11 @@
 
 int main(int argc, const char **argv) {
 
-	Config::read_config("config.conf");
+	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
+		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
+	} else {
+		Config::read_config("config.conf");
+	}
 
 	if (argc == 1 && FullText::is_indexed()) {
 		Worker::start_server();
@@ -46,13 +50,12 @@ int main(int argc, const char **argv) {
 
 		Worker::Status status;
 		status.items = FullText::total_urls_in_batches();
-		cout << status.items << endl;
-		status.items_indexed = 10;
+		status.items_indexed = 0;
 		status.start_time = Profiler::timestamp();
 		Worker::start_status_server(status);
 
 		FullText::index_all_batches("main_index", "main_index", status);
-		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
+		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index", status);
 
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
 		HashTableHelper::optimize(shards);
