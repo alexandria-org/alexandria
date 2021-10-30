@@ -35,6 +35,8 @@
 
 int main(int argc, const char **argv) {
 
+	Logger::start_logger_thread();
+
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
