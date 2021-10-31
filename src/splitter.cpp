@@ -1,9 +1,23 @@
 
 #include <iostream>
 #include <vector>
-#include "file/TsvFile.h"
+#include <fstream>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace std;
+
+void splitter(const string &warc_path) {
+	ifstream infile(warc_path);
+	boost::iostreams::filtering_istream decompress_stream;
+	decompress_stream.push(boost::iostreams::gzip_decompressor());
+	decompress_stream.push(infile);
+
+	string line;
+	while (getline(decompress_stream, line)) {
+		const string url = line.substr(0, line.find("\t"));
+	}
+}
 
 int main() {
 
@@ -12,14 +26,29 @@ int main() {
 		"CC-MAIN-2021-25",
 	};
 
+	ThreadPool pool(12);
+
 	for (const string &batch : batches) {
-		TsvFile warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 
-		vector<string> warc_paths;
-		warc_paths_file.read_column_into(0, warc_paths);
+		const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
 
-		for (const string &file : warc_paths) {
-			cout << file << endl;
+		ifstream infile(file_name);
+
+		boost::iostreams::filtering_istream decompress_stream;
+		decompress_stream.push(boost::iostreams::gzip_decompressor());
+		decompress_stream.push(infile);
+
+		string line;
+		while (getline(decompress_stream, line)) {
+			string warc_path = string("/mnt/") + line;
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".gz");
+			}
+
+			pool.enqueue([warc_path]() {
+				splitter(warc_path);
+			});
 		}
 	}
 
