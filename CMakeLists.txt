@@ -89,8 +89,8 @@ add_executable(cc_parser
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
-add_executable(cc_indexer
-	"src/indexer.cpp"
+add_executable(splitter
+	"src/splitter.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -113,12 +113,18 @@ target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
 target_link_libraries(cc_parser PUBLIC
 	AWS::aws-lambda-runtime 
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-target_link_libraries(cc_indexer PUBLIC
+target_link_libraries(splitter PUBLIC
 	AWS::aws-lambda-runtime 
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(run_tests PUBLIC
 	AWS::aws-lambda-runtime 
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(server PUBLIC
 	AWS::aws-lambda-runtime 
@@ -127,5 +133,4 @@ target_link_libraries(server PUBLIC
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 
 aws_lambda_package_target(${PROJECT_NAME})
-aws_lambda_package_target(cc_indexer)
 
