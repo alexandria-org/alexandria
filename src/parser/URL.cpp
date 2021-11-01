@@ -60,11 +60,7 @@ string URL::str() const {
 }
 
 uint64_t URL::hash() const {
-	//return m_hasher(m_host + m_path);
-	const size_t host_bits = 20;
-	const uint64_t hash = m_hasher(m_host + m_path + m_query);
-	const uint64_t host_part = (host_hash() >> (64 - host_bits)) << (64 - host_bits);
-	return (hash >> host_bits) | host_part;
+	return m_hasher(m_host + m_path + m_query);
 }
 
 uint64_t URL::host_hash() const {
@@ -72,17 +68,11 @@ uint64_t URL::host_hash() const {
 }
 
 uint64_t URL::link_hash(const URL &target_url, const string &link_text) const {
-	const size_t host_bits = 20;
-	const uint64_t hash = m_hasher(host_top_domain() + target_url.str() + link_text);
-	const uint64_t host_part = (target_url.host_hash() >> (64 - host_bits)) << (64 - host_bits);
-	return (hash >> host_bits) | host_part;
+	return m_hasher(host_top_domain() + target_url.str() + link_text);
 }
 
 uint64_t URL::domain_link_hash(const URL &target_url, const string &link_text) const {
-	const size_t host_bits = 20;
-	const uint64_t hash = m_hasher(host_top_domain() + target_url.host() + link_text);
-	const uint64_t host_part = (target_url.host_hash() >> (64 - host_bits)) << (64 - host_bits);
-	return (hash >> host_bits) | host_part;
+	return m_hasher(host_top_domain() + target_url.host() + link_text);
 }
 
 string URL::host() const {

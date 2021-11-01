@@ -56,6 +56,13 @@ namespace FullText {
 	bool is_indexed();
 	size_t total_urls_in_batches();
 
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system);
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system, Worker::Status &status);
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status);
+
 	void index_all_batches(const string &db_name, const string &hash_table_name);
 	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status);
 

@@ -88,13 +88,8 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 	HashTableHelper::truncate("test_link_index");
 	HashTableHelper::truncate("test_domain_link_index");
 
-	Config::nodes_in_cluster = 2;
+	Config::nodes_in_cluster = 1;
 	Config::node_id = 0;
-
-	URL url("http://url1.com");
-
-	// url8.com should be in node 0
-	// url1-7.com should be in node 1
 
 	{
 		// Index full text

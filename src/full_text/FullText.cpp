@@ -136,11 +136,10 @@ namespace FullText {
 
 	bool is_indexed() {
 		// Check if main_index, link_index and domain_link_index has at least one url.
-		FullTextShard<FullTextRecord> shard1("main_index", 0);
-		FullTextShard<LinkFullTextRecord> shard2("link_index", 0);
-		FullTextShard<DomainLinkFullTextRecord> shard3("domain_link_index", 0);
+		FullTextShard<FullTextRecord> shard1("main_index_0", 0);
+		cout << shard1.filename() << endl;
 
-		return shard1.keys().size() > 0 && shard2.keys().size() > 0 && shard3.keys().size() > 0;
+		return shard1.keys().size() > 0;
 	}
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
