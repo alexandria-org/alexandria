@@ -312,28 +312,32 @@ namespace FullText {
 		index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
 	}
 
+	size_t url_to_node(const URL &url) {
+		return url.host_hash() % Config::nodes_in_cluster;
+	}
+
+	// Returns true if this url belongs on this node.
+	bool should_index_url(const URL &url) {
+		return url_to_node(url) == Config::node_id;
+	}
+
+	// Returns true if this url belongs on this node and in this partition.
 	bool should_index_url(const URL &url, size_t partition) {
-		return should_index_hash(url.hash(), partition);
+		return url_to_node(url) == Config::node_id && (url.hash() % Config::ft_num_partitions) == partition;
 	}
 
-	bool should_index_hash(size_t hash, size_t partition) {
-		size_t mod = hash % (Config::nodes_in_cluster * Config::ft_num_partitions);
-		bool in_partition = (mod % Config::ft_num_partitions) == partition;
-		bool in_node = (mod / Config::ft_num_partitions) == Config::node_id;
-		return in_partition && in_node;
+	size_t link_to_node(const Link &link) {
+		return link.target_url().host_hash() % Config::nodes_in_cluster;
 	}
 
-	size_t hash_to_node(size_t hash) {
-		size_t mod = hash % (Config::nodes_in_cluster * Config::ft_num_partitions);
-		return mod / Config::ft_num_partitions;
+	// Returns true if this link belongs on this node.
+	bool should_index_link(const Link &link) {
+		return link_to_node(link) == Config::node_id;
 	}
 
+	// Returns true if this link belongs on this node and in this partition.
 	bool should_index_link(const Link &link, size_t partition) {
-		return true;
-	}
-
-	bool should_index_link_hash(size_t hash, size_t partition) {
-		return (hash % 8) == partition;
+		return link_to_node(link) == Config::node_id && (link.target_url().hash() % Config::ft_num_partitions) == partition;
 	}
 
 }

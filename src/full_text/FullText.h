@@ -81,11 +81,13 @@ namespace FullText {
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const string &batch);
 
+	size_t url_to_node(const URL &url);
+	bool should_index_url(const URL &url);
 	bool should_index_url(const URL &url, size_t partition);
-	bool should_index_hash(size_t hash, size_t partition);
-	size_t hash_to_node(size_t hash);
+
+	size_t link_to_node(const Link &link);
+	bool should_index_link(const Link &link);
 	bool should_index_link(const Link &link, size_t partition);
-	bool should_index_link_hash(size_t hash, size_t partition);
 
 	template<typename DataRecord>
 	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name) {

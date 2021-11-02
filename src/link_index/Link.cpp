@@ -30,6 +30,19 @@ Link::Link() {
 
 }
 
+Link::Link(const string &standard_link_data) {
+		vector<string> col_values;
+		boost::algorithm::split(col_values, standard_link_data, boost::is_any_of("\t"));
+
+		m_source_url = URL(col_values[0], col_values[1]);
+		m_target_url = URL(col_values[2], col_values[3]);
+		m_link_text = col_values[4].substr(0, 1000);
+
+		m_target_host_hash = m_target_url.host_hash();
+		m_source_harmonic = 0;
+		m_target_harmonic = 0;
+}
+
 Link::Link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic)
 :
 	m_source_url(source_url),
