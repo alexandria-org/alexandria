@@ -86,3 +86,10 @@ void UrlToDomain::write(size_t indexer_id) {
 	outfile.close();
 }
 
+void UrlToDomain::truncate() {
+	for (size_t i = 0; i < 8; i++) {
+		const string file_name = "/mnt/"+(to_string(i))+"/full_text/url_to_domain_"+m_db_name+".fti";
+		ofstream outfile(file_name, ios::trunc);
+	}
+}
+

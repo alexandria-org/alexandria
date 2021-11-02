@@ -41,6 +41,7 @@ public:
 	void add_url(uint64_t url_hash, uint64_t domain_hash);
 	void read();
 	void write(size_t indexer_id);
+	void truncate();
 
 	size_t size() const {
 		return m_url_to_domain.size();

@@ -43,12 +43,13 @@ int main(int argc, const char **argv) {
 		Config::read_config("config.conf");
 	}
 
-	if (argc == 1 && FullText::is_indexed()) {
-		Worker::start_server();
-		return 0;
-	}
+	const string arg(argc > 1 ? argv[1] : "");
 
-	if (argc == 1 && !FullText::is_indexed()) {
+	if (argc == 1 && FullText::is_indexed()) {
+
+		Worker::start_server();
+
+	} else if (argc == 1 && !FullText::is_indexed()) {
 
 		Worker::Status status;
 		status.items = FullText::total_urls_in_batches();
@@ -62,27 +63,16 @@ int main(int argc, const char **argv) {
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
 		HashTableHelper::optimize(shards);
 
-		return 0;
-	}
-
-	const string arg(argv[1]);
-
-	if (arg == "link") {
+	} else if (arg == "link") {
 
 		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
 
-		return 0;
-	}
-
-	if (arg == "optimize") {
+	} else if (arg == "optimize") {
 
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
 		HashTableHelper::optimize(shards);
 
-		return 0;
-	}
-
-	if (arg == "truncate_link") {
+	} else if (arg == "truncate_link") {
 
 		HashTableHelper::truncate("link_index");
 		HashTableHelper::truncate("domain_link_index");
@@ -90,10 +80,10 @@ int main(int argc, const char **argv) {
 		FullText::truncate_index("link_index");
 		FullText::truncate_index("domain_link_index");
 
-		return 0;
-	}
+	} else if (arg == "truncate") {
 
-	if (arg == "truncate") {
+		UrlToDomain url_to_domain("main_index");
+		url_to_domain.truncate();
 
 		FullText::truncate_url_to_domain("main_index");
 		FullText::truncate_index("main_index");
@@ -103,11 +93,9 @@ int main(int argc, const char **argv) {
 		HashTableHelper::truncate("main_index");
 		HashTableHelper::truncate("link_index");
 		HashTableHelper::truncate("domain_link_index");
-
-		return 0;
 	}
 
-	
+	Logger::join_logger_thread();
 	
 	return 0;
 }
