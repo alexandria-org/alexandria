@@ -31,6 +31,7 @@
 #include <math.h>
 #include "system/Logger.h"
 #include "full_text/FullText.h"
+#include "algorithm/Algorithm.h"
 
 LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 	const string &domain_hash_table_name, const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain)
@@ -50,7 +51,7 @@ void LinkIndexerRunner::run(const vector<string> local_files) {
 	std::vector<std::future<string>> results;
 
 	vector<vector<string>> chunks;
-	vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
+	Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
 
 	int id = 1;
 	for (const vector<string> &chunk : chunks) {

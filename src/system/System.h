@@ -28,12 +28,11 @@
 
 #include <iostream>
 
-using namespace std;
-
 namespace System {
 
 	bool is_dev();
-	string domain_index_filename();
-	string dictionary_filename();
+	std::string domain_index_filename();
+	std::string dictionary_filename();
+	size_t thread_id();
 
 }

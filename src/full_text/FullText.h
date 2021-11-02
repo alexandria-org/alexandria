@@ -83,6 +83,7 @@ namespace FullText {
 
 	bool should_index_url(const URL &url, size_t partition);
 	bool should_index_hash(size_t hash, size_t partition);
+	size_t hash_to_node(size_t hash);
 	bool should_index_link(const Link &link, size_t partition);
 	bool should_index_link_hash(size_t hash, size_t partition);
 

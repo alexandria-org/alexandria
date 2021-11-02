@@ -25,6 +25,9 @@
  */
 
 #include "System.h"
+#include <thread>
+
+using namespace std;
 
 namespace System {
 
@@ -47,6 +50,10 @@ namespace System {
 			return "/dev_files/dictionary.tsv";
 		}
 		return "/files/dictionary.tsv";
+	}
+
+	size_t thread_id() {
+		return hash<thread::id>{}(this_thread::get_id());
 	}
 
 }

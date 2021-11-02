@@ -30,6 +30,7 @@
 #include "FullTextIndexer.h"
 #include <math.h>
 #include "system/Logger.h"
+#include "algorithm/Algorithm.h"
 
 FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system)
 : m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
@@ -66,7 +67,7 @@ void FullTextIndexerRunner::run(const vector<string> local_files, size_t partiti
 	std::vector<std::future<string>> results;
 
 	vector<vector<string>> chunks;
-	vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
+	Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
 
 	int id = 1;
 	for (const vector<string> &chunk : chunks) {

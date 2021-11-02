@@ -323,6 +323,11 @@ namespace FullText {
 		return in_partition && in_node;
 	}
 
+	size_t hash_to_node(size_t hash) {
+		size_t mod = hash % (Config::nodes_in_cluster * Config::ft_num_partitions);
+		return mod / Config::ft_num_partitions;
+	}
+
 	bool should_index_link(const Link &link, size_t partition) {
 		return true;
 	}

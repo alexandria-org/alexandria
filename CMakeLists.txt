@@ -74,6 +74,8 @@ set(SRC_CLASSES
 	"src/hash/Hash.cpp"
 
 	"src/config.cpp"
+
+	"src/algorithm/Algorithm.cpp"
 )
 
 set(SRC_COMMON
