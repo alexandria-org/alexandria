@@ -6,6 +6,7 @@
 #include <thread>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/filesystem.hpp>
 #include "full_text/FullText.h"
 #include "algorithm/Algorithm.h"
 #include "parser/URL.h"
@@ -14,9 +15,9 @@
 
 using namespace std;
 
-// File structure is /mnt/crawl-data/ALEXANDRIA-NODE-[node_id]/files/thread_id-file_index.gz
+// File structure is /mnt/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
 string write_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
-	const string filename = "crawl-data/ALEXANDRIA-NODE-" + to_string(node_id) + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
+	const string filename = "crawl-data/NODE-" + to_string(node_id) + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
 	ofstream outfile("/mnt/" + filename, ios::trunc | ios::binary);
 
 	boost::iostreams::filtering_ostream compress_stream;
@@ -30,9 +31,9 @@ string write_cache(size_t file_index, size_t thread_id, vector<string> &lines, s
 	return filename;
 }
 
-// File structure is /mnt/crawl-data/ALEXANDRIA-NODE-[node_id]/files/thread_id-file_index.gz
+// File structure is /mnt/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
 string write_link_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
-	const string filename = "crawl-data/ALEXANDRIA-LINK-" + to_string(node_id) + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
+	const string filename = "crawl-data/LINK-" + to_string(node_id) + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
 	ofstream outfile("/mnt/" + filename, ios::trunc | ios::binary);
 
 	boost::iostreams::filtering_ostream compress_stream;
@@ -47,8 +48,9 @@ string write_link_cache(size_t file_index, size_t thread_id, vector<string> &lin
 }
 
 void splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
+	return;
 
-	const size_t max_cache_size = 250000;
+	const size_t max_cache_size = 150000;
 	size_t thread_id = System::thread_id();
 	size_t file_index = 1;
 
@@ -79,7 +81,7 @@ void splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 
 	write_file_mutex.lock();
 	for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
-		const string filename = "/mnt/crawl-data/ALEXANDRIA-NODE-" + to_string(node_id) + "/warc.paths";
+		const string filename = "/mnt/crawl-data/NODE-" + to_string(node_id) + "/warc.paths";
 		ofstream outfile(filename, ios::app);
 		for (const string &file : file_names[node_id]) {
 			outfile << file << "\n";
@@ -90,7 +92,7 @@ void splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 
 void link_splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 
-	const size_t max_cache_size = 250000;
+	const size_t max_cache_size = 1000000;
 	size_t thread_id = System::thread_id();
 	size_t file_index = 1;
 
@@ -122,7 +124,7 @@ void link_splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 
 	write_file_mutex.lock();
 	for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
-		const string filename = "/mnt/crawl-data/ALEXANDRIA-LINK-" + to_string(node_id) + "/warc.paths";
+		const string filename = "/mnt/crawl-data/LINK-" + to_string(node_id) + "/warc.paths";
 		ofstream outfile(filename, ios::app);
 		for (const string &file : file_names[node_id]) {
 			outfile << file << "\n";
@@ -134,6 +136,16 @@ void link_splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 int main() {
 
 	Config::read_config("/etc/alexandria.conf");
+
+	// Create directories.
+	for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
+		boost::filesystem::create_directories("/mnt/crawl-data/NODE-" + to_string(node_id));
+		boost::filesystem::create_directories("/mnt/crawl-data/NODE-" + to_string(node_id) + "/files");
+	}
+	for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
+		boost::filesystem::create_directories("/mnt/crawl-data/LINK-" + to_string(node_id));
+		boost::filesystem::create_directories("/mnt/crawl-data/LINK-" + to_string(node_id) + "/files");
+	}
 
 	const size_t num_threads = 12;
 
