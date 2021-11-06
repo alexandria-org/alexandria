@@ -60,7 +60,7 @@ class FullTextShard {
 
 public:
 
-	FullTextShard(const string &db_name, size_t shard_id);
+	FullTextShard(const string &db_name, size_t shard_id, size_t partition);
 	~FullTextShard();
 
 	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
@@ -81,6 +81,7 @@ private:
 	string m_db_name;
 	string m_filename;
 	size_t m_shard_id;
+	size_t m_partition;
 
 	// These variables always represent what is in the file.
 	vector<uint64_t> m_keys;
@@ -98,8 +99,8 @@ private:
 };
 
 template<typename DataRecord>
-FullTextShard<DataRecord>::FullTextShard(const string &db_name, size_t shard)
-: m_shard_id(shard), m_db_name(db_name), m_keys_read(false) {
+FullTextShard<DataRecord>::FullTextShard(const string &db_name, size_t shard, size_t partition)
+: m_shard_id(shard), m_db_name(db_name), m_keys_read(false), m_partition(partition) {
 	m_filename = "/mnt/"+mountpoint()+"/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 	read_keys();
 }
@@ -284,8 +285,8 @@ vector<uint64_t> FullTextShard<DataRecord>::keys() {
 
 template<typename DataRecord>
 string FullTextShard<DataRecord>::mountpoint() const {
-	hash<string> hasher;
-	return to_string((hasher(m_db_name) + m_shard_id) % 8);
+	if (m_partition < 1) return to_string(m_shard_id % 4);
+	return to_string((m_shard_id % 4) + 4);
 }
 
 template<typename DataRecord>

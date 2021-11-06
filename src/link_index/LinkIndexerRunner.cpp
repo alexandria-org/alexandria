@@ -214,13 +214,13 @@ string LinkIndexerRunner::run_merge_thread(size_t shard_id) {
 
 		{
 			const string db_name = m_db_name + "_" + to_string(partition);
-			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id);
+			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id, partition);
 			shard.merge();
 		}
 
 		{
 			const string db_name = m_domain_db_name + "_" + to_string(partition);
-			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id);
+			FullTextShardBuilder<LinkFullTextRecord> shard(db_name, shard_id, partition);
 			shard.merge();
 		}
 	}

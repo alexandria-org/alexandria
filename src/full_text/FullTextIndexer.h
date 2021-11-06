@@ -51,7 +51,7 @@ class FullTextIndexer {
 
 public:
 
-	FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	FullTextIndexer(int id, const string &db_name, size_t partition, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~FullTextIndexer();
 
 	size_t add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,

@@ -51,7 +51,7 @@ namespace FullText {
 
 			for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 				FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-					new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
+					new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id, partition);
 				shard_builder->truncate();
 				delete shard_builder;
 			}
@@ -136,7 +136,7 @@ namespace FullText {
 
 	bool is_indexed() {
 		// Check if main_index, link_index and domain_link_index has at least one url.
-		FullTextShard<FullTextRecord> shard1("main_index_0", 0);
+		FullTextShard<FullTextRecord> shard1("main_index_0", 0, 0);
 		cout << shard1.filename() << endl;
 
 		return shard1.keys().size() > 0;

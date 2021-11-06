@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(segments) {
 	unsigned long long initial_results_per_section = Config::ft_max_results_per_section;
 	Config::nodes_in_cluster = 1;
 	Config::node_id = 0;
-	Config::ft_max_results_per_section = 10;
+	Config::ft_max_results_per_section = 20;
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 

@@ -38,7 +38,8 @@ LinkIndexer::LinkIndexer(int id, const string &db_name, const SubSystem *sub_sys
 	for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 			FullTextShardBuilder<LinkFullTextRecord> *shard_builder =
-				new FullTextShardBuilder<LinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, Config::li_cached_bytes_per_shard);
+				new FullTextShardBuilder<LinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, partition,
+					Config::li_cached_bytes_per_shard);
 			m_shards[partition].push_back(shard_builder);
 		}
 	}

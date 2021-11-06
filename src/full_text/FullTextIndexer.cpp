@@ -30,13 +30,13 @@
 #include "text/Text.h"
 #include <math.h>
 
-FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
+FullTextIndexer::FullTextIndexer(int id, const string &db_name, size_t partition, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
 	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
+			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id, partition);
 		m_shards.push_back(shard_builder);
 	}
 }

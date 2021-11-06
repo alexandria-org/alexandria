@@ -94,7 +94,7 @@ namespace FullText {
 
 		vector<FullTextIndex<DataRecord> *> index_array;
 		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + to_string(partition)));
+			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + to_string(partition), partition));
 		}
 
 		return index_array;

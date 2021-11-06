@@ -61,7 +61,7 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 
 void FullTextIndexerRunner::run(const vector<string> local_files, size_t partition) {
 
-	truncate_cache();
+	truncate_cache(partition);
 
 	ThreadPool pool(Config::ft_num_threads_indexing);
 	std::vector<std::future<string>> results;
@@ -86,11 +86,11 @@ void FullTextIndexerRunner::run(const vector<string> local_files, size_t partiti
 		result.get();
 	}
 
-	merge();
-	sort();
+	merge(partition);
+	sort(partition);
 }
 
-void FullTextIndexerRunner::merge() {
+void FullTextIndexerRunner::merge(size_t partition) {
 	LOG_INFO("Merging...");
 
 	const size_t merge_batch_size = 500;
@@ -104,8 +104,8 @@ void FullTextIndexerRunner::merge() {
 		while (shard_id < Config::ft_num_shards && merge_results.size() < merge_batch_size) {
 
 			merge_results.emplace_back(
-				merge_pool.enqueue([this, shard_id] {
-					return run_merge_thread(shard_id);
+				merge_pool.enqueue([this, shard_id, partition] {
+					return run_merge_thread(shard_id, partition);
 				})
 			);
 
@@ -120,7 +120,7 @@ void FullTextIndexerRunner::merge() {
 	}
 }
 
-void FullTextIndexerRunner::sort() {
+void FullTextIndexerRunner::sort(size_t partition) {
 	LOG_INFO("Sorting...");
 
 	// Loop over hash table shards and merge them.
@@ -131,94 +131,14 @@ void FullTextIndexerRunner::sort() {
 	}
 }
 
-void FullTextIndexerRunner::truncate_cache() {
+void FullTextIndexerRunner::truncate_cache(size_t partition) {
 	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id);
+			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id, partition);
 		shard_builder->truncate_cache_files();
 		delete shard_builder;
 	}
 
-}
-
-void FullTextIndexerRunner::truncate() {
-	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
-		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<struct FullTextRecord>(m_db_name, shard_id);
-		shard_builder->truncate();
-		delete shard_builder;
-	}
-
-}
-
-string FullTextIndexerRunner::run_merge_large_thread() {
-
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(1, m_db_name, m_sub_system, &url_to_domain);
-
-	while (m_run_merge_large) {
-		LOG_INFO("merged " + to_string(indexer.write_large(m_full_text_mutexes)) + " large files");
-		sleep(1);
-	}
-
-	return "done";
-}
-
-string FullTextIndexerRunner::run_index_thread(const vector<string> &warc_paths, int id, size_t partition) {
-
-	vector<HashTableShardBuilder *> shard_builders;
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
-	}
-
-	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(id, m_db_name, m_sub_system, &url_to_domain);
-	size_t idx = 1;
-	for (const string &raw_warc_path : warc_paths) {
-		stringstream stream;
-
-		string warc_path = raw_warc_path;
-		const size_t pos = warc_path.find(".warc.gz");
-		if (pos != string::npos) {
-			warc_path.replace(pos, 8, ".gz");
-		}
-
-		int error;
-		Transfer::gz_file_to_stream(warc_path, stream, error);
-		if (error == Transfer::OK) {
-			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, partition, m_cc_batch);
-			indexer.write_cache(m_full_text_mutexes);
-		}
-
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			if (shard_builders[i]->full()) {
-				m_hash_table_mutexes[i].lock();
-				shard_builders[i]->write();
-				m_hash_table_mutexes[i].unlock();
-			}
-		}
-
-		LOG_INFO("Done " + to_string(idx) + " out of " + to_string(warc_paths.size()) + " for " + m_db_name);
-
-		idx++;
-	}
-	indexer.flush_cache(m_full_text_mutexes);
-
-	for (size_t i = 0; i < Config::ht_num_shards; i++) {
-		m_hash_table_mutexes[i].lock();
-		shard_builders[i]->write();
-		m_hash_table_mutexes[i].unlock();
-	}
-
-	m_write_url_to_domain_mutex.lock();
-	indexer.write_url_to_domain();
-	m_write_url_to_domain_mutex.unlock();
-
-	for (HashTableShardBuilder *shard_builder : shard_builders) {
-		delete shard_builder;
-	}
-
-	return "";
 }
 
 string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition) {
@@ -229,7 +149,7 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 	}
 
 	UrlToDomain url_to_domain("main_index");
-	FullTextIndexer indexer(id, m_db_name, m_sub_system, &url_to_domain);
+	FullTextIndexer indexer(id, m_db_name, partition, m_sub_system, &url_to_domain);
 	size_t idx = 1;
 	for (const string &local_file : local_files) {
 
@@ -273,9 +193,9 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 	return "";
 }
 
-string FullTextIndexerRunner::run_merge_thread(size_t shard_id) {
+string FullTextIndexerRunner::run_merge_thread(size_t shard_id, size_t partition) {
 
-	FullTextShardBuilder<struct FullTextRecord> shard(m_db_name, shard_id);
+	FullTextShardBuilder<struct FullTextRecord> shard(m_db_name, shard_id, partition);
 	shard.merge();
 
 	return "";

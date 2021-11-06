@@ -38,7 +38,7 @@ DomainLinkIndexer::DomainLinkIndexer(int id, const string &db_name, const SubSys
 	for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 			FullTextShardBuilder<DomainLinkFullTextRecord> *shard_builder =
-				new FullTextShardBuilder<DomainLinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id,
+				new FullTextShardBuilder<DomainLinkFullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, partition,
 					Config::li_cached_bytes_per_shard);
 			m_shards[partition].push_back(shard_builder);
 		}

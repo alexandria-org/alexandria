@@ -50,8 +50,8 @@ class FullTextShardBuilder {
 
 public:
 
-	FullTextShardBuilder(const string &db_name, size_t shard_id);
-	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t bytes_per_shard);
+	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition);
+	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard);
 	~FullTextShardBuilder();
 
 	void add(uint64_t key, const DataRecord &record);
@@ -83,6 +83,7 @@ private:
 
 	const string m_db_name;
 	const size_t m_shard_id;
+	const size_t m_partition;
 
 	mutable ifstream m_reader;
 	ofstream m_writer;
@@ -105,16 +106,16 @@ private:
 };
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)) {
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition)
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
 	m_records.push_back(new DataRecord[m_max_cache_size]);
 	m_keys.push_back(new uint64_t[m_max_cache_size]);
 	m_records_position = 0;
 }
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t bytes_per_shard)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)) {
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard)
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
 	m_records.push_back(new DataRecord[m_max_cache_size]);
 	m_keys.push_back(new uint64_t[m_max_cache_size]);
 	m_records_position = 0;
@@ -581,8 +582,8 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 
 template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::mountpoint() const {
-	hash<string> hasher;
-	return to_string((hasher(m_db_name) + m_shard_id) % 8);
+	if (m_partition < 1) return to_string(m_shard_id % 4);
+	return to_string((m_shard_id % 4) + 4);
 }
 
 template<typename DataRecord>

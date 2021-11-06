@@ -14,7 +14,7 @@ namespace Config {
 	size_t deduplicate_domain_count = 5;
 	size_t pre_result_limit = 200000;
 	size_t result_limit = 1000;
-	size_t ft_max_sections = 4;
+	size_t ft_max_sections = 8;
 	size_t ft_max_results_per_section = 100000;
 
 	void read_config(const string &config_file) {

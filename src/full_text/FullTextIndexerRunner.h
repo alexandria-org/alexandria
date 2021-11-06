@@ -57,10 +57,9 @@ public:
 	void run(size_t partition, size_t max_partitions);
 	void run(const vector<string> local_files, size_t partition);
 	void run_link();
-	void merge();
-	void sort();
-	void truncate_cache();
-	void truncate();
+	void merge(size_t partition);
+	void sort(size_t partition);
+	void truncate_cache(size_t partition);
 
 private:
 
@@ -76,11 +75,8 @@ private:
 	bool m_run_merge_large;
 	bool m_did_allocate_sub_system;
 
-	string run_merge_large_thread();
-	string run_index_thread(const vector<string> &warc_paths, int id, size_t partition);
 	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
-	string run_link_index_thread(const vector<string> &warc_paths, int id);
-	string run_merge_thread(size_t shard_id);
+	string run_merge_thread(size_t shard_id, size_t partition);
 	int download_file(const string &bucket, const string &key, stringstream &stream);
 
 };
