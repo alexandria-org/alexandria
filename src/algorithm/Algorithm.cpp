@@ -26,6 +26,9 @@
 
 #include "Algorithm.h"
 #include <cstdint>
+#include <iostream>
+#include <set>
+#include <numeric>
 
 namespace Algorithm {
 
@@ -74,6 +77,51 @@ namespace Algorithm {
 		}
 
 		return intersection;
+	}
+
+	/*
+		Returns partitions with indices that are smaller than the values in the dims vector.
+		For example:
+		dims = {2,2} gives {0,0}, {1,0}, {0,1}, {1,1}
+		dims = {2,3} gives {0,0}, {1,0}, {0,1}, {1,1}, {0,2}, {1,2}
+	*/
+	vector<vector<int>> incremental_partitions(const vector<int> &dims, int limit) {
+		vector<vector<int>> res;
+		set<vector<int>> uniq;
+		vector<int> initial(dims.size(), 0);
+		res.push_back(initial);
+		uniq.insert(initial);
+
+		for (size_t j = 0; j < res.size(); j++) {
+			vector<int> vec = res[j];
+			for (size_t i = 0; i < vec.size(); i++) {
+				if (vec[i] < dims[i]-1) {
+					vector<int> copy(vec);
+					copy[i]++;
+
+					res.push_back(copy);
+					uniq.insert(copy);
+					if (uniq.size() >= limit) break;
+				}
+			}
+			if (uniq.size() >= limit) break;
+		}
+
+		vector<vector<int>> ret(uniq.begin(), uniq.end());
+		sort(ret.begin(), ret.end(), [](const vector<int> &a, const vector<int> &b) {
+			int sum1 = accumulate(a.begin(), a.end(), 0);
+			int sum2 = accumulate(b.begin(), b.end(), 0);
+			if (sum1 == sum2) {
+				int max1 = *max_element(a.begin(), a.end());
+				int max2 = *max_element(b.begin(), b.end());
+				if (max1 == max2) {
+					return b < a;
+				}
+				return max1 < max2;
+			}
+			return sum1 < sum2;
+		});
+		return ret;
 	}
 
 }

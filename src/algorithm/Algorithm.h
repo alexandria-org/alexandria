@@ -49,4 +49,6 @@ namespace Algorithm {
 		}
 	}
 
+	vector<vector<int>> incremental_partitions(const vector<int> &dims, int limit);
+
 }

@@ -72,4 +72,85 @@ BOOST_AUTO_TEST_CASE(intersection) {
 	}
 }
 
+BOOST_AUTO_TEST_CASE(incremental_partitions) {
+
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({5}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 5);
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({6}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 6);
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({3}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 3);
+		BOOST_CHECK(res[0] == vector<int>{0});
+		BOOST_CHECK(res[1] == vector<int>{1});
+		BOOST_CHECK(res[2] == vector<int>{2});
+	}
+
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({2, 2}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 4);
+		BOOST_CHECK((res[0] == vector<int>{0, 0}));
+		BOOST_CHECK((res[1] == vector<int>{1, 0}));
+		BOOST_CHECK((res[2] == vector<int>{0, 1}));
+		BOOST_CHECK((res[3] == vector<int>{1, 1}));
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 9);
+		BOOST_CHECK((res[0] == vector<int>{0, 0}));
+		BOOST_CHECK((res[1] == vector<int>{1, 0}));
+		BOOST_CHECK((res[2] == vector<int>{0, 1}));
+		BOOST_CHECK((res[3] == vector<int>{1, 1}));
+		BOOST_CHECK((res[4] == vector<int>{2, 0}));
+		BOOST_CHECK((res[5] == vector<int>{0, 2}));
+		BOOST_CHECK((res[6] == vector<int>{2, 1}));
+		BOOST_CHECK((res[7] == vector<int>{1, 2}));
+		BOOST_CHECK((res[8] == vector<int>{2, 2}));
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3}, 5);
+		BOOST_CHECK_EQUAL(res.size(), 5);
+		BOOST_CHECK((res[0] == vector<int>{0, 0}));
+		BOOST_CHECK((res[1] == vector<int>{1, 0}));
+		BOOST_CHECK((res[2] == vector<int>{0, 1}));
+		BOOST_CHECK((res[3] == vector<int>{1, 1}));
+		BOOST_CHECK((res[4] == vector<int>{2, 0}));
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3, 3}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 27);
+		BOOST_CHECK((res[0] == vector<int>{0, 0, 0}));
+		BOOST_CHECK((res[1] == vector<int>{1, 0, 0}));
+		BOOST_CHECK((res[2] == vector<int>{0, 1, 0}));
+		BOOST_CHECK((res[3] == vector<int>{0, 0, 1}));
+		BOOST_CHECK((res[4] == vector<int>{1, 1, 0}));
+		BOOST_CHECK((res[5] == vector<int>{1, 0, 1}));
+		BOOST_CHECK((res[6] == vector<int>{0, 1, 1}));
+		BOOST_CHECK((res[7] == vector<int>{2, 0, 0}));
+		BOOST_CHECK((res[8] == vector<int>{0, 2, 0}));
+		BOOST_CHECK((res[9] == vector<int>{0, 0, 2}));
+		BOOST_CHECK((res[10] == vector<int>{1, 1, 1}));
+		BOOST_CHECK((res[11] == vector<int>{2, 1, 0}));
+		BOOST_CHECK((res[12] == vector<int>{2, 0, 1}));
+		BOOST_CHECK((res[13] == vector<int>{1, 2, 0}));
+		BOOST_CHECK((res[14] == vector<int>{1, 0, 2}));
+		BOOST_CHECK((res[15] == vector<int>{0, 2, 1}));
+	}
+	{
+		vector<vector<int>> res = Algorithm::incremental_partitions({2, 3}, 64);
+		BOOST_CHECK_EQUAL(res.size(), 6);
+		BOOST_CHECK((res[0] == vector<int>{0, 0}));
+		BOOST_CHECK((res[1] == vector<int>{1, 0}));
+		BOOST_CHECK((res[2] == vector<int>{0, 1}));
+		BOOST_CHECK((res[3] == vector<int>{1, 1}));
+		BOOST_CHECK((res[4] == vector<int>{0, 2}));
+		BOOST_CHECK((res[5] == vector<int>{1, 2}));
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
