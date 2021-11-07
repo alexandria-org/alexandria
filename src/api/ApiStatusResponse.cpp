@@ -43,7 +43,7 @@ ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 
 	double time_left = 0.0;
 	if (status.items_indexed > 0) {
-		time_left = (double)status.items * status.items_indexed/((double)(Profiler::timestamp() - status.start_time));
+		time_left = (double)status.items * (((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed);
 	}
 	message.WithObject("time_left", json_number.AsDouble(time_left));
 
