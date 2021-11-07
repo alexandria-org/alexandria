@@ -84,6 +84,7 @@ namespace FullText {
 	size_t url_to_node(const URL &url);
 	bool should_index_url(const URL &url);
 	bool should_index_url(const URL &url, size_t partition);
+	bool should_index_url_on_partition(const URL &url, size_t partition);
 
 	size_t link_to_node(const Link &link);
 	bool should_index_link(const Link &link);

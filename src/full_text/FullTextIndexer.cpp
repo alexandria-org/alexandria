@@ -58,7 +58,7 @@ size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 		URL url(col_values[0]);
 
-		if (FullText::should_index_url(url, partition)) {
+		if (FullText::should_index_url_on_partition(url, partition)) {
 
 			float harmonic = url.harmonic(m_sub_system);
 

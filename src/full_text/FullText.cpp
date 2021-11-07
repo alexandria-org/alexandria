@@ -326,6 +326,11 @@ namespace FullText {
 		return url_to_node(url) == Config::node_id && (url.hash() % Config::ft_num_partitions) == partition;
 	}
 
+	// Returns true if this url belongs on this partition.
+	bool should_index_url_on_partition(const URL &url, size_t partition) {
+		return (url.hash() % Config::ft_num_partitions) == partition;
+	}
+
 	size_t link_to_node(const Link &link) {
 		return link.target_url().host_hash() % Config::nodes_in_cluster;
 	}
