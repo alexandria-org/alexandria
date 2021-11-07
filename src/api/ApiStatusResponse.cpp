@@ -39,11 +39,14 @@ ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 
 	message.WithObject("status", string.AsString("indexing"));
 	message.WithObject("progress", json_number.AsDouble((double)status.items_indexed / status.items));
+	message.WithObject("items", json_number.AsInt64(status.items));
 	message.WithObject("items_indexed", json_number.AsInt64(status.items_indexed));
 
 	double time_left = 0.0;
 	if (status.items_indexed > 0) {
-		time_left = (double)status.items * (((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed);
+		const size_t items_left = status.items - status.items_indexed;
+		const double time_per_item = ((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
+		time_left = (double)items_left * time_per_item;
 	}
 	message.WithObject("time_left", json_number.AsDouble(time_left));
 
