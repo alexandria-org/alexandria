@@ -98,7 +98,11 @@ void link_splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
 
 	vector<vector<string>> file_names(Config::nodes_in_cluster);
 	vector<vector<string>> cache(Config::nodes_in_cluster);
+	size_t done = 0;
 	for (const string &warc_path : warc_paths) {
+
+		cout << "done " << done << "/" << warc_paths.size() << endl;
+		done++;
 
 		ifstream infile(warc_path);
 		boost::iostreams::filtering_istream decompress_stream;
