@@ -38,6 +38,7 @@
 #include "system/Logger.h"
 #include "hash/Hash.h"
 #include "sort/Sort.h"
+#include "algorithm/Algorithm.h"
 #include "SearchAllocation.h"
 #include <cassert>
 
@@ -261,7 +262,56 @@ namespace SearchEngine {
 
 	template<typename DataRecord>
 	void calculate_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, FullTextResultSet<DataRecord> *dest) {
-		value_intersection(result_sets, dest);
+
+		for (FullTextResultSet<DataRecord> *result : result_sets) {
+			if (result->size() == 0) return;
+		}
+
+		vector<FullTextResultSet<DataRecord> *> sorted_result_sets(result_sets);
+
+		sort(sorted_result_sets.begin(), sorted_result_sets.end(), [](const FullTextResultSet<DataRecord> *a, const FullTextResultSet<DataRecord> *b) {
+			return a->total_num_results() < b->total_num_results();
+		});
+
+		const int schema_size = 2;
+		const int schema[] = {0, 8};
+		size_t schema_index = 0;
+
+		vector<int> lengths;
+		for (FullTextResultSet<DataRecord> *result : sorted_result_sets) {
+			lengths.push_back(result->num_sections());
+		}
+
+		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, 64);
+
+		/*size_t partition_id = 0;
+		for (const int read_partitions : schema) {
+
+			for (size_t i = partition_id; i < partitions.size() && i <= read_partitions; i++) {
+
+			}
+			
+		}*/
+		/*for (const vector<int> partition : partitions) {
+			size_t i = 0;
+			for (int section : partition) {
+				result_sets[i]->point_to_section(section);
+				i++;
+			}
+
+			value_intersection(result_sets, dest);
+			if (dest->size() >= Config::pre_result_limit) break;
+
+			if (idx == schema[schema_index] && (schema_index + 1) < schema_size) {
+				schema_index++;
+			}
+
+			if (idx >= schema[schema_index]) {
+				break;
+			}
+			idx++;
+		}*/
+
 	}
 
 	template<typename DataRecord>
@@ -276,14 +326,14 @@ namespace SearchEngine {
 		FullTextResultSet<DataRecord> *tmp2, FullTextResultSet<DataRecord> *merged) {
 
 		while (merged->size() < Config::result_limit) {
-			bool loaded_segment = false;
+			bool loaded_section = false;
 			for (FullTextResultSet<DataRecord> *result : results) {
-				if (result->has_next_segment()) {
-					result->read_next_segment();
-					loaded_segment = true;
+				if (result->has_next_section()) {
+					result->read_next_section();
+					loaded_section = true;
 				}
 			}
-			if (!loaded_segment) break;
+			if (!loaded_section) break;
 			value_intersection(results, merged);
 		}
 
@@ -438,7 +488,7 @@ namespace SearchEngine {
 
 		// Close file pointers.
 		for (FullTextResultSet<DataRecord> *result_set : result_vector) {
-			result_set->close_segments();
+			result_set->close_sections();
 		}
 
 		input->metric->m_link_domain_matches = apply_domain_link_scores(*(input->domain_links), flat_result);

@@ -138,8 +138,8 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 
 	reader.seekg(m_data_start + pos, ios::beg);
 
-	result_set->prepare_segments(filename(), (size_t)reader.tellg(), len);
-	result_set->read_next_segment();
+	result_set->prepare_sections(filename(), (size_t)reader.tellg(), len);
+	result_set->read_to_section(0);
 
 	/*size_t num_records = len / sizeof(DataRecord);
 	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;

@@ -46,8 +46,8 @@ public:
 	size_t size() const { return m_size; }
 	size_t max_size() const { return m_max_size; }
 
-	const DataRecord *data_pointer() const { return m_data_pointer; }
-	DataRecord *data_pointer() { return m_data_pointer; }
+	const DataRecord *data_pointer() const { return &m_data_pointer[m_internal_pointer]; }
+	DataRecord *data_pointer() { return &m_data_pointer[m_internal_pointer]; }
 	span<DataRecord> *span_pointer() { return &m_span; }
 
 	size_t total_num_results() const { return m_total_num_results ; };
@@ -56,12 +56,15 @@ public:
 	void resize(size_t n) {
 		m_span = span<DataRecord>(m_data_pointer, n);
 		m_size = n;
+		m_internal_pointer = 0;
 	}
 
-	void prepare_segments(const string &filename, size_t offset, size_t len);
-	void read_next_segment();
-	bool has_next_segment();
-	void close_segments();
+	void prepare_sections(const string &filename, size_t offset, size_t len);
+	void read_to_section(size_t section);
+	bool has_next_section();
+	size_t num_sections();
+	void point_to_section(size_t section);
+	void close_sections();
 
 private:
 
@@ -69,12 +72,13 @@ private:
 
 	span<DataRecord> m_span;
 	DataRecord *m_data_pointer;
+	size_t m_internal_pointer;
 
-	size_t m_size; // The length in first segment.
+	size_t m_size; // The length in first section.
 	const size_t m_max_size; // The maximum number of elements the result set can hold.
-	size_t m_total_size; // The lengths of all elements in all segments.
+	size_t m_total_size; // The lengths of all elements in all sections.
 	size_t m_total_num_results; // The total indexed length, only used to display total number of results.
-	size_t m_segment_len;
+	size_t m_section_len;
 	size_t m_records_read;
 	int m_file_descriptor;
 
@@ -82,7 +86,7 @@ private:
 
 template<typename DataRecord>
 FullTextResultSet<DataRecord>::FullTextResultSet(size_t size)
-: m_size(size), m_max_size(size), m_total_num_results(0)
+: m_size(size), m_max_size(size), m_total_num_results(0), m_internal_pointer(0)
 {
 	m_file_descriptor = -1;
 	m_data_pointer = new DataRecord[size];
@@ -100,7 +104,7 @@ void FullTextResultSet<DataRecord>::set_total_num_results(size_t total_num_resul
 }
 
 template<typename DataRecord>
-void FullTextResultSet<DataRecord>::prepare_segments(const string &filename, size_t offset, size_t len) {
+void FullTextResultSet<DataRecord>::prepare_sections(const string &filename, size_t offset, size_t len) {
 
 	assert(m_file_descriptor < 0);
 
@@ -109,37 +113,57 @@ void FullTextResultSet<DataRecord>::prepare_segments(const string &filename, siz
 	if (m_size > Config::ft_max_results_per_section) m_size = Config::ft_max_results_per_section;
 
 	m_file_descriptor = open(filename.c_str(), O_RDONLY);
-	posix_fadvise(m_file_descriptor, offset, m_size * sizeof(DataRecord), POSIX_FADV_SEQUENTIAL);
+	posix_fadvise(m_file_descriptor, offset, m_total_size * sizeof(DataRecord), POSIX_FADV_SEQUENTIAL);
 	lseek(m_file_descriptor, offset, SEEK_SET);
 	m_records_read = 0;
+	m_internal_pointer = 0;
 }
 
+/*
+	Reads data up to and includint the section. So if the argument section equals zero the first section is read.
+*/
 template<typename DataRecord>
-void FullTextResultSet<DataRecord>::read_next_segment() {
+void FullTextResultSet<DataRecord>::read_to_section(size_t section) {
 	if (m_records_read >= m_total_size) {
 		resize(0);
 		return;
 	}
-	size_t records_to_read = m_total_size - m_records_read;
-	if (records_to_read > Config::ft_max_results_per_section) {
-		records_to_read = Config::ft_max_results_per_section;
-	}
-	::read(m_file_descriptor, (void *)&m_data_pointer[0], (size_t)records_to_read * sizeof(DataRecord));
+	size_t read_start = m_records_read;
+	size_t read_end = (section + 1) * Config::ft_max_results_per_section;
+	if (read_end > m_total_size) read_end = m_total_size;
+
+	size_t records_to_read = read_end - read_start;
+
+	::read(m_file_descriptor, (void *)&m_data_pointer[m_records_read], (size_t)records_to_read * sizeof(DataRecord));
 	m_records_read += records_to_read;
-	resize(records_to_read);
+	resize(m_records_read);
 }
 
 template<typename DataRecord>
-bool FullTextResultSet<DataRecord>::has_next_segment() {
+bool FullTextResultSet<DataRecord>::has_next_section() {
 	if (m_file_descriptor < 0) return false;
 	return m_total_size > m_records_read;
 }
 
 template<typename DataRecord>
-void FullTextResultSet<DataRecord>::close_segments() {
+size_t FullTextResultSet<DataRecord>::num_sections() {
+	// Ceiling integer division of m_total_size/Config::ft_max_results_per_section;
+	return (m_total_size + Config::ft_max_results_per_section - 1) / Config::ft_max_results_per_section;
+}
+
+template<typename DataRecord>
+void FullTextResultSet<DataRecord>::point_to_section(size_t section) {
+	m_internal_pointer = section * Config::ft_max_results_per_section;
+	if (m_internal_pointer >= m_total_size) m_internal_pointer = m_total_size - 1;
+	m_span = span<DataRecord>(&m_data_pointer[m_internal_pointer], min(Config::ft_max_results_per_section, m_total_size));
+}
+
+template<typename DataRecord>
+void FullTextResultSet<DataRecord>::close_sections() {
 	if (m_file_descriptor >= 0) {
 		close(m_file_descriptor);
 		m_file_descriptor = -1;
+		m_internal_pointer = 0;
 	}
 }
 

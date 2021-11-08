@@ -20,6 +20,7 @@ namespace Worker {
 
 	};
 
+	void test_search(const std::string &query);
 	void start_server();
 	void start_status_server(Status &status);
 
