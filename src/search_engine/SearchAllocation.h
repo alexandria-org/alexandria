@@ -53,8 +53,6 @@ namespace SearchAllocation {
 
 		// To hold the intersection of the result sets.
 		map<size_t, FullTextResultSet<DataRecord> *> intersected_result;
-		map<size_t, FullTextResultSet<DataRecord> *> intersected_result2;
-		map<size_t, FullTextResultSet<DataRecord> *> intersected_result3;
 	};
 
 	struct Allocation {
@@ -71,11 +69,9 @@ namespace SearchAllocation {
 		for (size_t i = 0; i < Config::ft_num_partitions; i++) {
 			storage->result_sets[i].resize(Config::query_max_words, NULL);
 			for (size_t j = 0; j < Config::query_max_words; j++) {
-				storage->result_sets[i][j] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section);
+				storage->result_sets[i][j] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
 			}
 			storage->intersected_result[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
-			storage->intersected_result2[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
-			storage->intersected_result3[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
 		}
 
 		return storage;
@@ -90,8 +86,6 @@ namespace SearchAllocation {
 				delete storage->result_sets[i][j];
 			}
 			delete storage->intersected_result[i];
-			delete storage->intersected_result2[i];
-			delete storage->intersected_result3[i];
 		}
 
 		delete storage;

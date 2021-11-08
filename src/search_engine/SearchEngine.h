@@ -260,6 +260,11 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
+	void calculate_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, FullTextResultSet<DataRecord> *dest) {
+		value_intersection(result_sets, dest);
+	}
+
+	template<typename DataRecord>
 	void sort_by_score(vector<DataRecord> &results) {
 		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_score > b.m_score;
@@ -419,11 +424,12 @@ namespace SearchEngine {
 
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
+
+			// We need to calculate the intersection of the given results.
 			flat_result = input->storage->intersected_result[input->partition_id];
 			flat_result->resize(0);
-			value_intersection<DataRecord>(result_vector, flat_result);
-			load_more_and_intersect(result_vector, input->storage->intersected_result2[input->partition_id],
-				input->storage->intersected_result3[input->partition_id], flat_result);
+			calculate_intersection<DataRecord>(result_vector, flat_result);
+
 			set_total_found<DataRecord>(result_vector, *(input->metric), (double)flat_result->size() / largest_result(result_vector));
 		} else {
 			flat_result = result_vector[0];
