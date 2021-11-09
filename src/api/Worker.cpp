@@ -34,6 +34,8 @@ namespace Worker {
 		stringstream response_stream;
 		Api::search(query, hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
 
+		cout << response_stream.rdbuf() << endl;
+
 		FullText::delete_index_array<FullTextRecord>(index_array);
 		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
 		FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);

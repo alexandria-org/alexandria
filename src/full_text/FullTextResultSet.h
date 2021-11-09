@@ -124,19 +124,17 @@ void FullTextResultSet<DataRecord>::prepare_sections(const string &filename, siz
 */
 template<typename DataRecord>
 void FullTextResultSet<DataRecord>::read_to_section(size_t section) {
-	if (m_records_read >= m_total_size) {
-		resize(0);
-		return;
-	}
 	size_t read_start = m_records_read;
 	size_t read_end = (section + 1) * Config::ft_max_results_per_section;
 	if (read_end > m_total_size) read_end = m_total_size;
+
+	if (read_start > read_end) return;
 
 	size_t records_to_read = read_end - read_start;
 
 	::read(m_file_descriptor, (void *)&m_data_pointer[m_records_read], (size_t)records_to_read * sizeof(DataRecord));
 	m_records_read += records_to_read;
-	resize(m_records_read);
+	point_to_section(section);
 }
 
 template<typename DataRecord>
@@ -155,7 +153,8 @@ template<typename DataRecord>
 void FullTextResultSet<DataRecord>::point_to_section(size_t section) {
 	m_internal_pointer = section * Config::ft_max_results_per_section;
 	if (m_internal_pointer >= m_total_size) m_internal_pointer = m_total_size - 1;
-	m_span = span<DataRecord>(&m_data_pointer[m_internal_pointer], min(Config::ft_max_results_per_section, m_total_size));
+	m_size = min(Config::ft_max_results_per_section, m_total_size - m_internal_pointer);
+	m_span = span<DataRecord>(&m_data_pointer[m_internal_pointer], m_size);
 }
 
 template<typename DataRecord>

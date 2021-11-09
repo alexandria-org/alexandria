@@ -582,6 +582,7 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 
 template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::mountpoint() const {
+	return to_string(m_shard_id % 8);
 	if (m_partition < 1) return to_string(m_shard_id % 4);
 	return to_string((m_shard_id % 4) + 4);
 }

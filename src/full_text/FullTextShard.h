@@ -139,7 +139,8 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	reader.seekg(m_data_start + pos, ios::beg);
 
 	result_set->prepare_sections(filename(), (size_t)reader.tellg(), len);
-	result_set->read_to_section(0);
+	result_set->read_to_section(2);
+	result_set->point_to_section(0);
 
 	/*size_t num_records = len / sizeof(DataRecord);
 	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
@@ -285,6 +286,7 @@ vector<uint64_t> FullTextShard<DataRecord>::keys() {
 
 template<typename DataRecord>
 string FullTextShard<DataRecord>::mountpoint() const {
+	return to_string(m_shard_id % 8);
 	if (m_partition < 1) return to_string(m_shard_id % 4);
 	return to_string((m_shard_id % 4) + 4);
 }

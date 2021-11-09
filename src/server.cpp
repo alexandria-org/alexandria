@@ -37,14 +37,17 @@ int main(int argc, const char **argv) {
 
 	Logger::start_logger_thread();
 
-	Worker::test_search("the lån");
-	return 0;
-
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
 		Config::read_config("config.conf");
 	}
+
+	/*Worker::test_search(string(argv[1]));
+
+	Logger::join_logger_thread();
+
+	return 0;*/
 
 	const string arg(argc > 1 ? argv[1] : "");
 

@@ -78,7 +78,7 @@ namespace Profiler {
 
 	void instance::print() {
 		if (!m_enabled) return;
-		LOG_INFO("Profiler [" + m_name + "] took " + to_string(get()) + "ms");
+		cout << "Profiler [" + m_name + "] took " + to_string(get()) + "ms" << endl;
 	}
 
 	void print_memory_status() {
