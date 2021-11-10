@@ -212,7 +212,7 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	void value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, FullTextResultSet<DataRecord> *dest) {
+	void value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, vector<int> sections, vector<DataRecord> &dest) {
 
 		if (result_sets.size() == 0) {
 			return;
@@ -231,80 +231,7 @@ namespace SearchEngine {
 
 		vector<size_t> positions(result_sets.size(), 0);
 
-		const DataRecord *shortest_data = result_sets[shortest_vector_position]->data_pointer();
-		DataRecord *dest_data = dest->data_pointer();
-
-		const bool make_binsearch = false;
-
-		size_t dest_index = dest->size();
-		while (positions[shortest_vector_position] < shortest_len) {
-
-			bool all_equal = true;
-			uint64_t value = shortest_data[positions[shortest_vector_position]].m_value;
-
-			float score_sum = 0.0f;
-			size_t iter_index = 0;
-			for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-				const DataRecord *data_arr = result_set->data_pointer();
-				const size_t len = result_set->size();
-
-				size_t *pos = &(positions[iter_index]);
-				
-				if (make_binsearch) {
-					// this is a linear search.
-					*pos = lower_bound(data_arr, *pos, len, value);
-				} else {
-					// this is a linear search.
-					while (*pos < len && value > data_arr[*pos].m_value) {
-						(*pos)++;
-					}
-				}
-				if (*pos < len && value == data_arr[*pos].m_value) {
-					const float score = data_arr[*pos].m_score;
-					score_sum += score;
-				}
-				if ((*pos < len && value < data_arr[*pos].m_value) || *pos >= len) {
-					all_equal = false;
-					break;
-				}
-				iter_index++;
-			}
-			if (all_equal) {
-				dest_data[dest_index] = shortest_data[positions[shortest_vector_position]];
-				dest_data[dest_index].m_score = score_sum / result_sets.size();
-				dest_index++;
-				if (dest_index >= dest->max_size()) {
-					break;
-				}
-			}
-
-			positions[shortest_vector_position]++;
-		}
-
-		dest->resize(dest_index);
-	}
-
-	template<typename DataRecord>
-	void value_intersection(const vector<FullTextResultSet<DataRecord> *> &result_sets, vector<DataRecord> &dest) {
-
-		if (result_sets.size() == 0) {
-			return;
-		}
-
-		size_t shortest_vector_position = 0;
-		size_t shortest_len = SIZE_MAX;
-		size_t iter_index = 0;
-		for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-			if (shortest_len > result_set->size()) {
-				shortest_len = result_set->size();
-				shortest_vector_position = iter_index;
-			}
-			iter_index++;
-		}
-
-		vector<size_t> positions(result_sets.size(), 0);
-
-		const DataRecord *shortest_data = result_sets[shortest_vector_position]->data_pointer();
+		const DataRecord *shortest_data = result_sets[shortest_vector_position]->section_pointer(sections[shortest_vector_position]);
 
 		const bool make_binsearch = false;
 
@@ -316,7 +243,7 @@ namespace SearchEngine {
 			float score_sum = 0.0f;
 			size_t iter_index = 0;
 			for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-				const DataRecord *data_arr = result_set->data_pointer();
+				const DataRecord *data_arr = result_set->section_pointer(sections[iter_index]);
 				const size_t len = result_set->size();
 
 				size_t *pos = &(positions[iter_index]);
@@ -371,13 +298,17 @@ namespace SearchEngine {
 			lengths.push_back(result->num_sections());
 		}
 
-		// First just try the top sections.
-		value_intersection(sorted_result_sets, dest);
-		if (dest->size() >= Config::result_limit) {
-			return;
-		}
+		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, 8);
 
-		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, 16);
+		// First just try the top sections.
+		{
+			vector<DataRecord> result;
+			value_intersection(sorted_result_sets, partitions[0], result);
+			if (result.size() >= Config::result_limit) {
+				dest->copy_vector(result);
+				return;
+			}
+		}
 
 		vector<int> maximum(sorted_result_sets.size(), 0);
 		for (const vector<int> &vec : partitions) {
@@ -390,18 +321,15 @@ namespace SearchEngine {
 		}
 
 		size_t idx = 0;
-		const size_t num_threads = 16;
+		const size_t num_threads = 8;
 
 		ThreadPool pool(num_threads);
 		vector<vector<DataRecord>> results(partitions.size());
 		std::vector<std::future<vector<DataRecord>>> thread_results;
 		for (const vector<int> &partition : partitions) {
-			for (size_t i = 0; i < partition.size(); i++) {
-				sorted_result_sets[i]->point_to_section(partition[i]);
-			}
-			thread_results.emplace_back(pool.enqueue([sorted_result_sets]() {
+			thread_results.emplace_back(pool.enqueue([sorted_result_sets, partition]() {
 				vector<DataRecord> result;
-				value_intersection(sorted_result_sets, result);
+				value_intersection(sorted_result_sets, partition, result);
 				return result;
 			}));
 			idx++;
@@ -416,76 +344,15 @@ namespace SearchEngine {
 		Sort::merge_arrays(results, [](const DataRecord &a, const DataRecord &b) {
 			return a.m_value < b.m_value;
 		}, merged_vec);
+
 		// copy.
-		DataRecord *dest_data = dest->data_pointer();
-		idx = 0;
-		for (DataRecord &rec : merged_vec) {
-			dest_data[idx] = rec;
-			idx++;
-		}
-		dest->resize(idx);
-
-		/*size_t partition_id = 0;
-		for (const int read_partitions : schema) {
-			for (size_t i = partition_id; i < partitions.size() && i <= read_partitions; i++) {
-			}
-		}*/
-
-		/*size_t partition_id = 0;
-		for (const int read_partitions : schema) {
-
-			for (size_t i = partition_id; i < partitions.size() && i <= read_partitions; i++) {
-
-			}
-			
-		}*/
-		/*for (const vector<int> partition : partitions) {
-			size_t i = 0;
-			for (int section : partition) {
-				result_sets[i]->point_to_section(section);
-				i++;
-			}
-
-			value_intersection(result_sets, dest);
-			if (dest->size() >= Config::pre_result_limit) break;
-
-			if (idx == schema[schema_index] && (schema_index + 1) < schema_size) {
-				schema_index++;
-			}
-
-			if (idx >= schema[schema_index]) {
-				break;
-			}
-			idx++;
-		}*/
-
+		dest->copy_vector(merged_vec);
 	}
 
 	template<typename DataRecord>
 	void sort_by_score(vector<DataRecord> &results) {
 		sort(results.begin(), results.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_score > b.m_score;
-		});
-	}
-
-	template<typename DataRecord>
-	void load_more_and_intersect(const vector<FullTextResultSet<DataRecord> *> results, FullTextResultSet<DataRecord> *tmp1,
-		FullTextResultSet<DataRecord> *tmp2, FullTextResultSet<DataRecord> *merged) {
-
-		while (merged->size() < Config::result_limit) {
-			bool loaded_section = false;
-			for (FullTextResultSet<DataRecord> *result : results) {
-				if (result->has_next_section()) {
-					result->read_next_section();
-					loaded_section = true;
-				}
-			}
-			if (!loaded_section) break;
-			value_intersection(results, merged);
-		}
-
-		sort(merged->span_pointer()->begin(), merged->span_pointer()->end(), [] (const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
 		});
 	}
 

@@ -31,9 +31,57 @@
 #include "api/Worker.h"
 #include "hash_table/HashTableHelper.h"
 #include "full_text/FullText.h"
+#include "full_text/FullTextRecord.h"
 #include "system/Profiler.h"
 
+#include <fstream>
+
+void runner(void) {
+	const size_t data_len = 16000000ull*24ull;
+	char *random_data = new char[data_len];
+
+	FullTextRecord *random_data2 = new FullTextRecord[8000000];
+
+	const size_t file_len = 8000000ull*24ull*200ull*5ull*4ull;
+	hash<string> hasher;
+	while (true) {
+		ifstream infile("/mnt/0/asd");
+		size_t rnd = hasher(to_string(rand())) % (file_len - data_len);
+		infile.seekg(rnd);
+		cout << hasher(to_string(rand())) << endl;
+		Profiler::instance prof("reading data");
+		infile.read((char *)random_data, data_len);
+		prof.stop();
+		prof.print();
+	}
+}
+
 int main(int argc, const char **argv) {
+
+	/*{
+		vector<thread> threads;
+		for (size_t i = 0; i < 10; i++) {
+			threads.emplace_back(std::move(thread(runner)));
+		}
+
+		for (thread &th : threads) {
+			th.join();
+		}
+
+	}
+	return 0;
+	{
+		const size_t data_len = 8000000*24;
+		char *random_data = new char[data_len];
+		for (size_t i = 0; i < data_len; i++) random_data[i] = rand();
+
+		ofstream outfile("/mnt/0/asd", ios::trunc);
+		for (size_t i = 0; i < 200*5*4; i++) {
+			outfile.write(random_data, data_len);
+		}
+	}
+
+	return 0;*/
 
 	Logger::start_logger_thread();
 
