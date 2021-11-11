@@ -89,8 +89,7 @@ adduser --system --shell /sbin/nologin --gecos "User for running alexandria serv
 touch /var/log/alexandria.log
 chown alexandria:syslog /var/log/alexandria.log
 
-echo "
-[Unit]
+echo "[Unit]
 Description=Alexandria Server
 
 [Service]
@@ -100,9 +99,6 @@ ExecStart=/alexandria/server
 Restart=always
 
 [Install]
-WantedBy=multi-user.target
-"
-
-> /etc/systemd/system/alexandria.service
+WantedBy=multi-user.target" > /etc/systemd/system/alexandria.service
 
 
