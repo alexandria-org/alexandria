@@ -101,4 +101,34 @@ Restart=always
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/alexandria.service
 
+echo "# Cluster config
+nodes_in_cluster = 4
+node_id = 0
 
+# Indexer config
+batches[] = NODE-0
+batches[] = NODE-1
+batches[] = NODE-2
+batches[] = NODE-3
+batches[] = NODE-4
+batches[] = NODE-5
+
+link_batches[] = LINK-0
+link_batches[] = LINK-1
+link_batches[] = LINK-2
+link_batches[] = LINK-3
+link_batches[] = LINK-4
+link_batches[] = LINK-5
+
+# Server config
+worker_count = 8
+query_max_words = 10 # Maximum number of words used in query.
+query_max_len = 200
+deduplicate_domain_count = 5
+pre_result_limit = 200000
+result_limit = 1000
+
+# Full text config
+ft_max_sections = 8
+ft_max_results_per_section = 2000000
+ft_section_depth = 16" > /etc/alexandria.conf
