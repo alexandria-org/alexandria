@@ -16,6 +16,7 @@ namespace Config {
 	size_t result_limit = 1000;
 	size_t ft_max_sections = 8;
 	size_t ft_max_results_per_section = 100000;
+	size_t ft_section_depth = 8;
 
 	void read_config(const string &config_file) {
 
@@ -68,6 +69,8 @@ namespace Config {
 				ft_max_sections = stoi(parts[1]);
 			} else if (parts[0] == "ft_max_results_per_section") {
 				ft_max_results_per_section = stoi(parts[1]);
+			} else if (parts[0] == "ft_section_depth") {
+				ft_section_depth = stoi(parts[1]);
 			}
 		}
 	}

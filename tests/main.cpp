@@ -56,6 +56,6 @@ using namespace std;
 #include "sort.h"
 #include "algorithm.h"
 #include "deduplication.h"
-#include "segments.h"
+#include "sections.h"
 #include "logger.h"
 

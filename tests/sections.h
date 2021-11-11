@@ -27,15 +27,19 @@
 #include "hash_table/HashTableHelper.h"
 #include "api/Api.h"
 
-BOOST_AUTO_TEST_SUITE(segments)
+BOOST_AUTO_TEST_SUITE(sections)
 
-BOOST_AUTO_TEST_CASE(segments) {
+BOOST_AUTO_TEST_CASE(sections) {
 
 	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
 	unsigned long long initial_results_per_section = Config::ft_max_results_per_section;
+	unsigned long long initial_ft_max_sections = Config::ft_max_sections;
+	unsigned long long initial_ft_section_depth = Config::ft_section_depth;
 	Config::nodes_in_cluster = 1;
 	Config::node_id = 0;
 	Config::ft_max_results_per_section = 20;
+	Config::ft_max_sections = 8;
+	Config::ft_section_depth = 64;
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
@@ -76,6 +80,8 @@ BOOST_AUTO_TEST_CASE(segments) {
 	Config::nodes_in_cluster = initial_nodes_in_cluster;
 	Config::node_id = 0;
 	Config::ft_max_results_per_section = initial_results_per_section;
+	Config::ft_max_sections = initial_ft_max_sections;
+	Config::ft_section_depth = initial_ft_section_depth;
 }
 
 BOOST_AUTO_TEST_SUITE_END();

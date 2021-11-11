@@ -289,16 +289,12 @@ namespace SearchEngine {
 			return a->total_num_results() < b->total_num_results();
 		});
 
-		const int schema_size = 2;
-		const int schema[] = {0, 8};
-		size_t schema_index = 0;
-
 		vector<int> lengths;
 		for (FullTextResultSet<DataRecord> *result : sorted_result_sets) {
 			lengths.push_back(result->num_sections());
 		}
 
-		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, 8);
+		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, Config::ft_section_depth);
 
 		// First just try the top sections.
 		{

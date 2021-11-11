@@ -75,17 +75,6 @@ BOOST_AUTO_TEST_CASE(intersection) {
 BOOST_AUTO_TEST_CASE(incremental_partitions) {
 
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({1, 2, 4}, 64);
-		for (const vector<int> &vec : res) {
-			for (int p : vec) {
-				cout << p << ", ";
-			}
-			cout << endl;
-		}
-	}
-
-
-	{
 		vector<vector<int>> res = Algorithm::incremental_partitions({5}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 5);
 	}
