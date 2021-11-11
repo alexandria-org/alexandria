@@ -151,7 +151,7 @@ fi
 bootstrap_script_server=$(cat <<EOF
 #!/bin/bash
 set -euo pipefail
-ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf ./lib/$PKG_LD --library-path ./lib ./bin/server
+ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf nice -n -20 ./lib/$PKG_LD --library-path ./lib ./bin/server
 EOF
 )
 
