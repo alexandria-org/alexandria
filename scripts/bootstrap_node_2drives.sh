@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apt-get update
-apt-get -y install vim parted zip nginx
+apt-get -y install vim parted zip unzip nginx
 
 echo "\nALEXANDRIA_LIVE=1" >> /etc/environment
 
@@ -83,4 +83,26 @@ echo "server {
     }
 }" > /etc/nginx/sites-enabled/default
 /etc/init.d/nginx restart
+
+adduser --system --shell /sbin/nologin --gecos "User for running alexandria service" --disabled-password --home /alexandria alexandria
+
+touch /var/log/alexandria.log
+chown alexandria:syslog /var/log/alexandria.log
+
+echo "
+[Unit]
+Description=Alexandria Server
+
+[Service]
+User=alexandria
+WorkingDirectory=/alexandria
+ExecStart=/alexandria/server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+"
+
+> /etc/systemd/system/alexandria.service
+
 
