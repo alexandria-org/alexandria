@@ -136,3 +136,4 @@ ft_section_depth = 16" > /etc/alexandria.conf
 cd /alexandria
 wget https://github.com/alexandria-org/alexandria/releases/download/v1.0/alexandria.zip
 unzip alexandria.zip
+chown -R alexandria /mnt/*
