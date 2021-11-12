@@ -132,3 +132,7 @@ result_limit = 1000
 ft_max_sections = 8
 ft_max_results_per_section = 2000000
 ft_section_depth = 16" > /etc/alexandria.conf
+
+cd /alexandria
+wget https://github.com/alexandria-org/alexandria/releases/download/v1.0/alexandria.zip
+unzip alexandria.zip
