@@ -13,3 +13,5 @@ for shard in $(seq 0 7); do
 	mkdir "/mnt/$shard/tmp";
 done
 
+chown -R alexandria /mnt/*
+
