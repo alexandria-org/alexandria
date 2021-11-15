@@ -164,7 +164,7 @@ namespace FullText {
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
 
 		vector<string> files;
-		const size_t limit = 3000;
+		const size_t limit = 1000;
 		size_t offset = 0;
 
 		while (true) {
@@ -181,7 +181,7 @@ namespace FullText {
 		Worker::Status &status) {
 
 		vector<string> files;
-		const size_t limit = 3000;
+		const size_t limit = 1000;
 		size_t offset = 0;
 
 		while (true) {
@@ -271,7 +271,7 @@ namespace FullText {
 		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
 
 		vector<string> files;
-		const size_t limit = 5000;
+		const size_t limit = 1000;
 		size_t offset = 0;
 
 		while (true) {
@@ -287,7 +287,7 @@ namespace FullText {
 		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status) {
 
 		vector<string> files;
-		const size_t limit = 5000;
+		const size_t limit = 1000;
 		size_t offset = 0;
 
 		while (true) {

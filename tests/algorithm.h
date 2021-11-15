@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_analysis) {
 
 	const size_t num_incoming = 20;
 
-	for (size_t i = 1; i < 1000000; i += 100000) {
+	for (size_t i = 1000000; i < 10000000; i += 1000000) {
 		const size_t len = i;
 		vector<uint64_t> vertices;
 		for (size_t j = 1; j <= len; j++) {

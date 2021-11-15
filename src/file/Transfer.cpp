@@ -240,6 +240,7 @@ namespace Transfer {
 	}
 
 	void delete_downloaded_files(const vector<string> &files) {
+		LOG_INFO("Deleting " + to_string(files.size()) + " downloaded files");
 		for (const string &file : files) {
 			File::delete_file(file);
 		}
