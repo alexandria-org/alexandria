@@ -25,10 +25,12 @@
  */
 
 #include "Algorithm.h"
-#include <cstdint>
 #include <iostream>
 #include <set>
 #include <numeric>
+#include <map>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Algorithm {
 
@@ -122,6 +124,44 @@ namespace Algorithm {
 			return sum1 < sum2;
 		});
 		return ret;
+	}
+
+	vector<double> harmonic_centrality(const vector<uint64_t> vertices, const set<pair<uint64_t, uint64_t>> edges, size_t depth) {
+		vector<double> harmonics;
+
+		unordered_map<uint64_t, vector<uint64_t>> edge_map;
+
+		for (const pair<uint64_t, uint64_t> &edge : edges) {
+			/*
+			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
+			harmonic centrality of vertex.
+			*/
+			edge_map[edge.second].push_back(edge.first);
+		}
+
+		for (const uint64_t vertex : vertices) {
+			map<int, unordered_set<uint64_t>> level_sets;
+			unordered_set<uint64_t> all;
+			level_sets[0].insert(vertex);
+			all.insert(vertex);
+			double harmonic = 0.0;
+			// If we can assume average number of incoming edges to be constant these loops should be O(1) in n.
+			for (int level = 1; level <= depth; level++) {
+				for (const uint64_t v : level_sets[level - 1]) {
+					for (const uint64_t edge : edge_map[v]) {
+						if (all.count(edge) == 0) {
+							level_sets[level].insert(edge); // Average O(1)
+							all.insert(edge); // Average O(1)
+						}
+					}
+				}
+				harmonic += (double)level_sets[level].size() / level;
+			}
+
+			harmonics.push_back(harmonic);
+		}
+
+		return harmonics;
 	}
 
 }

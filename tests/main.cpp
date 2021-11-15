@@ -27,6 +27,7 @@
 #define BOOST_TEST_MODULE "Unit tests for alexandria.org"
 
 #include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include "config.h"
 

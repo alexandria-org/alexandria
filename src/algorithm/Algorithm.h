@@ -27,6 +27,8 @@
 #pragma once
 
 #include <vector>
+#include <set>
+#include <cstdint>
 
 using namespace std;
 
@@ -51,4 +53,9 @@ namespace Algorithm {
 
 	vector<vector<int>> incremental_partitions(const vector<int> &dims, int limit);
 
+	/*
+		Calculates the harmonic centrality for vertices and edges. The returning vector has the harmonic centrality for vertex i at position i.
+		The depth parameter is the maximum level to traverse in the neighbour tree.
+	*/
+	vector<double> harmonic_centrality(const vector<uint64_t> vertices, const set<pair<uint64_t, uint64_t>> edges, size_t depth);
 }

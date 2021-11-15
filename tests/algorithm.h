@@ -180,4 +180,76 @@ BOOST_AUTO_TEST_CASE(binary_search) {
 	}
 }
 
+BOOST_AUTO_TEST_CASE(harmonic_centrality) {
+	{
+		vector<uint64_t> v = {1,2,3};
+		set<pair<uint64_t, uint64_t>> e = {make_pair(1, 2), make_pair(2, 3), make_pair(3, 1)};
+		vector<double> h = Algorithm::harmonic_centrality(v, e, 6);
+		BOOST_CHECK(h.size() == v.size());
+		BOOST_CHECK((h == vector<double>{1.5, 1.5, 1.5}));
+	}
+
+	{
+		vector<uint64_t> v = {1,2,3,4,5,6,7};
+		set<pair<uint64_t, uint64_t>> e = {
+			make_pair(1, 2),
+			make_pair(2, 3),
+			make_pair(3, 1),
+			make_pair(3, 4),
+			make_pair(4, 5),
+			make_pair(4, 6),
+			make_pair(5, 3),
+			make_pair(6, 5),
+		};
+		vector<double> h = Algorithm::harmonic_centrality(v, e, 6);
+		BOOST_CHECK(h.size() == v.size());
+		BOOST_CHECK_CLOSE(h[0], 8.0/3.0, 0.000001);
+		BOOST_CHECK_CLOSE(h[1], 7.0/3.0, 0.000001);
+		BOOST_CHECK_CLOSE(h[2], 7.0/2.0, 0.000001);
+		BOOST_CHECK_EQUAL(h[6], 0.0);
+	}
+
+	{
+		vector<uint64_t> v = {1,2,3,4,5,6,7};
+		set<pair<uint64_t, uint64_t>> e = {
+			make_pair(1, 2),
+			make_pair(2, 3),
+			make_pair(3, 2),
+			make_pair(4, 2),
+			make_pair(5, 2),
+			make_pair(6, 2),
+			make_pair(7, 2),
+			make_pair(8, 2),
+		};
+		vector<double> h = Algorithm::harmonic_centrality(v, e, 6);
+		BOOST_CHECK(h.size() == v.size());
+		BOOST_CHECK_CLOSE(h[1], 7, 0.000001);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(harmonic_centrality_analysis) {
+
+	const size_t num_incoming = 20;
+
+	for (size_t i = 1; i < 1000000; i += 100000) {
+		const size_t len = i;
+		vector<uint64_t> vertices;
+		for (size_t j = 1; j <= len; j++) {
+			vertices.push_back(j);
+		}
+
+		// generate num_incoming random edges per node
+		set<pair<uint64_t, uint64_t>> edges;
+		for (uint64_t vertex : vertices) {
+			edges.insert(make_pair(rand() % len + 1, vertex));
+		}
+
+		Profiler::instance prof("Profile for len = " + to_string(len));
+		vector<double> h = Algorithm::harmonic_centrality(vertices, edges, 6);
+		prof.stop();
+		prof.print();
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
