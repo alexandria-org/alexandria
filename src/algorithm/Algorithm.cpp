@@ -126,6 +126,11 @@ namespace Algorithm {
 		return ret;
 	}
 
+	/*
+		Calculates the harmonic centrality for vertices and edges. The returning vector has the harmonic centrality for vertex i at position i.
+		The depth parameter is the maximum level to traverse in the neighbour tree.
+		The edges set contains pairs of edges (from vertex, to vertex)
+	*/
 	vector<double> harmonic_centrality(const vector<uint64_t> vertices, const set<pair<uint64_t, uint64_t>> edges, size_t depth) {
 		vector<double> harmonics;
 
