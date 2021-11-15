@@ -145,7 +145,13 @@ namespace Algorithm {
 			level_sets[0].insert(vertex);
 			all.insert(vertex);
 			double harmonic = 0.0;
-			// If we can assume average number of incoming edges to be constant these loops should be O(1) in n.
+			/*
+				If we can assume the average number of incoming edges per vertex to be constant these loops should be O(1) in n.
+				Example, if we have n = 10 000 000 vertices and 10 inbound edges on each vertex these loops should be
+				(first loop is depth) X (worst case second loop is 10^depth) X (inner loop is 10)
+				depth * 10^depth * 10
+				independent of n
+			*/
 			for (int level = 1; level <= depth; level++) {
 				for (const uint64_t v : level_sets[level - 1]) {
 					for (const uint64_t edge : edge_map[v]) {
