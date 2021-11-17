@@ -227,29 +227,4 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(harmonic_centrality_analysis) {
-
-	const size_t num_incoming = 20;
-
-	for (size_t i = 1000000; i < 10000000; i += 1000000) {
-		const size_t len = i;
-		vector<uint64_t> vertices;
-		for (size_t j = 1; j <= len; j++) {
-			vertices.push_back(j);
-		}
-
-		// generate num_incoming random edges per node
-		set<pair<uint64_t, uint64_t>> edges;
-		for (uint64_t vertex : vertices) {
-			edges.insert(make_pair(rand() % len + 1, vertex));
-		}
-
-		Profiler::instance prof("Profile for len = " + to_string(len));
-		vector<double> h = Algorithm::harmonic_centrality(vertices, edges, 6);
-		prof.stop();
-		prof.print();
-	}
-
-}
-
 BOOST_AUTO_TEST_SUITE_END();

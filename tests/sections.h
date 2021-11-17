@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(sections) {
 	unsigned long long initial_ft_section_depth = Config::ft_section_depth;
 	Config::nodes_in_cluster = 1;
 	Config::node_id = 0;
-	Config::ft_max_results_per_section = 20;
+	Config::ft_max_results_per_section = 10;
 	Config::ft_max_sections = 8;
 	Config::ft_section_depth = 64;
 
