@@ -91,8 +91,8 @@ add_executable(cc_parser
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
-add_executable(splitter
-	"src/splitter.cpp"
+add_executable(tools
+	"src/tools.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -118,7 +118,7 @@ target_link_libraries(cc_parser PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-target_link_libraries(splitter PUBLIC
+target_link_libraries(tools PUBLIC
 	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
