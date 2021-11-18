@@ -31,6 +31,9 @@
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
+#include <math.h>
+#include <cassert>
+#include <future>
 
 namespace Algorithm {
 
@@ -131,22 +134,19 @@ namespace Algorithm {
 		The depth parameter is the maximum level to traverse in the neighbour tree.
 		The edges set contains pairs of edges (from vertex, to vertex)
 	*/
-	vector<double> harmonic_centrality(const vector<uint64_t> vertices, const set<pair<uint64_t, uint64_t>> edges, size_t depth) {
+
+	/*
+	 * This is the inner outer loop for calculating harmonic centrality.
+	 * */
+	vector<double> harmonic_centrality_subvector(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map,
+			size_t depth, size_t start, size_t len) {
+
 		vector<double> harmonics;
 
-		unordered_map<uint64_t, vector<uint64_t>> edge_map;
-
-		for (const pair<uint64_t, uint64_t> &edge : edges) {
-			/*
-			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
-			harmonic centrality of vertex.
-			*/
-			edge_map[edge.second].push_back(edge.first);
-		}
-
-		for (const uint64_t vertex : vertices) {
-			map<int, unordered_set<uint64_t>> level_sets;
-			unordered_set<uint64_t> all;
+		for (size_t i = start; i < start + len; i++) {
+			const uint32_t vertex = vertices[i];
+			map<int, unordered_set<uint32_t>> level_sets;
+			unordered_set<uint32_t> all;
 			level_sets[0].insert(vertex);
 			all.insert(vertex);
 			double harmonic = 0.0;
@@ -158,21 +158,83 @@ namespace Algorithm {
 				independent of n
 			*/
 			for (int level = 1; level <= depth; level++) {
-				for (const uint64_t v : level_sets[level - 1]) {
-					for (const uint64_t edge : edge_map[v]) {
-						if (all.count(edge) == 0) {
-							level_sets[level].insert(edge); // Average O(1)
-							all.insert(edge); // Average O(1)
+				for (const uint32_t v : level_sets[level - 1]) {
+					if (edge_map.count(v)) {
+						for (const uint32_t edge : edge_map.at(v)) {
+							if (all.count(edge) == 0) {
+								level_sets[level].insert(edge); // Average O(1)
+								all.insert(edge); // Average O(1)
+							}
 						}
 					}
 				}
 				harmonic += (double)level_sets[level].size() / level;
 			}
 
+			cout << "got harmonic: " << harmonic << endl;
+
 			harmonics.push_back(harmonic);
 		}
 
 		return harmonics;
+	}
+
+	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth) {
+		vector<double> harmonics;
+
+		unordered_map<uint32_t, vector<uint32_t>> edge_map;
+		for (const pair<uint32_t, uint32_t> &edge : edges) {
+			/*
+			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
+			harmonic centrality of vertex.
+			*/
+			edge_map[edge.second].push_back(edge.first);
+		}
+
+		return harmonic_centrality(vertices, edge_map, depth);
+	}
+
+	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map, size_t depth) {
+		return harmonic_centrality_subvector(vertices, edge_map, depth, 0, vertices.size());
+	}
+
+	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
+			size_t num_threads) {
+
+		unordered_map<uint32_t, vector<uint32_t>> edge_map;
+		for (const pair<uint32_t, uint32_t> &edge : edges) {
+			/*
+			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
+			harmonic centrality of vertex.
+			*/
+			edge_map[edge.second].push_back(edge.first);
+		}
+
+		return harmonic_centrality_threaded(vertices, edge_map, depth, num_threads);
+	}
+
+	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map,
+			size_t depth, size_t num_threads) {
+
+		assert(vertices.size() >= num_threads);
+
+		vector<future<vector<double>>> threads;
+
+		// Split the vertices into several vectors.
+		const size_t max_len = ceil((double)vertices.size() / num_threads);
+		for (size_t i = 0; i < vertices.size(); i += max_len) {
+			const size_t len = min(max_len, vertices.size() - i);
+			threads.emplace_back(async(launch::async, harmonic_centrality_subvector, vertices, edge_map, depth, i, len));
+			break;
+		}
+
+		vector<double> harmonic;
+		for (auto &thread : threads) {
+			vector<double> part = thread.get();
+			harmonic.insert(harmonic.end(), part.begin(), part.end());
+		}
+
+		return harmonic;
 	}
 
 }

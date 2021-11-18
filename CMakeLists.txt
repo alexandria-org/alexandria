@@ -76,6 +76,9 @@ set(SRC_CLASSES
 	"src/config.cpp"
 
 	"src/algorithm/Algorithm.cpp"
+
+	"src/tools/Splitter.cpp"
+	"src/tools/CalculateHarmonic.cpp"
 )
 
 set(SRC_COMMON
@@ -84,8 +87,6 @@ set(SRC_COMMON
 	"src/common/DictionaryRow.cpp"
 	"src/text/Stopwords.cpp"
 	"src/text/Text.cpp"
-
-	"src/tools/Splitter.cpp"
 )
 
 add_executable(cc_parser 
