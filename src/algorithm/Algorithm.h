@@ -59,10 +59,10 @@ namespace Algorithm {
 		The depth parameter is the maximum level to traverse in the neighbour tree.
 		The edges set contains pairs of edges (from vertex, to vertex)
 	*/
-	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth);
-	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map, size_t depth);
-	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
+	vector<double> harmonic_centrality(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth);
+	vector<double> harmonic_centrality(size_t vlen, const vector<uint32_t> *edge_map, size_t depth);
+	vector<double> harmonic_centrality_threaded(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
 			size_t num_threads);
-	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map,
+	vector<double> harmonic_centrality_threaded(size_t vlen, const vector<uint32_t> *edge_map,
 			size_t depth, size_t num_threads);
 }

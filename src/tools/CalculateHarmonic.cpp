@@ -133,7 +133,7 @@ namespace Tools {
 		}
 
 		idx = 1;
-		ofstream outfile("/tmp/hosts.txt", ios::trunc);
+		ofstream outfile("/mnt/hosts.txt", ios::trunc);
 		for (const auto &iter : hosts) {
 			outfile << idx << '\t' << iter.first << '\t' << iter.second << '\n';
 			idx++;
@@ -143,8 +143,8 @@ namespace Tools {
 
 	unordered_map<uint64_t, uint32_t> read_hosts_file() {
 
-		// Load the hosts from /tmp/hosts.txt
-		ifstream infile("/tmp/hosts.txt");
+		// Load the hosts from /mnt/hosts.txt
+		ifstream infile("/mnt/hosts.txt");
 
 		unordered_map<uint64_t, uint32_t> ret;
 
@@ -163,8 +163,8 @@ namespace Tools {
 
 	vector<uint32_t> read_hosts_file_vec() {
 
-		// Load the hosts from /tmp/hosts.txt
-		ifstream infile("/tmp/hosts.txt");
+		// Load the hosts from /mnt/hosts.txt
+		ifstream infile("/mnt/hosts.txt");
 
 		vector<uint32_t> ret;
 
@@ -180,12 +180,12 @@ namespace Tools {
 		return ret;
 	}
 
-	unordered_map<uint32_t, vector<uint32_t>> read_edge_file() {
+	vector<uint32_t> *read_edge_file(size_t vlen) {
 
-		// Load the hosts from /tmp/hosts.txt
-		ifstream infile("/tmp/edges.txt");
+		// Load the hosts from /mnt/hosts.txt
+		ifstream infile("/mnt/edges.txt");
 
-		unordered_map<uint32_t, vector<uint32_t>> ret;
+		vector<uint32_t> *edge_map = new vector<uint32_t>[vlen];
 
 		string line;
 		while (getline(infile, line)) {
@@ -194,10 +194,10 @@ namespace Tools {
 
 			uint32_t from = stoi(parts[0]);
 			uint32_t to = stoi(parts[1]);
-			ret[to].push_back(from);
+			edge_map[to].push_back(from);
 		}
 
-		return ret;
+		return edge_map;
 	}
 
 	void calculate_harmonic_links() {
@@ -259,7 +259,7 @@ namespace Tools {
 			idx++;
 		}
 
-		ofstream outfile("/tmp/edges.txt", ios::trunc);
+		ofstream outfile("/mnt/edges.txt", ios::trunc);
 		for (const pair<uint32_t, uint32_t> edge : edges) {
 			outfile << edge.first << '\t' << edge.second << '\n';
 		}
@@ -268,22 +268,23 @@ namespace Tools {
 
 	void calculate_harmonic() {
 
-		const size_t num_threads = 12;
+		const size_t num_threads = 8;
 
 		vector<uint32_t> hosts = read_hosts_file_vec();
-		unordered_map<uint32_t, vector<uint32_t>> edges = read_edge_file();
+		const vector<uint32_t> *edge_map = read_edge_file(hosts.size());
 
 		cout << "loaded " << hosts.size() << " hosts" << endl;
-		cout << "loaded " << edges.size() << " edges" << endl;
 
 		cout << "running harmonic centrality algorithm on " << num_threads << " threads" << endl;
 
-		vector<double> harmonic = Algorithm::harmonic_centrality_threaded(hosts, edges, 5, num_threads);
+		vector<double> harmonic = Algorithm::harmonic_centrality_threaded(hosts.size(), edge_map, 3, num_threads);
+
+		delete [] edge_map;
 
 		// Save harmonic centrality.
-		ofstream outfile("/tmp/harmonic.txt", ios::trunc);
+		ofstream outfile("/mnt/harmonic.txt", ios::trunc);
 		for (size_t i = 0; i < hosts.size(); i++) {
-			outfile << hosts[i] << '\t' << harmonic[i] << '\n';
+			outfile << fixed << hosts[i] << '\t' << harmonic[i] << '\n';
 		}
 
 	}

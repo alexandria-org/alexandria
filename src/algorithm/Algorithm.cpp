@@ -25,6 +25,7 @@
  */
 
 #include "Algorithm.h"
+#include "system/Profiler.h"
 #include <iostream>
 #include <set>
 #include <numeric>
@@ -34,6 +35,7 @@
 #include <math.h>
 #include <cassert>
 #include <future>
+#include <cstring>
 
 namespace Algorithm {
 
@@ -138,17 +140,30 @@ namespace Algorithm {
 	/*
 	 * This is the inner outer loop for calculating harmonic centrality.
 	 * */
-	vector<double> harmonic_centrality_subvector(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map,
+	vector<double> harmonic_centrality_subvector(size_t vlen, const vector<uint32_t> *edge_map,
 			size_t depth, size_t start, size_t len) {
+
+		char *all = new char[vlen];
+		uint32_t *level1 = new uint32_t[vlen];
+		uint32_t *level2 = new uint32_t[vlen];
+
+		uint32_t *levels[2] = {level1, level2};
+		size_t level_len[2] = {0, 0};
 
 		vector<double> harmonics;
 
+		Profiler::instance prof("Timetaker");
 		for (size_t i = start; i < start + len; i++) {
-			const uint32_t vertex = vertices[i];
-			map<int, unordered_set<uint32_t>> level_sets;
-			unordered_set<uint32_t> all;
-			level_sets[0].insert(vertex);
-			all.insert(vertex);
+			const uint32_t vertex = i;
+
+			level_len[0] = 0;
+			level_len[1] = 0;
+			memset(all, 0, vlen);
+
+			levels[0][0] = vertex;
+			level_len[0]++;
+			all[vertex] = 1;
+
 			double harmonic = 0.0;
 			/*
 				If we can assume the average number of incoming edges per vertex to be constant these loops should be O(1) in n.
@@ -157,32 +172,46 @@ namespace Algorithm {
 				depth * 10^depth * 10
 				independent of n
 			*/
+			size_t last_level = 0;
+			size_t cur_level = 1;
 			for (int level = 1; level <= depth; level++) {
-				for (const uint32_t v : level_sets[level - 1]) {
-					if (edge_map.count(v)) {
-						for (const uint32_t edge : edge_map.at(v)) {
-							if (all.count(edge) == 0) {
-								level_sets[level].insert(edge); // Average O(1)
-								all.insert(edge); // Average O(1)
-							}
+				//for (const uint32_t &v : level[level - 1]) {
+				for (size_t j = 0; j < level_len[last_level]; j++) {
+					const uint32_t v = levels[last_level][j];
+					for (const uint32_t &edge : edge_map[v]) {
+						if (!all[edge]) {
+							levels[cur_level][level_len[cur_level]++] = edge;
+							all[edge] = 1;
 						}
 					}
 				}
-				harmonic += (double)level_sets[level].size() / level;
+				if (level_len[cur_level] == 0) break;
+				harmonic += (double)level_len[cur_level] / level;
+				// Swap levels
+				level_len[last_level] = 0;
+				size_t tmp = last_level;
+				last_level = cur_level;
+				cur_level = tmp;
 			}
 
-			cout << "got harmonic: " << harmonic << endl;
+			if (start == 0) {
+				cout << fixed << "got harmonic: " << harmonic << " " << i << "/" << (start + len) << " in " << prof.get() << "ms == " << (double)i / ((double)prof.get() / 1000) << endl;
+			}
 
 			harmonics.push_back(harmonic);
 		}
 
+		delete [] level2;
+		delete [] level1;
+		delete [] all;
+
 		return harmonics;
 	}
 
-	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth) {
+	vector<double> harmonic_centrality(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth) {
 		vector<double> harmonics;
 
-		unordered_map<uint32_t, vector<uint32_t>> edge_map;
+		vector<uint32_t> *edge_map = new vector<uint32_t>[vlen];
 		for (const pair<uint32_t, uint32_t> &edge : edges) {
 			/*
 			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
@@ -191,17 +220,21 @@ namespace Algorithm {
 			edge_map[edge.second].push_back(edge.first);
 		}
 
-		return harmonic_centrality(vertices, edge_map, depth);
+		vector<double> ret = harmonic_centrality(vlen, edge_map, depth);
+
+		delete [] edge_map;
+
+		return ret;
 	}
 
-	vector<double> harmonic_centrality(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map, size_t depth) {
-		return harmonic_centrality_subvector(vertices, edge_map, depth, 0, vertices.size());
+	vector<double> harmonic_centrality(size_t vlen, const vector<uint32_t> *edge_map, size_t depth) {
+		return harmonic_centrality_subvector(vlen, edge_map, depth, 0, vlen);
 	}
 
-	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
+	vector<double> harmonic_centrality_threaded(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
 			size_t num_threads) {
 
-		unordered_map<uint32_t, vector<uint32_t>> edge_map;
+		vector<uint32_t> *edge_map = new vector<uint32_t>[vlen];
 		for (const pair<uint32_t, uint32_t> &edge : edges) {
 			/*
 			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
@@ -210,22 +243,24 @@ namespace Algorithm {
 			edge_map[edge.second].push_back(edge.first);
 		}
 
-		return harmonic_centrality_threaded(vertices, edge_map, depth, num_threads);
+		vector<double> ret = harmonic_centrality_threaded(vlen, edge_map, depth, num_threads);
+
+		delete [] edge_map;
+
+		return ret;
 	}
 
-	vector<double> harmonic_centrality_threaded(const vector<uint32_t> &vertices, const unordered_map<uint32_t, vector<uint32_t>> &edge_map,
-			size_t depth, size_t num_threads) {
+	vector<double> harmonic_centrality_threaded(size_t vlen, const vector<uint32_t> *edge_map, size_t depth, size_t num_threads) {
 
-		assert(vertices.size() >= num_threads);
+		assert(vlen >= num_threads);
 
 		vector<future<vector<double>>> threads;
 
 		// Split the vertices into several vectors.
-		const size_t max_len = ceil((double)vertices.size() / num_threads);
-		for (size_t i = 0; i < vertices.size(); i += max_len) {
-			const size_t len = min(max_len, vertices.size() - i);
-			threads.emplace_back(async(launch::async, harmonic_centrality_subvector, vertices, edge_map, depth, i, len));
-			break;
+		const size_t max_len = ceil((double)vlen / num_threads);
+		for (size_t i = 0; i < vlen; i += max_len) {
+			const size_t len = min(max_len, vlen - i);
+			threads.emplace_back(async(launch::async, harmonic_centrality_subvector, vlen, edge_map, depth, i, len));
 		}
 
 		vector<double> harmonic;
