@@ -272,4 +272,17 @@ namespace Algorithm {
 		return harmonic;
 	}
 
+	vector<uint32_t> *set_to_edge_map(size_t n, const set<pair<uint32_t, uint32_t>> &edges) {
+		vector<uint32_t> *edge_map = new vector<uint32_t>[n];
+		for (const pair<uint32_t, uint32_t> &edge : edges) {
+			/*
+			second -> first mapping because we want to traverse the edges in the opposite direction of the edge. Incoming edges should increase
+			harmonic centrality of vertex.
+			*/
+			edge_map[edge.second].push_back(edge.first);
+		}
+
+		return edge_map;
+	}
+
 }

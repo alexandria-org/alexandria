@@ -47,6 +47,7 @@ namespace Algorithm {
 			char leading_zeros_plus_one(size_t x) const;
 			size_t num_zero_registers() const;
 			HyperLogLog operator +(const HyperLogLog &hl) const;
+			HyperLogLog &operator =(const HyperLogLog &other);
 
 		private:
 			
@@ -128,6 +129,12 @@ namespace Algorithm {
 		}
 
 		return res;
+	}
+
+	template<typename T>
+	HyperLogLog<T> &HyperLogLog<T>::operator =(const HyperLogLog<T> &other) {
+		memcpy(m_M, other.m_M, m_len);
+		return *this;
 	}
 
 }

@@ -65,4 +65,6 @@ namespace Algorithm {
 			size_t num_threads);
 	vector<double> harmonic_centrality_threaded(size_t vlen, const vector<uint32_t> *edge_map,
 			size_t depth, size_t num_threads);
+
+	vector<uint32_t> *set_to_edge_map(size_t n, const set<pair<uint32_t, uint32_t>> &edges);
 }

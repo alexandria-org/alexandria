@@ -42,6 +42,30 @@ BOOST_AUTO_TEST_CASE(hyper_simple) {
 
 BOOST_AUTO_TEST_CASE(hyper_inserts) {
 
+	{
+		Algorithm::HyperLogLog<uint32_t> hl;
+		hl.insert(0);
+		hl.insert(1);
+		hl.insert(2);
+		hl.insert(3);
+		hl.insert(4);
+		hl.insert(5);
+		hl.insert(6);
+
+		Algorithm::HyperLogLog<uint32_t> hl2;
+		hl2.insert(0);
+		hl2.insert(1);
+		hl2.insert(2);
+		hl2.insert(3);
+		hl2.insert(4);
+		hl2.insert(5);
+		hl2.insert(7);
+
+		Algorithm::HyperLogLog<uint32_t> hl3 = hl + hl2;
+		
+		cout << hl3.size() << endl;
+	}
+
 	vector<int> intervals = {400000, 500000, 1000000, 10000000};
 
 	for (int interval : intervals) {
