@@ -24,40 +24,49 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#include "algorithm/HyperLogLog.h"
+#include <cstdlib>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
+BOOST_AUTO_TEST_SUITE(hyper_log_log)
 
-#include "config.h"
+BOOST_AUTO_TEST_CASE(hyper_simple) {
+	{
+		Algorithm::HyperLogLog<uint32_t> hl;
 
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include "search_engine/SearchAllocation.h"
+		BOOST_CHECK(hl.leading_zeros_plus_one(0x0ull) == 65);
+		BOOST_CHECK(hl.leading_zeros_plus_one(0x1ull) == 64);
+		BOOST_CHECK(hl.leading_zeros_plus_one(0xFFFFFFFFull) == 33);
+		BOOST_CHECK(hl.leading_zeros_plus_one(0xFFFFFFFFull) == 33);
+	}
+}
 
-using namespace std;
+BOOST_AUTO_TEST_CASE(hyper_inserts) {
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
+	vector<int> intervals = {400000, 500000, 1000000, 10000000};
 
+	for (int interval : intervals) {
+		Algorithm::HyperLogLog<uint32_t> hl;
+		for (size_t i = 0; i < interval; i++) {
+			hl.insert(i);
+		}
+		BOOST_CHECK(std::abs((int)hl.size() - interval) < interval * 0.0040625);
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(hyper_union) {
+	Algorithm::HyperLogLog<uint32_t> hl1;
+	Algorithm::HyperLogLog<uint32_t> hl2;
+
+	for (size_t i = 0; i < 250000; i++) {
+		hl1.insert(i);
+	}
+	for (size_t i = 250000; i < 500000; i++) {
+		hl2.insert(i);
+	}
+
+	Algorithm::HyperLogLog<uint32_t> hl3 = hl1 + hl2;
+	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * 0.0040625);
+}
+
+BOOST_AUTO_TEST_SUITE_END();
