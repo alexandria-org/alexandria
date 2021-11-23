@@ -9,6 +9,9 @@ using namespace std;
 void help() {
 	cout << "Usage: ./tools [OPTION]..." << endl;
 	cout << "--split run splitter" << endl;
+	cout << "--harmonic-hosts create file /tmp/hosts.txt with hosts for harmonic centrality" << endl;
+	cout << "--harmonic-links create file /tmp/edges.txt for edges for harmonic centrality" << endl;
+	cout << "--harmonic calculates harmonic centrality" << endl;
 }
 
 int main(int argc, const char **argv) {
