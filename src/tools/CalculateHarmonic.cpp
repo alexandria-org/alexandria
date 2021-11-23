@@ -193,8 +193,8 @@ namespace Tools {
 			vector<string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of("\t"));
 
-			uint32_t from = stoi(parts[0]) - 1; // I think we are counting from 0 now but from 1 when we created the edge file.
-			uint32_t to = stoi(parts[1]) - 1;
+			uint32_t from = stoi(parts[0]); // I think we are counting from 0 now but from 1 when we created the edge file.
+			uint32_t to = stoi(parts[1]);
 			edge_map[to].push_back(from);
 		}
 
