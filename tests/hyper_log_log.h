@@ -62,8 +62,6 @@ BOOST_AUTO_TEST_CASE(hyper_inserts) {
 		hl2.insert(7);
 
 		Algorithm::HyperLogLog<uint32_t> hl3 = hl + hl2;
-		
-		cout << hl3.size() << endl;
 	}
 
 	vector<int> intervals = {400000, 500000, 1000000, 10000000};
@@ -73,7 +71,7 @@ BOOST_AUTO_TEST_CASE(hyper_inserts) {
 		for (size_t i = 0; i < interval; i++) {
 			hl.insert(i);
 		}
-		BOOST_CHECK(std::abs((int)hl.size() - interval) < interval * 0.0040625);
+		BOOST_CHECK(std::abs((int)hl.size() - interval) < interval * 3 * hl.error_bound());
 	}
 
 }
@@ -90,7 +88,7 @@ BOOST_AUTO_TEST_CASE(hyper_union) {
 	}
 
 	Algorithm::HyperLogLog<uint32_t> hl3 = hl1 + hl2;
-	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * 0.0040625);
+	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * 3 * hl3.error_bound());
 }
 
 BOOST_AUTO_TEST_SUITE_END();

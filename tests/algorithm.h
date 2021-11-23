@@ -282,9 +282,8 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_hyper_ball) {
 			make_pair(4, 2),
 			make_pair(5, 4),
 		};
-		const size_t n = 1000000;
+		const size_t n = 1000;
 		vector<uint32_t> *edge_map = Algorithm::set_to_edge_map(n, e);
-		cout << "starting" << endl;
 		vector<double> h = Algorithm::hyper_ball(n, edge_map);
 		delete [] edge_map;
 		BOOST_CHECK(h.size() == n);

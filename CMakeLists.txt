@@ -76,6 +76,7 @@ set(SRC_CLASSES
 	"src/config.cpp"
 
 	"src/algorithm/Algorithm.cpp"
+	"src/algorithm/HyperBall.cpp"
 
 	"src/tools/Splitter.cpp"
 	"src/tools/CalculateHarmonic.cpp"

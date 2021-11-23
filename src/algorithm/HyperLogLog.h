@@ -27,6 +27,9 @@
 #pragma once
 
 #include <cmath>
+#include <cstring>
+#include <algorithm>
+#include <iostream>
 
 namespace Algorithm {
 
@@ -48,6 +51,8 @@ namespace Algorithm {
 			size_t size() const;
 			char leading_zeros_plus_one(size_t x) const;
 			size_t num_zero_registers() const;
+			double error_bound() const;
+
 			HyperLogLog operator +(const HyperLogLog &hl) const;
 			HyperLogLog &operator +=(const HyperLogLog &hl);
 			HyperLogLog &operator =(const HyperLogLog &other);
@@ -57,9 +62,8 @@ namespace Algorithm {
 			char *m_M; // Points to registers.
 			const int m_b = 10;
 			const size_t m_len = 1ull << m_b; // 2^m_b
-			//const double m_alpha = 0.72128812454; // = 0.7213/(1+ 1.079/m_len) 
-			const double m_alpha = 0.72054075832; // = 0.7213/(1+ 1.079/m_len) 
-			hash<string> m_hasher;
+			const double m_alpha = 0.7213/(1.0 + 1.079/m_len);
+			std::hash<std::string> m_hasher;
 
 	};
 
@@ -82,9 +86,9 @@ namespace Algorithm {
 
 	template<typename T>
 	void HyperLogLog<T>::insert(T v) {
-		size_t x = m_hasher(to_string(v));
+		size_t x = m_hasher(std::to_string(v));
 		size_t j = x >> 64-m_b;
-		m_M[j] = max(m_M[j], leading_zeros_plus_one(x << m_b));
+		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}
 
 	template<typename T>
@@ -126,10 +130,15 @@ namespace Algorithm {
 	}
 
 	template<typename T>
+	double HyperLogLog<T>::error_bound() const {
+		return 1.04 / sqrt((double)m_len);
+	}
+
+	template<typename T>
 	HyperLogLog<T> HyperLogLog<T>::operator +(const HyperLogLog<T> &hl) const {
 		HyperLogLog res;
 		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
-			res.m_M[i] = max(m_M[i], hl.m_M[i]);
+			res.m_M[i] = std::max(m_M[i], hl.m_M[i]);
 		}
 
 		return res;
@@ -138,7 +147,7 @@ namespace Algorithm {
 	template<typename T>
 	HyperLogLog<T> &HyperLogLog<T>::operator +=(const HyperLogLog<T> &hl) {
 		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
-			m_M[i] = max(m_M[i], hl.m_M[i]);
+			m_M[i] = std::max(m_M[i], hl.m_M[i]);
 		}
 		return *this;
 	}

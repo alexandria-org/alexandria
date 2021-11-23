@@ -24,13 +24,48 @@
  * SOFTWARE.
  */
 
-#include <vector>
-#include <cstdint>
+#include "HyperBall.h"
 
-#pragma once
+#include "HyperLogLog.h"
+#include "system/Profiler.h"
+
+using namespace std;
 
 namespace Algorithm {
 
-	std::vector<double> hyper_ball(uint32_t n, const std::vector<uint32_t> *edge_map);
+	vector<double> hyper_ball(uint32_t n, const vector<uint32_t> *edge_map) {
+		vector<HyperLogLog<uint32_t>> c(n);
+		vector<HyperLogLog<uint32_t>> a(n);
+		vector<double> harmonic(n, 0.0);
+
+		for (uint32_t v = 0; v < n; v++) {
+			c[v].insert(v);
+		}
+
+		size_t t = 0;
+		Profiler::instance prof("Timetaker");
+		while (true) {
+			for (uint32_t v = 0; v < n; v++) {
+				a[v] = c[v];
+				for (const uint32_t &w : edge_map[v]) {
+					a[v] += c[w];
+				}
+
+				// a[v] is t + 1 and c[v] is at t
+				harmonic[v] += (1.0 / (t + 1)) * (a[v].size() - c[v].size());
+				if (v % 1000000 == 0) {
+					cout << fixed << "t = " << t << " got harmonic: " << harmonic[v] << " " << v << "/" << n << " in " << prof.get() << "ms (" << (double)v / ((double)prof.get() / 1000) << "/s)" << endl;
+				}
+			}
+			for (uint32_t v = 0; v < n; v++) {
+				c[v] = a[v];
+			}
+			cout << "Finished run t = " + to_string(t) << endl;
+			t++;
+			if (t > 20) break;
+		}
+
+		return harmonic;
+	}
 
 }
