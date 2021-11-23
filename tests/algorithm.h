@@ -269,30 +269,4 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(harmonic_centrality_hyper_ball) {
-
-	{
-		set<pair<uint32_t, uint32_t>> e = {
-			make_pair(0, 1),
-			make_pair(1, 2),
-			make_pair(2, 0),
-			make_pair(2, 3),
-			make_pair(3, 4),
-			make_pair(3, 5),
-			make_pair(4, 2),
-			make_pair(5, 4),
-		};
-		const size_t n = 1000;
-		vector<uint32_t> *edge_map = Algorithm::set_to_edge_map(n, e);
-		vector<double> h = Algorithm::hyper_ball(n, edge_map);
-		delete [] edge_map;
-		BOOST_CHECK(h.size() == n);
-		BOOST_CHECK_CLOSE(h[0], 8.0/3.0, 0.000001);
-		BOOST_CHECK_CLOSE(h[1], 7.0/3.0, 0.000001);
-		BOOST_CHECK_CLOSE(h[2], 7.0/2.0, 0.000001);
-		BOOST_CHECK_EQUAL(h[6], 0.0);
-	}
-
-}
-
 BOOST_AUTO_TEST_SUITE_END();

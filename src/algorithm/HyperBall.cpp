@@ -28,12 +28,34 @@
 
 #include "HyperLogLog.h"
 #include "system/Profiler.h"
+#include <thread>
 
 using namespace std;
 
 namespace Algorithm {
 
+	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const vector<uint32_t> *edge_map, vector<HyperLogLog<uint32_t>> &c,
+			vector<HyperLogLog<uint32_t>> &a, vector<double> &harmonic) {
+
+		Profiler::instance prof("Timetaker");
+		for (uint32_t v = v_begin; v < v_end; v++) {
+			a[v] = c[v];
+			for (const uint32_t &w : edge_map[v]) {
+				a[v] += c[w];
+			}
+
+			// a[v] is t + 1 and c[v] is at t
+			harmonic[v] += (1.0 / (t + 1.0)) * (a[v].size() - c[v].size());
+		}
+		for (uint32_t v = v_begin; v < v_end; v++) {
+			c[v] = a[v];
+		}
+	}
+
 	vector<double> hyper_ball(uint32_t n, const vector<uint32_t> *edge_map) {
+
+		const size_t num_threads = min(12, (int)n);
+		const size_t items_per_thread = n / num_threads;
 		vector<HyperLogLog<uint32_t>> c(n);
 		vector<HyperLogLog<uint32_t>> a(n);
 		vector<double> harmonic(n, 0.0);
@@ -42,27 +64,22 @@ namespace Algorithm {
 			c[v].insert(v);
 		}
 
-		size_t t = 0;
-		Profiler::instance prof("Timetaker");
+		double t = 0.0;
 		while (true) {
-			for (uint32_t v = 0; v < n; v++) {
-				a[v] = c[v];
-				for (const uint32_t &w : edge_map[v]) {
-					a[v] += c[w];
-				}
-
-				// a[v] is t + 1 and c[v] is at t
-				harmonic[v] += (1.0 / (t + 1)) * (a[v].size() - c[v].size());
-				if (v % 1000000 == 0) {
-					cout << fixed << "t = " << t << " got harmonic: " << harmonic[v] << " " << v << "/" << n << " in " << prof.get() << "ms (" << (double)v / ((double)prof.get() / 1000) << "/s)" << endl;
-				}
+			vector<thread> threads;
+			for (size_t i = 0; i < num_threads; i++) {
+				const size_t v_begin = i * items_per_thread;
+				const size_t v_end = (i == num_threads) ? n : (i + 1) * items_per_thread;
+				thread th(hyper_ball_worker, t, v_begin, v_end, edge_map, ref(c), ref(a), ref(harmonic));
+				threads.push_back(move(th));
 			}
-			for (uint32_t v = 0; v < n; v++) {
-				c[v] = a[v];
+
+			for (thread &th : threads) {
+				th.join();
 			}
 			cout << "Finished run t = " + to_string(t) << endl;
-			t++;
-			if (t > 20) break;
+			t += 1.0;
+			if (t > 20.0) break;
 		}
 
 		return harmonic;
