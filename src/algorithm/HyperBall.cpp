@@ -69,7 +69,7 @@ namespace Algorithm {
 			vector<thread> threads;
 			for (size_t i = 0; i < num_threads; i++) {
 				const size_t v_begin = i * items_per_thread;
-				const size_t v_end = (i == num_threads) ? n : (i + 1) * items_per_thread;
+				const size_t v_end = (i == num_threads - 1) ? n : (i + 1) * items_per_thread;
 				thread th(hyper_ball_worker, t, v_begin, v_end, edge_map, ref(c), ref(a), ref(harmonic));
 				threads.push_back(move(th));
 			}
