@@ -132,7 +132,7 @@ namespace Tools {
 			idx++;
 		}
 
-		idx = 1;
+		idx = 0;
 		ofstream outfile("/mnt/hosts.txt", ios::trunc);
 		for (const auto &iter : hosts) {
 			outfile << idx << '\t' << iter.first << '\t' << iter.second << '\n';
