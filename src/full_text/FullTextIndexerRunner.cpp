@@ -174,18 +174,22 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 
 		idx++;
 	}
+	LOG_INFO("Done with all, flushing cache");
 	indexer.flush_cache(m_full_text_mutexes);
 
+	LOG_INFO("Done, writing hash table shards");
 	for (size_t i = 0; i < Config::ht_num_shards; i++) {
 		m_hash_table_mutexes[i].lock();
 		shard_builders[i]->write();
 		m_hash_table_mutexes[i].unlock();
 	}
 
+	LOG_INFO("Done, writing url_to_domain");
 	m_write_url_to_domain_mutex.lock();
 	indexer.write_url_to_domain();
 	m_write_url_to_domain_mutex.unlock();
 
+	LOG_INFO("Done, deleting hash table shards");
 	for (HashTableShardBuilder *shard_builder : shard_builders) {
 		delete shard_builder;
 	}

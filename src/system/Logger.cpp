@@ -32,22 +32,32 @@ using namespace std;
 
 namespace Logger {
 	thread m_logger_thread;
-	mutex m_lock;
+	mutex *m_lock = nullptr;
+	queue<string> *m_queue = nullptr;
 	ofstream m_file;
 	chrono::seconds m_reopen_interval = std::chrono::seconds(300);
 	chrono::system_clock::time_point m_last_reopen;
 	bool m_verbose = true;
 	bool m_run_logger = true;
 	bool m_logger_started = false;
-	queue<string> m_queue;
 
 	void verbose(bool verbose) {
 		m_verbose = verbose;
 	}
 
+	void initialize() {
+		m_lock = new mutex;
+		m_queue = new queue<string>;
+	}
+
+	void de_initialize() {
+		delete m_lock;
+		delete m_queue;
+	}
+
 	void reopen() {
 		auto now = chrono::system_clock::now();
-		m_lock.lock();
+		m_lock->lock();
 		if (now - m_last_reopen > m_reopen_interval) {
 			m_last_reopen = now;
 			try {
@@ -67,7 +77,7 @@ namespace Logger {
 				throw error;
 			}
 		}
-		m_lock.unlock();
+		m_lock->unlock();
 	}
 
 	string timestamp() {
@@ -96,9 +106,10 @@ namespace Logger {
 	}
 
 	void log_string(const string &message) {
-		m_lock.lock();
-		m_queue.push(message);
-		m_lock.unlock();
+		if (m_lock == nullptr) return; // logger thread not started.
+		m_lock->lock();
+		m_queue->push(message);
+		m_lock->unlock();
 	}
 
 	void log(const string &type, const string &file, int line, const string &message) {
@@ -110,21 +121,24 @@ namespace Logger {
 	}
 
 	void logger_thread() {
+		initialize();
 		reopen();
 		while (true) {
-			while (m_queue.empty() && m_run_logger) {
+			while (m_queue->empty() && m_run_logger) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			}
 
-			if (m_queue.empty()) break;
+			if (m_queue->empty()) break;
 
-			m_lock.lock();
-			string message = m_queue.front();
-			m_queue.pop();
-			m_lock.unlock();
+			m_lock->lock();
+			string message = m_queue->front();
+			m_queue->pop();
+			m_lock->unlock();
 
 			write_message_to_logfile(message);
 		}
+
+		de_initialize();
 	}
 
 	void start_logger_thread() {
