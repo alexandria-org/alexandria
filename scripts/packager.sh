@@ -158,8 +158,10 @@ EOF
 cp "$PKG_BIN_PATH/server" "$PKG_DIR/bin"
 cp "$PKG_BIN_PATH/../scripts/bootstrap_node_2drives.sh" "$PKG_DIR/"
 cp "$PKG_BIN_PATH/../scripts/truncate.sh" "$PKG_DIR/"
+cp "$PKG_BIN_PATH/../scripts/update.sh" "$PKG_DIR/"
 chmod +x "$PKG_DIR/bootstrap_node_2drives.sh"
 chmod +x "$PKG_DIR/truncate.sh"
+chmod +x "$PKG_DIR/update.sh"
 echo -e "$bootstrap_script_server" > "$PKG_DIR/server"
 chmod +x "$PKG_DIR/server"
 # some shenanigans to create the right layout in the zip file without extraneous directories
