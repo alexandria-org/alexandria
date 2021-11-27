@@ -48,11 +48,15 @@ namespace Logger {
 	void initialize() {
 		m_lock = new mutex;
 		m_queue = new queue<string>;
+		m_logger_started = true;
 	}
 
 	void de_initialize() {
 		delete m_lock;
 		delete m_queue;
+		m_lock = nullptr;
+		m_queue = nullptr;
+		m_logger_started = false;
 	}
 
 	void reopen() {
@@ -106,7 +110,7 @@ namespace Logger {
 	}
 
 	void log_string(const string &message) {
-		if (m_lock == nullptr) return; // logger thread not started.
+		if (!m_logger_started || m_lock == nullptr || m_queue == nullptr) return; // logger thread not started.
 		m_lock->lock();
 		m_queue->push(message);
 		m_lock->unlock();
@@ -143,8 +147,13 @@ namespace Logger {
 
 	void start_logger_thread() {
 		if (!m_logger_started) {
+			m_run_logger = true;
 			m_logger_thread = thread(logger_thread);
-			m_logger_started = true;
+		}
+
+		// Wait for logger thread to start.
+		for (size_t i = 0; i < 20 && !m_logger_started; i++) {
+			this_thread::sleep_for(1ms);
 		}
 	}
 
@@ -152,7 +161,6 @@ namespace Logger {
 		if (m_logger_started) {
 			m_run_logger = false;
 			m_logger_thread.join();
-			m_logger_started = false;
 		}
 	}
 

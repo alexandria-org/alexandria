@@ -194,10 +194,6 @@ namespace Algorithm {
 				cur_level = tmp;
 			}
 
-			if (start == 0) {
-				cout << fixed << "got harmonic: " << harmonic << " " << i << "/" << (start + len) << " in " << prof.get() << "ms == " << (double)i / ((double)prof.get() / 1000) << endl;
-			}
-
 			harmonics.push_back(harmonic);
 		}
 

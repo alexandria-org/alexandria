@@ -28,6 +28,7 @@
 
 #include "HyperLogLog.h"
 #include "system/Profiler.h"
+#include "system/Logger.h"
 #include <thread>
 
 using namespace std;
@@ -77,7 +78,7 @@ namespace Algorithm {
 			for (thread &th : threads) {
 				th.join();
 			}
-			cout << "Finished run t = " + to_string(t) << endl;
+			LOG_INFO("Finished run t = " + to_string(t));
 			t += 1.0;
 			if (t > 20.0) break;
 		}
