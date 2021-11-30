@@ -24,42 +24,8 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#pragma once
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
+#include "Document.h"
 
-#include "config.h"
-
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include "search_engine/SearchAllocation.h"
-
-using namespace std;
-
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
 

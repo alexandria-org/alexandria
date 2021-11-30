@@ -112,6 +112,7 @@ namespace Logger {
 	void log_string(const string &message) {
 		if (!m_logger_started || m_lock == nullptr || m_queue == nullptr) return; // logger thread not started.
 		m_lock->lock();
+		if (m_verbose) cout << message << endl;
 		m_queue->push(message);
 		m_lock->unlock();
 	}
@@ -161,6 +162,7 @@ namespace Logger {
 		if (m_logger_started) {
 			m_run_logger = false;
 			m_logger_thread.join();
+			m_verbose = false;
 		}
 	}
 

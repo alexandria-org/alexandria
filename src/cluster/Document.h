@@ -24,42 +24,40 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#pragma once
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
+#include<iostream>
+#include<unordered_map>
+#include<cstdint>
 
-#include "config.h"
+namespace Cluster {
 
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include "search_engine/SearchAllocation.h"
+	typedef struct Corpus_s {
+		std::unordered_map<size_t, std::string> words;
+		std::unordered_map<size_t, size_t> counts;
+	} Corpus;
 
-using namespace std;
+	class Document {
+		public:
+			Document();
+			Document(const std::string &name);
+			~Document();
+			std::string name() const { return m_name; };
+			size_t size() const { return m_counts.size(); };
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
+			void read_text(const std::string &text);
+			friend void print_document(Corpus &corpus, const Document &document);
 
+		private:
+
+			std::string m_name;
+			std::unordered_map<size_t, size_t> m_counts;
+
+	};
+
+	typedef Document Topic;
+	typedef std::unordered_map<size_t, Document> Documents;
+
+	void read_corpus(Corpus &corpus, Documents &documents, std::stringstream &tsv);
+	void print_document(Corpus &corpus, const Document &document);
+}

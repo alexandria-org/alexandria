@@ -80,6 +80,8 @@ set(SRC_CLASSES
 
 	"src/tools/Splitter.cpp"
 	"src/tools/CalculateHarmonic.cpp"
+
+	"src/cluster/Document.cpp"
 )
 
 set(SRC_COMMON

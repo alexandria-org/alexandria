@@ -24,42 +24,34 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+//#include "algorithm/HyperBall.h"
+#include "cluster/Cluster.h"
+#include "file/Transfer.h"
+#include "hash/Hash.h"
+#include "system/Logger.h"
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
+BOOST_AUTO_TEST_SUITE(cluster)
 
-#include "config.h"
+BOOST_AUTO_TEST_CASE(cluster) {
+	Logger::verbose(true);
+	Logger::start_logger_thread();
+	{
+		int error;
+		stringstream ss;
+		Transfer::gz_file_to_stream("/test-data/10272145489625484395-1002.gz", ss, error);
+		BOOST_CHECK(error == Transfer::OK);
 
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include "search_engine/SearchAllocation.h"
+		Cluster::Corpus corpus;
+		Cluster::Documents documents;
+		Cluster::read_corpus(corpus, documents, ss);
 
-using namespace std;
+		const size_t key = Hash::str("aftonbladet.se");
+		BOOST_CHECK(documents.count(key) == 1);
+		BOOST_CHECK(documents[key].size() > 0);
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "invoke.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
+		Cluster::print_document(corpus, documents[key]);
+	}
+	Logger::join_logger_thread();
+}
 
+BOOST_AUTO_TEST_SUITE_END();
