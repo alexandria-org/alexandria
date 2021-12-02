@@ -75,7 +75,7 @@ void HtmlParser::parse(const string &html, const string &url) {
 
 	m_h1 = get_tag_content(html, "<h1", "</h1>");
 	m_meta = get_meta_tag(html);
-	m_text = get_text_after_h1(html);
+	m_text = get_text_content(html);
 
 	if (m_encoding == ENC_ISO_8859_1) {
 		iso_to_utf8(m_title);
@@ -215,7 +215,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path) {
 	return CC_OK;
 }
 
-inline void HtmlParser::remove_www(string &path) {
+void HtmlParser::remove_www(string &path) {
 	size_t pos = path.find("www.");
 	if (pos == 0) path.erase(0, 4);
 	Text::trim(path);
@@ -317,7 +317,7 @@ inline pair<size_t, size_t> HtmlParser::find_tag(const string &html, const strin
 	return pair<size_t, size_t>(pos_start, pos_end + tag_end.size());
 }
 
-inline string HtmlParser::get_tag_content(const string &html, const string &tag_start, const string &tag_end) {
+string HtmlParser::get_tag_content(const string &html, const string &tag_start, const string &tag_end) {
 	size_t pos_start = html.find(tag_start);
 	if (pos_start == string::npos || is_invisible(pos_start)) return "";
 	pos_start = html.find(">", pos_start);
@@ -328,7 +328,7 @@ inline string HtmlParser::get_tag_content(const string &html, const string &tag_
 	return (string)html.substr(pos_start + 1, len - 1);
 }
 
-inline string HtmlParser::get_meta_tag(const string &html) {
+string HtmlParser::get_meta_tag(const string &html) {
 	const size_t pos_start = html.find("<meta");
 	const size_t pos_description = html.find("description\"", pos_start);
 	const size_t pos_end_tag = html.find(">", pos_description);
@@ -344,7 +344,7 @@ inline string HtmlParser::get_meta_tag(const string &html) {
 	return (string)html.substr(content_start + s.size(), pos_end_tag - content_start - s.size() - 1);
 }
 
-inline void HtmlParser::clean_text(string &str) {
+void HtmlParser::clean_text(string &str) {
 	strip_tags(str);
 	if (str.size() >= HTML_PARSER_CLEANBUF_LEN) return;
 	decode_html_entities_utf8(m_clean_buff, str.c_str());
@@ -353,7 +353,7 @@ inline void HtmlParser::clean_text(string &str) {
 	Text::trim(str);
 }
 
-inline void HtmlParser::strip_tags(string &html) {
+void HtmlParser::strip_tags(string &html) {
 	const int len = html.size();
 	bool copy = true;
 	bool last_was_space = false;
@@ -375,7 +375,7 @@ inline void HtmlParser::strip_tags(string &html) {
 	html.resize(j);
 }
 
-inline void HtmlParser::strip_whitespace(string &html) {
+void HtmlParser::strip_whitespace(string &html) {
 	const int len = html.size();
 	bool last_was_space = false;
 	int i = 0, j = 0;
@@ -394,10 +394,20 @@ inline void HtmlParser::strip_whitespace(string &html) {
 	html.resize(j);
 }
 
-inline string HtmlParser::get_text_after_h1(const string &html) {
-	const size_t pos_start = html.find("</h1>");
+/*
+ * This function returns the text content of the html by first trying to fetch content after the first <h1>...</h1> tag. If no h1 tag is present
+ * it tries to fetch content from the start of the <body>
+ * */
+string HtmlParser::get_text_content(const string &html) {
+	size_t pos_start = html.find("</h1>");
 
-	if (pos_start == string::npos || is_invisible(pos_start)) return "";
+	// Start from body if no h1 is present
+	if (pos_start == string::npos || is_invisible(pos_start)) {
+		pos_start = html.find("<body");
+	}
+	if (pos_start == string::npos || is_invisible(pos_start)) {
+		return "";
+	}
 
 	const int len = html.size();
 	bool copy = true;

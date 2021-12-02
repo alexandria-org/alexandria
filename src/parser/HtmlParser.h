@@ -105,12 +105,12 @@ private:
 
 	inline pair<size_t, size_t> find_tag(const string &html, const string &tag_start, const string &tag_end,
 		size_t pos);
-	inline string get_tag_content(const string &html, const string &tag_start, const string &tag_end);
-	inline string get_meta_tag(const string &html);
-	inline void clean_text(string &str);
-	inline void strip_whitespace(string &html);
-	inline void strip_tags(string &html);
-	inline string get_text_after_h1(const string &html);
+	string get_tag_content(const string &html, const string &tag_start, const string &tag_end);
+	string get_meta_tag(const string &html);
+	void clean_text(string &str);
+	void strip_whitespace(string &html);
+	void strip_tags(string &html);
+	string get_text_content(const string &html);
 	void sort_invisible();
 	inline bool is_invisible(size_t pos);
 

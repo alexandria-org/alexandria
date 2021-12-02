@@ -19,6 +19,7 @@ namespace Warc {
 
 			bool parse_stream(std::istream &stream);
 			const string &result() const { return m_result; };
+			const string &link_result() const { return m_links; };
 
 		private:
 

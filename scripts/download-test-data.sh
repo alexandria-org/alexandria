@@ -7,6 +7,16 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 
+for shard in $(seq 0 7); do
+	mkdir "/mnt/$shard";
+	mkdir "/mnt/$shard/input";
+	mkdir "/mnt/$shard/output";
+	mkdir "/mnt/$shard/upload";
+	mkdir "/mnt/$shard/hash_table";
+	mkdir "/mnt/$shard/full_text";
+	mkdir "/mnt/$shard/tmp";
+done
+
 DEST=$1
 
 cd $DEST || { echo "target directory does not exist"; exit 127; }

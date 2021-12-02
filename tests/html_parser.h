@@ -65,6 +65,22 @@ BOOST_AUTO_TEST_CASE(html_parse2) {
 	parser.parse(File::read_test_file("test6.html"));
 }
 
+BOOST_AUTO_TEST_CASE(html_parse3) {
+	HtmlParser parser;
+
+	parser.parse(File::read_test_file("test7.html"));
+	BOOST_CHECK_EQUAL(parser.text().substr(0, 20), "Add to wishlist Adde");
+
+}
+
+BOOST_AUTO_TEST_CASE(html_parse4) {
+	HtmlParser parser;
+
+	parser.parse(File::read_test_file("test8.html"));
+	BOOST_CHECK_EQUAL(parser.text().substr(0, 107), "Hacker News new | past | comments | ask | show | jobs | submit login 1. The Fastest FizzBuzz Implementation");
+
+}
+
 BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	string html;

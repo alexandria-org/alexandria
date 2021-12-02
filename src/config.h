@@ -54,7 +54,7 @@ namespace Config {
 
 	// Commoncrawl parser.
 	inline const std::string cc_target_output = "alexandria-cc-output";
-	inline const bool cc_run_on_lambda = true;
+	inline const bool cc_run_on_lambda = false;
 
 	inline const std::string log_file_path = "/var/log/alexandria.log";
 
