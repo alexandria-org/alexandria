@@ -134,7 +134,7 @@ namespace Worker {
 			return;
 		}
 
-		pthread_t thread_ids[Config::worker_count];
+		vector<pthread_t> thread_ids(Config::worker_count);
 
 		Worker *workers = new Worker[Config::worker_count];
 		for (size_t i = 0; i < Config::worker_count; i++) {

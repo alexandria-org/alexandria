@@ -177,4 +177,4 @@ BOOST_AUTO_TEST_CASE(merge_many_arrays_of_struct) {
 
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

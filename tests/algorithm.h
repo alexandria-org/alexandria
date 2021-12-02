@@ -269,4 +269,4 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 	}
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

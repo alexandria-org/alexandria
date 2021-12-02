@@ -91,4 +91,4 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 	}
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

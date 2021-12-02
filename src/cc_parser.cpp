@@ -59,7 +59,7 @@ namespace io = boost::iostreams;
 
 char const TAG[] = "LAMBDA_ALLOC";
 
-#define CC_PARSER_CHUNK 1024*1024*600
+#define CC_PARSER_CHUNK 629145600
 #define CC_PARSER_ZLIB_IN 1024*1024*16
 #define CC_PARSER_ZLIB_OUT 1024*1024*16
 
@@ -230,9 +230,8 @@ int CCParser::unzip_record(char *data, int size) {
 	int data_size = size;
 	int consumed = 0, consumed_total = 0;
 	int avail_in_before_inflate;
-	int ret;
+	int ret = Z_OK;
 	unsigned have;
-	z_stream strm;
 
 	if (!m_continue_inflate) {
 		m_zstream.zalloc = Z_NULL;
@@ -405,8 +404,8 @@ void CCParser::parse_record(const string &record, const string &url) {
 }
 
 string CCParser::get_warc_record(const string &record, const string &key, int &offset) {
-	const int pos = record.find(key);
-	const int pos_end = record.find("\n", pos);
+	const size_t pos = record.find(key);
+	const size_t pos_end = record.find("\n", pos);
 	if (pos == string::npos || pos_end == string::npos) {
 		return "";
 	}

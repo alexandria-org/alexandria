@@ -54,4 +54,4 @@ BOOST_AUTO_TEST_CASE(cluster) {
 	Logger::join_logger_thread();
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

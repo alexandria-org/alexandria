@@ -39,4 +39,4 @@ BOOST_AUTO_TEST_CASE(invoke_lambda) {
 	delete sub_system;
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

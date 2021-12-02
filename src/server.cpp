@@ -40,8 +40,6 @@ void runner(void) {
 	const size_t data_len = 16000000ull*24ull;
 	char *random_data = new char[data_len];
 
-	FullTextRecord *random_data2 = new FullTextRecord[8000000];
-
 	const size_t file_len = 8000000ull*24ull*200ull*5ull*4ull;
 	hash<string> hasher;
 	while (true) {

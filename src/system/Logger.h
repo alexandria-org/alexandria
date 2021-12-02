@@ -69,5 +69,5 @@ namespace Logger {
 
 	};
 
-};
+}
 

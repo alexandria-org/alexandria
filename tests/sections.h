@@ -84,4 +84,4 @@ BOOST_AUTO_TEST_CASE(sections) {
 	Config::ft_section_depth = initial_ft_section_depth;
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

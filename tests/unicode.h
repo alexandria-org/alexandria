@@ -38,4 +38,4 @@ BOOST_AUTO_TEST_CASE(unicode) {
 		rika på protein, mineraler och fibrer. Smaken är söt och konsistensen le")));
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

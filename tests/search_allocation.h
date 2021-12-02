@@ -37,4 +37,4 @@ BOOST_AUTO_TEST_CASE(create) {
 	SearchAllocation::delete_storage(search_alloc);
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

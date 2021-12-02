@@ -190,4 +190,4 @@ BOOST_AUTO_TEST_CASE(local_tsv_files) {
 	BOOST_CHECK_EQUAL(my_file2.find_next_position("aac"), my_file2.size());
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

@@ -359,4 +359,4 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	Config::node_id = 0;
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

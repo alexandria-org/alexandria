@@ -218,4 +218,4 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 	
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

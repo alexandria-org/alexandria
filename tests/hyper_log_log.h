@@ -91,4 +91,4 @@ BOOST_AUTO_TEST_CASE(hyper_union) {
 	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * 3 * hl3.error_bound());
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

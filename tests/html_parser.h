@@ -231,4 +231,4 @@ BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 	here: http://nomell.se/2009/03/24/prisa-gud-har-kommer-skatteaterbaringen/
 */
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()

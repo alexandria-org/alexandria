@@ -86,4 +86,4 @@ BOOST_AUTO_TEST_CASE(read_config) {
 	Config::read_config("../tests/test_config.conf");
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()
