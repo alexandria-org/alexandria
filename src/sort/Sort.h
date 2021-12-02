@@ -36,7 +36,7 @@ namespace Sort {
 	template<typename DataRecord, typename F>
 	void merge_arrays(const vector<DataRecord> &arr1, const vector<DataRecord> &arr2, F compare, vector<DataRecord> &arr3) {
 
-		int i = 0, j = 0;
+		size_t i = 0, j = 0;
 
 		while (i < arr1.size() && j < arr2.size()) {
 			if (compare(arr1[i], arr2[j])) {
@@ -53,7 +53,7 @@ namespace Sort {
 	template<typename DataRecord, typename F>
 	void merge_arrays(const span<DataRecord> *arr1, const span<DataRecord> *arr2, F compare, vector<DataRecord> &arr3) {
 
-		int i = 0, j = 0;
+		size_t i = 0, j = 0;
 
 		while (i < arr1->size() && j < arr2->size()) {
 			if (compare((*arr1)[i], (*arr2)[j])) {

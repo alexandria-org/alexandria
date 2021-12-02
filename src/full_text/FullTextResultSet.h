@@ -81,6 +81,7 @@ private:
 	size_t m_section_len;
 	size_t m_records_read;
 	int m_file_descriptor;
+	bool m_error = false;
 
 };
 
@@ -132,7 +133,12 @@ void FullTextResultSet<DataRecord>::read_to_section(size_t section) {
 
 	size_t records_to_read = read_end - read_start;
 
-	::read(m_file_descriptor, (void *)&m_data_pointer[m_records_read], (size_t)records_to_read * sizeof(DataRecord));
+	int bytes_read = ::read(m_file_descriptor, (void *)&m_data_pointer[m_records_read], (size_t)records_to_read * sizeof(DataRecord));
+	if (bytes_read < 0) {
+		m_error = true;
+	} else {
+		m_error = false;
+	}
 	m_records_read += records_to_read;
 }
 

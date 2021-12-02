@@ -62,10 +62,10 @@ namespace Logger {
 
 	private:
 
-		std::string m_formatted_message;
+		std::string m_message;
 		std::string m_file;
 		int m_line;
-		std::string m_message;
+		std::string m_formatted_message;
 
 	};
 

@@ -5,6 +5,7 @@ set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
+add_compile_options(-Wall -Werror)
 project(cc_parser LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -61,6 +62,7 @@ set(SRC_CLASSES
 	"src/parser/HtmlParser.cpp"
 	"src/parser/Unicode.cpp"
 	"src/parser/URL.cpp"
+	"src/parser/Warc.cpp"
 	
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"

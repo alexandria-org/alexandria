@@ -178,7 +178,6 @@ void HashTableShardBuilder::read_keys() {
 	const size_t record_len = Config::ht_key_size + sizeof(size_t);
 	const size_t buffer_len = record_len * 10000;
 	char buffer[buffer_len];
-	size_t latest_pos = 0;
 
 	if (infile.is_open()) {
 		do {

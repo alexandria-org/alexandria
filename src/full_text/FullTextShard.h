@@ -100,7 +100,7 @@ private:
 
 template<typename DataRecord>
 FullTextShard<DataRecord>::FullTextShard(const string &db_name, size_t shard, size_t partition)
-: m_shard_id(shard), m_db_name(db_name), m_keys_read(false), m_partition(partition) {
+: m_db_name(db_name), m_shard_id(shard), m_partition(partition), m_keys_read(false) {
 	m_filename = "/mnt/"+mountpoint()+"/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
 	read_keys();
 }

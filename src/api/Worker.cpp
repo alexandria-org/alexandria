@@ -55,8 +55,6 @@ namespace Worker {
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
 		Worker *worker = (Worker *)data;
-		int rc, i, thread_id = worker->thread_id;
-		pid_t pid = getpid();
 
 		FCGX_Request request;
 
@@ -139,14 +137,14 @@ namespace Worker {
 		pthread_t thread_ids[Config::worker_count];
 
 		Worker *workers = new Worker[Config::worker_count];
-		for (int i = 0; i < Config::worker_count; i++) {
+		for (size_t i = 0; i < Config::worker_count; i++) {
 			workers[i].socket_id = socket_id;
 			workers[i].thread_id = i;
 
 			pthread_create(&thread_ids[i], NULL, run_worker, &workers[i]);
 		}
 
-		for (int i = 0; i < Config::worker_count; i++) {
+		for (size_t i = 0; i < Config::worker_count; i++) {
 			pthread_join(thread_ids[i], NULL);
 		}
 	}

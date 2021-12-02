@@ -104,7 +104,7 @@ void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_bui
 
 		URL target_url(col_values[2], col_values[3]);
 
-		uint64_t key_hash = target_url.hash();
+		//uint64_t key_hash = target_url.hash();
 		//shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, target_url.str());
 
 		const string site_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 

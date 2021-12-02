@@ -63,10 +63,10 @@ public:
 
 private:
 
-	const SubSystem *m_sub_system;
 	const string m_cc_batch;
-	const string m_hash_table_name;
 	const string m_db_name;
+	const string m_hash_table_name;
+	const SubSystem *m_sub_system;
 
 	mutex m_hash_table_mutexes[Config::ht_num_shards];
 	mutex m_full_text_mutexes[Config::ft_num_shards];

@@ -70,7 +70,7 @@ namespace Algorithm {
 				while (*pos < len && value > vec[*pos]) {
 					(*pos)++;
 				}
-				if (*pos < len && value < vec[*pos] || *pos >= len) {
+				if (((*pos < len) && (value < vec[*pos])) || *pos >= len) {
 					all_equal = false;
 					break;
 				}
@@ -92,7 +92,7 @@ namespace Algorithm {
 		dims = {2,2} gives {0,0}, {1,0}, {0,1}, {1,1}
 		dims = {2,3} gives {0,0}, {1,0}, {0,1}, {1,1}, {0,2}, {1,2}
 	*/
-	vector<vector<int>> incremental_partitions(const vector<int> &dims, int limit) {
+	vector<vector<int>> incremental_partitions(const vector<int> &dims, size_t limit) {
 		vector<vector<int>> res;
 		set<vector<int>> uniq;
 		vector<int> initial(dims.size(), 0);
@@ -174,7 +174,7 @@ namespace Algorithm {
 			*/
 			size_t last_level = 0;
 			size_t cur_level = 1;
-			for (int level = 1; level <= depth; level++) {
+			for (size_t level = 1; level <= depth; level++) {
 				//for (const uint32_t &v : level[level - 1]) {
 				for (size_t j = 0; j < level_len[last_level]; j++) {
 					const uint32_t v = levels[last_level][j];

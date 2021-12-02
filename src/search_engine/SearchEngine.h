@@ -411,7 +411,7 @@ namespace SearchEngine {
 		vector<DataRecord> deduped;
 		vector<DataRecord> non_deduped;
 
-		map<uint64_t, int> d_count;
+		map<uint64_t, size_t> d_count;
 		for (const DataRecord &result : results) {
 			if (d_count[result.m_domain_hash] < Config::deduplicate_domain_count) {
 				deduped.push_back(result);

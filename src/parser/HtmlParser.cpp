@@ -313,7 +313,6 @@ inline pair<size_t, size_t> HtmlParser::find_tag(const string &html, const strin
 	if (pos_start == string::npos) return pair<size_t, size_t>(string::npos, string::npos);
 
 	const size_t pos_end = html.find(tag_end, pos_start);
-	const size_t len = pos_end - pos_start;
 	if (pos_end == string::npos) return pair<size_t, size_t>(string::npos, string::npos);
 	return pair<size_t, size_t>(pos_start, pos_end + tag_end.size());
 }
@@ -408,7 +407,7 @@ inline string HtmlParser::get_text_after_h1(const string &html) {
 
 	auto interval = m_invisible_pos.begin();
 	const auto invisible_end = m_invisible_pos.end();
-	while (interval != m_invisible_pos.end() && interval->first < pos_start) {
+	while (interval != m_invisible_pos.end() && interval->first < (int)pos_start) {
 		interval++;
 	}
 
@@ -452,10 +451,10 @@ bool HtmlParser::is_exotic_language_debug(const string &str) const {
 	int num_exotic = 0;
 	int num_normal = 0;
 	int num_seminormal = 0;
-	for (int i = 0; i < len;) {
+	for (size_t i = 0; i < len;) {
 		int multibyte_len = 1;
 		int cumsum = 0;
-		for (int j = i + 1; (j < len) && IS_MULTIBYTE_CODEPOINT(cstr[j]); j++, multibyte_len++) {
+		for (size_t j = i + 1; (j < len) && IS_MULTIBYTE_CODEPOINT(cstr[j]); j++, multibyte_len++) {
 			cumsum += (unsigned char)cstr[j];
 		}
 
@@ -487,10 +486,10 @@ bool HtmlParser::is_exotic_language(const string &str) const {
 	int num_exotic = 0;
 	int num_normal = 0;
 	int num_seminormal = 0;
-	for (int i = 0; i < len;) {
+	for (size_t i = 0; i < len;) {
 		int multibyte_len = 1;
 		int cumsum = 0;
-		for (int j = i + 1; (j < len) && IS_MULTIBYTE_CODEPOINT(cstr[j]); j++, multibyte_len++) {
+		for (size_t j = i + 1; (j < len) && IS_MULTIBYTE_CODEPOINT(cstr[j]); j++, multibyte_len++) {
 			cumsum += (unsigned char)cstr[j];
 		}
 
@@ -522,7 +521,7 @@ void HtmlParser::sort_invisible() {
 
 inline bool HtmlParser::is_invisible(size_t pos) {
 	for (const auto &interval : m_invisible_pos) {
-		if (interval.first <= pos && pos <= interval.second) return true;
+		if (interval.first <= (int)pos && (int)pos <= interval.second) return true;
 	}
 	return false;
 }

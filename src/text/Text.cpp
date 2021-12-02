@@ -42,7 +42,7 @@ namespace Text {
 		size_t len = s.size();
 		for (size_t i = 0; i < len; ) {
 			size_t multibyte_len = 1;
-			for (int j = i + 1; IS_MULTIBYTE_CODEPOINT(str[j]) && (j < len); j++, multibyte_len++) {
+			for (size_t j = i + 1; IS_MULTIBYTE_CODEPOINT(str[j]) && (j < len); j++, multibyte_len++) {
 			}
 
 			if (!is_clean_char(&str[i], multibyte_len)) {
@@ -61,7 +61,7 @@ namespace Text {
 		size_t len = s.size();
 		for (size_t i = 0; i < len; ) {
 			size_t multibyte_len = 1;
-			for (int j = i + 1; IS_MULTIBYTE_CODEPOINT(str[j]) && (j < len); j++, multibyte_len++) {
+			for (size_t j = i + 1; IS_MULTIBYTE_CODEPOINT(str[j]) && (j < len); j++, multibyte_len++) {
 			}
 
 			if (is_clean_char(&str[i], multibyte_len)) {

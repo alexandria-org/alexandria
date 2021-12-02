@@ -83,13 +83,13 @@ private:
 
 	const string m_db_name;
 	const size_t m_shard_id;
+	const size_t m_max_cache_size;
 	const size_t m_partition;
 
 	mutable ifstream m_reader;
 	ofstream m_writer;
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
-	const size_t m_max_cache_size;
 	const size_t m_max_num_keys = 10000000;
 	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
 	char *m_buffer;
@@ -559,7 +559,6 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 	char buffer[buffer_len];
 
 	// Write data.
-	hash<string> hasher;
 	for (uint64_t key : keys) {
 		size_t i = 0;
 

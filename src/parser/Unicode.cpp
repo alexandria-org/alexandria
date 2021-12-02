@@ -84,19 +84,15 @@ bool Unicode::is_valid(const std::string &str) {
 	const char *cstr = str.c_str();
 	size_t len = str.size();
 
-	size_t last_unicode = len;
 	size_t utf8_len = 0;
 	for (size_t i = 0; i < len; i++) {
 		if (utf8_len == 0) {
 			if (IS_UTF8_START_1(cstr[i])) {
 				utf8_len = 1;
-				last_unicode = i;
 			} else if (IS_UTF8_START_2(cstr[i])) {
 				utf8_len = 2;
-				last_unicode = i;
 			} else if (IS_UTF8_START_3(cstr[i])) {
 				utf8_len = 3;
-				last_unicode = i;
 			} else if (IS_UNKNOWN_UTF8_START(cstr[i])) {
 				return false;
 			}

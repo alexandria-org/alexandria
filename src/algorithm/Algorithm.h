@@ -38,7 +38,7 @@ namespace Algorithm {
 	vector<int> intersection(const vector<vector<int>> &input);
 
 	template<class T>
-	void vector_chunk(const vector<T> &vec, int chunk_size, vector<vector<T>> &dest) {
+	void vector_chunk(const vector<T> &vec, size_t chunk_size, vector<vector<T>> &dest) {
 		vector<T> chunk;
 		for (T item : vec) {
 			chunk.push_back(item);
@@ -52,7 +52,7 @@ namespace Algorithm {
 		}
 	}
 
-	vector<vector<int>> incremental_partitions(const vector<int> &dims, int limit);
+	vector<vector<int>> incremental_partitions(const vector<int> &dims, size_t limit);
 
 	/*
 		Calculates the harmonic centrality for vertices and edges. The returning vector has the harmonic centrality for vertex i at position i.

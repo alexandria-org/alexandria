@@ -83,9 +83,9 @@ public:
 
 private:
 
-	const SubSystem *m_sub_system;
 	int m_indexer_id;
 	const string m_db_name;
+	const SubSystem *m_sub_system;
 	hash<string> m_hasher;
 	vector<FullTextShardBuilder<struct FullTextRecord> *> m_shards;
 

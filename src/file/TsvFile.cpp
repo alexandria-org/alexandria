@@ -313,7 +313,6 @@ size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const stri
 	}
 
 	size_t pivot_len_1 = (file_size - offset) / 2;
-	size_t pivot_len_2 = (file_size - offset) - pivot_len_1;
 	size_t pivot = offset + pivot_len_1;
 
 	// Get key at pivot.
@@ -352,7 +351,6 @@ size_t TsvFile::binary_find_position_any(size_t file_size, size_t offset, const 
 	}
 
 	size_t pivot_len_1 = (file_size - offset) / 2;
-	size_t pivot_len_2 = (file_size - offset) - pivot_len_1;
 	size_t pivot = offset + pivot_len_1;
 
 	// Get key at pivot.

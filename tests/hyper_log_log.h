@@ -64,14 +64,14 @@ BOOST_AUTO_TEST_CASE(hyper_inserts) {
 		Algorithm::HyperLogLog<uint32_t> hl3 = hl + hl2;
 	}
 
-	vector<int> intervals = {400000, 500000, 1000000, 10000000};
+	vector<size_t> intervals = {400000, 500000, 1000000, 10000000};
 
-	for (int interval : intervals) {
+	for (size_t interval : intervals) {
 		Algorithm::HyperLogLog<uint32_t> hl;
 		for (size_t i = 0; i < interval; i++) {
 			hl.insert(i);
 		}
-		BOOST_CHECK(std::abs((int)hl.size() - interval) < interval * 3 * hl.error_bound());
+		BOOST_CHECK(std::abs((int)hl.size() - (int)interval) < interval * 3 * hl.error_bound());
 	}
 
 }

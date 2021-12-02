@@ -53,10 +53,10 @@ public:
 
 private:
 
+	int m_indexer_id;
 	const string m_db_name;
 	const SubSystem *m_sub_system;
 	UrlToDomain *m_url_to_domain;
-	int m_indexer_id;
 	hash<string> m_hasher;
 
 	map<size_t, vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;

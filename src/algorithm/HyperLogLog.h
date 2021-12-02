@@ -87,7 +87,7 @@ namespace Algorithm {
 	template<typename T>
 	void HyperLogLog<T>::insert(T v) {
 		size_t x = m_hasher(std::to_string(v));
-		size_t j = x >> 64-m_b;
+		size_t j = x >> (64-m_b);
 		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}
 
