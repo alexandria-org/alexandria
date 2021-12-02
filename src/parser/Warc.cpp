@@ -16,15 +16,20 @@ namespace Warc {
 		delete m_z_buffer_out;
 	}
 
-	bool Parser::parse_stream(istream &infile) {
+	bool Parser::parse_stream(istream &stream) {
 
-		bool stream_good = infile.good();
-		while (stream_good) {
-			infile.read(m_z_buffer_in, WARC_PARSER_ZLIB_IN);
+		size_t total_bytes_read = 0;
+		while (stream.good()) {
+			stream.read(m_z_buffer_in, WARC_PARSER_ZLIB_IN);
 
-			if (!infile.good()) {
-				cout << "stream not good" << endl;
-				stream_good = false;
+			auto bytes_read = stream.gcount();
+			total_bytes_read += bytes_read;
+
+			if (bytes_read > 0) {
+				if (unzip_chunk(bytes_read) < 0) {
+					cout << "Stopped because fatal error" << endl;
+					break;
+				}
 			}
 		}
 
@@ -173,7 +178,11 @@ namespace Warc {
 
 	void Parser::parse_record(const string &record, const string &url) {
 
-		m_html_parser.parse(record, url);
+		const size_t warc_response_start = record.find("\r\n\r\n");
+		const size_t response_body_start = record.find("\r\n\r\n", warc_response_start + 4);
+
+		string html = record.substr(response_body_start + 4);
+		m_html_parser.parse(html, url);
 
 		if (m_html_parser.should_insert()) {
 			m_result += (url
@@ -201,20 +210,6 @@ namespace Warc {
 		}
 
 		return record.substr(pos + key.size(), pos_end - pos - key.size() - 1);
-	}
-
-	void cparse(istream &infile) {
-		bool stream_good = infile.good();
-		char *m_z_buffer_in = new char[WARC_PARSER_ZLIB_IN];
-		while (stream_good) {
-			infile.read(m_z_buffer_in, WARC_PARSER_ZLIB_IN);
-
-			if (!infile.good()) {
-				cout << "stream not good" << endl;
-				stream_good = false;
-			}
-		}
-		delete m_z_buffer_in;
 	}
 
 }

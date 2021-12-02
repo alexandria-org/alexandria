@@ -30,17 +30,12 @@
 BOOST_AUTO_TEST_SUITE(cc_parser)
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {
-	ifstream infile(Config::test_data_path + "CC-MAIN-20210731172305-20210731202305-00275.warc.gz", ios::binary);
-
-	//Warc::cparse(infile);
-
-	//return;
-
+	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", ios::binary);
 
 	Warc::Parser pp;
 	pp.parse_stream(infile);
 
-	/*
+	stringstream ss(pp.result());
 	string line;
 	bool found_url = false;
 	while (getline(ss, line)) {
@@ -48,12 +43,12 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch) {
 		boost::algorithm::split(cols, line, boost::is_any_of("\t"));
 
 		if (cols[0] == "https://www.bokus.com/recension/670934") {
+			BOOST_CHECK(cols[4].substr(0, 120) == "Recenserad produkt Los Angeles's Original Farmers Market Häftad (Trade Paper) Mycket intressant läsning om hur Farmers");
 			found_url = true;
 		}
 	}
 
 	BOOST_CHECK(found_url);
-	*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()

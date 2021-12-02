@@ -18,7 +18,7 @@ namespace Warc {
 			~Parser();
 
 			bool parse_stream(std::istream &stream);
-			//const string &result() const { return m};
+			const string &result() const { return m_result; };
 
 		private:
 
@@ -43,7 +43,5 @@ namespace Warc {
 			std::string get_warc_record(const std::string &record, const std::string &key, int &offset);
 
 	};
-
-	void cparse(std::istream &infile);
 
 }
