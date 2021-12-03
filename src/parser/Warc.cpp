@@ -1,5 +1,6 @@
 
 #include "Warc.h"
+#include "text/Text.h"
 
 using namespace std;
 
@@ -177,31 +178,43 @@ namespace Warc {
 		}
 
 		const string warc_header = get_warc_header(m_current_record);
-		const string content_len_str = get_warc_record(m_current_record, "Content-Length: ");
+		const string content_len_str = get_header(warc_header, "Content-Length: ");
 
 		size_t content_len = stoull(content_len_str);
 		size_t received_content = m_current_record.size() - (warc_header.size() + 8);
 
 		if (content_len == received_content) {
-			const string type = get_warc_record(m_current_record, "WARC-Type: ");
+			const string type = get_header(warc_header, "WARC-Type: ");
 
 			if (type == "response") {
-				const string url = get_warc_record(m_current_record, "WARC-Target-URI: ");
-				const string tld = m_html_parser.url_tld(url);
-				parse_record(m_current_record, url);
+				parse_record(warc_header, m_current_record);
 			}
 		}
 
 	}
 
-	void Parser::parse_record(const string &record, const string &url) {
+	void Parser::parse_record(const string &warc_header, const string &warc_record) {
 
-		const size_t warc_response_start = record.find("\r\n\r\n");
-		const size_t response_body_start = record.find("\r\n\r\n", warc_response_start + 4);
+		const string url = get_header(warc_header, "WARC-Target-URI: ");
+		const string tld = m_html_parser.url_tld(url);
+		const string ip = get_header(warc_header, "WARC-IP-Address: ");
+		const string date = get_header(warc_header, "WARC-Date: ");
 
-		const string http_header = record.substr(warc_response_start + 4, response_body_start - warc_response_start - 4);
+		const size_t warc_response_start = warc_record.find("\r\n\r\n");
+		const size_t response_body_start = warc_record.find("\r\n\r\n", warc_response_start + 4);
 
-		string html = record.substr(response_body_start + 4);
+		string http_header = warc_record.substr(warc_response_start + 4, response_body_start - warc_response_start - 4);
+		Text::lower_case(http_header);
+
+		const size_t http_code = http_response_code(http_header);
+		const string location = get_header(warc_header, "location: ");
+
+		cout << "code: " << http_code << endl;
+		if (m_num_handled > 10) {
+			//exit(0);
+		}
+
+		string html = warc_record.substr(response_body_start + 4);
 		m_html_parser.parse(html, url);
 
 		if (m_html_parser.should_insert()) {
@@ -227,14 +240,31 @@ namespace Warc {
 		return record.substr(0, pos);
 	}
 
-	string Parser::get_warc_record(const string &record, const string &key) {
+	string Parser::get_header(const string &record, const string &key) {
 		const size_t pos = record.find(key);
 		const size_t pos_end = record.find("\n", pos);
-		if (pos == string::npos || pos_end == string::npos) {
+		if (pos == string::npos) {
 			return "";
 		}
 
+		if (pos_end == string::npos) {
+			return record.substr(pos + key.size());
+		}
+
 		return record.substr(pos + key.size(), pos_end - pos - key.size() - 1);
+	}
+
+	size_t Parser::http_response_code(const string &http_header) {
+		const size_t return_on_invalid = 500;
+		const size_t code_start = http_header.find(' ');
+		const size_t code_end = http_header.find(' ', code_start);
+		if (code_start == string::npos || code_end == string::npos) return return_on_invalid;
+
+		size_t response_code = stoull(http_header.substr(code_start + 1, 3));
+
+		if (response_code < 100 || response_code >= 600) return return_on_invalid;
+
+		return response_code;
 	}
 
 }

@@ -85,4 +85,12 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 	BOOST_CHECK_EQUAL(pp.result().size(), response.size());
 }
 
+BOOST_AUTO_TEST_CASE(parse_cc_batch_301) {
+
+	Warc::Parser pp;
+	ifstream infile(Config::test_data_path + "long_warc.gz", ios::binary);
+	pp.parse_stream(infile);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

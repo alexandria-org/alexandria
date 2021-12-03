@@ -44,9 +44,10 @@ namespace Warc {
 			int unzip_chunk(int bytes_in);
 
 			void handle_record_chunk(char *data, int len);
-			void parse_record(const std::string &record, const std::string &url);
+			void parse_record(const std::string &warc_header, const std::string &warc_record);
 			std::string get_warc_header(const std::string &record);
-			std::string get_warc_record(const std::string &record, const std::string &key);
+			std::string get_header(const std::string &record, const std::string &key);
+			size_t http_response_code(const string &http_header);
 
 	};
 
