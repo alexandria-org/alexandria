@@ -160,18 +160,36 @@ namespace Warc {
 		return 0;
 	}
 
+	/*
+	 * Handles unzipped data. The data pointer is either pointing to a new warc record or it is the continuation of a previous warc record.
+	 * */
 	void Parser::handle_record_chunk(char *data, int len) {
 
-		string record(data, len);
+		m_handled += len;
+		m_num_handled++;
 
-		int type_offset;
-		int uri_offset;
-		const string type = get_warc_record(record, "WARC-Type: ", type_offset);
+		if (len > 8 && strncmp(data, "WARC/1.0", 8) == 0) {
+			// data is the start of a warc record
+			string record(data, len);
+			m_current_record.assign(data, len);
+		} else {
+			m_current_record.append(data, len);
+		}
 
-		if (type == "response") {
-			const string url = get_warc_record(record, "WARC-Target-URI: ", uri_offset);
-			const string tld = m_html_parser.url_tld(url);
-			parse_record(record, url);
+		const string warc_header = get_warc_header(m_current_record);
+		const string content_len_str = get_warc_record(m_current_record, "Content-Length: ");
+
+		size_t content_len = stoull(content_len_str);
+		size_t received_content = m_current_record.size() - (warc_header.size() + 8);
+
+		if (content_len == received_content) {
+			const string type = get_warc_record(m_current_record, "WARC-Type: ");
+
+			if (type == "response") {
+				const string url = get_warc_record(m_current_record, "WARC-Target-URI: ");
+				const string tld = m_html_parser.url_tld(url);
+				parse_record(m_current_record, url);
+			}
 		}
 
 	}
@@ -180,6 +198,8 @@ namespace Warc {
 
 		const size_t warc_response_start = record.find("\r\n\r\n");
 		const size_t response_body_start = record.find("\r\n\r\n", warc_response_start + 4);
+
+		const string http_header = record.substr(warc_response_start + 4, response_body_start - warc_response_start - 4);
 
 		string html = record.substr(response_body_start + 4);
 		m_html_parser.parse(html, url);
@@ -202,7 +222,12 @@ namespace Warc {
 		}
 	}
 
-	string Parser::get_warc_record(const string &record, const string &key, int &offset) {
+	string Parser::get_warc_header(const string &record) {
+		const size_t pos = record.find("\r\n\r\n");
+		return record.substr(0, pos);
+	}
+
+	string Parser::get_warc_record(const string &record, const string &key) {
 		const size_t pos = record.find(key);
 		const size_t pos_end = record.find("\n", pos);
 		if (pos == string::npos || pos_end == string::npos) {

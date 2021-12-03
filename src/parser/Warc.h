@@ -36,12 +36,17 @@ namespace Warc {
 
 			z_stream m_zstream; /* decompression stream */
 
+			size_t m_handled = 0;
+			size_t m_num_handled = 0;
+			string m_current_record;
+
 			int unzip_record(char *data, int size);
 			int unzip_chunk(int bytes_in);
 
 			void handle_record_chunk(char *data, int len);
 			void parse_record(const std::string &record, const std::string &url);
-			std::string get_warc_record(const std::string &record, const std::string &key, int &offset);
+			std::string get_warc_header(const std::string &record);
+			std::string get_warc_record(const std::string &record, const std::string &key);
 
 	};
 

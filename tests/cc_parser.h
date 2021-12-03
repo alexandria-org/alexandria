@@ -53,32 +53,36 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch) {
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 
-	vector<string> files = {
-		Config::test_data_path + "test1.warc.gz",
-		Config::test_data_path + "test2.warc.gz",
-		Config::test_data_path + "test3.warc.gz",
-		Config::test_data_path + "test4.warc.gz",
-		Config::test_data_path + "test5.warc.gz",
-	};
-	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", ios::binary);
+	string response;
+	{
+		Warc::Parser pp;
+		ifstream infile(Config::test_data_path + "warc_test.gz", ios::binary);
+		pp.parse_stream(infile);
 
-	Warc::Parser pp;
-	pp.parse_stream(infile);
-
-	stringstream ss(pp.result());
-	string line;
-	bool found_url = false;
-	while (getline(ss, line)) {
-		vector<string> cols;
-		boost::algorithm::split(cols, line, boost::is_any_of("\t"));
-
-		if (cols[0] == "https://www.bokus.com/recension/670934") {
-			BOOST_CHECK(cols[4].substr(0, 120) == "Recenserad produkt Los Angeles's Original Farmers Market Häftad (Trade Paper) Mycket intressant läsning om hur Farmers");
-			found_url = true;
-		}
+		response = pp.result();
 	}
 
-	BOOST_CHECK(found_url);
+	vector<string> files = {
+		Config::test_data_path + "warc_test.gz.aa",
+		Config::test_data_path + "warc_test.gz.ab",
+		Config::test_data_path + "warc_test.gz.ac",
+		Config::test_data_path + "warc_test.gz.ad",
+		Config::test_data_path + "warc_test.gz.ae",
+		Config::test_data_path + "warc_test.gz.af",
+		Config::test_data_path + "warc_test.gz.ag",
+		Config::test_data_path + "warc_test.gz.ah",
+		Config::test_data_path + "warc_test.gz.ai",
+		Config::test_data_path + "warc_test.gz.aj"
+	};
+
+	Warc::Parser pp;
+
+	for (const string &filename : files) {
+		ifstream infile(filename, ios::binary);
+		pp.parse_stream(infile);
+	}
+
+	BOOST_CHECK_EQUAL(pp.result().size(), response.size());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
