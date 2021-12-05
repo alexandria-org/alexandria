@@ -67,6 +67,7 @@ public:
 	string h1();
 	string text();
 	vector<HtmlLink> links();
+	vector<HtmlLink> internal_links();
 	bool should_insert();
 
 	// Return top level domain
@@ -77,6 +78,7 @@ public:
 private:
 
 	vector<HtmlLink> m_links;
+	vector<HtmlLink> m_internal_links;
 	vector<pair<int, int>> m_invisible_pos;
 
 	char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];
@@ -95,10 +97,10 @@ private:
 
 	void find_scripts(const string &html);
 	void find_styles(const string &html);
-	void find_links(const string &html);
+	void find_links(const string &html, const string &base_url);
 
-	int parse_link(const string &link);
-	int parse_url(const string &url, string &host, string &path);
+	int parse_link(const string &link, const string &base_url);
+	int parse_url(const string &url, string &host, string &path, const string &base_url);
 	inline void remove_www(string &path);
 	void parse_encoding(const string &html);
 	void iso_to_utf8(string &text);

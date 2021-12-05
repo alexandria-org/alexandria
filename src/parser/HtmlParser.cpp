@@ -47,7 +47,7 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_should_insert = false;
 	m_should_insert = false;
 
-	parse_url(url, m_host, m_path);
+	parse_url(url, m_host, m_path, "");
 
 	m_title.clear();
 	m_h1.clear();
@@ -55,6 +55,7 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_text.clear();
 	m_invisible_pos.clear();
 	m_links.clear();
+	m_internal_links.clear();
 
 	parse_encoding(html);
 	if (m_encoding == ENC_UNKNOWN) {
@@ -65,14 +66,9 @@ void HtmlParser::parse(const string &html, const string &url) {
 	find_scripts(html);
 	find_styles(html);
 	sort_invisible();
-	find_links(html);
+	find_links(html, url);
 
 	m_title = get_tag_content(html, "<title", "</title>");
-	clean_text(m_title);
-	if (m_title.size() == 0 || is_exotic_language(m_title) || m_title.size() > HTML_PARSER_MAX_TITLE_LEN) return;
-
-	m_should_insert = true;
-
 	m_h1 = get_tag_content(html, "<h1", "</h1>");
 	m_meta = get_meta_tag(html);
 	m_text = get_text_content(html);
@@ -83,6 +79,10 @@ void HtmlParser::parse(const string &html, const string &url) {
 		iso_to_utf8(m_meta);
 		iso_to_utf8(m_text);
 	}
+
+	clean_text(m_title);
+	if (m_title.size() == 0 || is_exotic_language(m_title) || m_title.size() > HTML_PARSER_MAX_TITLE_LEN) return;
+	m_should_insert = true;
 
 	clean_text(m_h1);
 	clean_text(m_meta);
@@ -122,7 +122,7 @@ void HtmlParser::find_styles(const string &html) {
 	}
 }
 
-void HtmlParser::find_links(const string &html) {
+void HtmlParser::find_links(const string &html, const string &base_url) {
 	size_t pos = 0;
 	pair<size_t, size_t> tag(0, 0);
 	while (pos != string::npos) {
@@ -131,11 +131,11 @@ void HtmlParser::find_links(const string &html) {
 			break;
 		}
 
-		parse_link(html.substr(tag.first, tag.second - tag.first));
+		parse_link(html.substr(tag.first, tag.second - tag.first), base_url);
 	}
 }
 
-int HtmlParser::parse_link(const string &link) {
+int HtmlParser::parse_link(const string &link, const string &base_url) {
 	const string href_key = "href=\"";
 	const size_t key_len = href_key.size();
 	const size_t href_start = link.find(href_key);
@@ -143,13 +143,26 @@ int HtmlParser::parse_link(const string &link) {
 	const size_t href_end = link.find("\"", href_start + key_len);
 	if (href_end == string::npos) return CC_ERROR;
 	string href = link.substr(href_start + key_len, href_end - href_start - key_len);
-	if (href.find("http") != 0) return CC_ERROR;
+
+	const string rel_key = "rel=\"";
+	const size_t rel_key_len = rel_key.size();
+	const size_t rel_start = link.find(rel_key);
+	bool nofollow = false;
+	if (rel_start != string::npos) {
+		// "rel=" present in string
+		const size_t rel_end = link.find("\"", rel_start + key_len);
+		const string rel = link.substr(rel_start + rel_key_len, rel_end - rel_start - rel_key_len);
+		if (rel.find("nofollow") != string::npos) nofollow = true;
+	}
 
 	string host;
 	string path;
-	if (parse_url(href, host, path) != CC_OK) return CC_ERROR;
+	if (parse_url(href, host, path, base_url) != CC_OK) return CC_ERROR;
 
-	if (host == m_host) return CC_ERROR;
+	if (host == m_host) {
+		m_internal_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow));
+		return CC_OK;
+	}
 
 	const size_t content_start = link.find(">", href_end) + 1;
 	if (content_start == string::npos) return CC_ERROR;
@@ -163,14 +176,18 @@ int HtmlParser::parse_link(const string &link) {
 
 	if (content == "") return CC_ERROR;
 
-	m_links.push_back(HtmlLink(m_host, m_path, host, path, content));
+	m_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow, content));
 
 	return CC_OK;
 }
 
-int HtmlParser::parse_url(const string &url, string &host, string &path) {
+int HtmlParser::parse_url(const string &url, string &host, string &path, const string &base_url) {
 	CURLU *h = curl_url();
 	if (!h) return CC_ERROR;
+
+	if (base_url.size()) {
+		curl_url_set(h, CURLUPART_URL, base_url.c_str(), 0);
+	}
 
 	CURLUcode uc = curl_url_set(h, CURLUPART_URL, url.c_str(), 0);
 	if (uc) {
@@ -270,6 +287,10 @@ string HtmlParser::text() {
 
 vector<HtmlLink> HtmlParser::links() {
 	return m_links;
+}
+
+vector<HtmlLink> HtmlParser::internal_links() {
+	return m_internal_links;
 }
 
 bool HtmlParser::should_insert() {

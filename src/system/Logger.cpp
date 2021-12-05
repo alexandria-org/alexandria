@@ -37,7 +37,7 @@ namespace Logger {
 	ofstream m_file;
 	chrono::seconds m_reopen_interval = std::chrono::seconds(300);
 	chrono::system_clock::time_point m_last_reopen;
-	bool m_verbose = true;
+	bool m_verbose = false;
 	bool m_run_logger = true;
 	bool m_logger_started = false;
 

@@ -33,7 +33,6 @@
 BOOST_AUTO_TEST_SUITE(cluster)
 
 BOOST_AUTO_TEST_CASE(cluster) {
-	Logger::verbose(true);
 	Logger::start_logger_thread();
 	{
 		int error;
@@ -49,7 +48,7 @@ BOOST_AUTO_TEST_CASE(cluster) {
 		BOOST_CHECK(documents.count(key) == 1);
 		BOOST_CHECK(documents[key].size() > 0);
 
-		Cluster::print_document(corpus, documents[key]);
+		//Cluster::print_document(corpus, documents[key]);
 	}
 	Logger::join_logger_thread();
 }

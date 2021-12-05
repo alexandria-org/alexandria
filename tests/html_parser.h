@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(html_parse4) {
 	HtmlParser parser;
 
 	parser.parse(File::read_test_file("test8.html"));
-	BOOST_CHECK_EQUAL(parser.text().substr(0, 107), "Hacker News new | past | comments | ask | show | jobs | submit login 1. The Fastest FizzBuzz Implementation");
+	BOOST_CHECK_EQUAL(parser.text().substr(0, 107), "Hacker News new | past | comments | ask | show | jobs | submit login 1. Apple Broke Up with Me ( merecivili");
 
 }
 

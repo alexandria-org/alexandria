@@ -1,12 +1,12 @@
 
 #include "Warc.h"
+#include "tlds.h"
 #include "text/Text.h"
 
 using namespace std;
 
 namespace Warc {
 
-		
 	Parser::Parser() {
 		m_z_buffer_in = new char[WARC_PARSER_ZLIB_IN];
 		m_z_buffer_out = new char[WARC_PARSER_ZLIB_OUT];
@@ -197,6 +197,9 @@ namespace Warc {
 
 		const string url = get_header(warc_header, "WARC-Target-URI: ");
 		const string tld = m_html_parser.url_tld(url);
+
+		if (tlds.count(tld) == 0) return;
+
 		const string ip = get_header(warc_header, "WARC-IP-Address: ");
 		const string date = get_header(warc_header, "WARC-Date: ");
 
@@ -206,13 +209,8 @@ namespace Warc {
 		string http_header = warc_record.substr(warc_response_start + 4, response_body_start - warc_response_start - 4);
 		Text::lower_case(http_header);
 
-		const size_t http_code = http_response_code(http_header);
-		const string location = get_header(warc_header, "location: ");
-
-		cout << "code: " << http_code << endl;
-		if (m_num_handled > 10) {
-			//exit(0);
-		}
+		//const size_t http_code = http_response_code(http_header);
+		//const string location = get_header(warc_header, "location: ");
 
 		string html = warc_record.substr(response_body_start + 4);
 		m_html_parser.parse(html, url);
@@ -223,6 +221,8 @@ namespace Warc {
 				+ '\t' + m_html_parser.h1()
 				+ '\t' + m_html_parser.meta()
 				+ '\t' + m_html_parser.text()
+				+ '\t' + date
+				+ '\t' + ip
 				+ '\n');
 			for (const auto &link : m_html_parser.links()) {
 				m_links += (link.host()
@@ -230,7 +230,16 @@ namespace Warc {
 					+ '\t' + link.target_host()
 					+ '\t' + link.target_path()
 					+ '\t' + link.text()
+					+ '\t' + (link.nofollow() ? "1" : "0")
 					+ '\n');
+			}
+			for (const auto &link : m_html_parser.internal_links()) {
+				if (!link.nofollow()) {
+					uint64_t source_hash = link.source_url().hash();
+					uint64_t target_hash = link.target_url().hash();
+					m_internal_links.append((char *)&source_hash, sizeof(uint64_t));
+					m_internal_links.append((char *)&target_hash, sizeof(uint64_t));
+				}
 			}
 		}
 	}

@@ -120,6 +120,35 @@ void upload_links(Aws::S3::S3Client const& s3_client, const string &result, cons
 	}
 }
 
+void upload_internal_links(Aws::S3::S3Client const& s3_client, const string &result, const string &target_key) {
+
+	Aws::S3::Model::PutObjectRequest request;
+	request.SetBucket(Config::cc_target_output);
+	string key = target_key;
+	key.replace(key.find(".warc.gz"), 8, string(".internal.gz"));
+	request.SetKey(key);
+
+	stringstream ss;
+	ss << result;
+
+	filtering_istream in;
+	in.push(gzip_compressor());
+	in.push(ss);
+
+	shared_ptr<Aws::StringStream> request_body = Aws::MakeShared<Aws::StringStream>("");
+	*request_body << in.rdbuf();
+	request.SetBody(request_body);
+
+	Aws::S3::Model::PutObjectOutcome outcome = s3_client.PutObject(request);
+
+	if (outcome.IsSuccess()) {
+	    cout << "Added object '" << key << "' to bucket '" << Config::cc_target_output << "'.";
+	} else {
+	    cout << "Error: PutObject: " << outcome.GetError().GetMessage() << endl;
+
+	}
+}
+
 bool parse_warc(const Aws::S3::S3Client &s3_client, const string &bucket, const string &key) {
 
 	Aws::S3::Model::GetObjectRequest request;
@@ -185,6 +214,7 @@ bool parse_warc(const Aws::S3::S3Client &s3_client, const string &bucket, const 
 
 	upload_result(s3_client, parser.result(), key);
 	upload_links(s3_client, parser.link_result(), key);
+	upload_internal_links(s3_client, parser.internal_link_result(), key);
 
 	cout << string("We read ") + to_string(offset) + " bytes in total of " + to_string(total_microseconds / 1000) + "ms";
 

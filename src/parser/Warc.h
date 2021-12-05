@@ -20,15 +20,15 @@ namespace Warc {
 			bool parse_stream(std::istream &stream);
 			const string &result() const { return m_result; };
 			const string &link_result() const { return m_links; };
+			const string &internal_link_result() const { return m_internal_links; };
 
 		private:
-
-			//const vector<string> m_tlds = {"se", "com", "nu", "net", "org", "gov", "edu", "info"};
 
 			int m_cur_offset = 0;
 			bool m_continue_inflate = false;
 			std::string m_result;
 			std::string m_links;
+			std::string m_internal_links;
 			HtmlParser m_html_parser;
 
 			char *m_z_buffer_in;

@@ -26,30 +26,34 @@
 
 #pragma once
 
-#include "common/common.h"
 #include <string>
+#include "parser/URL.h"
 
 using namespace std;
 
 class HtmlLink {
 
 public:
-	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path,
+	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path, bool nofollow,
 		const string &text);
+	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path, bool nofollow);
 	~HtmlLink();
 
-	string host() const;
-	string path() const;
-	string target_host() const;
-	string target_path() const;
-	string text() const;
+	URL source_url() const { return URL(m_host, m_path); };
+	URL target_url() const { return URL(m_target_host, m_target_path); };
+	string host() const { return m_host; };
+	string path() const { return m_path; };
+	string target_host() const { return m_target_host; };
+	string target_path() const { return m_target_path; };
+	bool nofollow() const { return m_nofollow; };
+	string text() const {return m_text; };
 
 private:
 	string m_host;
 	string m_path;
 	string m_target_host;
 	string m_target_path;
+	bool m_nofollow;
 	string m_text;
-	string m_rel;
 
 };
