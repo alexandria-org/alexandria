@@ -190,4 +190,29 @@ BOOST_AUTO_TEST_CASE(local_tsv_files) {
 	BOOST_CHECK_EQUAL(my_file2.find_next_position("aac"), my_file2.size());
 }
 
+BOOST_AUTO_TEST_CASE(head_content_len) {
+
+	{
+		int error;
+		size_t content_len = Transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com", error);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		BOOST_CHECK_EQUAL(content_len, 8084);
+	}
+
+	{
+		int error;
+		size_t content_len = Transfer::head_content_length("http://localhost/test-data/10272145489625484395-1002.gz", error);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		BOOST_CHECK_EQUAL(content_len, 59535774);
+	}
+
+	{
+		int error;
+		size_t content_len = Transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com-not-here", error);
+		BOOST_CHECK_EQUAL(error, Transfer::ERROR);
+		BOOST_CHECK_EQUAL(content_len, 0);
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

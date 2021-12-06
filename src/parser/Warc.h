@@ -4,6 +4,7 @@
 #include <iostream>
 #include "HtmlParser.h"
 #include "zlib.h"
+#include "parser/Parser.h"
 
 #define WARC_PARSER_ZLIB_IN 1024*1024*16
 #define WARC_PARSER_ZLIB_OUT 1024*1024*16
@@ -46,9 +47,10 @@ namespace Warc {
 			void handle_record_chunk(char *data, int len);
 			void parse_record(const std::string &warc_header, const std::string &warc_record);
 			std::string get_warc_header(const std::string &record);
-			std::string get_header(const std::string &record, const std::string &key);
 			size_t http_response_code(const string &http_header);
 
 	};
+
+	string download(const string &url);
 
 }

@@ -26,6 +26,8 @@
 
 #include "Parser.h"
 
+using namespace std;
+
 namespace Parser {
 
 	bool is_percent_encoding(const char *cstr) {
@@ -59,5 +61,19 @@ namespace Parser {
 		delete ret;
 
 		return ret_str;
+	}
+
+	string get_http_header(const string &record, const string &key) {
+		const size_t pos = record.find(key);
+		const size_t pos_end = record.find("\n", pos);
+		if (pos == string::npos) {
+			return "";
+		}
+
+		if (pos_end == string::npos) {
+			return record.substr(pos + key.size());
+		}
+
+		return record.substr(pos + key.size(), pos_end - pos - key.size() - 1);
 	}
 }

@@ -55,7 +55,7 @@ namespace io = boost::iostreams;
 
 char const TAG[] = "LAMBDA_ALLOC";
 
-#define CC_PARSER_CHUNK 629145600
+#define CC_PARSER_CHUNK 0
 
 
 string next_range(size_t offset) {
@@ -212,9 +212,9 @@ bool parse_warc(const Aws::S3::S3Client &s3_client, const string &bucket, const 
 	auto total_elapsed = std::chrono::high_resolution_clock::now() - total_start;
 	auto total_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(total_elapsed).count();
 
-	upload_result(s3_client, parser.result(), key);
+	/*upload_result(s3_client, parser.result(), key);
 	upload_links(s3_client, parser.link_result(), key);
-	upload_internal_links(s3_client, parser.internal_link_result(), key);
+	upload_internal_links(s3_client, parser.internal_link_result(), key);*/
 
 	cout << string("We read ") + to_string(offset) + " bytes in total of " + to_string(total_microseconds / 1000) + "ms";
 
@@ -289,26 +289,25 @@ void run_lambda_handler() {
 	run_handler(handler_fn);
 }
 
+void usage() {
+	cout << "cc_parser [commoncrawl warc path]" << endl;
+	exit(0);
+}
+
 int main(int argc, const char **argv) {
 
-	Aws::SDKOptions options;
-	options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Warn;
-	options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
-	Aws::InitAPI(options);
-
-	if (Config::cc_run_on_lambda) {
-		run_lambda_handler();
-	} else {
-		for (int retry = 1; retry <= 1; retry++) {
-			if (parse_warc(Aws::S3::S3Client(getS3Config()), "commoncrawl",
-				"crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz")) {
-				break;
-			}
-			cout << "Retry " << retry << endl;
-		}
+	if (argc != 2) {
+		usage();
 	}
 
-	Aws::ShutdownAPI(options);
+	const string warc_path(argv[1]);
+
+	//download_warc(warc_path);
+
+
+		/*if (parse_warc(s3_client, "commoncrawl",
+			"crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz")) {
+		}*/
 
 	return 0;
 }

@@ -26,8 +26,7 @@
 
 #include <iostream>
 
-using namespace std;
-
 namespace Parser {
-	string urldecode(const string &str);
+	std::string urldecode(const std::string &str);
+	std::string get_http_header(const std::string &record, const std::string &key);
 }

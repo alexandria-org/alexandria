@@ -178,13 +178,13 @@ namespace Warc {
 		}
 
 		const string warc_header = get_warc_header(m_current_record);
-		const string content_len_str = get_header(warc_header, "Content-Length: ");
+		const string content_len_str = ::Parser::get_http_header(warc_header, "Content-Length: ");
 
 		size_t content_len = stoull(content_len_str);
 		size_t received_content = m_current_record.size() - (warc_header.size() + 8);
 
 		if (content_len == received_content) {
-			const string type = get_header(warc_header, "WARC-Type: ");
+			const string type = ::Parser::get_http_header(warc_header, "WARC-Type: ");
 
 			if (type == "response") {
 				parse_record(warc_header, m_current_record);
@@ -195,13 +195,13 @@ namespace Warc {
 
 	void Parser::parse_record(const string &warc_header, const string &warc_record) {
 
-		const string url = get_header(warc_header, "WARC-Target-URI: ");
+		const string url = ::Parser::get_http_header(warc_header, "WARC-Target-URI: ");
 		const string tld = m_html_parser.url_tld(url);
 
 		if (tlds.count(tld) == 0) return;
 
-		const string ip = get_header(warc_header, "WARC-IP-Address: ");
-		const string date = get_header(warc_header, "WARC-Date: ");
+		const string ip = ::Parser::get_http_header(warc_header, "WARC-IP-Address: ");
+		const string date = ::Parser::get_http_header(warc_header, "WARC-Date: ");
 
 		const size_t warc_response_start = warc_record.find("\r\n\r\n");
 		const size_t response_body_start = warc_record.find("\r\n\r\n", warc_response_start + 4);
@@ -210,7 +210,7 @@ namespace Warc {
 		Text::lower_case(http_header);
 
 		//const size_t http_code = http_response_code(http_header);
-		//const string location = get_header(warc_header, "location: ");
+		//const string location = ::Parser::get_http_header(warc_header, "location: ");
 
 		string html = warc_record.substr(response_body_start + 4);
 		m_html_parser.parse(html, url);
@@ -249,20 +249,6 @@ namespace Warc {
 		return record.substr(0, pos);
 	}
 
-	string Parser::get_header(const string &record, const string &key) {
-		const size_t pos = record.find(key);
-		const size_t pos_end = record.find("\n", pos);
-		if (pos == string::npos) {
-			return "";
-		}
-
-		if (pos_end == string::npos) {
-			return record.substr(pos + key.size());
-		}
-
-		return record.substr(pos + key.size(), pos_end - pos - key.size() - 1);
-	}
-
 	size_t Parser::http_response_code(const string &http_header) {
 		const size_t return_on_invalid = 500;
 		const size_t code_start = http_header.find(' ');
@@ -274,6 +260,14 @@ namespace Warc {
 		if (response_code < 100 || response_code >= 600) return return_on_invalid;
 
 		return response_code;
+	}
+
+	string download_part(const string &url) {
+		return "";
+	}
+
+	string download(const string &url) {
+		return "";
 	}
 
 }

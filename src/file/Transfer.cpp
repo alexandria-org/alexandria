@@ -30,6 +30,8 @@
 #include "system/ThreadPool.h"
 #include "system/Logger.h"
 #include "File.h"
+#include "text/Text.h"
+#include "parser/Parser.h"
 
 namespace Transfer {
 
@@ -245,4 +247,58 @@ namespace Transfer {
 			File::delete_file(file);
 		}
 	}
+
+	size_t head_content_length(const string &url, int &error) {
+		CURL *curl = curl_easy_init();
+		error = ERROR;
+		if (curl) {
+			CURLcode res;
+			LOG_INFO("Making head request to:" + url);
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+			stringstream response;
+			curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+			curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stringstream_writer);
+
+			res = curl_easy_perform(curl);
+
+			string response_str;
+			try {
+				response_str = string(istreambuf_iterator<char>(response), {});
+			} catch (...) {
+				curl_easy_cleanup(curl);
+				error = ERROR;
+				return 0;
+			}
+
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code == 200) {
+					error = OK;
+				} else {
+					curl_easy_cleanup(curl);
+					return 0;
+				}
+			}
+
+			curl_easy_cleanup(curl);
+
+			const string content_len_str = Parser::get_http_header(Text::lower_case(response_str), "content-length: ");
+			size_t content_len;
+			try {
+				content_len = stoull(content_len_str);
+			} catch (...) {
+				error = ERROR;
+				return 0;
+			}
+
+			return content_len;
+		}
+
+		return 0;
+	}
+
 }

@@ -30,6 +30,14 @@
 
 BOOST_AUTO_TEST_SUITE(cc_parser)
 
+BOOST_AUTO_TEST_CASE(download_warc) {
+
+	const string data = Warc::download("http://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-43/segments/1634323583083.92/warc/CC-MAIN-20211015192439-20211015222439-00108.warc.gz");
+
+	cout << "downloaded: " << data.size() << " bytes" << endl;
+
+}
+
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {
 	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", ios::binary);
 

@@ -26,6 +26,6 @@ cd deps
 
 git clone https://github.com/aws/aws-sdk-cpp.git
 cd aws-sdk-cpp
-git checkout tags/1.9.47
+#git checkout tags/1.9.47
 git submodule update --init --recursive
 
