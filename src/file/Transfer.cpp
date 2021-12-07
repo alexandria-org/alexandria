@@ -76,10 +76,6 @@ namespace Transfer {
 
 		arg->offset += read_bytes;
 
-		if (arg->offset >= arg->buffer_len) {
-			return 0ull;
-		}
-	 
 		return read_bytes;
 	}
 
@@ -370,7 +366,7 @@ namespace Transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = string(FILE_SERVER) + "/upload" + path;
+			const string url = string(FILE_SERVER) + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
@@ -399,7 +395,46 @@ namespace Transfer {
 		return ERROR;
 	}
 
-	int upload_file_gz(const string &path, const string &data) {
-		return 0;
+	int upload_gz_file(const string &path, const string &data) {
+		CURL *curl = curl_easy_init();
+		if (curl) {
+			CURLcode res;
+			const string url = string(FILE_SERVER) + "/" + path;
+			LOG_INFO("Uploading file to:" + url);
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+			stringstream ss(data);
+			boost::iostreams::filtering_istream compress_stream;
+			compress_stream.push(boost::iostreams::gzip_compressor());
+			compress_stream.push(ss);
+
+			string compressed_data = string(istreambuf_iterator<char>(compress_stream), {});
+
+			cout << data.size() << endl;
+			cout << compressed_data.size() << endl;
+
+			struct curl_string_read_struct arg;
+			arg.buffer = compressed_data.c_str();
+			arg.buffer_len = compressed_data.size();
+			arg.offset = 0;
+
+			stringstream response;
+			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
+			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
+			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
+
+			res = curl_easy_perform(curl);
+
+			curl_easy_cleanup(curl);
+
+			if (res == CURLE_OK) {
+				return OK;
+			}
+			return ERROR;
+		}
+
+		return ERROR;
 	}
 }

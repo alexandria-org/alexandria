@@ -13,16 +13,12 @@ echo "server {
 	server_name _;
 
 	location / {
-		try_files \$uri \$uri/ =404;
-	}
-	location /upload {
-
-		root /var/www/html/node0003.alexandria.org/upload;
-		client_body_temp_path /var/www/html/node0003.alexandria.org/upload-tmp;
-		dav_methods PUT DELETE MKCOL COPY MOVE;
-		create_full_put_path  on;
-		dav_access group:rw  all:r;
-		client_max_body_size 10000m;
+			autoindex on;
+    		client_body_temp_path /var/www/html/node0003.alexandria.org/upload-tmp;
+    		dav_methods PUT;
+    		create_full_put_path  on;
+    		dav_access group:rw  all:r;
+    		client_max_body_size 10000m;
 	}
 }
 " > /etc/nginx/sites-available/default

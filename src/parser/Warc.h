@@ -53,4 +53,7 @@ namespace Warc {
 
 	string multipart_download(const string &url);
 
+	string get_result_path(const string &warc_path);
+	string get_link_result_path(const string &warc_path);
+	string get_internal_link_result_path(const string &warc_path);
 }

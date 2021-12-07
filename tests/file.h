@@ -28,6 +28,7 @@
 #include "text/Text.h"
 #include "file/TsvFileRemote.h"
 #include "system/Logger.h"
+#include "hash/Hash.h"
 
 BOOST_AUTO_TEST_SUITE(file)
 
@@ -226,8 +227,33 @@ BOOST_AUTO_TEST_CASE(test_upload) {
 		Transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
 		BOOST_CHECK_EQUAL(error, Transfer::OK);
 
-		error = Transfer::upload_file("/multipart_test", buffer);
+		error = Transfer::upload_file("multipart_test", buffer);
 		BOOST_CHECK_EQUAL(error, Transfer::OK);
+	}
+
+	Logger::join_logger_thread();
+}
+
+BOOST_AUTO_TEST_CASE(test_upload_gz) {
+
+	Logger::start_logger_thread();
+
+	{
+		int error;
+		string buffer;
+		Transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+
+		error = Transfer::upload_gz_file("multipart_test.gz", buffer);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+
+		// Download it again as gz file and see if we get the same result.
+		
+		const string result_back = Transfer::gz_file_to_string("multipart_test.gz", error);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+
+		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
+		BOOST_CHECK_EQUAL(Hash::str(result_back), Hash::str(buffer));
 	}
 
 	Logger::join_logger_thread();

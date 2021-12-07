@@ -68,6 +68,6 @@ namespace Transfer {
 	size_t head_content_length(const string &url, int &error);
 
 	int upload_file(const string &path, const string &data);
-	int upload_file_gz(const string &path, const string &data);
+	int upload_gz_file(const string &path, const string &data);
 
 }

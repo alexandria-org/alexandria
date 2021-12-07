@@ -298,5 +298,23 @@ namespace Warc {
 		return buffer;
 	}
 
+	string get_result_path(const string &warc_path) {
+		string path = warc_path;
+		path.replace(path.find(".warc.gz"), 8, string(".gz"));
+		return path;
+	}
+
+	string get_link_result_path(const string &warc_path) {
+		string path = warc_path;
+		path.replace(path.find(".warc.gz"), 8, string(".links.gz"));
+		return path;
+	}
+
+	string get_internal_link_result_path(const string &warc_path) {
+		string path = warc_path;
+		path.replace(path.find(".warc.gz"), 8, string(".internal.gz"));
+		return path;
+	}
+
 }
 

@@ -300,9 +300,22 @@ int main(int argc, const char **argv) {
 		usage();
 	}
 
-	const string warc_path(argv[1]);
+	Logger::start_logger_thread();
 
-	//download_warc(warc_path);
+	const string warc_path(argv[1]);
+	const string data = Warc::multipart_download(warc_path);
+	stringstream data_stream(data);
+
+	Warc::Parser pp;
+	pp.parse_stream(data_stream);
+
+	int error;
+
+	error = Transfer::upload_gz_file("/" + Warc::get_result_path(warc_path), pp.result());
+	error = Transfer::upload_gz_file("/" + Warc::get_link_result_path(warc_path), pp.link_result());
+	error = Transfer::upload_gz_file("/" + Warc::get_internal_link_path(warc_path), pp.internal_link_result());
+
+	Logger::join_logger_thread();
 
 
 		/*if (parse_warc(s3_client, "commoncrawl",
