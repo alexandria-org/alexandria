@@ -32,10 +32,14 @@ BOOST_AUTO_TEST_SUITE(cc_parser)
 
 BOOST_AUTO_TEST_CASE(download_warc) {
 
-	const string data = Warc::download("http://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-43/segments/1634323583083.92/warc/CC-MAIN-20211015192439-20211015222439-00108.warc.gz");
+	Logger::start_logger_thread();
 
-	cout << "downloaded: " << data.size() << " bytes" << endl;
+	const string data = Warc::multipart_download("http://alexandria-test-data.s3.amazonaws.com/multipart_test");
 
+	BOOST_CHECK_EQUAL(data.size(), 15728640);
+	BOOST_CHECK_EQUAL(Hash::str(data), 1803966798292769636ull);
+
+	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {

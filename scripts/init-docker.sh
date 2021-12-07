@@ -15,15 +15,30 @@ echo "server {
 	location / {
 		try_files \$uri \$uri/ =404;
 	}
+	location /upload {
+
+		root /var/www/html/node0003.alexandria.org/upload;
+		client_body_temp_path /var/www/html/node0003.alexandria.org/upload-tmp;
+		dav_methods PUT DELETE MKCOL COPY MOVE;
+		create_full_put_path  on;
+		dav_access group:rw  all:r;
+		client_max_body_size 10000m;
+	}
 }
-" > /etc/nginx/sites-available/default 
+" > /etc/nginx/sites-available/default
 
 /etc/init.d/nginx restart
 
 echo "Downloading test data";
 ./download-test-data.sh /var/www/html
 
-for shard in `cat ../shards`; do
+mkdir /var/www/html/node0003.alexandria.org/upload
+mkdir /var/www/html/node0003.alexandria.org/upload-tmp
+
+chown -R www-data:www-data /var/www/html/node0003.alexandria.org/upload
+chown -R www-data:www-data /var/www/html/node0003.alexandria.org/upload-tmp
+
+for shard in $(seq 0 7); do
 	rm -r $shard/*
 	mkdir $shard
 	mkdir "$shard/input";

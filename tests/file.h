@@ -27,6 +27,7 @@
 #include "file/Transfer.h"
 #include "text/Text.h"
 #include "file/TsvFileRemote.h"
+#include "system/Logger.h"
 
 BOOST_AUTO_TEST_SUITE(file)
 
@@ -212,6 +213,24 @@ BOOST_AUTO_TEST_CASE(head_content_len) {
 		BOOST_CHECK_EQUAL(error, Transfer::ERROR);
 		BOOST_CHECK_EQUAL(content_len, 0);
 	}
+
+}
+
+BOOST_AUTO_TEST_CASE(test_upload) {
+
+	Logger::start_logger_thread();
+
+	{
+		int error;
+		string buffer;
+		Transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+
+		error = Transfer::upload_file("/multipart_test", buffer);
+		BOOST_CHECK_EQUAL(error, Transfer::OK);
+	}
+
+	Logger::join_logger_thread();
 
 }
 

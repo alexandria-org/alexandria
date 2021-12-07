@@ -51,6 +51,6 @@ namespace Warc {
 
 	};
 
-	string download(const string &url);
+	string multipart_download(const string &url);
 
 }

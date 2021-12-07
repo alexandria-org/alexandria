@@ -7,7 +7,7 @@ read -p "Do you want to delete your local alexandria data? [Y/n] " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Y]$ ]]
 then
-	for shard in `cat shards`; do
+	for shard in $(seq 0 7); do
 		rm -r $shard/*
 		mkdir $shard
 		mkdir "$shard/input";

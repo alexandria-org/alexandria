@@ -49,6 +49,40 @@ namespace Transfer {
 		return byte_size;
 	}
 
+	size_t curl_string_writer(void *ptr, size_t size, size_t nmemb, string *str) {
+		size_t byte_size = size * nmemb;
+		str->append((char *)ptr, byte_size);
+		return byte_size;
+	}
+
+	struct curl_string_read_struct {
+		const char *buffer;
+		size_t buffer_len;
+		size_t offset;
+	};
+
+	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata) {
+		struct curl_string_read_struct *arg = (struct curl_string_read_struct *)userdata;
+
+		if (arg->offset >= arg->buffer_len) {
+			return 0ull;
+		}
+
+		size_t max_read = size * nmemb;
+		size_t read_bytes = arg->buffer_len - arg->offset;
+		if (read_bytes > max_read) read_bytes = max_read;
+
+		memcpy(ptr, &arg->buffer[arg->offset], read_bytes);
+
+		arg->offset += read_bytes;
+
+		if (arg->offset >= arg->buffer_len) {
+			return 0ull;
+		}
+	 
+		return read_bytes;
+	}
+
 	void prepare_curl(CURL *curl) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
@@ -205,6 +239,37 @@ namespace Transfer {
 		}
 	}
 
+	void url_to_string(const string &url, string &buffer, int &error) {
+		CURL *curl = curl_easy_init();
+		error = ERROR;
+		const size_t original_buffer_size = buffer.size();
+		if (curl) {
+			CURLcode res;
+			LOG_INFO("Downloading url: " + url);
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 5000);
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 5);
+
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_string_writer);
+
+			res = curl_easy_perform(curl);
+
+			if (res == CURLE_OK) {
+				long response_code;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+				if (response_code >= 200 && response_code < 300) {
+					error = OK;
+				}
+			} else {
+				// If an error ocurred we set the size of the buffer to the original size, removing any appended data.
+				buffer.resize(original_buffer_size);
+			}
+
+			curl_easy_cleanup(curl);
+		}
+	}
+
 	string run_gz_download_thread(const string &file_path) {
 		size_t hash = hasher(file_path);
 		const string target_filename = "/mnt/" + to_string(hash % 8) + "/tmp/tmp_" + to_string(hash);
@@ -301,4 +366,40 @@ namespace Transfer {
 		return 0;
 	}
 
+	int upload_file(const string &path, const string &data) {
+		CURL *curl = curl_easy_init();
+		if (curl) {
+			CURLcode res;
+			const string url = string(FILE_SERVER) + "/upload" + path;
+			LOG_INFO("Uploading file to:" + url);
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+			struct curl_string_read_struct arg;
+			arg.buffer = data.c_str();
+			arg.buffer_len = data.size();
+			arg.offset = 0;
+
+			stringstream response;
+			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
+			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
+			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
+
+			res = curl_easy_perform(curl);
+
+			curl_easy_cleanup(curl);
+
+			if (res == CURLE_OK) {
+				return OK;
+			}
+			return ERROR;
+		}
+
+		return ERROR;
+	}
+
+	int upload_file_gz(const string &path, const string &data) {
+		return 0;
+	}
 }

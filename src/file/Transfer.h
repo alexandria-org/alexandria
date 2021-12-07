@@ -59,10 +59,15 @@ namespace Transfer {
 	void file_to_stream(const string &file_path, ostream &output_stream, int &error);
 	void gz_file_to_stream(const string &file_path, ostream &output_stream, int &error);
 
+	void url_to_string(const string &url, string &buffer, int &error);
+
 	vector<string> download_gz_files_to_disk(const vector<string> files_to_download);
 	void delete_downloaded_files(const vector<string> &files);
 
 	// Make a http HEAD request and return the content length. Return 0 on failure and sets the error parameter to Transfer::ERROR
 	size_t head_content_length(const string &url, int &error);
+
+	int upload_file(const string &path, const string &data);
+	int upload_file_gz(const string &path, const string &data);
 
 }

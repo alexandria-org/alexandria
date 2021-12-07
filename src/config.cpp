@@ -17,6 +17,8 @@ namespace Config {
 	size_t ft_max_sections = 8;
 	size_t ft_max_results_per_section = 100000;
 	size_t ft_section_depth = 8;
+	string file_upload_user = "";
+	string file_upload_password = "";
 
 	void read_config(const string &config_file) {
 
@@ -71,6 +73,10 @@ namespace Config {
 				ft_max_results_per_section = stoi(parts[1]);
 			} else if (parts[0] == "ft_section_depth") {
 				ft_section_depth = stoi(parts[1]);
+			} else if (parts[0] == "file_upload_user") {
+				file_upload_user = parts[1];
+			} else if (parts[0] == "ft_section_password") {
+				file_upload_password = parts[1];
 			}
 		}
 	}

@@ -20,6 +20,8 @@ namespace Config {
 	extern size_t ft_max_sections;
 	extern size_t ft_max_results_per_section;
 	extern size_t ft_section_depth;
+	extern std::string file_upload_user;
+	extern std::string file_upload_password;
 
 	/*
 		Constants only configurable at compilation time.
