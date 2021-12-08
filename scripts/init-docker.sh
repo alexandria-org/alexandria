@@ -31,8 +31,7 @@ echo "Downloading test data";
 mkdir /var/www/html/node0003.alexandria.org/upload
 mkdir /var/www/html/node0003.alexandria.org/upload-tmp
 
-chown -R www-data:www-data /var/www/html/node0003.alexandria.org/upload
-chown -R www-data:www-data /var/www/html/node0003.alexandria.org/upload-tmp
+chown -R www-data:www-data /var/www/html/node0003.alexandria.org
 
 for shard in $(seq 0 7); do
 	rm -r $shard/*
