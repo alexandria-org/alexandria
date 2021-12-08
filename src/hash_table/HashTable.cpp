@@ -84,73 +84,9 @@ size_t HashTable::size() const {
 	return m_num_items;
 }
 
-void HashTable::upload(const SubSystem *sub_system) {
-	const size_t num_threads_downloading = 100;
-	ThreadPool pool(num_threads_downloading);
-	std::vector<std::future<void>> results;
-
-	for (auto shard : m_shards) {
-		results.emplace_back(
-			pool.enqueue([this, sub_system, shard] {
-				run_upload_thread(sub_system, shard);
-			})
-		);
-	}
-
-	for(auto && result: results) {
-		result.get();
-	}
-}
-
-void HashTable::download(const SubSystem *sub_system) {
-	const size_t num_threads_uploading = 100;
-	ThreadPool pool(num_threads_uploading);
-	std::vector<std::future<void>> results;
-
-	for (auto shard : m_shards) {
-		results.emplace_back(
-			pool.enqueue([this, sub_system, shard] {
-				run_download_thread(sub_system, shard);
-			})
-		);
-	}
-
-	for(auto && result: results) {
-		result.get();
-	}
-}
-
 void HashTable::print_all_items() const {
 	for (HashTableShard *shard : m_shards) {
 		shard->print_all_items();
-	}
-}
-
-void HashTable::run_upload_thread(const SubSystem *sub_system, const HashTableShard *shard) {
-	ifstream infile_data(shard->filename_data());
-	if (infile_data.is_open()) {
-		const string key = "hash_table/" + m_db_name + "/" + to_string(shard->shard_id()) + ".data.gz";
-		sub_system->upload_from_stream("alexandria-index", key, infile_data);
-	}
-
-	ifstream infile_pos(shard->filename_pos());
-	if (infile_pos.is_open()) {
-		const string key = "hash_table/" + m_db_name + "/" + to_string(shard->shard_id()) + ".pos.gz";
-		sub_system->upload_from_stream("alexandria-index", key, infile_pos);
-	}
-}
-
-void HashTable::run_download_thread(const SubSystem *sub_system, const HashTableShard *shard) {
-	ofstream outfile_data(shard->filename_data(), ios::binary | ios::trunc);
-	if (outfile_data.is_open()) {
-		const string key = "hash_table/" + m_db_name + "/" + to_string(shard->shard_id()) + ".data.gz";
-		sub_system->download_to_stream("alexandria-index", key, outfile_data);
-	}
-
-	ofstream outfile_pos(shard->filename_pos(), ios::binary | ios::trunc);
-	if (outfile_pos.is_open()) {
-		const string key = "hash_table/" + m_db_name + "/" + to_string(shard->shard_id()) + ".pos.gz";
-		sub_system->download_to_stream("alexandria-index", key, outfile_pos);
 	}
 }
 

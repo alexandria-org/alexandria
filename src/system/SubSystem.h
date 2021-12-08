@@ -61,15 +61,6 @@ public:
 	const Aws::S3::S3Client s3_client() const;
 	const Aws::Lambda::LambdaClient lambda_client() const;
 
-	string download_to_string(const string &bucket, const string &key) const;
-	bool download_to_stream(const string &bucket, const string &key, ofstream &output_stream) const;
-
-	void upload_from_string(const string &bucket, const string &key, const string &data) const;
-	void upload_from_stream(const string &bucket, const string &key, ifstream &file_stream) const;
-	void upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream) const;
-	void upload_from_stream(const string &bucket, const string &key, filtering_istream &compress_stream,
-		size_t retries) const;
-
 private:
 	Dictionary *m_domain_index;
 	Dictionary *m_dictionary;

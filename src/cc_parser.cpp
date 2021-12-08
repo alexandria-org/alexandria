@@ -27,6 +27,7 @@
 // main.cpp
 #include "config.h"
 #include "parser/Warc.h"
+#include "system/Logger.h"
 #include <aws/core/Aws.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
@@ -313,7 +314,11 @@ int main(int argc, const char **argv) {
 
 	error = Transfer::upload_gz_file("/" + Warc::get_result_path(warc_path), pp.result());
 	error = Transfer::upload_gz_file("/" + Warc::get_link_result_path(warc_path), pp.link_result());
-	error = Transfer::upload_gz_file("/" + Warc::get_internal_link_path(warc_path), pp.internal_link_result());
+	error = Transfer::upload_gz_file("/" + Warc::get_internal_link_result_path(warc_path), pp.internal_link_result());
+
+	if (error) {
+		cout << "error" << endl;
+	}
 
 	Logger::join_logger_thread();
 

@@ -52,16 +52,10 @@ public:
 	size_t size() const;
 	void print_all_items() const;
 
-	void upload(const SubSystem *sub_system);
-	void download(const SubSystem *sub_system);
-
 private:
 
 	vector<HashTableShard *> m_shards;
 	const string m_db_name;
 	size_t m_num_items;
-
-	void run_upload_thread(const SubSystem *sub_system, const HashTableShard *shard);
-	void run_download_thread(const SubSystem *sub_system, const HashTableShard *shard);
 
 };
