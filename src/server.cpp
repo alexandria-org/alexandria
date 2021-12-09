@@ -86,7 +86,7 @@ int main(int argc, const char **argv) {
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
-		Config::read_config("config.conf");
+		Config::read_config("/etc/alexandria.conf");
 	}
 
 	/*Worker::test_search(string(argv[1]));
@@ -99,6 +99,7 @@ int main(int argc, const char **argv) {
 
 	if (argc == 1 && FullText::is_indexed()) {
 
+		cout << "starting download server" << endl;
 		Worker::start_download_server();
 		Worker::start_server();
 

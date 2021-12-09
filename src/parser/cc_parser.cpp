@@ -38,22 +38,19 @@ namespace Parser {
 
 	void run_downloader(const string &warc_path) {
 
-		cout << "downloading: " << warc_path << endl;
-
 		Warc::Parser pp;
 		Warc::multipart_download("http://commoncrawl.s3.amazonaws.com/" + warc_path, [&pp](const string &chunk) {
-			cout << "parsing chunk of size: " << chunk.size() << endl;
 			stringstream ss(chunk);
 			pp.parse_stream(ss);
 		});
 
-		cout << "uploading: " << warc_path << endl;
+		LOG_INFO("uploading: " + warc_path);
 		int error;
-		error = Transfer::upload_gz_file("/" + Warc::get_result_path(warc_path), pp.result());
-		error = Transfer::upload_gz_file("/" + Warc::get_link_result_path(warc_path), pp.link_result());
+		error = Transfer::upload_gz_file(Warc::get_result_path(warc_path), pp.result());
+		error = Transfer::upload_gz_file(Warc::get_link_result_path(warc_path), pp.link_result());
 
 		if (error) {
-			cout << "error" << endl;
+			LOG_INFO("error uploading: " + warc_path);
 		}
 	}
 
@@ -67,7 +64,6 @@ namespace Parser {
 				sleep(rand() % (num_threads * 2));
 				run_downloader(warc_path);
 			}));
-			break;
 		}
 
 		for(auto &&result: results) {
@@ -103,7 +99,7 @@ namespace Parser {
 
 	void warc_downloader() {
 
-		const size_t timeout = 10;
+		const size_t timeout = 300;
 		const size_t limit = 500;
 
 		// main loop

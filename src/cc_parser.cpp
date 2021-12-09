@@ -539,7 +539,6 @@ int main(int argc, const char **argv) {
 			sleep(rand() % (num_threads * 2));
 			run_downloader(warc_path);
 		}));
-		break;
 	}
 
 
