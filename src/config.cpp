@@ -75,7 +75,7 @@ namespace Config {
 				ft_section_depth = stoi(parts[1]);
 			} else if (parts[0] == "file_upload_user") {
 				file_upload_user = parts[1];
-			} else if (parts[0] == "ft_section_password") {
+			} else if (parts[0] == "file_upload_password") {
 				file_upload_password = parts[1];
 			}
 		}

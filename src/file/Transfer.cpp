@@ -410,9 +410,6 @@ namespace Transfer {
 
 			string compressed_data = string(istreambuf_iterator<char>(compress_stream), {});
 
-			cout << data.size() << endl;
-			cout << compressed_data.size() << endl;
-
 			struct curl_string_read_struct arg;
 			arg.buffer = compressed_data.c_str();
 			arg.buffer_len = compressed_data.size();

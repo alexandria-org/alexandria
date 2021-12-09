@@ -178,17 +178,20 @@ namespace Warc {
 			m_current_record.append(data, len);
 		}
 
-		const string warc_header = get_warc_header(m_current_record);
-		const string content_len_str = ::Parser::get_http_header(warc_header, "Content-Length: ");
+		if (m_current_record.find("\r\n\r\n") != string::npos) {
 
-		size_t content_len = stoull(content_len_str);
-		size_t received_content = m_current_record.size() - (warc_header.size() + 8);
+			const string warc_header = get_warc_header(m_current_record);
+			const string content_len_str = ::Parser::get_http_header(warc_header, "Content-Length: ");
 
-		if (content_len == received_content) {
-			const string type = ::Parser::get_http_header(warc_header, "WARC-Type: ");
+			size_t content_len = stoull(content_len_str);
+			size_t received_content = m_current_record.size() - (warc_header.size() + 8);
 
-			if (type == "response") {
-				parse_record(warc_header, m_current_record);
+			if (content_len == received_content) {
+				const string type = ::Parser::get_http_header(warc_header, "WARC-Type: ");
+
+				if (type == "response") {
+					parse_record(warc_header, m_current_record);
+				}
 			}
 		}
 
