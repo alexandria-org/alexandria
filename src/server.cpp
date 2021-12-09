@@ -99,6 +99,7 @@ int main(int argc, const char **argv) {
 
 	if (argc == 1 && FullText::is_indexed()) {
 
+		Worker::start_download_server();
 		Worker::start_server();
 
 	} else if (argc == 1 && !FullText::is_indexed()) {

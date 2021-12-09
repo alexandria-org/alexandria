@@ -27,8 +27,28 @@
 #include "config.h"
 #include "parser/Warc.h"
 #include "parser/URL.h"
+#include "parser/cc_parser.h"
 
 BOOST_AUTO_TEST_SUITE(cc_parser)
+
+BOOST_AUTO_TEST_CASE(download_warc_paths) {
+	{
+		vector<string> paths = Parser::download_warc_paths();
+		BOOST_CHECK_EQUAL(paths.size(), 0);
+
+		paths.push_back("test_path/testing1");
+		paths.push_back("test_path/testing2");
+
+		BOOST_CHECK(Parser::upload_warc_paths(paths));
+	}
+	{
+		vector<string> paths = Parser::download_warc_paths();
+		BOOST_CHECK_EQUAL(paths.size(), 2);
+		BOOST_CHECK_EQUAL(paths[0], "test_path/testing1");
+		BOOST_CHECK_EQUAL(paths[1], "test_path/testing2");
+	}
+	BOOST_CHECK(Parser::upload_warc_paths({}));
+}
 
 BOOST_AUTO_TEST_CASE(download_warc) {
 

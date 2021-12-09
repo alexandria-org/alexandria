@@ -7,6 +7,8 @@
 
 namespace Config {
 
+	extern std::string node;
+	extern std::string master;
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;
 	extern std::vector<std::string> batches;

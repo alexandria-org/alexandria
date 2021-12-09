@@ -4,6 +4,8 @@
 
 namespace Config {
 
+	string node = "test0001";
+	string master = "localhost";
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
 	vector<string> batches;
@@ -47,7 +49,11 @@ namespace Config {
 				part = Text::trim(part);
 			}
 
-			if (parts[0] == "nodes_in_cluster") {
+			if (parts[0] == "node") {
+				node = parts[1];
+			} else if (parts[0] == "master") {
+				master = parts[1];
+			} else if (parts[0] == "nodes_in_cluster") {
 				nodes_in_cluster = stoi(parts[1]);
 			} else if (parts[0] == "node_id") {
 				node_id = stoi(parts[1]);

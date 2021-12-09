@@ -60,6 +60,13 @@ namespace Text {
 		return s;
 	}
 
+	inline string trim(const string &s) {
+		string copy = s;
+		ltrim(copy);
+		rtrim(copy);
+		return copy;
+	}
+
 	inline string lower_case(const string &str) {
 		string ret = str;
 		transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c){ return tolower(c); });

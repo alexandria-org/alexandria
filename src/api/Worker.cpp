@@ -3,6 +3,7 @@
 #include "fcgio.h"
 #include "config.h"
 #include "parser/URL.h"
+#include "parser/cc_parser.h"
 
 #include "post_processor/PostProcessor.h"
 #include "api/ApiResponse.h"
@@ -149,6 +150,10 @@ namespace Worker {
 		}
 	}
 
+	void download_server() {
+		Parser::warc_downloader();
+	}
+
 	void status_server(Status *status) {
 		FCGX_Init();
 
@@ -180,6 +185,13 @@ namespace Worker {
 
 			FCGX_Finish_r(&request);
 		}
+	}
+
+	thread download_server_thread;
+	void start_download_server() {
+
+		download_server_thread = std::move(thread(download_server));
+
 	}
 
 	thread status_server_thread;

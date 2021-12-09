@@ -86,9 +86,9 @@ namespace Transfer {
 
 	string make_url(const string &file_path) {
 		if (file_path.size() && file_path[0] != '/') {
-			return file_server + "/" + file_path;
+			return "http://" + Config::master + "/" + file_path;
 		}
-		return file_server + file_path;
+		return "http://" + Config::master + file_path;
 	}
 
 	string file_to_string(const string &file_path, int &error) {
@@ -366,7 +366,7 @@ namespace Transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = string(FILE_SERVER) + "/" + path;
+			const string url = "http://" + Config::master + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
@@ -399,7 +399,7 @@ namespace Transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = string(FILE_SERVER) + "/" + path;
+			const string url = "http://" + Config::master + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 

@@ -63,6 +63,7 @@ set(SRC_CLASSES
 	"src/parser/Unicode.cpp"
 	"src/parser/URL.cpp"
 	"src/parser/Warc.cpp"
+	"src/parser/cc_parser.cpp"
 	
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"
