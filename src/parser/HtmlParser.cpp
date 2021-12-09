@@ -160,7 +160,8 @@ int HtmlParser::parse_link(const string &link, const string &base_url) {
 	if (parse_url(href, host, path, base_url) != CC_OK) return CC_ERROR;
 
 	if (host == m_host) {
-		m_internal_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow));
+		// Ignore internal links for now.
+		//m_internal_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow));
 		return CC_OK;
 	}
 

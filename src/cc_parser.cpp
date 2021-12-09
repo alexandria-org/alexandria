@@ -300,18 +300,17 @@ void run_downloader(const string &warc_path) {
 
 	cout << "downloading: " << warc_path << endl;
 
-	const string data = Warc::multipart_download("http://commoncrawl.s3.amazonaws.com/" + warc_path);
-	stringstream data_stream(data);
-
-	cout << "parsing: " << warc_path << endl;
 	Warc::Parser pp;
-	pp.parse_stream(data_stream);
+	Warc::multipart_download("http://commoncrawl.s3.amazonaws.com/" + warc_path, [&pp](const string &chunk) {
+		cout << "parsing chunk of size: " << chunk.size() << endl;
+		stringstream ss(chunk);
+		pp.parse_stream(ss);
+	});
 
 	cout << "uploading: " << warc_path << endl;
 	int error;
 	error = Transfer::upload_gz_file("/" + Warc::get_result_path(warc_path), pp.result());
 	error = Transfer::upload_gz_file("/" + Warc::get_link_result_path(warc_path), pp.link_result());
-	error = Transfer::upload_gz_file("/" + Warc::get_internal_link_result_path(warc_path), pp.internal_link_result());
 
 	if (error) {
 		cout << "error" << endl;
@@ -528,7 +527,7 @@ int main(int argc, const char **argv) {
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
-		Config::read_config("config.conf");
+		Config::read_config("/etc/alexandria.conf");
 	}
 
 	const size_t num_threads = 48;
@@ -540,6 +539,7 @@ int main(int argc, const char **argv) {
 			sleep(rand() % (num_threads * 2));
 			run_downloader(warc_path);
 		}));
+		break;
 	}
 
 
@@ -549,10 +549,6 @@ int main(int argc, const char **argv) {
 
 	Logger::join_logger_thread();
 
-
-		/*if (parse_warc(s3_client, "commoncrawl",
-			"crawl-data/CC-MAIN-2021-17/segments/1618038056325.1/warc/CC-MAIN-20210416100222-20210416130222-00002.warc.gz")) {
-		}*/
 
 	return 0;
 }

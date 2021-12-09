@@ -51,7 +51,7 @@ namespace Warc {
 
 	};
 
-	string multipart_download(const string &url);
+	void multipart_download(const string &url, const std::function<void(const string &chunk)> &callback);
 
 	string get_result_path(const string &warc_path);
 	string get_link_result_path(const string &warc_path);

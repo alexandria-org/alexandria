@@ -266,7 +266,7 @@ namespace Warc {
 		return response_code;
 	}
 
-	string multipart_download(const string &url) {
+	void multipart_download(const string &url, const std::function<void(const string &chunk)> &callback) {
 
 		int error;
 		size_t content_len = Transfer::head_content_length(url, error);
@@ -278,16 +278,18 @@ namespace Warc {
 		const size_t max_parts = 50;
 		const size_t max_retries = 3;
 
-		string buffer;
-		buffer.reserve(content_len);
-
 		size_t part = 1;
-		while (buffer.size() < content_len && part < max_parts) {
+		size_t read_bytes = 0;
+		while (read_bytes < content_len && part < max_parts) {
 			size_t retry = 0;
 			while (retry < max_retries) {
+				string buffer;
 				Transfer::url_to_string(url + "?partNumber=" + to_string(part), buffer, error);
-				if (error == Transfer::OK) break;
-				else {
+				if (error == Transfer::OK) {
+					read_bytes += buffer.size();
+					callback(buffer);
+					break;
+				} else {
 					LOG_INFO("got error response");
 				}
 				retry++;
@@ -297,8 +299,6 @@ namespace Warc {
 			}
 			part++;
 		}
-
-		return buffer;
 	}
 
 	string get_result_path(const string &warc_path) {
