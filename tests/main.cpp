@@ -63,4 +63,5 @@ using namespace std;
 #include "hyper_ball.h"
 #include "cluster.h"
 #include "cc_parser.h"
+#include "hash.h"
 
