@@ -31,7 +31,6 @@
 #include <vector>
 #include <mutex>
 #include <unordered_map>
-#include "common/common.h"
 
 class FullTextIndexer;
 

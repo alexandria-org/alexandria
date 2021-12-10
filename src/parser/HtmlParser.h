@@ -35,7 +35,6 @@
 #include <string.h>
 #include <boost/algorithm/string.hpp>
 
-#include "common/common.h"
 #include "HtmlLink.h"
 #include "parser/Unicode.h"
 

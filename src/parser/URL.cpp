@@ -25,12 +25,13 @@
  */
 
 #include "URL.h"
+#include "Parser.h"
 #include <curl/curl.h>
 #include "text/Text.h"
 #include "Parser.h"
 
 URL::URL() {
-	m_status = CC_OK;
+	m_status = ::Parser::OK;
 }
 
 URL::URL(const string &url) :
@@ -43,7 +44,7 @@ URL::URL(const string &host, const string &path) :
 	m_url_string("http://" + host + path), m_host(host), m_path(path)
 {
 	m_host_reverse = URL::host_reverse(m_host);
-	m_status = CC_OK;
+	m_status = ::Parser::OK;
 }
 
 URL::~URL() {
@@ -196,12 +197,12 @@ ostream &operator <<(ostream& os, const URL& url) {
 
 int URL::parse() {
 	CURLU *h = curl_url();
-	if (!h) return CC_ERROR;
+	if (!h) return ::Parser::ERROR;
 
 	CURLUcode uc = curl_url_set(h, CURLUPART_URL, m_url_string.c_str(), 0);
 	if (uc) {
 		curl_url_cleanup(h);
-		return CC_ERROR;
+		return ::Parser::ERROR;
 	}
 
 	char *chost;
@@ -237,7 +238,7 @@ int URL::parse() {
 
 	m_host_reverse = URL::host_reverse(m_host);
 
-	return CC_OK;
+	return ::Parser::OK;
 }
 
 inline void URL::remove_www(string &path) {

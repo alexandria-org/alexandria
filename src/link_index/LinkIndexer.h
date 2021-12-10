@@ -30,7 +30,6 @@
 #include <istream>
 #include <vector>
 #include <mutex>
-#include "common/common.h"
 
 #include "parser/URL.h"
 #include "system/SubSystem.h"

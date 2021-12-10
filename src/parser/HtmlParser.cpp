@@ -26,6 +26,7 @@
 
 #include "entities.h"
 #include "HtmlParser.h"
+#include "Parser.h"
 #include "text/Text.h"
 #include <curl/curl.h>
 
@@ -139,9 +140,9 @@ int HtmlParser::parse_link(const string &link, const string &base_url) {
 	const string href_key = "href=\"";
 	const size_t key_len = href_key.size();
 	const size_t href_start = link.find(href_key);
-	if (href_start == string::npos) return CC_ERROR;
+	if (href_start == string::npos) return ::Parser::ERROR;
 	const size_t href_end = link.find("\"", href_start + key_len);
-	if (href_end == string::npos) return CC_ERROR;
+	if (href_end == string::npos) return ::Parser::ERROR;
 	string href = link.substr(href_start + key_len, href_end - href_start - key_len);
 
 	const string rel_key = "rel=\"";
@@ -157,16 +158,16 @@ int HtmlParser::parse_link(const string &link, const string &base_url) {
 
 	string host;
 	string path;
-	if (parse_url(href, host, path, base_url) != CC_OK) return CC_ERROR;
+	if (parse_url(href, host, path, base_url) != ::Parser::OK) return ::Parser::ERROR;
 
 	if (host == m_host) {
 		// Ignore internal links for now.
 		//m_internal_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow));
-		return CC_OK;
+		return ::Parser::OK;
 	}
 
 	const size_t content_start = link.find(">", href_end) + 1;
-	if (content_start == string::npos) return CC_ERROR;
+	if (content_start == string::npos) return ::Parser::ERROR;
 	const size_t content_end = link.find("</a>", content_start);
 	string content = link.substr(content_start, content_end - content_start);
 
@@ -175,16 +176,16 @@ int HtmlParser::parse_link(const string &link, const string &base_url) {
 	}
 	clean_text(content);
 
-	if (content == "") return CC_ERROR;
+	if (content == "") return ::Parser::ERROR;
 
 	m_links.push_back(HtmlLink(m_host, m_path, host, path, nofollow, content));
 
-	return CC_OK;
+	return ::Parser::OK;
 }
 
 int HtmlParser::parse_url(const string &url, string &host, string &path, const string &base_url) {
 	CURLU *h = curl_url();
-	if (!h) return CC_ERROR;
+	if (!h) return ::Parser::ERROR;
 
 	if (base_url.size()) {
 		curl_url_set(h, CURLUPART_URL, base_url.c_str(), 0);
@@ -193,7 +194,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path, const s
 	CURLUcode uc = curl_url_set(h, CURLUPART_URL, url.c_str(), 0);
 	if (uc) {
 		curl_url_cleanup(h);
-		return CC_ERROR;
+		return ::Parser::ERROR;
 	}
 
 	char *chost;
@@ -230,7 +231,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path, const s
 
 	curl_url_cleanup(h);
 
-	return CC_OK;
+	return ::Parser::OK;
 }
 
 void HtmlParser::remove_www(string &path) {

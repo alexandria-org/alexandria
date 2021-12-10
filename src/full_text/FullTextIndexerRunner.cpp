@@ -205,28 +205,3 @@ string FullTextIndexerRunner::run_merge_thread(size_t shard_id, size_t partition
 	return "";
 }
 
-int FullTextIndexerRunner::download_file(const string &bucket, const string &key, stringstream &stream) {
-
-	Aws::S3::Model::GetObjectRequest request;
-	LOG_INFO("Downloading " + bucket + " key: " + key);
-	request.SetBucket(bucket);
-	request.SetKey(key);
-
-	auto outcome = m_sub_system->s3_client().GetObject(request);
-
-	if (outcome.IsSuccess()) {
-
-		auto &input_stream = outcome.GetResultWithOwnership().GetBody();
-
-		filtering_istream decompress_stream;
-		decompress_stream.push(gzip_decompressor());
-		decompress_stream.push(input_stream);
-
-		stream << decompress_stream.rdbuf();
-
-		return 0;
-	}
-
-	return 1;
-}
-

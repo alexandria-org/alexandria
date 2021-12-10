@@ -6,11 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 add_compile_options(-Wall -Werror -Wpedantic)
-project(cc_parser LANGUAGES CXX)
+project(alexandria LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(aws-lambda-runtime REQUIRED)
 find_package(AWSSDK COMPONENTS s3 transfer lambda)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
 find_package(ZLIB)
@@ -32,7 +31,6 @@ set(SRC_CLASSES
 	"src/file/File.cpp"
 	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"
-	"src/file/TsvFileS3.cpp"
 	"src/file/TsvFileRemote.cpp"
 	"src/file/TsvRow.cpp"
 
@@ -70,8 +68,6 @@ set(SRC_CLASSES
 	"src/system/SubSystem.cpp"
 	"src/system/Logger.cpp"
 
-	"src/aws/Lambda.cpp"
-
 	"src/sort/Sort.cpp"
 
 	"src/hash/Hash.cpp"
@@ -88,18 +84,12 @@ set(SRC_CLASSES
 )
 
 set(SRC_COMMON
-	"src/common/common.cpp"
 	"src/common/Dictionary.cpp"
 	"src/common/DictionaryRow.cpp"
 	"src/text/Stopwords.cpp"
 	"src/text/Text.cpp"
 )
 
-add_executable(cc_parser 
-	"src/cc_parser.cpp"
-	${SRC_CLASSES}
-	${SRC_COMMON}
-)
 add_executable(tools
 	"src/tools.cpp"
 	${SRC_CLASSES}
@@ -122,26 +112,16 @@ target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
-target_link_libraries(cc_parser PUBLIC
-	AWS::aws-lambda-runtime 
-	${FCGI_LIBRARY}
-	${FCGI_LIBRARYCPP}
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(tools PUBLIC
-	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(run_tests PUBLIC
-	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
 target_link_libraries(server PUBLIC
-	AWS::aws-lambda-runtime 
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
-
-aws_lambda_package_target(${PROJECT_NAME})
 

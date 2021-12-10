@@ -27,6 +27,8 @@
 #include "ApiResponse.h"
 #include "parser/Unicode.h"
 
+#include <aws/core/utils/json/JsonSerializer.h>
+
 using namespace Aws::Utils::Json;
 
 ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {

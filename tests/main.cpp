@@ -49,7 +49,6 @@ using namespace std;
 #include "sub_system.h"
 #include "hash_table.h"
 #include "full_text.h"
-#include "invoke.h"
 #include "api.h"
 #include "search_engine.h"
 #include "configuration.h"

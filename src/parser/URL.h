@@ -29,7 +29,6 @@
 #include <iostream>
 #include <functional>
 #include <boost/algorithm/string/join.hpp>
-#include "common/common.h"
 #include "system/SubSystem.h"
 
 using namespace std;

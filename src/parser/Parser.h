@@ -24,9 +24,15 @@
  * SOFTWARE.
  */
 
+#pragma once
+
 #include <iostream>
 
 namespace Parser {
+
+	const int OK = 0;
+	const int ERROR = 1;
+
 	std::string urldecode(const std::string &str);
 	std::string get_http_header(const std::string &record, const std::string &key);
 }

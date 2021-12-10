@@ -40,6 +40,8 @@
 #include "system/Logger.h"
 #include "system/Profiler.h"
 
+#include <aws/core/utils/json/JsonSerializer.h>
+
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,

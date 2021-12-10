@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <mutex>
-#include "common/common.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
 #include "hash_table/HashTable.h"

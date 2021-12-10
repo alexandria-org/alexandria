@@ -26,7 +26,6 @@
 
 #include "system/SubSystem.h"
 #include "common/Dictionary.h"
-#include "file/TsvFileS3.h"
 
 BOOST_AUTO_TEST_SUITE(sub_system)
 

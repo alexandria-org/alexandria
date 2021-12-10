@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <mutex>
-#include "common/common.h"
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
 #include "hash_table/HashTable.h"
@@ -77,6 +76,5 @@ private:
 
 	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
 	string run_merge_thread(size_t shard_id, size_t partition);
-	int download_file(const string &bucket, const string &key, stringstream &stream);
 
 };
