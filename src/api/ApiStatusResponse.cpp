@@ -25,22 +25,21 @@
  */
 
 #include "ApiStatusResponse.h"
-#include <aws/core/utils/json/JsonSerializer.h>
 #include <system/Profiler.h>
 
+#include "json.hpp"
+
+using json = nlohmann::json;
 using namespace std;
 
 ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 
-	Aws::Utils::Json::JsonValue message("{}");
+	json message;
 
-	Aws::Utils::Json::JsonValue string;
-	Aws::Utils::Json::JsonValue json_number;
-
-	message.WithObject("status", string.AsString("indexing"));
-	message.WithObject("progress", json_number.AsDouble((double)status.items_indexed / status.items));
-	message.WithObject("items", json_number.AsInt64(status.items));
-	message.WithObject("items_indexed", json_number.AsInt64(status.items_indexed));
+	message["status"] = "indexing";
+	message["progress"] = (double)status.items_indexed / status.items;
+	message["items"] = status.items;
+	message["items_indexed"] = status.items_indexed;
 
 	double time_left = 0.0;
 	if (status.items_indexed > 0) {
@@ -48,10 +47,10 @@ ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 		const double time_per_item = ((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
 		time_left = (double)items_left * time_per_item;
 	}
-	message.WithObject("time_left", json_number.AsDouble(time_left));
+	message["time_left"] = time_left;
 
-	//m_response = message.View().WriteCompact();
-	m_response = message.View().WriteReadable();
+	//m_response = message.dump();
+	m_response = message.dump(4);
 }
 
 ApiStatusResponse::~ApiStatusResponse() {

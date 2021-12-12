@@ -26,6 +26,9 @@
 
 #include "hash_table/HashTableHelper.h"
 #include "api/Api.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 BOOST_AUTO_TEST_SUITE(api)
 
@@ -71,18 +74,16 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK_EQUAL(json_obj["total_found"], 1);
+		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 1);
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 1);
-		BOOST_CHECK_EQUAL(v.GetInteger("total_url_links_found"), 1);
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("url"), "http://url1.com/test");
+		BOOST_CHECK(json_obj.contains("results"));
+		BOOST_CHECK(json_obj["results"][0].contains("url"));
+		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://url1.com/test");
 	}
 
 	{
@@ -91,21 +92,19 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
 
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("index"));
+		BOOST_CHECK(json_obj["index"].contains("words"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["words"]["meta"], 1.0);
 
-		BOOST_CHECK(v.ValueExists("index"));
-		BOOST_CHECK(v.GetObject("index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetObject("words").GetDouble("meta"), 1.0);
-
-		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
+		BOOST_CHECK(json_obj["index"].contains("total"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
 	{
@@ -114,20 +113,18 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("index"));
+		BOOST_CHECK(json_obj["index"].contains("words"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["words"]["uniq"], 1.0/8.0);
 
-		BOOST_CHECK(v.ValueExists("index"));
-		BOOST_CHECK(v.GetObject("index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetObject("words").GetDouble("uniq"), 1.0/8.0);
-
-		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
+		BOOST_CHECK(json_obj["index"].contains("total"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -175,16 +172,14 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("url"), "http://url1.com/test");
+		BOOST_CHECK(json_obj.contains("results"));
+		BOOST_CHECK(json_obj["results"][0].contains("url"));
+		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://url1.com/test");
 	}
 
 	{
@@ -194,21 +189,19 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
 
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("index"));
+		BOOST_CHECK(json_obj["index"].contains("words"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["words"]["meta"], 1.0);
 
-		BOOST_CHECK(v.ValueExists("index"));
-		BOOST_CHECK(v.GetObject("index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetObject("words").GetDouble("meta"), 1.0);
-
-		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
+		BOOST_CHECK(json_obj["index"].contains("total"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
 	{
@@ -217,20 +210,18 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("index"));
+		BOOST_CHECK(json_obj["index"].contains("words"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["words"]["uniq"], 1.0/8.0);
 
-		BOOST_CHECK(v.ValueExists("index"));
-		BOOST_CHECK(v.GetObject("index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetObject("words").GetDouble("uniq"), 1.0/8.0);
-
-		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
+		BOOST_CHECK(json_obj["index"].contains("total"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -284,18 +275,16 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK_EQUAL(json_obj["total_found"], 1);
+		BOOST_CHECK_EQUAL(json_obj["total_domain_links_found"], 2);
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 1);
-		BOOST_CHECK_EQUAL(v.GetInteger("total_domain_links_found"), 2);
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK(v.GetArray("results")[0].ValueExists("url"));
-		BOOST_CHECK_EQUAL(v.GetArray("results")[0].GetString("url"), "http://url1.com/test");
+		BOOST_CHECK(json_obj.contains("results"));
+		BOOST_CHECK(json_obj["results"][0].contains("url"));
+		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://url1.com/test");
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -346,14 +335,12 @@ BOOST_AUTO_TEST_CASE(many_links) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
-
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 6);
-		BOOST_CHECK_EQUAL(v.GetInteger("link_url_matches"), 15);
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK_EQUAL(json_obj["total_found"], 6);
+		BOOST_CHECK_EQUAL(json_obj["link_url_matches"], 15);
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -404,21 +391,19 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
 
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("index"));
+		BOOST_CHECK(json_obj["index"].contains("words"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["words"]["uniq"], 2.0/8.0);
 
-		BOOST_CHECK(v.ValueExists("index"));
-		BOOST_CHECK(v.GetObject("index").ValueExists("words"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetObject("words").GetDouble("uniq"), 2.0/8.0);
-
-		BOOST_CHECK(v.GetObject("index").ValueExists("total"));
-		BOOST_CHECK_EQUAL(v.GetObject("index").GetInt64("total"), 8);
+		BOOST_CHECK(json_obj["index"].contains("total"));
+		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
 	{
@@ -427,14 +412,12 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-
-		BOOST_CHECK(v.ValueExists("time_ms"));
+		BOOST_CHECK(json_obj.contains("time_ms"));
 	}
 
 	FullText::delete_index_array<FullTextRecord>(index_array);
@@ -476,17 +459,15 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
+		BOOST_CHECK(json_obj.contains("response"));
 
-		BOOST_CHECK(v.ValueExists("time_ms"));
-		BOOST_CHECK(v.ValueExists("response"));
-
-		BOOST_CHECK_EQUAL(v.GetString("response"), "http://url1.com/my_test_url	test test		test test test test		ALEXANDRIA-TEST-04");
+		BOOST_CHECK_EQUAL(json_obj["response"], "http://url1.com/my_test_url	test test		test test test test		ALEXANDRIA-TEST-04");
 	}
 
 	{
@@ -495,17 +476,15 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
+		BOOST_CHECK(json_obj.contains("time_ms"));
+		BOOST_CHECK(json_obj.contains("response"));
 
-		BOOST_CHECK(v.ValueExists("time_ms"));
-		BOOST_CHECK(v.ValueExists("response"));
-
-		BOOST_CHECK_EQUAL(v.GetString("response"), "");
+		BOOST_CHECK_EQUAL(json_obj["response"], "");
 	}
 
 }

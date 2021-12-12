@@ -27,6 +27,10 @@
 #include "hash_table/HashTableHelper.h"
 #include "api/Api.h"
 
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 BOOST_AUTO_TEST_SUITE(sections)
 
 BOOST_AUTO_TEST_CASE(sections) {
@@ -63,17 +67,14 @@ BOOST_AUTO_TEST_CASE(sections) {
 
 		string response = response_stream.str();
 
-		Aws::Utils::Json::JsonValue json(response);
+		json json_obj = json::parse(response);
 
-		auto v = json.View();
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 0);
 
-		BOOST_CHECK(v.ValueExists("status"));
-		BOOST_CHECK_EQUAL(v.GetString("status"), "success");
-		//BOOST_CHECK_EQUAL(v.GetInteger("total_found"), 1);
-		BOOST_CHECK_EQUAL(v.GetInteger("total_url_links_found"), 0);
-
-		BOOST_CHECK(v.ValueExists("results"));
-		BOOST_CHECK_EQUAL(v.GetArray("results").GetLength(), 160);
+		BOOST_CHECK(json_obj.contains("results"));
+		BOOST_CHECK_EQUAL(json_obj["results"].size(), 160);
 	}
 
 	// Reset.

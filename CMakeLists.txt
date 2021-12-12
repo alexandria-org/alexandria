@@ -16,6 +16,7 @@ find_package(ZLIB)
 find_package(fcgi)
 
 include_directories(src/)
+include_directories(deps/)
 include_directories(tests/)
 
 set(SRC_CLASSES

@@ -38,10 +38,6 @@
 #include "DomainLinkFullTextRecord.h"
 #include "full_text/FullTextRecord.h"
 
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/GetObjectRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>

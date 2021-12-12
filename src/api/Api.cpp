@@ -39,8 +39,9 @@
 
 #include "system/Logger.h"
 #include "system/Profiler.h"
+#include "json.hpp"
 
-#include <aws/core/utils/json/JsonSerializer.h>
+using json = nlohmann::json;
 
 namespace Api {
 
@@ -150,20 +151,19 @@ namespace Api {
 		response_stream << response;
 	}
 
-	Aws::Utils::Json::JsonValue generate_word_stats_json(const map<string, double> word_map) {
-		Aws::Utils::Json::JsonValue result;
+	json generate_word_stats_json(const map<string, double> word_map) {
+		json result;
 		for (const auto &iter : word_map) {
-			Aws::Utils::Json::JsonValue json_number;
-			result.WithObject(iter.first, json_number.AsDouble(iter.second));
+			result[iter.first] = iter.second;
 		}
 
 		return result;
 	}
 
-	Aws::Utils::Json::JsonValue generate_index_stats_json(const map<string, double> word_map, size_t index_size) {
-		Aws::Utils::Json::JsonValue result, total;
-		result.WithObject("total", total.AsInt64(index_size));
-		result.WithObject("words", generate_word_stats_json(word_map));
+	json generate_index_stats_json(const map<string, double> word_map, size_t index_size) {
+		json result;
+		result["total"] = index_size;
+		result["words"] = generate_word_stats_json(word_map);
 		return result;
 	}
 
@@ -177,13 +177,13 @@ namespace Api {
 
 		double time_ms = profiler.get();
 
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("success"));
-		message.WithObject("time_ms", json_string.AsDouble(time_ms));
-		message.WithObject("index", generate_index_stats_json(word_stats, index_size));
-		message.WithObject("link_index", generate_index_stats_json(link_word_stats, link_index_size));
+		json message;
+		message["status"] = "success";
+		message["time_ms"] = time_ms;
+		message["index"] = generate_index_stats_json(word_stats, index_size);
+		message["link_index"] = generate_index_stats_json(link_word_stats, link_index_size);
 
-		response_stream << message.View().WriteReadable();
+		response_stream << message;
 	}
 
 	void url(const string &url_str, HashTable &hash_table, stringstream &response_stream) {
@@ -191,12 +191,12 @@ namespace Api {
 
 		URL url(url_str);
 
-		Aws::Utils::Json::JsonValue message("{}"), json_string;
-		message.WithObject("status", json_string.AsString("success"));
-		message.WithObject("response", json_string.AsString(hash_table.find(url.hash())));
-		message.WithObject("time_ms", json_string.AsDouble(profiler.get()));
+		json message;
+		message["status"] = "success";
+		message["response"] = hash_table.find(url.hash());
+		message["time_ms"] = profiler.get();
 
-		response_stream << message.View().WriteReadable();
+		response_stream << message;
 	}
 
 }

@@ -26,47 +26,40 @@
 
 #include "ApiResponse.h"
 #include "parser/Unicode.h"
+#include "json.hpp"
 
-#include <aws/core/utils/json/JsonSerializer.h>
-
-using namespace Aws::Utils::Json;
+using json = nlohmann::json;
 
 ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {
 
-	JsonValue message("{}");
+	json message;
 
-	Aws::Utils::Array<Aws::Utils::Json::JsonValue> result_array(results.size());
-
-	size_t idx = 0;
+	json result_array;
 	for (const ResultWithSnippet &result : results) {
-		JsonValue json_result;
-		JsonValue string;
-		JsonValue json_number;
+		json json_result;
 
-		json_result.WithObject("url", string.AsString(result.url().str()));
-		json_result.WithObject("title", string.AsString(Unicode::encode(result.title())));
-		json_result.WithObject("snippet", string.AsString(Unicode::encode(result.snippet())));
-		json_result.WithObject("score", json_number.AsDouble(result.score()));
-		json_result.WithObject("domain_hash", string.AsString(to_string(result.domain_hash())));
-		json_result.WithObject("url_hash", string.AsString(to_string(result.url().hash())));
-		result_array[idx] = json_result;
-		idx++;
+		json_result["url"] = result.url().str();
+		json_result["title"] = Unicode::encode(result.title());
+		json_result["snippet"] = Unicode::encode(result.snippet());
+		json_result["score"] = result.score();
+		json_result["domain_hash"] = to_string(result.domain_hash());
+		json_result["url_hash"] = to_string(result.url().hash());
+
+		result_array.push_back(json_result);
 	}
 
-	JsonValue json_results, json_string, json_number;
-	json_results.AsArray(result_array);
-	message.WithObject("status", json_string.AsString("success"));
-	message.WithObject("time_ms", json_string.AsDouble(profile));
-	message.WithObject("total_found", json_number.AsInt64(metric.m_total_found));
-	message.WithObject("total_url_links_found", json_number.AsInt64(metric.m_total_url_links_found));
-	message.WithObject("total_domain_links_found", json_number.AsInt64(metric.m_total_domain_links_found));
-	message.WithObject("links_handled", json_number.AsInt64(metric.m_links_handled));
-	message.WithObject("link_domain_matches", json_number.AsInt64(metric.m_link_domain_matches));
-	message.WithObject("link_url_matches", json_number.AsInt64(metric.m_link_url_matches));
-	message.WithObject("results", json_results);
+	message["status"] = "success";
+	message["time_ms"] = profile;
+	message["total_found"] = metric.m_total_found;
+	message["total_url_links_found"] = metric.m_total_url_links_found;
+	message["total_domain_links_found"] = metric.m_total_domain_links_found;
+	message["links_handled"] = metric.m_links_handled;
+	message["link_domain_matches"] = metric.m_link_domain_matches;
+	message["link_url_matches"] = metric.m_link_url_matches;
+	message["results"] = result_array;
 
-	//m_response = message.View().WriteCompact();
-	m_response = message.View().WriteReadable();
+	//m_response = message.dump();
+	m_response = message.dump(4);
 }
 
 ApiResponse::~ApiResponse() {
