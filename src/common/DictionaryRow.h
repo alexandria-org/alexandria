@@ -40,8 +40,8 @@ public:
 
 	DictionaryRow();
 	DictionaryRow(const DictionaryRow &row);
-	DictionaryRow(const string &row);
-	DictionaryRow(stringstream &stream);
+	explicit DictionaryRow(const string &row);
+	explicit DictionaryRow(stringstream &stream);
 	~DictionaryRow();
 
 	int get_int(int column) const;

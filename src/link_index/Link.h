@@ -32,7 +32,7 @@ class Link {
 
 public:
 	Link();
-	Link(const string &standard_link_data);
+	explicit Link(const string &standard_link_data);
 	Link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic);
 	~Link();
 

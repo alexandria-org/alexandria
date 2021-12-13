@@ -34,7 +34,7 @@ using namespace std;
 class TsvRow {
 
 public:
-	TsvRow(const string &line);
+	explicit TsvRow(const string &line);
 	~TsvRow();
 
 private:

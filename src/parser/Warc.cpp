@@ -14,8 +14,8 @@ namespace Warc {
 	}
 
 	Parser::~Parser() {
-		delete m_z_buffer_in;
-		delete m_z_buffer_out;
+		delete [] m_z_buffer_in;
+		delete [] m_z_buffer_out;
 	}
 
 	bool Parser::parse_stream(istream &stream) {

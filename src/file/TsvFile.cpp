@@ -304,7 +304,7 @@ size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const stri
 		size_t bytes_read = 0;
 		while (getline(m_file, line) && bytes_read <= file_size - offset) {
 			bytes_read += (line.size() + 1u);
-			if (line.find(key + "\t") == 0) {
+			if (line.starts_with(key + "\t")) {
 				return (size_t)m_file.tellg() - (line.size() + 1u);
 			}
 		}
@@ -341,8 +341,8 @@ size_t TsvFile::binary_find_position_any(size_t file_size, size_t offset, const 
 		size_t bytes_read = 0;
 		while (getline(m_file, line) && bytes_read <= file_size - offset) {
 			bytes_read += (line.size() + 1u);
-			const string key = line.substr(0, line.find("\t"));
-			if (key >= key) {
+			const string this_key = line.substr(0, line.find("\t"));
+			if (this_key >= key) {
 				return (size_t)m_file.tellg() - (line.size() + 1u);
 			}
 		}

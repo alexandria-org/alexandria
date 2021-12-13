@@ -33,7 +33,7 @@
 class ApiStatusResponse {
 
 public:
-	ApiStatusResponse(Worker::Status &status);
+	explicit ApiStatusResponse(Worker::Status &status);
 	~ApiStatusResponse();
 
 	friend std::ostream &operator<<(std::ostream &os, const ApiStatusResponse &api_response);

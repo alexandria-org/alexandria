@@ -43,7 +43,7 @@ class HashTable {
 
 public:
 
-	HashTable(const string &db_name);
+	explicit HashTable(const string &db_name);
 	~HashTable();
 
 	void add(uint64_t key, const string &value);

@@ -45,7 +45,7 @@ LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &domain
 LinkIndexerRunner::~LinkIndexerRunner() {
 }
 
-void LinkIndexerRunner::run(const vector<string> local_files) {
+void LinkIndexerRunner::run(const vector<string> &local_files) {
 
 	ThreadPool pool(Config::ft_num_threads_indexing);
 	std::vector<std::future<string>> results;

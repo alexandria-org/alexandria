@@ -56,7 +56,7 @@ namespace Transfer {
 
 	void url_to_string(const string &url, string &buffer, int &error);
 
-	vector<string> download_gz_files_to_disk(const vector<string> files_to_download);
+	vector<string> download_gz_files_to_disk(const vector<string> &files_to_download);
 	void delete_downloaded_files(const vector<string> &files);
 
 	// Make a http HEAD request and return the content length. Return 0 on failure and sets the error parameter to Transfer::ERROR

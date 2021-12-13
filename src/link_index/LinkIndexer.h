@@ -60,8 +60,6 @@ private:
 
 	map<size_t, vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;
 
-	void add_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
-		float score);
 	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
 		float score);
 

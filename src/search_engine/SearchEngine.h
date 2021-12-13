@@ -54,16 +54,16 @@ namespace SearchEngine {
 		Our main search routine, no deduplication just raw search.
 	*/
 	template<typename DataRecord>
-	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, vector<FullTextIndex<DataRecord> *> index_array,
+	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
 		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric);
 
 	/*
 		Only for FullTextRecords since deduplication requires domain hashes.
 	*/
-	vector<FullTextRecord> search_deduplicate(SearchAllocation::Storage<FullTextRecord> *storage, vector<FullTextIndex<FullTextRecord> *> index_array,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
-		struct SearchMetric &metric);
+	vector<FullTextRecord> search_deduplicate(SearchAllocation::Storage<FullTextRecord> *storage,
+		const vector<FullTextIndex<FullTextRecord> *> &index_array, const vector<LinkFullTextRecord> &links,
+		const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
 
 }
 
@@ -108,7 +108,7 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	size_t largest_result(const vector<FullTextResultSet<DataRecord> *> result_vector) {
+	size_t largest_result(const vector<FullTextResultSet<DataRecord> *> &result_vector) {
 
 		size_t largest_size = 0;
 		for (FullTextResultSet<DataRecord> *result : result_vector) {
@@ -220,20 +220,20 @@ namespace SearchEngine {
 
 		size_t shortest_vector_position = 0;
 		size_t shortest_len = SIZE_MAX;
-		size_t iter_index = 0;
-		for (FullTextResultSet<DataRecord> *result_set : result_sets) {
-			if (shortest_len > result_set->size()) {
-				shortest_len = result_set->size();
-				shortest_vector_position = iter_index;
+		{
+			size_t iter_index = 0;
+			for (FullTextResultSet<DataRecord> *result_set : result_sets) {
+				if (shortest_len > result_set->size()) {
+					shortest_len = result_set->size();
+					shortest_vector_position = iter_index;
+				}
+				iter_index++;
 			}
-			iter_index++;
 		}
 
 		vector<size_t> positions(result_sets.size(), 0);
 
 		const DataRecord *shortest_data = result_sets[shortest_vector_position]->section_pointer(sections[shortest_vector_position]);
-
-		const bool make_binsearch = false;
 
 		while (positions[shortest_vector_position] < shortest_len) {
 
@@ -248,15 +248,11 @@ namespace SearchEngine {
 
 				size_t *pos = &(positions[iter_index]);
 				
-				if (make_binsearch) {
-					// this is a linear search.
-					*pos = lower_bound(data_arr, *pos, len, value);
-				} else {
-					// this is a linear search.
-					while (*pos < len && value > data_arr[*pos].m_value) {
-						(*pos)++;
-					}
+				// this is a linear search.
+				while (*pos < len && value > data_arr[*pos].m_value) {
+					(*pos)++;
 				}
+
 				if (*pos < len && value == data_arr[*pos].m_value) {
 					const float score = data_arr[*pos].m_score;
 					score_sum += score;
@@ -510,7 +506,7 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search_wrapper(SearchAllocation::Storage<DataRecord> *storage, vector<FullTextIndex<DataRecord> *> index_array,
+	vector<DataRecord> search_wrapper(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
 		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
@@ -570,7 +566,7 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, vector<FullTextIndex<DataRecord> *> index_array,
+	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
 		const vector<LinkFullTextRecord> &links, const vector<DomainLinkFullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 

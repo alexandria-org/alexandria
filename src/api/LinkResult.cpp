@@ -32,11 +32,6 @@ LinkResult::LinkResult(const string &tsv_data, const LinkFullTextRecord &res)
 	size_t pos_start = 0;
 	size_t pos_end = 0;
 
-	string source_host;
-	string source_path;
-	string target_host;
-	string target_path;
-
 	pos_end = tsv_data.find(" links to ", pos_start);
 	size_t len = pos_end - pos_start;
 	m_source_url = URL(tsv_data.substr(pos_start, len));

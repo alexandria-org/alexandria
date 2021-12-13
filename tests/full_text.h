@@ -88,9 +88,6 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		HashTable hash_table_link("test_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 8);
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(hash_table_link.size(), 11);
-#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
@@ -160,9 +157,6 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		HashTable hash_table_link("test_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 8);
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(hash_table_link.size(), 15);
-#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
@@ -237,10 +231,6 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 		HashTable hash_table_domain_link("test_domain_link_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 10);
-#ifdef COMPILE_WITH_LINK_INDEX
-		BOOST_CHECK_EQUAL(hash_table_link.size(), 14);
-		BOOST_CHECK_EQUAL(hash_table_domain_link.size(), 12);
-#endif
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");

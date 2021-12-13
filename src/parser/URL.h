@@ -37,8 +37,8 @@ class URL {
 
 public:
 	URL();
-	URL(const string &url);
-	URL(const string &host, const string &path);
+	explicit URL(const string &url);
+	explicit URL(const string &host, const string &path);
 	~URL();
 
 	static string host_reverse(const string &host);

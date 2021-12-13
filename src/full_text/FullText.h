@@ -102,7 +102,7 @@ namespace FullText {
 	}
 
 	template<typename DataRecord>
-	void delete_index_array(vector<FullTextIndex<DataRecord> *> &index_array) {
+	void delete_index_array(const vector<FullTextIndex<DataRecord> *> &index_array) {
 
 		for (FullTextIndex<DataRecord> *index : index_array) {
 			delete index;

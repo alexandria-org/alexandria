@@ -59,7 +59,7 @@ FullTextIndexerRunner::~FullTextIndexerRunner() {
 	}
 }
 
-void FullTextIndexerRunner::run(const vector<string> local_files, size_t partition) {
+void FullTextIndexerRunner::run(const vector<string> &local_files, size_t partition) {
 
 	truncate_cache(partition);
 

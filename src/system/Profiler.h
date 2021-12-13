@@ -39,7 +39,7 @@ namespace Profiler {
 
 	public:
 
-		instance(const string &name);
+		explicit instance(const string &name);
 		instance();
 		~instance();
 

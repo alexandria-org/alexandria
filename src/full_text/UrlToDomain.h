@@ -35,7 +35,7 @@ using namespace std;
 class UrlToDomain {
 
 public:
-	UrlToDomain(const string &db_name);
+	explicit UrlToDomain(const string &db_name);
 	~UrlToDomain();
 
 	void add_url(uint64_t url_hash, uint64_t domain_hash);

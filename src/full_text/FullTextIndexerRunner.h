@@ -50,7 +50,7 @@ public:
 	~FullTextIndexerRunner();
 
 	void run(size_t partition, size_t max_partitions);
-	void run(const vector<string> local_files, size_t partition);
+	void run(const vector<string> &local_files, size_t partition);
 	void run_link();
 	void merge(size_t partition);
 	void sort(size_t partition);
@@ -67,7 +67,6 @@ private:
 	mutex m_full_text_mutexes[Config::ft_num_shards];
 	mutex m_write_url_to_domain_mutex;
 
-	bool m_run_merge_large;
 	bool m_did_allocate_sub_system;
 
 	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);

@@ -41,7 +41,7 @@ class TsvFileRemote : public TsvFile {
 
 public:
 
-	TsvFileRemote(const string &file_name);
+	explicit TsvFileRemote(const string &file_name);
 	~TsvFileRemote();
 
 	string get_path() const;

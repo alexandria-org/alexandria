@@ -78,13 +78,6 @@ void LinkIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, ba
 
 			const size_t partition = link_hash % Config::ft_num_partitions;
 
-
-#ifdef COMPILE_WITH_LINK_INDEX
-			shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, source_url.str() + " links to " + target_url.str() + " with link text: " + link_text);
-
-			const string link_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
-			add_data_to_shards(partition, link_hash, source_url, target_url, link_colon, source_harmonic);
-#endif
 			add_expanded_data_to_shards(partition, link_hash, source_url, target_url, link_text, source_harmonic);			
 		}
 	}
@@ -126,20 +119,6 @@ void LinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_partitions][Con
 				idx++;
 			}
 		}
-	}
-}
-
-void LinkIndexer::add_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
-	const string &link_text, float score) {
-
-	vector<string> words = Text::get_full_text_words(link_text);
-	for (const string &word : words) {
-
-		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % Config::ft_num_shards;
-
-		m_shards[partition][shard_id]->add(word_hash, LinkFullTextRecord{.m_value = link_hash, .m_score = score,
-			.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
 	}
 }
 

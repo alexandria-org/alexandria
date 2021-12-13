@@ -35,7 +35,7 @@ using namespace std;
 class PostProcessor {
 
 public:
-	PostProcessor(const string &query);
+	explicit PostProcessor(const string &query);
 	~PostProcessor();
 
 	void run(vector<ResultWithSnippet> &results);

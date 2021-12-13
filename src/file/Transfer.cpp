@@ -278,7 +278,7 @@ namespace Transfer {
 		return target_filename;
 	}
 
-	vector<string> download_gz_files_to_disk(const vector<string> files_to_download) {
+	vector<string> download_gz_files_to_disk(const vector<string> &files_to_download) {
 		
 		ThreadPool pool(Config::num_async_file_transfers);
 		std::vector<std::future<string>> results;
@@ -375,7 +375,6 @@ namespace Transfer {
 			arg.buffer_len = data.size();
 			arg.offset = 0;
 
-			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
 			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
 			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
@@ -415,7 +414,6 @@ namespace Transfer {
 			arg.buffer_len = compressed_data.size();
 			arg.offset = 0;
 
-			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
 			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
 			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());

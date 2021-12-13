@@ -55,7 +55,7 @@ namespace Worker {
 
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-		Worker *worker = (Worker *)data;
+		Worker *worker = static_cast<Worker *>(data);
 
 		FCGX_Request request;
 

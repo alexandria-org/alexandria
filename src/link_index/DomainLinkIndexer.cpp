@@ -124,20 +124,6 @@ void DomainLinkIndexer::flush_cache(mutex write_mutexes[Config::ft_num_partition
 	}
 }
 
-void DomainLinkIndexer::add_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
-	const string &link_text, float score) {
-
-	vector<string> words = Text::get_full_text_words(link_text);
-	for (const string &word : words) {
-
-		const uint64_t word_hash = m_hasher(word);
-		const size_t shard_id = word_hash % Config::ft_num_shards;
-
-		m_shards[partition][shard_id]->add(word_hash, DomainLinkFullTextRecord{.m_value = link_hash, .m_score = score,
-			.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});
-	}
-}
-
 void DomainLinkIndexer::add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
 	const string &link_text, float score) {
 

@@ -106,11 +106,11 @@ void HashTableShard::load() {
 	const size_t record_len = Config::ht_key_size + sizeof(size_t);
 	const size_t buffer_len = record_len * 10000;
 	char buffer[buffer_len];
-	size_t latest_pos = 0;
 
 	vector<uint64_t> keys;
 	vector<size_t> positions;
 	if (infile.is_open()) {
+		size_t latest_pos = 0;
 		do {
 			infile.read(buffer, buffer_len);
 

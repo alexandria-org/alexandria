@@ -52,7 +52,7 @@ public:
 		const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexerRunner();
 
-	void run(const vector<string> local_files);
+	void run(const vector<string> &local_files);
 	void merge();
 	void sort();
 

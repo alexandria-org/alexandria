@@ -43,7 +43,7 @@ class TsvFile {
 public:
 
 	TsvFile();
-	TsvFile(const string &file_name);
+	explicit TsvFile(const string &file_name);
 	~TsvFile();
 
 	// Returns the line with the first column equals key. Returns string::npos if not present in file.
