@@ -5,12 +5,14 @@ set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_compile_options(-Wall -Werror -Wpedantic)
 project(alexandria LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(AWSSDK COMPONENTS s3 transfer lambda)
+find_package(Threads REQUIRED)
+FIND_PACKAGE(CURL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
 find_package(ZLIB)
 find_package(fcgi)
@@ -116,13 +118,16 @@ target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 target_link_libraries(tools PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
 target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
-	${AWSSDK_LINK_LIBRARIES} ${Boost_LIBRARIES} ZLIB::ZLIB)
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
 
