@@ -21,6 +21,8 @@ namespace Config {
 	size_t ft_section_depth = 8;
 	string file_upload_user = "";
 	string file_upload_password = "";
+	size_t n_grams = 0;
+	bool return_snippets = true;
 
 	void read_config(const string &config_file) {
 
@@ -83,6 +85,10 @@ namespace Config {
 				file_upload_user = parts[1];
 			} else if (parts[0] == "file_upload_password") {
 				file_upload_password = parts[1];
+			} else if (parts[0] == "n_grams") {
+				n_grams = stoull(parts[1]);
+			} else if (parts[0] == "return_snippets") {
+				return_snippets = static_cast<bool>(stoull(parts[1]));
 			}
 		}
 	}

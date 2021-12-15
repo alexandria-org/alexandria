@@ -139,7 +139,7 @@ namespace FullText {
 		FullTextShard<FullTextRecord> shard1("main_index_0", 0, 0);
 		cout << shard1.filename() << endl;
 
-		return shard1.keys().size() > 0;
+		return !shard1.empty();
 	}
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {

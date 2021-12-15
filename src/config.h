@@ -24,6 +24,8 @@ namespace Config {
 	extern size_t ft_section_depth;
 	extern std::string file_upload_user;
 	extern std::string file_upload_password;
+	extern size_t n_grams;
+	extern bool return_snippets;
 
 	/*
 		Constants only configurable at compilation time.
@@ -32,7 +34,7 @@ namespace Config {
 	// Full text indexer config
 	inline const unsigned long long ft_num_shards = 1024;
 	inline const unsigned long long ft_num_partitions = 2;
-	inline const unsigned long long ft_max_keys = 0xFFFFFFFF;
+	inline const unsigned long long ft_max_keys = 0xFFFFFFFF; // Should not be used, remove...
 	inline const unsigned long long ft_max_cache_gb = 30;
 	inline const unsigned long long ft_num_threads_indexing = 24;
 	inline const unsigned long long ft_num_threads_merging = 24;

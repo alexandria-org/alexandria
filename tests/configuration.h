@@ -83,6 +83,9 @@ BOOST_AUTO_TEST_CASE(read_config) {
 	BOOST_CHECK_EQUAL(Config::ft_max_sections, 2);
 	BOOST_CHECK_EQUAL(Config::ft_max_results_per_section, 20);
 
+	BOOST_CHECK_EQUAL(Config::n_grams, 5);
+	BOOST_CHECK_EQUAL(Config::return_snippets, false);
+
 	Config::read_config("../tests/test_config.conf");
 }
 

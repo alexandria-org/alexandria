@@ -56,18 +56,15 @@ public:
 
 	void add(uint64_t key, const DataRecord &record);
 	void sort_cache();
-	void order_sections_by_value(vector<DataRecord> &results) const;
-	void sort_cache_with_sum();
 	bool full() const;
 	void append();
 	void merge();
-	void merge_with_sum();
-	void read_append_cache();
 	bool should_merge();
 	void merge_with(FullTextShardBuilder<DataRecord> &with);
 
 	string mountpoint() const;
-	string filename() const;
+	string cache_filename() const;
+	string key_cache_filename() const;
 	string key_filename() const;
 	string target_filename() const;
 
@@ -77,8 +74,6 @@ public:
 	size_t disk_size() const;
 	size_t cache_size() const;
 
-	void read_data_to_cache();
-
 private:
 
 	const string m_db_name;
@@ -86,70 +81,50 @@ private:
 	const size_t m_max_cache_size;
 	const size_t m_partition;
 
-	mutable ifstream m_reader;
-	ofstream m_writer;
-
+	const size_t m_key_map_len = 1000000;
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
-	const size_t m_max_num_keys = 10000000;
+	const size_t m_max_num_keys = 10000;
 	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
 	char *m_buffer;
 
-	vector<uint64_t *> m_keys;
-	vector<DataRecord *>m_records;
-	size_t m_records_position;
+	vector<uint64_t> m_keys;
+	vector<DataRecord> m_records;
 
 	map<uint64_t, vector<DataRecord>> m_cache;
 	map<uint64_t, size_t> m_total_results;
 
+	void read_append_cache();
+	void read_data_to_cache();
+	bool read_page(ifstream &reader);
 	void save_file();
+	void write_key(ofstream &key_writer, uint64_t key, size_t page_pos);
+	size_t write_page(ofstream &writer, const vector<uint64_t> &keys);
+	void reset_key_file(ofstream &key_writer);
+	void order_sections_by_value(vector<DataRecord> &results) const;
 
 };
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition)
 : m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
-	m_records.push_back(new DataRecord[m_max_cache_size]);
-	m_keys.push_back(new uint64_t[m_max_cache_size]);
-	m_records_position = 0;
 }
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard)
 : m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
-	m_records.push_back(new DataRecord[m_max_cache_size]);
-	m_keys.push_back(new uint64_t[m_max_cache_size]);
-	m_records_position = 0;
 }
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::~FullTextShardBuilder() {
-	if (m_reader.is_open()) {
-		m_reader.close();
-	}
-	for (DataRecord *inputs : m_records) {
-		delete inputs;
-	}
-	for (uint64_t *keys : m_keys) {
-		delete keys;
-	}
 }
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::add(uint64_t key, const DataRecord &record) {
 
-	uint64_t *keys = m_keys.back();
-	DataRecord *records = m_records.back();
+	// Amortized constant
+	m_keys.push_back(key);
+	m_records.push_back(record);
 
-	keys[m_records_position] = key;
-	records[m_records_position] = record;
-
-	m_records_position++;
-
-	if (m_records_position >= m_max_cache_size) {
-		m_records.push_back(new DataRecord[m_max_cache_size]);
-		m_keys.push_back(new uint64_t[m_max_cache_size]);
-		m_records_position = 0;
-	}
 }
 
 template<typename DataRecord>
@@ -202,103 +177,39 @@ void FullTextShardBuilder<DataRecord>::order_sections_by_value(vector<DataRecord
 }
 
 template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::sort_cache_with_sum() {
-	/*for (auto &iter : m_cache) {
-		// Make elements unique.
-		sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
-		});
-
-		size_t sum_pos = 0;
-		for (size_t i = 1; i < iter.second.size(); i++) {
-			if (iter.second[sum_pos].m_value == iter.second[i].m_value) {
-				iter.second[sum_pos].m_score += iter.second[i].m_score;
-			} else {
-				sum_pos++;
-				iter.second[sum_pos] = iter.second[i];
-			}
-		}
-		sum_pos++;
-
-		iter.second.erase(iter.second.begin() + sum_pos, iter.second.end());
-
-		m_total_results[iter.first] = iter.second.size();
-
-		// Cap at Config::ft_max_results_per_partition
-		if (iter.second.size() > Config::ft_max_results_per_partition) {
-			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
-				return a.m_score > b.m_score;
-			});
-			iter.second.resize(Config::ft_max_results_per_partition);
-
-			// Order by value again.
-			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
-				return a.m_value < b.m_value;
-			});
-		}
-
-	}*/
-}
-
-template<typename DataRecord>
 bool FullTextShardBuilder<DataRecord>::full() const {
 	return cache_size() > m_max_cache_size;
 }
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::append() {
-	m_writer.open(filename(), ios::binary | ios::app);
-	if (!m_writer.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " +
+	ofstream record_writer(cache_filename(), ios::binary | ios::app);
+	if (!record_writer.is_open()) {
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " +
 			string(strerror(errno)));
 	}
 
-	ofstream key_writer(key_filename(), ios::binary | ios::app);
+	ofstream key_writer(key_cache_filename(), ios::binary | ios::app);
 	if (!key_writer.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_filename() + "). Error: " +
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " +
 			string(strerror(errno)));
 	}
 
-	while (m_records.size() > 1) {
-		DataRecord *records = m_records.back();
-		uint64_t *keys = m_keys.back();
-		m_records.pop_back();
-		m_keys.pop_back();
-		m_writer.write((const char *)records, m_records_position * sizeof(DataRecord));
-		key_writer.write((const char *)keys, m_records_position * sizeof(uint64_t));
-		m_records_position = m_max_cache_size;
-		delete records;
-		delete keys;
-	}
-	m_writer.write((const char *)m_records[0], m_records_position * sizeof(DataRecord));
-	key_writer.write((const char *)m_keys[0], m_records_position * sizeof(uint64_t));
-	m_records_position = 0;
+	record_writer.write((const char *)m_records.data(), m_records.size() * sizeof(DataRecord));
+	key_writer.write((const char *)m_keys.data(), m_keys.size() * sizeof(uint64_t));
 
-	m_writer.close();
-	key_writer.close();
+	m_records.clear();
+	m_keys.clear();
 }
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::merge() {
 
 	read_append_cache();
-
 	sort_cache();
-
 	save_file();
-
 	truncate_cache_files();
-}
 
-template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::merge_with_sum() {
-	read_append_cache();
-
-	sort_cache_with_sum();
-
-	save_file();
-
-	truncate_cache_files();
 }
 
 template<typename DataRecord>
@@ -311,14 +222,14 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	read_data_to_cache();
 
 	// Read the cache into memory.
-	m_reader.open(filename(), ios::binary);
-	if (!m_reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+	ifstream reader(cache_filename(), ios::binary);
+	if (!reader.is_open()) {
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + string(strerror(errno)));
 	}
 
-	ifstream key_reader(key_filename(), ios::binary);
+	ifstream key_reader(key_cache_filename(), ios::binary);
 	if (!key_reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " + string(strerror(errno)));
 	}
 
 	const size_t buffer_len = 100000;
@@ -327,14 +238,14 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	char *buffer = new char[buffer_size];
 	char *key_buffer = new char[key_buffer_size];
 
-	m_reader.seekg(0, ios::beg);
+	reader.seekg(0, ios::beg);
 
-	while (!m_reader.eof()) {
+	while (!reader.eof()) {
 
-		m_reader.read(buffer, buffer_size);
+		reader.read(buffer, buffer_size);
 		key_reader.read(key_buffer, key_buffer_size);
 
-		const size_t read_bytes = m_reader.gcount();
+		const size_t read_bytes = reader.gcount();
 		const size_t num_records = read_bytes / sizeof(DataRecord);
 
 		for (size_t i = 0; i < num_records; i++) {
@@ -343,8 +254,6 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 			m_cache[key].push_back(*record);
 		}
 	}
-	m_reader.close();
-	key_reader.close();
 
 	delete key_buffer;
 	delete buffer;
@@ -353,9 +262,8 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 template<typename DataRecord>
 bool FullTextShardBuilder<DataRecord>::should_merge() {
 
-	m_writer.open(filename(), ios::binary | ios::app);
-	size_t cache_file_size = m_writer.tellp();
-	m_writer.close();
+	ofstream writer(cache_filename(), ios::binary | ios::app);
+	size_t cache_file_size = writer.tellp();
 
 	return cache_file_size > m_max_cache_file_size;
 }
@@ -405,6 +313,9 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 	with.truncate();
 }
 
+/*
+ * Reads the file into RAM.
+ * */
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 
@@ -412,24 +323,29 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	m_total_results.clear();
 
 	ifstream reader(target_filename(), ios::binary);
-
 	if (!reader.is_open()) return;
 
 	reader.seekg(0, ios::end);
 	const size_t file_size = reader.tellg();
-
 	if (file_size == 0) return;
+	reader.seekg(0, ios::beg);
+
+	m_buffer = new char[m_buffer_len];
+	while (read_page(reader)) {
+	}
+	delete m_buffer;
+}
+
+template<typename DataRecord>
+bool FullTextShardBuilder<DataRecord>::read_page(ifstream &reader) {
 
 	char buffer[64];
 
-	reader.seekg(0, ios::beg);
 	reader.read(buffer, 8);
 
-	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
+	if (reader.eof()) return false;
 
-	if (num_keys > Config::ft_max_keys) {
-		throw LOG_ERROR_EXCEPTION("Number of keys in file exceeeds maximum: file: " + filename() + " num: " + to_string(num_keys));
-	}
+	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
 	char *vector_buffer = new char[num_keys * 8];
 
@@ -465,9 +381,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	}
 	delete vector_buffer;
 
-	if (data_size == 0) return;
-
-	m_buffer = new char[m_buffer_len];
+	if (data_size == 0) return true;
 
 	// Read the data.
 	size_t total_read_data = 0;
@@ -503,35 +417,63 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 		}
 	}
 
-	delete m_buffer;
-
+	return true;
 }
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::save_file() {
 
-	vector<uint64_t> keys;
-
-	const string filename = target_filename();
-
-	m_writer.open(filename, ios::binary | ios::trunc);
-	if (!m_writer.is_open()) {
+	ofstream writer(target_filename(), ios::binary | ios::trunc);
+	if (!writer.is_open()) {
 		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
 
-	keys.clear();
-	for (auto &iter : m_cache) {
-		keys.push_back(iter.first);
+	ofstream key_writer(key_filename(), ios::binary | ios::trunc);
+	if (!key_writer.is_open()) {
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + string(strerror(errno)));
 	}
-	
-	sort(keys.begin(), keys.end(), [](const uint64_t a, const uint64_t b) {
+
+	reset_key_file(key_writer);
+
+	unordered_map<uint64_t, vector<uint64_t>> pages;
+	for (auto &iter : m_cache) {
+		pages[iter.first % m_key_map_len].push_back(iter.first);
+	}
+
+	for (const auto &iter : pages) {
+		const size_t page_pos = write_page(writer, iter.second);
+		write_key(key_writer, iter.first, page_pos);
+	}
+
+	/*sort(keys.begin(), keys.end(), [](const uint64_t a, const uint64_t b) {
 		return a < b;
 	});
 
+	
+
+	m_cache.clear();
+	*/
+}
+
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::write_key(ofstream &key_writer, uint64_t key, size_t page_pos) {
+	assert(key < m_key_map_len);
+	key_writer.seekp(key * sizeof(uint64_t));
+	key_writer.write((char *)&page_pos, sizeof(size_t));
+}
+
+/*
+ * Writes the page with keys, appending it to the file stream writer. Takes data from m_cache.
+ * */
+template<typename DataRecord>
+size_t FullTextShardBuilder<DataRecord>::write_page(ofstream &writer, const vector<uint64_t> &keys) {
+
+	const size_t page_pos = writer.tellp();
+
 	size_t num_keys = keys.size();
 
-	m_writer.write((char *)&num_keys, 8);
-	m_writer.write((char *)keys.data(), keys.size() * 8);
+	writer.write((char *)&num_keys, 8);
+	writer.write((char *)keys.data(), keys.size() * 8);
 
 	vector<size_t> v_pos;
 	vector<size_t> v_len;
@@ -550,9 +492,9 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 		pos += len;
 	}
 	
-	m_writer.write((char *)v_pos.data(), keys.size() * 8);
-	m_writer.write((char *)v_len.data(), keys.size() * 8);
-	m_writer.write((char *)v_tot.data(), keys.size() * 8);
+	writer.write((char *)v_pos.data(), keys.size() * 8);
+	writer.write((char *)v_len.data(), keys.size() * 8);
+	writer.write((char *)v_tot.data(), keys.size() * 8);
 
 	const size_t buffer_num_records = 1000;
 	const size_t buffer_len =  buffer_num_records * sizeof(DataRecord);
@@ -566,17 +508,25 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 			memcpy(&buffer[i], (char *)&record, sizeof(DataRecord));
 			i += sizeof(DataRecord);
 			if (i == buffer_len) {
-				m_writer.write(buffer, buffer_len);
+				writer.write(buffer, buffer_len);
 				i = 0;
 			}
 		}
 		if (i) {
-			m_writer.write(buffer, i);
+			writer.write(buffer, i);
 		}
 	}
 
-	m_writer.close();
-	m_cache.clear();
+	return page_pos;
+}
+
+template<typename DataRecord>
+void FullTextShardBuilder<DataRecord>::reset_key_file(ofstream &key_writer) {
+	key_writer.seekp(0);
+	uint64_t data = SIZE_MAX;
+	for (size_t i = 0; i < m_key_map_len; i++) {
+		key_writer.write((char *)&data, sizeof(uint64_t));
+	}
 }
 
 template<typename DataRecord>
@@ -586,15 +536,18 @@ string FullTextShardBuilder<DataRecord>::mountpoint() const {
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::filename() const {
-	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
-		".cache";
+string FullTextShardBuilder<DataRecord>::cache_filename() const {
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) + ".cache";
+}
+
+template<typename DataRecord>
+string FullTextShardBuilder<DataRecord>::key_cache_filename() const {
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +".keys";
 }
 
 template<typename DataRecord>
 string FullTextShardBuilder<DataRecord>::key_filename() const {
-	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +
-		".keys";
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".keys";
 }
 
 template<typename DataRecord>
@@ -622,29 +575,29 @@ void FullTextShardBuilder<DataRecord>::truncate_cache_files() {
 
 	m_cache.clear();
 
-	m_writer.open(filename(), ios::trunc);
-	m_writer.close();
+	ofstream writer(cache_filename(), ios::trunc);
+	writer.close();
 
-	ofstream key_writer(key_filename(), ios::trunc);
+	ofstream key_writer(key_cache_filename(), ios::trunc);
 	key_writer.close();
 }
 
 template<typename DataRecord>
 size_t FullTextShardBuilder<DataRecord>::disk_size() const {
 
-	m_reader.open(filename(), ios::binary);
-	if (!m_reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + filename() + "). Error: " + string(strerror(errno)));
+	ifstream reader(cache_filename(), ios::binary);
+	if (!reader.is_open()) {
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + string(strerror(errno)));
 	}
 
-	m_reader.seekg(0, ios::end);
-	size_t file_size = m_reader.tellg();
-	m_reader.close();
+	reader.seekg(0, ios::end);
+	size_t file_size = reader.tellg();
+
 	return file_size;
 }
 
 template<typename DataRecord>
 size_t FullTextShardBuilder<DataRecord>::cache_size() const {
-	return m_records_position + (m_records.size() - 1) * m_max_cache_size;
+	return m_records.size();
 }
 
