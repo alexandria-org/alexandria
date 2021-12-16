@@ -35,32 +35,32 @@ BOOST_AUTO_TEST_SUITE(file)
 BOOST_AUTO_TEST_CASE(transfer_test) {
 	int error;
 	{
-		string result = Transfer::file_to_string("/example.txt", error);
+		string result = Transfer::file_to_string("/test-data/example.txt", error);
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::gz_file_to_string("/example.txt.gz", error);
+		string result = Transfer::gz_file_to_string("/test-data/example.txt.gz", error);
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::file_to_string("example.txt", error);
+		string result = Transfer::file_to_string("test-data/example.txt", error);
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::gz_file_to_string("example.txt.gz", error);
+		string result = Transfer::gz_file_to_string("test-data/example.txt.gz", error);
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
 	}
 
 	{
 		stringstream ss;
-		Transfer::file_to_stream("/example.txt", ss, error);
+		Transfer::file_to_stream("/test-data/example.txt", ss, error);
 		string result = ss.str();
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 
 	{
 		stringstream ss;
-		Transfer::gz_file_to_stream("/example.txt.gz", ss, error);
+		Transfer::gz_file_to_stream("/test-data/example.txt.gz", ss, error);
 		string result = ss.str();
 		BOOST_CHECK(error == Transfer::OK);
 		BOOST_CHECK(Text::trim(result) == "An example file");
@@ -113,49 +113,6 @@ BOOST_AUTO_TEST_CASE(tsv_file_exists) {
 	BOOST_CHECK(manual_paths_file.is_open());
 	BOOST_CHECK(warc_paths.size() > 0);
 	BOOST_CHECK(warc_paths[0] == "/crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz");
-}
-
-BOOST_AUTO_TEST_CASE(cache_performance_test) {
-	int error;
-	{
-		string result = Transfer::file_to_string("/example.txt", error);
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
-
-	{
-		string result = Transfer::gz_file_to_string("/example.txt.gz", error);
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
-
-	{
-		string result = Transfer::file_to_string("example.txt", error);
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
-
-	{
-		string result = Transfer::gz_file_to_string("example.txt.gz", error);
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
-
-	{
-		stringstream ss;
-		Transfer::file_to_stream("/example.txt", ss, error);
-		string result = ss.str();
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
-
-	{
-		stringstream ss;
-		Transfer::gz_file_to_stream("/example.txt.gz", ss, error);
-		string result = ss.str();
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
-	}
 }
 
 BOOST_AUTO_TEST_CASE(tsv_file_dont_exists) {

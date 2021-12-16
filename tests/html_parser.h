@@ -242,6 +242,21 @@ BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 	BOOST_CHECK(parser.is_exotic_language("Ремонт Принтеров Hp в Спб Адреса | Ремонт принтеров"));
 }
 
+BOOST_AUTO_TEST_CASE(html_parser_long_text) {
+
+	Config::html_parser_long_text_len = 100000;
+
+	HtmlParser parser;
+	string html = File::read_test_file("zlib_manual.html");
+
+	parser.parse(html, "https://zlib.net/manual.html");
+
+	string text = parser.text();
+	BOOST_CHECK_EQUAL(text.substr(text.size() - 15), "# endif #endif ");
+
+	Config::html_parser_long_text_len = 1000;
+}
+
 /*
 	test these links: <a href="http://skatteverket.se/">Skatteverket</A>
 	here: http://nomell.se/2009/03/24/prisa-gud-har-kommer-skatteaterbaringen/

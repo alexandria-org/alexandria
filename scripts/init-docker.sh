@@ -23,12 +23,11 @@ echo "server {
 }
 " > /etc/nginx/sites-available/default
 
-/etc/init.d/nginx restart
-
 echo "Downloading test data";
 ./download-test-data.sh /var/www/html
 
-mkdir /var/www/html/node0003.alexandria.org/upload
+mkdir /var/www/html/node0003.alexandria.org/nodes
+mkdir /var/www/html/node0003.alexandria.org/nodes/test0001
 mkdir /var/www/html/node0003.alexandria.org/upload-tmp
 
 chown -R www-data:www-data /var/www/html/node0003.alexandria.org
@@ -43,4 +42,6 @@ for shard in $(seq 0 7); do
 	mkdir "$shard/full_text";
 	mkdir "$shard/tmp";
 done
+
+/etc/init.d/nginx restart
 
