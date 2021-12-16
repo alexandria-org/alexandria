@@ -27,6 +27,7 @@ namespace Config {
 	extern size_t n_grams;
 	extern bool return_snippets;
 	extern size_t shard_hash_table_size;
+	extern size_t html_parser_long_text_len;
 
 	/*
 		Constants only configurable at compilation time.

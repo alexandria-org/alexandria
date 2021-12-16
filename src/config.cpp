@@ -24,6 +24,7 @@ namespace Config {
 	size_t n_grams = 0;
 	bool return_snippets = true;
 	size_t shard_hash_table_size = 100000;
+	size_t html_parser_long_text_len = 1000;
 
 	void read_config(const string &config_file) {
 
@@ -91,7 +92,9 @@ namespace Config {
 			} else if (parts[0] == "return_snippets") {
 				return_snippets = static_cast<bool>(stoull(parts[1]));
 			} else if (parts[0] == "shard_hash_table_size") {
-				shard_hash_table_size = static_cast<bool>(stoull(parts[1]));
+				shard_hash_table_size = stoull(parts[1]);
+			} else if (parts[0] == "html_parser_long_text_len") {
+				html_parser_long_text_len = stoull(parts[1]);
 			}
 		}
 	}

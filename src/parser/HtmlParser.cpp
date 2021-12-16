@@ -27,16 +27,21 @@
 #include "entities.h"
 #include "HtmlParser.h"
 #include "Parser.h"
+#include "config.h"
 #include "text/Text.h"
 #include <curl/curl.h>
 
 const vector<string> non_content_tags{"script", "noscript", "style", "embed", "label", "form", "input",
 	"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 
-HtmlParser::HtmlParser() {
+HtmlParser::HtmlParser()
+: m_long_str_buf_len(Config::html_parser_long_text_len)
+{
+	m_long_str_buf = new char[m_long_str_buf_len];
 }
 
 HtmlParser::~HtmlParser() {
+	delete [] m_long_str_buf;
 }
 
 void HtmlParser::parse(const string &html) {
@@ -93,10 +98,6 @@ void HtmlParser::parse(const string &html, const string &url) {
 		m_should_insert = false;
 		return;
 	}
-
-	/*m_title.resize(HTML_PARSER_SHORT_TEXT_LEN);
-	m_h1.resize(HTML_PARSER_SHORT_TEXT_LEN);
-	m_meta.resize(HTML_PARSER_LONG_TEXT_LEN);*/
 }
 
 void HtmlParser::find_scripts(const string &html) {
@@ -432,21 +433,21 @@ string HtmlParser::get_text_content(const string &html) {
 		return "";
 	}
 
-	const int len = html.size();
+	const size_t len = html.size();
 	bool copy = true;
 	bool ignore = false;
 	bool last_was_space = false;
-	int i = pos_start, j = 0;
+	size_t i = pos_start, j = 0;
 
 	auto interval = m_invisible_pos.begin();
 	const auto invisible_end = m_invisible_pos.end();
-	while (interval != m_invisible_pos.end() && interval->first < (int)pos_start) {
+	while (interval != m_invisible_pos.end() && interval->first < pos_start) {
 		interval++;
 	}
 
 	const char *html_s = html.c_str();
 
-	for (; i < len && j < HTML_PARSER_LONG_TEXT_LEN; i++) {
+	for (; i < len && j < m_long_str_buf_len; i++) {
 		if (html_s[i] == '<') {
 			if (interval != invisible_end && interval->first == i) {
 				// Skip the whole invisible tag.
@@ -462,11 +463,11 @@ string HtmlParser::get_text_content(const string &html) {
 			copy = false;
 		}
 		if (isspace(html_s[i])) {
-			m_long_str_buf[j] = ' ';
+			if (j < m_long_str_buf_len) m_long_str_buf[j] = ' ';
 			if (copy && !last_was_space) j++;
 			last_was_space = true;
 		} else {
-			m_long_str_buf[j] = html_s[i];
+			if (j < m_long_str_buf_len) m_long_str_buf[j] = html_s[i];
 			if (copy) j++;
 			last_was_space = false;
 		}
@@ -554,7 +555,7 @@ void HtmlParser::sort_invisible() {
 
 inline bool HtmlParser::is_invisible(size_t pos) {
 	for (const auto &interval : m_invisible_pos) {
-		if (interval.first <= (int)pos && (int)pos <= interval.second) return true;
+		if (interval.first <= pos && pos <= interval.second) return true;
 	}
 	return false;
 }

@@ -41,15 +41,15 @@
 using namespace std;
 
 #define HTML_PARSER_LONG_TEXT_LEN 1000
-#define HTML_PARSER_SHORT_TEXT_LEN 300
+#define HTML_PARSER_MAX_H1_LEN 400
+#define HTML_PARSER_MAX_TITLE_LEN 400
+
 #define HTML_PARSER_CLEANBUF_LEN 1024
 #define HTML_PARSER_ENCODING_BUFFER_LEN 8192
 
 #define ENC_UTF_8 1
 #define ENC_ISO_8859_1 2
 #define ENC_UNKNOWN -1
-#define HTML_PARSER_MAX_H1_LEN 400
-#define HTML_PARSER_MAX_TITLE_LEN 400
 
 class HtmlParser {
 
@@ -78,10 +78,11 @@ private:
 
 	vector<HtmlLink> m_links;
 	vector<HtmlLink> m_internal_links;
-	vector<pair<int, int>> m_invisible_pos;
+	vector<pair<size_t, size_t>> m_invisible_pos;
 
 	char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];
-	char m_long_str_buf[HTML_PARSER_LONG_TEXT_LEN];
+	const size_t m_long_str_buf_len;
+	char *m_long_str_buf;
 	unsigned char m_encoding_buffer[HTML_PARSER_ENCODING_BUFFER_LEN];
 	bool m_should_insert;
 	int m_encoding = ENC_UNKNOWN;
