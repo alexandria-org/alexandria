@@ -81,8 +81,6 @@ private:
 	size_t m_shard_id;
 	size_t m_partition;
 
-	const size_t m_key_map_len = 1000000;
-
 	size_t m_data_start;
 	size_t m_pos_start;
 	size_t m_len_start;
@@ -136,36 +134,26 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	char buffer[64];
 
 	// Read position and length.
-	reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos, ios::beg);
+	reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t pos = *((size_t *)(&buffer[0]));
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t len = *((size_t *)(&buffer[0]));
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t total_num_results = *((size_t *)(&buffer[0]));
 
 	reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, ios::beg);
 
-	result_set->prepare_sections(filename(), (size_t)reader.tellg(), len);
-	result_set->read_to_section(0);
-
 	size_t num_records = len / sizeof(DataRecord);
 	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
 
+	result_set->prepare_sections(filename(), (size_t)reader.tellg(), len);
+	result_set->read_to_section(0);
 	result_set->resize(num_records);
-
-	DataRecord *record_res = result_set->data_pointer();
-
-	int fd = open(filename().c_str(), O_RDONLY);
-	posix_fadvise(fd, reader.tellg(), num_records * sizeof(DataRecord), POSIX_FADV_SEQUENTIAL);
-	lseek(fd, reader.tellg(), SEEK_SET);
-	::read(fd, (void *)&record_res[0], (size_t)num_records * sizeof(DataRecord));
-	close(fd);
-
 	result_set->set_total_num_results(total_num_results);
 }
 
@@ -175,7 +163,7 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 template<typename DataRecord>
 size_t FullTextShard<DataRecord>::read_key_pos(ifstream &reader, uint64_t key) {
 
-	const size_t hash_pos = key % m_key_map_len;
+	const size_t hash_pos = key % Config::shard_hash_table_size;
 
 	ifstream key_reader(key_filename(), ios::binary);
 
@@ -221,7 +209,7 @@ size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
 
 	char buffer[64];
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, ios::beg);
 	reader.read(buffer, 8);
 	size_t total_num_results = *((size_t *)(&buffer[0]));
 

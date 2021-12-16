@@ -8,14 +8,14 @@ echo
 if [[ $REPLY =~ ^[Y]$ ]]
 then
 	for shard in $(seq 0 7); do
-		rm -r $shard/*
-		mkdir $shard
-		mkdir "$shard/input";
-		mkdir "$shard/output";
-		mkdir "$shard/upload";
-		mkdir "$shard/hash_table";
-		mkdir "$shard/full_text";
-		mkdir "$shard/tmp";
+		rm -r /mnt/$shard/*
+		mkdir /mnt/$shard
+		mkdir "/mnt/$shard/input";
+		mkdir "/mnt/$shard/output";
+		mkdir "/mnt/$shard/upload";
+		mkdir "/mnt/$shard/hash_table";
+		mkdir "/mnt/$shard/full_text";
+		mkdir "/mnt/$shard/tmp";
 	done
 
 else

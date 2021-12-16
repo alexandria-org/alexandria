@@ -23,6 +23,7 @@ namespace Config {
 	string file_upload_password = "";
 	size_t n_grams = 0;
 	bool return_snippets = true;
+	size_t shard_hash_table_size = 100000;
 
 	void read_config(const string &config_file) {
 
@@ -89,6 +90,8 @@ namespace Config {
 				n_grams = stoull(parts[1]);
 			} else if (parts[0] == "return_snippets") {
 				return_snippets = static_cast<bool>(stoull(parts[1]));
+			} else if (parts[0] == "shard_hash_table_size") {
+				shard_hash_table_size = static_cast<bool>(stoull(parts[1]));
 			}
 		}
 	}

@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(deduplication) {
 		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 0);
 
 		BOOST_CHECK(json_obj.contains("results"));
-		BOOST_CHECK(json_obj["results"].size() == Config::result_limit);
+		BOOST_CHECK_EQUAL(json_obj["results"].size(), Config::result_limit);
 	}
 
 	// Reset.

@@ -63,4 +63,5 @@ using namespace std;
 #include "cluster.h"
 #include "cc_parser.h"
 #include "hash.h"
+#include "shard_builder.h"
 

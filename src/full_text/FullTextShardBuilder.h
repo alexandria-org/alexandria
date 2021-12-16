@@ -81,7 +81,6 @@ private:
 	const size_t m_max_cache_size;
 	const size_t m_partition;
 
-	const size_t m_key_map_len = 1000000;
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 	const size_t m_max_num_keys = 10000;
 	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
@@ -437,11 +436,12 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 
 	unordered_map<uint64_t, vector<uint64_t>> pages;
 	for (auto &iter : m_cache) {
-		pages[iter.first % m_key_map_len].push_back(iter.first);
+		pages[iter.first % Config::shard_hash_table_size].push_back(iter.first);
 	}
 
 	for (const auto &iter : pages) {
 		const size_t page_pos = write_page(writer, iter.second);
+		writer.flush();
 		write_key(key_writer, iter.first, page_pos);
 	}
 
@@ -457,7 +457,7 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::write_key(ofstream &key_writer, uint64_t key, size_t page_pos) {
-	assert(key < m_key_map_len);
+	assert(key < Config::shard_hash_table_size);
 	key_writer.seekp(key * sizeof(uint64_t));
 	key_writer.write((char *)&page_pos, sizeof(size_t));
 }
@@ -496,25 +496,9 @@ size_t FullTextShardBuilder<DataRecord>::write_page(ofstream &writer, const vect
 	writer.write((char *)v_len.data(), keys.size() * 8);
 	writer.write((char *)v_tot.data(), keys.size() * 8);
 
-	const size_t buffer_num_records = 1000;
-	const size_t buffer_len =  buffer_num_records * sizeof(DataRecord);
-	char buffer[buffer_len];
-
 	// Write data.
 	for (uint64_t key : keys) {
-		size_t i = 0;
-
-		for (const DataRecord &record : m_cache[key]) {
-			memcpy(&buffer[i], (char *)&record, sizeof(DataRecord));
-			i += sizeof(DataRecord);
-			if (i == buffer_len) {
-				writer.write(buffer, buffer_len);
-				i = 0;
-			}
-		}
-		if (i) {
-			writer.write(buffer, i);
-		}
+		writer.write((char *)m_cache[key].data(), sizeof(DataRecord) * m_cache[key].size());
 	}
 
 	return page_pos;
@@ -524,7 +508,7 @@ template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::reset_key_file(ofstream &key_writer) {
 	key_writer.seekp(0);
 	uint64_t data = SIZE_MAX;
-	for (size_t i = 0; i < m_key_map_len; i++) {
+	for (size_t i = 0; i < Config::shard_hash_table_size; i++) {
 		key_writer.write((char *)&data, sizeof(uint64_t));
 	}
 }

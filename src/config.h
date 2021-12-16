@@ -26,13 +26,14 @@ namespace Config {
 	extern std::string file_upload_password;
 	extern size_t n_grams;
 	extern bool return_snippets;
+	extern size_t shard_hash_table_size;
 
 	/*
 		Constants only configurable at compilation time.
 	*/
 
 	// Full text indexer config
-	inline const unsigned long long ft_num_shards = 1024;
+	inline const unsigned long long ft_num_shards = 24;
 	inline const unsigned long long ft_num_partitions = 2;
 	inline const unsigned long long ft_max_keys = 0xFFFFFFFF; // Should not be used, remove...
 	inline const unsigned long long ft_max_cache_gb = 30;
