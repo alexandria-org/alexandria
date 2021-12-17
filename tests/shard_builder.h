@@ -58,6 +58,8 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 		builder.append();
 	}
 
+	builder.merge();
+
 	{
 		FullTextRecord record = {
 			.m_value = 112ull,
@@ -66,7 +68,6 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 		};
 
 		builder.add(123457ull, record);
-		builder.append();
 	}
 
 	{
