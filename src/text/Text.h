@@ -35,6 +35,7 @@
 #include <sstream>
 #include "Stopwords.h"
 #include "parser/Unicode.h"
+#include "hash/Hash.h"
 
 using namespace std;
 
@@ -101,5 +102,21 @@ namespace Text {
 	*/
 	vector<string> get_words_without_stopwords(const string &str, size_t limit);
 	vector<string> get_words_without_stopwords(const string &str);
+
+	template<typename T>
+	void words_to_ngram_hash(const vector<string> &words, size_t n_grams, T fun) {
+		
+		const size_t word_iter_max = words.size();
+
+		for (size_t i = 0; i < word_iter_max; i++) {
+			for (size_t j = 0; j < n_grams && (j + i) < word_iter_max; j++) {
+				string n_gram = words[i];
+				for (size_t k = i + 1; k <= i + j; k++) {
+					n_gram += " " + words[k];
+				}
+				fun(Hash::str(n_gram));
+			}
+		}
+	}
 
 }

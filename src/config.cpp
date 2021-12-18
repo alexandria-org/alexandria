@@ -21,7 +21,7 @@ namespace Config {
 	size_t ft_section_depth = 8;
 	string file_upload_user = "";
 	string file_upload_password = "";
-	size_t n_grams = 0;
+	size_t n_grams = 1;
 	bool return_snippets = true;
 	size_t shard_hash_table_size = 100000;
 	size_t html_parser_long_text_len = 1000;

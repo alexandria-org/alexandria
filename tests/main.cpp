@@ -64,4 +64,5 @@ using namespace std;
 #include "cc_parser.h"
 #include "hash.h"
 #include "shard_builder.h"
+#include "n_gram.h"
 

@@ -195,13 +195,13 @@ void FullTextIndexer::add_expanded_data_to_word_map(map<uint64_t, float> &word_m
 
 	vector<string> words = Text::get_expanded_full_text_words(text);
 	map<uint64_t, uint64_t> uniq;
-	for (const string &word : words) {
-		const uint64_t word_hash = m_hasher(word);
-		if (uniq.find(word_hash) == uniq.end()) {
-			word_map[word_hash] += score;
-			uniq[word_hash] = word_hash;
+
+	Text::words_to_ngram_hash(words, Config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
+		if (uniq.find(hash) == uniq.end()) {
+			word_map[hash] += score;
+			uniq[hash] = hash;
 		}
-	}
+	});
 }
 
 void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
