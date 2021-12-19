@@ -78,3 +78,6 @@ make run_tests -j24
 ./run_tests
 ```
 
+## Coding rules
+1. Never put "using namespace..." in header files.
+
