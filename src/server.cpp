@@ -36,6 +36,8 @@
 
 #include <fstream>
 
+using namespace std;
+
 void runner(void) {
 	const size_t data_len = 16000000ull*24ull;
 	char *random_data = new char[data_len];

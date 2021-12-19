@@ -31,15 +31,13 @@
 #include <fstream>
 #include <unistd.h>
 
-using namespace std;
-
 namespace Profiler {
 
 	class instance {
 
 	public:
 
-		explicit instance(const string &name);
+		explicit instance(const std::string &name);
 		instance();
 		~instance();
 
@@ -50,7 +48,7 @@ namespace Profiler {
 		void print();
 
 	private:
-		string m_name;
+		std::string m_name;
 		bool m_enabled = true;
 		bool m_has_stopped = false;
 		std::chrono::_V2::system_clock::time_point m_start_time;
@@ -58,7 +56,7 @@ namespace Profiler {
 
 	void print_memory_status();
 
-	void tick(const string &name, const string &section);
+	void tick(const std::string &name, const std::string &section);
 	void report_reset();
 	void report_print();
 	double now_micro();

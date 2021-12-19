@@ -28,6 +28,8 @@
 #include "HashTableHelper.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 namespace HashTableHelper {
 
 	void truncate(const string &hash_table_name) {

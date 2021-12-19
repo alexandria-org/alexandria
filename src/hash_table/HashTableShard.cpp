@@ -28,6 +28,8 @@
 #include "HashTableShard.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 HashTableShard::HashTableShard(const string &db_name, size_t shard_id)
 : m_db_name(db_name), m_shard_id(shard_id), m_loaded(false), m_size(0)
 {
@@ -188,8 +190,8 @@ string HashTableShard::data_at_position(size_t pos) {
 	infile.read(buffer, data_len);
 	stringstream ss(string(buffer, data_len));
 
-	filtering_istream decompress_stream;
-	decompress_stream.push(gzip_decompressor());
+	boost::iostreams::filtering_istream decompress_stream;
+	decompress_stream.push(boost::iostreams::gzip_decompressor());
 	decompress_stream.push(ss);
 
 	stringstream decompressed;

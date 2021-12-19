@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(binary_search) {
 
 BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 	{
-		set<pair<uint32_t, uint32_t>> e = {make_pair(0, 1), make_pair(1, 2), make_pair(2, 0)};
+		set<pair<uint32_t, uint32_t>> e = {std::make_pair(0, 1), std::make_pair(1, 2), std::make_pair(2, 0)};
 		vector<double> h = Algorithm::harmonic_centrality(3, e, 6);
 		BOOST_CHECK(h.size() == 3);
 		BOOST_CHECK((h == vector<double>{1.5, 1.5, 1.5}));
@@ -191,14 +191,14 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 
 	{
 		set<pair<uint32_t, uint32_t>> e = {
-			make_pair(0, 1),
-			make_pair(1, 2),
-			make_pair(2, 0),
-			make_pair(2, 3),
-			make_pair(3, 4),
-			make_pair(3, 5),
-			make_pair(4, 2),
-			make_pair(5, 4),
+			std::make_pair(0, 1),
+			std::make_pair(1, 2),
+			std::make_pair(2, 0),
+			std::make_pair(2, 3),
+			std::make_pair(3, 4),
+			std::make_pair(3, 5),
+			std::make_pair(4, 2),
+			std::make_pair(5, 4),
 		};
 		vector<double> h = Algorithm::harmonic_centrality(7, e, 6);
 		BOOST_CHECK(h.size() == 7);
@@ -210,14 +210,14 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 
 	{
 		set<pair<uint32_t, uint32_t>> e = {
-			make_pair(0, 1),
-			make_pair(1, 2),
-			make_pair(2, 1),
-			make_pair(3, 1),
-			make_pair(4, 1),
-			make_pair(5, 1),
-			make_pair(6, 1),
-			make_pair(7, 1),
+			std::make_pair(0, 1),
+			std::make_pair(1, 2),
+			std::make_pair(2, 1),
+			std::make_pair(3, 1),
+			std::make_pair(4, 1),
+			std::make_pair(5, 1),
+			std::make_pair(6, 1),
+			std::make_pair(7, 1),
 		};
 		vector<double> h = Algorithm::harmonic_centrality(8, e, 6);
 		BOOST_CHECK(h.size() == 8);
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 
 BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 	{
-		set<pair<uint32_t, uint32_t>> e = {make_pair(0, 1), make_pair(1, 2), make_pair(2, 0)};
+		set<pair<uint32_t, uint32_t>> e = {std::make_pair(0, 1), std::make_pair(1, 2), std::make_pair(2, 0)};
 		vector<double> h = Algorithm::harmonic_centrality_threaded(3, e, 6, 3);
 		BOOST_CHECK(h.size() == 3);
 		BOOST_CHECK((h == vector<double>{1.5, 1.5, 1.5}));
@@ -235,14 +235,14 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 
 	{
 		set<pair<uint32_t, uint32_t>> e = {
-			make_pair(0, 1),
-			make_pair(1, 2),
-			make_pair(2, 0),
-			make_pair(2, 3),
-			make_pair(3, 4),
-			make_pair(3, 5),
-			make_pair(4, 2),
-			make_pair(5, 4),
+			std::make_pair(0, 1),
+			std::make_pair(1, 2),
+			std::make_pair(2, 0),
+			std::make_pair(2, 3),
+			std::make_pair(3, 4),
+			std::make_pair(3, 5),
+			std::make_pair(4, 2),
+			std::make_pair(5, 4),
 		};
 		vector<double> h = Algorithm::harmonic_centrality_threaded(7, e, 6, 2);
 		BOOST_CHECK(h.size() == 7);
@@ -254,14 +254,14 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 
 	{
 		set<pair<uint32_t, uint32_t>> e = {
-			make_pair(0, 1),
-			make_pair(1, 2),
-			make_pair(2, 1),
-			make_pair(3, 1),
-			make_pair(4, 1),
-			make_pair(5, 1),
-			make_pair(6, 1),
-			make_pair(7, 1),
+			std::make_pair(0, 1),
+			std::make_pair(1, 2),
+			std::make_pair(2, 1),
+			std::make_pair(3, 1),
+			std::make_pair(4, 1),
+			std::make_pair(5, 1),
+			std::make_pair(6, 1),
+			std::make_pair(7, 1),
 		};
 		vector<double> h = Algorithm::harmonic_centrality_threaded(8, e, 6, 1);
 		BOOST_CHECK(h.size() == 8);

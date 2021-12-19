@@ -24,10 +24,10 @@
  * SOFTWARE.
  */
 
+#pragma once
+
 #include <vector>
 #include <cstdint>
-
-#pragma once
 
 namespace Algorithm {
 

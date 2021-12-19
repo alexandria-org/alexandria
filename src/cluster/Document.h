@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include<iostream>
-#include<unordered_map>
-#include<cstdint>
+#include <iostream>
+#include <unordered_map>
+#include <cstdint>
 
 namespace Cluster {
 

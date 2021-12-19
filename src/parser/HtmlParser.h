@@ -38,8 +38,6 @@
 #include "HtmlLink.h"
 #include "parser/Unicode.h"
 
-using namespace std;
-
 #define HTML_PARSER_LONG_TEXT_LEN 1000
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
@@ -58,27 +56,27 @@ public:
 	HtmlParser();
 	~HtmlParser();
 
-	void parse(const string &html, const string &url);
-	void parse(const string &html);
+	void parse(const std::string &html, const std::string &url);
+	void parse(const std::string &html);
 
-	string title();
-	string meta();
-	string h1();
-	string text();
-	vector<HtmlLink> links();
-	vector<HtmlLink> internal_links();
+	std::string title();
+	std::string meta();
+	std::string h1();
+	std::string text();
+	std::vector<HtmlLink> links();
+	std::vector<HtmlLink> internal_links();
 	bool should_insert();
 
 	// Return top level domain
-	string url_tld(const string &url);
-	bool is_exotic_language_debug(const string &str) const;
-	bool is_exotic_language(const string &str) const;
+	std::string url_tld(const std::string &url);
+	bool is_exotic_language_debug(const std::string &str) const;
+	bool is_exotic_language(const std::string &str) const;
 
 private:
 
-	vector<HtmlLink> m_links;
-	vector<HtmlLink> m_internal_links;
-	vector<pair<size_t, size_t>> m_invisible_pos;
+	std::vector<HtmlLink> m_links;
+	std::vector<HtmlLink> m_internal_links;
+	std::vector<std::pair<size_t, size_t>> m_invisible_pos;
 
 	char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];
 	const size_t m_long_str_buf_len;
@@ -87,32 +85,32 @@ private:
 	bool m_should_insert;
 	int m_encoding = ENC_UNKNOWN;
 
-	string m_title;
-	string m_h1;
-	string m_meta;
-	string m_text;
+	std::string m_title;
+	std::string m_h1;
+	std::string m_meta;
+	std::string m_text;
 
-	string m_host;
-	string m_path;
+	std::string m_host;
+	std::string m_path;
 
-	void find_scripts(const string &html);
-	void find_styles(const string &html);
-	void find_links(const string &html, const string &base_url);
+	void find_scripts(const std::string &html);
+	void find_styles(const std::string &html);
+	void find_links(const std::string &html, const std::string &base_url);
 
-	int parse_link(const string &link, const string &base_url);
-	int parse_url(const string &url, string &host, string &path, const string &base_url);
-	inline void remove_www(string &path);
-	void parse_encoding(const string &html);
-	void iso_to_utf8(string &text);
+	int parse_link(const std::string &link, const std::string &base_url);
+	int parse_url(const std::string &url, std::string &host, std::string &path, const std::string &base_url);
+	inline void remove_www(std::string &path);
+	void parse_encoding(const std::string &html);
+	void iso_to_utf8(std::string &text);
 
-	inline pair<size_t, size_t> find_tag(const string &html, const string &tag_start, const string &tag_end,
+	inline std::pair<size_t, size_t> find_tag(const std::string &html, const std::string &tag_start, const std::string &tag_end,
 		size_t pos);
-	string get_tag_content(const string &html, const string &tag_start, const string &tag_end);
-	string get_meta_tag(const string &html);
-	void clean_text(string &str);
-	void strip_whitespace(string &html);
-	void strip_tags(string &html);
-	string get_text_content(const string &html);
+	std::string get_tag_content(const std::string &html, const std::string &tag_start, const std::string &tag_end);
+	std::string get_meta_tag(const std::string &html);
+	void clean_text(std::string &str);
+	void strip_whitespace(std::string &html);
+	void strip_tags(std::string &html);
+	std::string get_text_content(const std::string &html);
 	void sort_invisible();
 	inline bool is_invisible(size_t pos);
 

@@ -26,6 +26,8 @@
 
 #include "Link.h"
 
+using namespace std;
+
 Link::Link() {
 
 }

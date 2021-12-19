@@ -26,6 +26,7 @@
 
 #include "Unicode.h"
 
+using namespace std;
 
 std::string Unicode::encode(const std::string &str) {
 

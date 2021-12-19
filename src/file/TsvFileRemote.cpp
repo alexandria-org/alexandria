@@ -27,6 +27,14 @@
 #include "TsvFileRemote.h"
 #include "system/Logger.h"
 
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
+using namespace std;
+using namespace boost::iostreams;
+
 TsvFileRemote::TsvFileRemote(const string &file_name) {
 	// Check if the file exists.
 

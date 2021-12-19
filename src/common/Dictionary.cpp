@@ -27,6 +27,8 @@
 #include "Dictionary.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 Dictionary::Dictionary() {
 
 }

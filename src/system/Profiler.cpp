@@ -28,6 +28,8 @@
 #include "Logger.h"
 #include <vector>
 
+using namespace std;
+
 namespace Profiler {
 
 	std::chrono::_V2::system_clock::time_point start_time = std::chrono::high_resolution_clock::now();

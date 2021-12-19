@@ -36,9 +36,17 @@
 #include <fstream>
 #include <streambuf>
 #include <math.h>
-#include "search_engine/SearchAllocation.h"
+#include <vector>
+#include <set>
+#include <map>
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::ifstream;
+using std::stringstream;
+using std::set;
+using std::map;
+using std::pair;
 
 #include "search_allocation.h"
 #include "file.h"

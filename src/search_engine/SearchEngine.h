@@ -43,9 +43,17 @@
 #include "SearchAllocation.h"
 #include <cassert>
 
-using namespace std;
-
 namespace SearchEngine {
+
+	using std::string;
+	using std::vector;
+	using std::future;
+	using std::thread;
+	using std::span;
+	using std::pair;
+	using std::map;
+	using std::unordered_map;
+
 	/*
 		Public interface
 	*/
@@ -152,11 +160,11 @@ namespace SearchEngine {
 				i++;
 			} else if (hash1 == hash2) {
 
-				if (domain_unique.count(make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
+				if (domain_unique.count(std::make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					data[j].m_score += url_score;
 					applied_links++;
-					domain_unique[make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
+					domain_unique[std::make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
 				}
 
 				i++;
@@ -182,12 +190,12 @@ namespace SearchEngine {
 			{
 				for (const DomainLinkFullTextRecord &link : links) {
 
-					if (domain_unique.count(make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
+					if (domain_unique.count(std::make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
 
 						const float domain_score = expm1(25.0f*link.m_score) / 50.0f;
 						domain_scores[link.m_target_domain] += domain_score;
 						domain_counts[link.m_target_domain]++;
-						domain_unique[make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;
+						domain_unique[std::make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;
 
 					}
 				}
@@ -584,7 +592,7 @@ namespace SearchEngine {
 		for (FullTextIndex<DataRecord> *index : index_array) {
 
 			auto fut = async(search_partition<DataRecord>, storage, index->shards(), links, domain_links, partition_id, query, limit,
-				ref(metrics_vector[partition_id]));
+				std::ref(metrics_vector[partition_id]));
 
 			futures.push_back(move(fut));
 
@@ -633,7 +641,7 @@ namespace SearchEngine {
 		for (FullTextIndex<DataRecord> *index : index_array) {
 
 			auto fut = async(search_partition_exact<DataRecord>, storage, index->shards(), partition_id, query, limit,
-				ref(metrics_vector[partition_id]));
+				std::ref(metrics_vector[partition_id]));
 
 			futures.push_back(move(fut));
 

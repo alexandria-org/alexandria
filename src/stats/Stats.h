@@ -33,20 +33,20 @@
 
 namespace Stats {
 
-	hash<string> hasher;
+	std::hash<std::string> hasher;
 
 	template<typename DataRecord>
-	map<string, double> word_stats(vector<FullTextIndex<DataRecord> *> index_array, const string &query, size_t index_size);
+	std::map<std::string, double> word_stats(std::vector<FullTextIndex<DataRecord> *> index_array, const std::string &query, size_t index_size);
 
 	template<typename DataRecord>
-	map<string, double> get_word_counts(const vector<FullTextShard<DataRecord> *> &shards, const string &query) {
+	std::map<std::string, double> get_word_counts(const std::vector<FullTextShard<DataRecord> *> &shards, const std::string &query) {
 
-		vector<string> words = Text::get_full_text_words(query);
+		std::vector<std::string> words = Text::get_full_text_words(query);
 		if (words.size() == 0) return {};
 
-		map<string, double> result;
-		vector<string> searched_words;
-		for (const string &word : words) {
+		std::map<std::string, double> result;
+		std::vector<std::string> searched_words;
+		for (const std::string &word : words) {
 
 			// One word should only be searched once.
 			if (find(searched_words.begin(), searched_words.end(), word) != searched_words.end()) continue;
@@ -60,20 +60,20 @@ namespace Stats {
 	}
 
 	template<typename DataRecord>
-	map<string, double> word_stats(vector<FullTextIndex<DataRecord> *> index_array, const string &query, size_t index_size) {
+	std::map<std::string, double> word_stats(std::vector<FullTextIndex<DataRecord> *> index_array, const std::string &query, size_t index_size) {
 
-		vector<future<map<string, double>>> futures;
+		std::vector<std::future<std::map<std::string, double>>> futures;
 
 		size_t idx = 0;
 		for (FullTextIndex<DataRecord> *index : index_array) {
-			future<map<string, double>> future = async(get_word_counts<DataRecord>, index->shards(), query);
+			std::future<std::map<std::string, double>> future = async(get_word_counts<DataRecord>, index->shards(), query);
 			futures.push_back(move(future));
 			idx++;
 		}
 
-		map<string, double> complete_result;
+		std::map<std::string, double> complete_result;
 		for (auto &future : futures) {
-			map<string, double> result = future.get();
+			std::map<std::string, double> result = future.get();
 			for (const auto &iter : result) {
 				complete_result[iter.first] += (double)iter.second;
 			}

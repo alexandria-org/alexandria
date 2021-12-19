@@ -33,6 +33,8 @@
 #include "full_text/FullText.h"
 #include "algorithm/Algorithm.h"
 
+using namespace std;
+
 LinkIndexerRunner::LinkIndexerRunner(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 	const string &domain_hash_table_name, const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_cc_batch(cc_batch), m_db_name(db_name), m_domain_db_name(domain_db_name), m_hash_table_name(hash_table_name),

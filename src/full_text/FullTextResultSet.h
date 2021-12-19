@@ -33,8 +33,6 @@
 #include <span>
 #include <cassert>
 
-using namespace std;
-
 template<typename DataRecord>
 class FullTextResultSet {
 
@@ -50,28 +48,28 @@ public:
 	const DataRecord *section_pointer(size_t section) const { return &m_data_pointer[section * Config::ft_max_results_per_section]; }
 	DataRecord *data_pointer() { return m_data_pointer; }
 	DataRecord *section_pointer(size_t section) { return &m_data_pointer[section * Config::ft_max_results_per_section]; }
-	span<DataRecord> *span_pointer() { return &m_span; }
+	std::span<DataRecord> *span_pointer() { return &m_span; }
 
 	size_t total_num_results() const { return m_total_num_results ; };
 	void set_total_num_results(size_t total_num_results);
 
 	void resize(size_t n) {
-		m_span = span<DataRecord>(m_data_pointer, n);
+		m_span = std::span<DataRecord>(m_data_pointer, n);
 		m_size = n;
 	}
 
-	void prepare_sections(const string &filename, size_t offset, size_t len);
+	void prepare_sections(const std::string &filename, size_t offset, size_t len);
 	void read_to_section(size_t section);
 	bool has_next_section();
 	size_t num_sections();
 	void close_sections();
-	void copy_vector(const vector<DataRecord> &vec);
+	void copy_vector(const std::vector<DataRecord> &vec);
 
 private:
 
 	FullTextResultSet(const FullTextResultSet &res) = delete;
 
-	span<DataRecord> m_span;
+	std::span<DataRecord> m_span;
 	DataRecord *m_data_pointer;
 
 	size_t m_size; // The length in first section.
@@ -91,7 +89,7 @@ FullTextResultSet<DataRecord>::FullTextResultSet(size_t size)
 {
 	m_file_descriptor = -1;
 	m_data_pointer = new DataRecord[size];
-	m_span = span<DataRecord>(m_data_pointer, size);
+	m_span = std::span<DataRecord>(m_data_pointer, size);
 }
 
 template<typename DataRecord>
@@ -105,7 +103,7 @@ void FullTextResultSet<DataRecord>::set_total_num_results(size_t total_num_resul
 }
 
 template<typename DataRecord>
-void FullTextResultSet<DataRecord>::prepare_sections(const string &filename, size_t offset, size_t len) {
+void FullTextResultSet<DataRecord>::prepare_sections(const std::string &filename, size_t offset, size_t len) {
 
 	assert(m_file_descriptor < 0);
 
@@ -163,7 +161,7 @@ void FullTextResultSet<DataRecord>::close_sections() {
 }
 
 template<typename DataRecord>
-void FullTextResultSet<DataRecord>::copy_vector(const vector<DataRecord> &vec) {
+void FullTextResultSet<DataRecord>::copy_vector(const std::vector<DataRecord> &vec) {
 	memcpy(&m_data_pointer[0], vec.data(), vec.size() * sizeof(DataRecord));
 	resize(vec.size());
 }

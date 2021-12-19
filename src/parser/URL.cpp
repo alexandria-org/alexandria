@@ -30,6 +30,8 @@
 #include "text/Text.h"
 #include "Parser.h"
 
+using namespace std;
+
 URL::URL() {
 	m_status = ::Parser::OK;
 }

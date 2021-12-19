@@ -31,55 +31,53 @@
 #include <boost/algorithm/string/join.hpp>
 #include "system/SubSystem.h"
 
-using namespace std;
-
 class URL {
 
 public:
 	URL();
-	explicit URL(const string &url);
-	explicit URL(const string &host, const string &path);
+	explicit URL(const std::string &url);
+	explicit URL(const std::string &host, const std::string &path);
 	~URL();
 
-	static string host_reverse(const string &host);
-	static string host_reverse_top_domain(const string &host);
+	static std::string host_reverse(const std::string &host);
+	static std::string host_reverse_top_domain(const std::string &host);
 
-	void set_url_string(const string &url);
-	string str() const;
+	void set_url_string(const std::string &url);
+	std::string str() const;
 
 	uint64_t hash() const;
 	uint64_t host_hash() const;
-	uint64_t link_hash(const URL &target_url, const string &link_text) const;
-	uint64_t domain_link_hash(const URL &target_url, const string &link_text) const;
+	uint64_t link_hash(const URL &target_url, const std::string &link_text) const;
+	uint64_t domain_link_hash(const URL &target_url, const std::string &link_text) const;
 
-	string host() const;
-	string host_top_domain() const;
-	string scheme() const;
-	string path() const;
-	string path_with_query() const;
-	map<string, string> query() const;
-	string host_reverse() const;
-	string domain_without_tld() const;
+	std::string host() const;
+	std::string host_top_domain() const;
+	std::string scheme() const;
+	std::string path() const;
+	std::string path_with_query() const;
+	std::map<std::string, std::string> query() const;
+	std::string host_reverse() const;
+	std::string domain_without_tld() const;
 	uint32_t size() const;
 
 	float harmonic(const SubSystem *sub_system) const;
 
-	friend istream &operator >>(istream &ss, URL &url);
-	friend ostream &operator <<(ostream& os, const URL& url);
+	friend std::istream &operator >>(std::istream &ss, URL &url);
+	friend std::ostream &operator <<(std::ostream& os, const URL& url);
 
 private:
 
 	std::hash<std::string> m_hasher;
-	string m_url_string;
-	string m_host;
-	string m_host_reverse;
-	string m_scheme;
-	string m_path;
-	string m_query;
+	std::string m_url_string;
+	std::string m_host;
+	std::string m_host_reverse;
+	std::string m_scheme;
+	std::string m_path;
+	std::string m_query;
 	int m_status;
 
 	int parse();
-	inline void remove_www(string &path);
+	inline void remove_www(std::string &path);
 
 
 };

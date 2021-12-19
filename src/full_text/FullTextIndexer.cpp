@@ -30,6 +30,8 @@
 #include "text/Text.h"
 #include <math.h>
 
+using namespace std;
+
 FullTextIndexer::FullTextIndexer(int id, const string &db_name, size_t partition, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {

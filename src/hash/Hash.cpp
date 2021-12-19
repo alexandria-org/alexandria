@@ -26,6 +26,8 @@
 
 #include "Hash.h"
 
+using namespace std;
+
 namespace Hash {
 
 	hash<string> hasher;

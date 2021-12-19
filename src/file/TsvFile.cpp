@@ -27,6 +27,8 @@
 #include "TsvFile.h"
 #include <exception>
 
+using namespace std;
+
 TsvFile::TsvFile() {
 
 }

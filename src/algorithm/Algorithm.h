@@ -31,15 +31,13 @@
 #include <unordered_map>
 #include <cstdint>
 
-using namespace std;
-
 namespace Algorithm {
 
-	vector<int> intersection(const vector<vector<int>> &input);
+	std::vector<int> intersection(const std::vector<std::vector<int>> &input);
 
 	template<class T>
-	void vector_chunk(const vector<T> &vec, size_t chunk_size, vector<vector<T>> &dest) {
-		vector<T> chunk;
+	void vector_chunk(const std::vector<T> &vec, size_t chunk_size, std::vector<std::vector<T>> &dest) {
+		std::vector<T> chunk;
 		for (T item : vec) {
 			chunk.push_back(item);
 			if (chunk.size() == chunk_size) {
@@ -52,19 +50,19 @@ namespace Algorithm {
 		}
 	}
 
-	vector<vector<int>> incremental_partitions(const vector<int> &dims, size_t limit);
+	std::vector<std::vector<int>> incremental_partitions(const std::vector<int> &dims, size_t limit);
 
 	/*
 		Calculates the harmonic centrality for vertices and edges. The returning vector has the harmonic centrality for vertex i at position i.
 		The depth parameter is the maximum level to traverse in the neighbour tree.
 		The edges set contains pairs of edges (from vertex, to vertex)
 	*/
-	vector<double> harmonic_centrality(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth);
-	vector<double> harmonic_centrality(size_t vlen, const vector<uint32_t> *edge_map, size_t depth);
-	vector<double> harmonic_centrality_threaded(size_t vlen, const set<pair<uint32_t, uint32_t>> &edges, size_t depth,
+	std::vector<double> harmonic_centrality(size_t vlen, const std::set<std::pair<uint32_t, uint32_t>> &edges, size_t depth);
+	std::vector<double> harmonic_centrality(size_t vlen, const std::vector<uint32_t> *edge_map, size_t depth);
+	std::vector<double> harmonic_centrality_threaded(size_t vlen, const std::set<std::pair<uint32_t, uint32_t>> &edges, size_t depth,
 			size_t num_threads);
-	vector<double> harmonic_centrality_threaded(size_t vlen, const vector<uint32_t> *edge_map,
+	std::vector<double> harmonic_centrality_threaded(size_t vlen, const std::vector<uint32_t> *edge_map,
 			size_t depth, size_t num_threads);
 
-	vector<uint32_t> *set_to_edge_map(size_t n, const set<pair<uint32_t, uint32_t>> &edges);
+	std::vector<uint32_t> *set_to_edge_map(size_t n, const std::set<std::pair<uint32_t, uint32_t>> &edges);
 }

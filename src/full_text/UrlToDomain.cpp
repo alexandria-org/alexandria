@@ -27,6 +27,8 @@
 #include "UrlToDomain.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 UrlToDomain::UrlToDomain(const string &db_name)
 : m_db_name(db_name)
 {

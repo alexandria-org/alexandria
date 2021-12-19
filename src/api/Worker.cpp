@@ -18,6 +18,8 @@
 #include "link_index/LinkFullTextRecord.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 namespace Worker {
 
 	void test_search(const string &query) {

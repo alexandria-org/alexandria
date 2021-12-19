@@ -28,6 +28,7 @@
 #include "parser/Unicode.h"
 #include "json.hpp"
 
+using namespace std;
 using json = nlohmann::json;
 
 ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {

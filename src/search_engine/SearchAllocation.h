@@ -34,8 +34,6 @@
 #include <map>
 #include <vector>
 
-using namespace std;
-
 namespace SearchAllocation {
 
 	/*
@@ -49,10 +47,10 @@ namespace SearchAllocation {
 			result_sets[0 ... Config::ft_num_partitions][0 ... Config::query_max_words]
 			first element in the map contains the partition number and the second is the index of the queried word
 		*/
-		map<size_t, vector<FullTextResultSet<DataRecord> *>> result_sets;
+		std::map<size_t, std::vector<FullTextResultSet<DataRecord> *>> result_sets;
 
 		// To hold the intersection of the result sets.
-		map<size_t, FullTextResultSet<DataRecord> *> intersected_result;
+		std::map<size_t, FullTextResultSet<DataRecord> *> intersected_result;
 	};
 
 	struct Allocation {

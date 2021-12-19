@@ -37,30 +37,28 @@
 #include "full_text/UrlToDomain.h"
 #include "full_text/FullTextShardBuilder.h"
 
-using namespace std;
-
 class LinkIndexer {
 
 public:
 
-	LinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	LinkIndexer(int id, const std::string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexer();
 
-	void add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream);
-	void write_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
-	void flush_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+	void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
+	void write_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+	void flush_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
 
 private:
 
 	int m_indexer_id;
-	const string m_db_name;
+	const std::string m_db_name;
 	const SubSystem *m_sub_system;
 	UrlToDomain *m_url_to_domain;
-	hash<string> m_hasher;
+	std::hash<std::string> m_hasher;
 
-	map<size_t, vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;
+	std::map<size_t, std::vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;
 
-	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const string &link_text,
+	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const std::string &link_text,
 		float score);
 
 };

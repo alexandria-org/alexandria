@@ -29,31 +29,29 @@
 #include <string>
 #include "parser/URL.h"
 
-using namespace std;
-
 class HtmlLink {
 
 public:
-	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path, bool nofollow,
-		const string &text);
-	HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path, bool nofollow);
+	HtmlLink(const std::string &host, const std::string &path, const std::string &target_host, const std::string &target_path, bool nofollow,
+		const std::string &text);
+	HtmlLink(const std::string &host, const std::string &path, const std::string &target_host, const std::string &target_path, bool nofollow);
 	~HtmlLink();
 
 	URL source_url() const { return URL(m_host, m_path); };
 	URL target_url() const { return URL(m_target_host, m_target_path); };
-	string host() const { return m_host; };
-	string path() const { return m_path; };
-	string target_host() const { return m_target_host; };
-	string target_path() const { return m_target_path; };
+	std::string host() const { return m_host; };
+	std::string path() const { return m_path; };
+	std::string target_host() const { return m_target_host; };
+	std::string target_path() const { return m_target_path; };
 	bool nofollow() const { return m_nofollow; };
-	string text() const {return m_text; };
+	std::string text() const {return m_text; };
 
 private:
-	string m_host;
-	string m_path;
-	string m_target_host;
-	string m_target_path;
+	std::string m_host;
+	std::string m_path;
+	std::string m_target_host;
+	std::string m_target_path;
 	bool m_nofollow;
-	string m_text;
+	std::string m_text;
 
 };

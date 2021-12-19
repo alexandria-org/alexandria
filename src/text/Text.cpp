@@ -26,6 +26,8 @@
 
 #include "Text.h"
 
+using namespace std;
+
 namespace Text {
 
 	bool is_clean_char(const char *ch, size_t multibyte_len) {

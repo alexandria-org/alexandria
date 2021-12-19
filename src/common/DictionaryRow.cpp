@@ -26,6 +26,8 @@
 
 #include "DictionaryRow.h"
 
+using namespace std;
+
 DictionaryRow::DictionaryRow() {
 }
 

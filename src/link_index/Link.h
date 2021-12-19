@@ -32,7 +32,7 @@ class Link {
 
 public:
 	Link();
-	explicit Link(const string &standard_link_data);
+	explicit Link(const std::string &standard_link_data);
 	Link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic);
 	~Link();
 
@@ -51,6 +51,6 @@ private:
 	uint64_t m_target_host_hash;
 	float m_source_harmonic;
 	float m_target_harmonic;
-	string m_link_text;
+	std::string m_link_text;
 };
 

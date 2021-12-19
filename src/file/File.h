@@ -30,12 +30,10 @@
 #include <fstream>
 #include <stdio.h>
 
-using namespace std;
-
 namespace File {
 
-	string read_test_file(const string &file_name);
-	void copy_file(const string &source, const string &dest);
-	void delete_file(const string &file);
+	std::string read_test_file(const std::string &file_name);
+	void copy_file(const std::string &source, const std::string &dest);
+	void delete_file(const std::string &file);
 
 }

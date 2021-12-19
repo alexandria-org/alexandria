@@ -26,6 +26,8 @@
 
 #include "TsvRow.h"
 
+using namespace std;
+
 TsvRow::TsvRow(const string &line) {
 	size_t pos_start = 0;
 	size_t pos_end = 0;

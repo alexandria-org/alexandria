@@ -2,6 +2,8 @@
 #include "config.h"
 #include "text/Text.h"
 
+using namespace std;
+
 namespace Config {
 
 	string node = "test0001";

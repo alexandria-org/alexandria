@@ -27,6 +27,8 @@
 #include "LinkResult.h"
 #include "text/Text.h"
 
+using namespace std;
+
 LinkResult::LinkResult(const string &tsv_data, const LinkFullTextRecord &res)
 : m_score(res.m_score), m_link_hash(res.m_value) {
 	size_t pos_start = 0;

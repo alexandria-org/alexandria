@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+using namespace std;
+
 #define UNICODE_MAX 0x10FFFFul
 
 static const char *const NAMED_ENTITIES[][2] = {

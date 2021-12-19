@@ -32,6 +32,8 @@
 #include "system/Logger.h"
 #include "algorithm/Algorithm.h"
 
+using namespace std;
+
 FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system)
 : m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
 {

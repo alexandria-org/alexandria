@@ -32,8 +32,6 @@
 
 #include "DictionaryRow.h"
 
-using namespace std;
-
 class Dictionary {
 
 public:
@@ -42,18 +40,18 @@ public:
 	explicit Dictionary(TsvFile &tsv_file);
 	~Dictionary();
 
-	unordered_map<size_t, DictionaryRow>::const_iterator find(const string &key) const;
+	std::unordered_map<size_t, DictionaryRow>::const_iterator find(const std::string &key) const;
 
-	unordered_map<size_t, DictionaryRow>::const_iterator begin() const;
-	unordered_map<size_t, DictionaryRow>::const_iterator end() const;
+	std::unordered_map<size_t, DictionaryRow>::const_iterator begin() const;
+	std::unordered_map<size_t, DictionaryRow>::const_iterator end() const;
 
-	bool has_key(const string &key) const;
+	bool has_key(const std::string &key) const;
 	size_t size() const { return m_rows.size(); }
 
 private:
 
-	unordered_map<size_t, DictionaryRow> m_rows;
+	std::unordered_map<size_t, DictionaryRow> m_rows;
 
-	void handle_collision(size_t key, const string &col);
+	void handle_collision(size_t key, const std::string &col);
 
 };

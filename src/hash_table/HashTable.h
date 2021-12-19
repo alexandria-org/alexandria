@@ -35,27 +35,25 @@
 #include "system/SubSystem.h"
 #include "system/ThreadPool.h"
 
-using namespace std;
-
 class HashTableShard;
 
 class HashTable {
 
 public:
 
-	explicit HashTable(const string &db_name);
+	explicit HashTable(const std::string &db_name);
 	~HashTable();
 
-	void add(uint64_t key, const string &value);
+	void add(uint64_t key, const std::string &value);
 	void truncate();
-	string find(uint64_t key);
+	std::string find(uint64_t key);
 	size_t size() const;
 	void print_all_items() const;
 
 private:
 
-	vector<HashTableShard *> m_shards;
-	const string m_db_name;
+	std::vector<HashTableShard *> m_shards;
+	const std::string m_db_name;
 	size_t m_num_items;
 
 };

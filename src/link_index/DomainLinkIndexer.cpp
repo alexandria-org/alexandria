@@ -31,6 +31,8 @@
 #include "full_text/FullText.h"
 #include <math.h>
 
+using namespace std;
+
 DomainLinkIndexer::DomainLinkIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {

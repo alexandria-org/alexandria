@@ -29,17 +29,15 @@
 #include <iostream>
 #include <set>
 
-using namespace std;
-
 class Stopwords {
 
 public:
 
-	static bool is_stop_word(const string &word);
+	static bool is_stop_word(const std::string &word);
 
 private:
 
-	static set<string> s_english;
-	static set<string> s_swedish;
+	static std::set<std::string> s_english;
+	static std::set<std::string> s_swedish;
 
 };

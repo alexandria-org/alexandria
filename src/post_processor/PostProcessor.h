@@ -30,15 +30,13 @@
 #include <vector>
 #include "api/ResultWithSnippet.h"
 
-using namespace std;
-
 class PostProcessor {
 
 public:
-	explicit PostProcessor(const string &query);
+	explicit PostProcessor(const std::string &query);
 	~PostProcessor();
 
-	void run(vector<ResultWithSnippet> &results);
+	void run(std::vector<ResultWithSnippet> &results);
 
 private:
 

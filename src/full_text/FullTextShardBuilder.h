@@ -43,15 +43,13 @@ template<typename DataRecord> class FullTextShardBuilder;
 #include "link_index/LinkFullTextRecord.h"
 #include "system/Logger.h"
 
-using namespace std;
-
 template<typename DataRecord>
 class FullTextShardBuilder {
 
 public:
 
-	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition);
-	FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard);
+	FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition);
+	FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard);
 	~FullTextShardBuilder();
 
 	void add(uint64_t key, const DataRecord &record);
@@ -62,11 +60,11 @@ public:
 	bool should_merge();
 	void merge_with(FullTextShardBuilder<DataRecord> &with);
 
-	string mountpoint() const;
-	string cache_filename() const;
-	string key_cache_filename() const;
-	string key_filename() const;
-	string target_filename() const;
+	std::string mountpoint() const;
+	std::string cache_filename() const;
+	std::string key_cache_filename() const;
+	std::string key_filename() const;
+	std::string target_filename() const;
 
 	void truncate();
 	void truncate_cache_files();
@@ -76,7 +74,7 @@ public:
 
 private:
 
-	const string m_db_name;
+	const std::string m_db_name;
 	const size_t m_shard_id;
 	const size_t m_max_cache_size;
 	const size_t m_partition;
@@ -86,30 +84,30 @@ private:
 	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
 	char *m_buffer;
 
-	vector<uint64_t> m_keys;
-	vector<DataRecord> m_records;
+	std::vector<uint64_t> m_keys;
+	std::vector<DataRecord> m_records;
 
-	map<uint64_t, vector<DataRecord>> m_cache;
-	map<uint64_t, size_t> m_total_results;
+	std::map<uint64_t, std::vector<DataRecord>> m_cache;
+	std::map<uint64_t, size_t> m_total_results;
 
 	void read_append_cache();
 	void read_data_to_cache();
-	bool read_page(ifstream &reader);
+	bool read_page(std::ifstream &reader);
 	void save_file();
-	void write_key(ofstream &key_writer, uint64_t key, size_t page_pos);
-	size_t write_page(ofstream &writer, const vector<uint64_t> &keys);
-	void reset_key_file(ofstream &key_writer);
-	void order_sections_by_value(vector<DataRecord> &results) const;
+	void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
+	size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
+	void reset_key_file(std::ofstream &key_writer);
+	void order_sections_by_value(std::vector<DataRecord> &results) const;
 
 };
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition)
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition)
 : m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
 }
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard)
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard)
 : m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
 }
 
@@ -131,10 +129,10 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 	const size_t max_results_per_partition = Config::ft_max_results_per_section * Config::ft_max_sections;
 	for (auto &iter : m_cache) {
 		// Make elements unique.
-		sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
+		std::sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 			return a.m_value < b.m_value;
 		});
-		auto last = unique(iter.second.begin(), iter.second.end(),
+		auto last = std::unique(iter.second.begin(), iter.second.end(),
 			[](const DataRecord &a, const DataRecord &b) {
 			return a.m_value == b.m_value;
 		});
@@ -143,7 +141,7 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 		m_total_results[iter.first] = iter.second.size();
 
 		if (iter.second.size() > Config::ft_max_results_per_section) {
-			sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
+			std::sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
 				return a.m_score > b.m_score;
 			});
 
@@ -159,7 +157,7 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 }
 
 template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::order_sections_by_value(vector<DataRecord> &results) const {
+void FullTextShardBuilder<DataRecord>::order_sections_by_value(std::vector<DataRecord> &results) const {
 	bool stop = false;
 	for (size_t section = 0; section < Config::ft_max_sections; section++) {
 		const size_t start = section * Config::ft_max_results_per_section;
@@ -168,7 +166,7 @@ void FullTextShardBuilder<DataRecord>::order_sections_by_value(vector<DataRecord
 			end = results.size();
 			stop = true;
 		}
-		sort(results.begin() + start, results.begin() + end, [](const DataRecord &a, const DataRecord &b) {
+		std::sort(results.begin() + start, results.begin() + end, [](const DataRecord &a, const DataRecord &b) {
 			return a.m_value < b.m_value;
 		});
 		if (stop) break;
@@ -182,16 +180,16 @@ bool FullTextShardBuilder<DataRecord>::full() const {
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::append() {
-	ofstream record_writer(cache_filename(), ios::binary | ios::app);
+	std::ofstream record_writer(cache_filename(), std::ios::binary | std::ios::app);
 	if (!record_writer.is_open()) {
 		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " +
-			string(strerror(errno)));
+			std::string(strerror(errno)));
 	}
 
-	ofstream key_writer(key_cache_filename(), ios::binary | ios::app);
+	std::ofstream key_writer(key_cache_filename(), std::ios::binary | std::ios::app);
 	if (!key_writer.is_open()) {
 		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " +
-			string(strerror(errno)));
+			std::string(strerror(errno)));
 	}
 
 	record_writer.write((const char *)m_records.data(), m_records.size() * sizeof(DataRecord));
@@ -221,14 +219,14 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	read_data_to_cache();
 
 	// Read the cache into memory.
-	ifstream reader(cache_filename(), ios::binary);
+	std::ifstream reader(cache_filename(), std::ios::binary);
 	if (!reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + std::string(strerror(errno)));
 	}
 
-	ifstream key_reader(key_cache_filename(), ios::binary);
+	std::ifstream key_reader(key_cache_filename(), std::ios::binary);
 	if (!key_reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " + std::string(strerror(errno)));
 	}
 
 	const size_t buffer_len = 100000;
@@ -237,7 +235,7 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	char *buffer = new char[buffer_size];
 	char *key_buffer = new char[key_buffer_size];
 
-	reader.seekg(0, ios::beg);
+	reader.seekg(0, std::ios::beg);
 
 	while (!reader.eof()) {
 
@@ -261,7 +259,7 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 template<typename DataRecord>
 bool FullTextShardBuilder<DataRecord>::should_merge() {
 
-	ofstream writer(cache_filename(), ios::binary | ios::app);
+	std::ofstream writer(cache_filename(), std::ios::binary | std::ios::app);
 	size_t cache_file_size = writer.tellp();
 
 	return cache_file_size > m_max_cache_file_size;
@@ -282,11 +280,11 @@ void FullTextShardBuilder<DataRecord>::merge_with(FullTextShardBuilder<DataRecor
 	// Merge algorithm as described here: https://en.wikipedia.org/wiki/Merge_algorithm
 	// but with an additional sum of the scores.
 	for (auto &iter : m_cache) {
-		const vector<DataRecord> *vec1 = &iter.second;
-		const vector<DataRecord> *vec2 = &(with.m_cache[iter.first]);
+		const std::vector<DataRecord> *vec1 = &iter.second;
+		const std::vector<DataRecord> *vec2 = &(with.m_cache[iter.first]);
 		size_t i = 0;
 		size_t j = 0;
-		vector<DataRecord> merged;
+		std::vector<DataRecord> merged;
 		while (i < vec1->size() && j < vec2->size()) {
 			if (vec1->at(i).m_value < vec2->at(j).m_value) {
 				merged.push_back(vec1->at(i));
@@ -321,13 +319,13 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	m_cache.clear();
 	m_total_results.clear();
 
-	ifstream reader(target_filename(), ios::binary);
+	std::ifstream reader(target_filename(), std::ios::binary);
 	if (!reader.is_open()) return;
 
-	reader.seekg(0, ios::end);
+	reader.seekg(0, std::ios::end);
 	const size_t file_size = reader.tellg();
 	if (file_size == 0) return;
-	reader.seekg(0, ios::beg);
+	reader.seekg(0, std::ios::beg);
 
 	m_buffer = new char[m_buffer_len];
 	while (read_page(reader)) {
@@ -336,7 +334,7 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 }
 
 template<typename DataRecord>
-bool FullTextShardBuilder<DataRecord>::read_page(ifstream &reader) {
+bool FullTextShardBuilder<DataRecord>::read_page(std::ifstream &reader) {
 
 	char buffer[64];
 
@@ -350,21 +348,21 @@ bool FullTextShardBuilder<DataRecord>::read_page(ifstream &reader) {
 
 	// Read the keys.
 	reader.read(vector_buffer, num_keys * 8);
-	vector<uint64_t> keys;
+	std::vector<uint64_t> keys;
 	for (size_t i = 0; i < num_keys; i++) {
 		keys.push_back(*((uint64_t *)(&vector_buffer[i*8])));
 	}
 
 	// Read the positions.
 	reader.read(vector_buffer, num_keys * 8);
-	vector<size_t> positions;
+	std::vector<size_t> positions;
 	for (size_t i = 0; i < num_keys; i++) {
 		positions.push_back(*((size_t *)(&vector_buffer[i*8])));
 	}
 
 	// Read the lengths.
 	reader.read(vector_buffer, num_keys * 8);
-	vector<size_t> lens;
+	std::vector<size_t> lens;
 	size_t data_size = 0;
 	for (size_t i = 0; i < num_keys; i++) {
 		size_t len = *((size_t *)(&vector_buffer[i*8]));
@@ -387,7 +385,7 @@ bool FullTextShardBuilder<DataRecord>::read_page(ifstream &reader) {
 	size_t key_id = 0;
 	size_t num_records_for_key = lens[key_id] / sizeof(DataRecord);
 	while (total_read_data < data_size) {
-		reader.read(m_buffer, min(m_buffer_len, data_size));
+		reader.read(m_buffer, std::min(m_buffer_len, data_size));
 		const size_t read_len = reader.gcount();
 
 		if (read_len == 0) {
@@ -422,19 +420,19 @@ bool FullTextShardBuilder<DataRecord>::read_page(ifstream &reader) {
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::save_file() {
 
-	ofstream writer(target_filename(), ios::binary | ios::trunc);
+	std::ofstream writer(target_filename(), std::ios::binary | std::ios::trunc);
 	if (!writer.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
 	}
 
-	ofstream key_writer(key_filename(), ios::binary | ios::trunc);
+	std::ofstream key_writer(key_filename(), std::ios::binary | std::ios::trunc);
 	if (!key_writer.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
 	}
 
 	reset_key_file(key_writer);
 
-	unordered_map<uint64_t, vector<uint64_t>> pages;
+	std::unordered_map<uint64_t, std::vector<uint64_t>> pages;
 	for (auto &iter : m_cache) {
 		pages[iter.first % Config::shard_hash_table_size].push_back(iter.first);
 	}
@@ -445,7 +443,7 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 		write_key(key_writer, iter.first, page_pos);
 	}
 
-	/*sort(keys.begin(), keys.end(), [](const uint64_t a, const uint64_t b) {
+	/*std::sort(keys.begin(), keys.end(), [](const uint64_t a, const uint64_t b) {
 		return a < b;
 	});
 
@@ -456,7 +454,7 @@ void FullTextShardBuilder<DataRecord>::save_file() {
 }
 
 template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::write_key(ofstream &key_writer, uint64_t key, size_t page_pos) {
+void FullTextShardBuilder<DataRecord>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
 	assert(key < Config::shard_hash_table_size);
 	key_writer.seekp(key * sizeof(uint64_t));
 	key_writer.write((char *)&page_pos, sizeof(size_t));
@@ -466,7 +464,7 @@ void FullTextShardBuilder<DataRecord>::write_key(ofstream &key_writer, uint64_t 
  * Writes the page with keys, appending it to the file stream writer. Takes data from m_cache.
  * */
 template<typename DataRecord>
-size_t FullTextShardBuilder<DataRecord>::write_page(ofstream &writer, const vector<uint64_t> &keys) {
+size_t FullTextShardBuilder<DataRecord>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
 
 	const size_t page_pos = writer.tellp();
 
@@ -475,9 +473,9 @@ size_t FullTextShardBuilder<DataRecord>::write_page(ofstream &writer, const vect
 	writer.write((char *)&num_keys, 8);
 	writer.write((char *)keys.data(), keys.size() * 8);
 
-	vector<size_t> v_pos;
-	vector<size_t> v_len;
-	vector<size_t> v_tot;
+	std::vector<size_t> v_pos;
+	std::vector<size_t> v_len;
+	std::vector<size_t> v_tot;
 
 	size_t pos = 0;
 	for (uint64_t key : keys) {
@@ -505,7 +503,7 @@ size_t FullTextShardBuilder<DataRecord>::write_page(ofstream &writer, const vect
 }
 
 template<typename DataRecord>
-void FullTextShardBuilder<DataRecord>::reset_key_file(ofstream &key_writer) {
+void FullTextShardBuilder<DataRecord>::reset_key_file(std::ofstream &key_writer) {
 	key_writer.seekp(0);
 	uint64_t data = SIZE_MAX;
 	for (size_t i = 0; i < Config::shard_hash_table_size; i++) {
@@ -514,29 +512,29 @@ void FullTextShardBuilder<DataRecord>::reset_key_file(ofstream &key_writer) {
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::mountpoint() const {
-	if (m_partition < 1) return to_string(m_shard_id % 4);
-	return to_string((m_shard_id % 4) + 4);
+std::string FullTextShardBuilder<DataRecord>::mountpoint() const {
+	if (m_partition < 1) return std::to_string(m_shard_id % 4);
+	return std::to_string((m_shard_id % 4) + 4);
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::cache_filename() const {
-	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) + ".cache";
+std::string FullTextShardBuilder<DataRecord>::cache_filename() const {
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + std::to_string(m_shard_id) + ".cache";
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::key_cache_filename() const {
-	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + to_string(m_shard_id) +".keys";
+std::string FullTextShardBuilder<DataRecord>::key_cache_filename() const {
+	return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + std::to_string(m_shard_id) +".keys";
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::key_filename() const {
-	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".keys";
+std::string FullTextShardBuilder<DataRecord>::key_filename() const {
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".keys";
 }
 
 template<typename DataRecord>
-string FullTextShardBuilder<DataRecord>::target_filename() const {
-	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
+std::string FullTextShardBuilder<DataRecord>::target_filename() const {
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".idx";
 }
 
 /*
@@ -547,7 +545,7 @@ void FullTextShardBuilder<DataRecord>::truncate() {
 
 	truncate_cache_files();
 
-	ofstream target_writer(target_filename(), ios::trunc);
+	std::ofstream target_writer(target_filename(), std::ios::trunc);
 	target_writer.close();
 }
 
@@ -559,22 +557,22 @@ void FullTextShardBuilder<DataRecord>::truncate_cache_files() {
 
 	m_cache.clear();
 
-	ofstream writer(cache_filename(), ios::trunc);
+	std::ofstream writer(cache_filename(), std::ios::trunc);
 	writer.close();
 
-	ofstream key_writer(key_cache_filename(), ios::trunc);
+	std::ofstream key_writer(key_cache_filename(), std::ios::trunc);
 	key_writer.close();
 }
 
 template<typename DataRecord>
 size_t FullTextShardBuilder<DataRecord>::disk_size() const {
 
-	ifstream reader(cache_filename(), ios::binary);
+	std::ifstream reader(cache_filename(), std::ios::binary);
 	if (!reader.is_open()) {
-		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + string(strerror(errno)));
+		throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " + std::string(strerror(errno)));
 	}
 
-	reader.seekg(0, ios::end);
+	reader.seekg(0, std::ios::end);
 	size_t file_size = reader.tellg();
 
 	return file_size;

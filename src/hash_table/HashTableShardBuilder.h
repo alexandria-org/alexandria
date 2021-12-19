@@ -31,13 +31,11 @@
 
 #include "HashTable.h"
 
-using namespace std;
-
 class HashTableShardBuilder {
 
 public:
 
-	HashTableShardBuilder(const string &db_name, size_t shard_id);
+	HashTableShardBuilder(const std::string &db_name, size_t shard_id);
 	~HashTableShardBuilder();
 
 	bool full() const;
@@ -46,20 +44,20 @@ public:
 	void sort();
 	void optimize();
 
-	void add(uint64_t key, const string &value);
+	void add(uint64_t key, const std::string &value);
 
-	string filename_data() const;
-	string filename_pos() const;
-	string filename_data_tmp() const;
-	string filename_pos_tmp() const;
+	std::string filename_data() const;
+	std::string filename_pos() const;
+	std::string filename_data_tmp() const;
+	std::string filename_pos_tmp() const;
 
 private:
 
-	map<uint64_t, string> m_cache;
-	const string m_db_name;
+	std::map<uint64_t, std::string> m_cache;
+	const std::string m_db_name;
 	size_t m_shard_id;
 	const size_t m_cache_limit;
-	map<uint64_t, size_t> m_sort_pos;
+	std::map<uint64_t, size_t> m_sort_pos;
 
 	void read_keys();
 

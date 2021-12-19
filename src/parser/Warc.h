@@ -11,6 +11,8 @@
 
 namespace Warc {
 
+	using std::string;
+
 	class Parser {
 
 		public:

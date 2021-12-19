@@ -47,8 +47,8 @@ namespace FullText {
 	void truncate_url_to_domain(const string &index_name);
 	void truncate_index(const string &index_name);
 
-	map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system);
-	void add_words_to_word_map(const vector<string> &words, float score, map<uint64_t, float> &word_map);
+	std::map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system);
+	void add_words_to_word_map(const vector<string> &words, float score, std::map<uint64_t, float> &word_map);
 
 	vector<string> make_partition_from_files(const vector<string> &files, size_t partition, size_t max_partitions);
 
@@ -95,7 +95,7 @@ namespace FullText {
 
 		vector<FullTextIndex<DataRecord> *> index_array;
 		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + to_string(partition), partition));
+			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + std::to_string(partition), partition));
 		}
 
 		return index_array;

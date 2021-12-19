@@ -30,6 +30,8 @@
 #include "link_index/LinkIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
 
+using namespace std;
+
 namespace FullText {
 
 	hash<string> hasher;

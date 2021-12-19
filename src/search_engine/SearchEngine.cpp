@@ -30,6 +30,8 @@
 #include "system/Profiler.h"
 #include <cmath>
 
+using namespace std;
+
 namespace SearchEngine {
 
 	void reset_search_metric(struct SearchMetric &metric) {

@@ -26,25 +26,17 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-
 #include "Transfer.h"
 #include "TsvFile.h"
-
-using namespace std;
-using namespace boost::iostreams;
 
 class TsvFileRemote : public TsvFile {
 
 public:
 
-	explicit TsvFileRemote(const string &file_name);
+	explicit TsvFileRemote(const std::string &file_name);
 	~TsvFileRemote();
 
-	string get_path() const;
+	std::string get_path() const;
 
 private:
 

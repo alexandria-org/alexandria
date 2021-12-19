@@ -26,6 +26,8 @@
 
 #include "PostProcessor.h"
 
+using namespace std;
+
 PostProcessor::PostProcessor(const string &query) {
 
 }

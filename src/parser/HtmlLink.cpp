@@ -26,6 +26,8 @@
 
 #include "HtmlLink.h"
 
+using namespace std;
+
 HtmlLink::HtmlLink(const string &host, const string &path, const string &target_host, const string &target_path, bool nofollow,
 	const string &text) :
 	m_host(host),

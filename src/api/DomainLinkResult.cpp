@@ -27,6 +27,8 @@
 #include "DomainLinkResult.h"
 #include "text/Text.h"
 
+using namespace std;
+
 DomainLinkResult::DomainLinkResult(const string &tsv_data, const DomainLinkFullTextRecord &res)
 : m_score(res.m_score), m_link_hash(res.m_value) {
 

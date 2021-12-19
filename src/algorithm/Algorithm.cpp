@@ -37,6 +37,8 @@
 #include <future>
 #include <cstring>
 
+using namespace std;
+
 namespace Algorithm {
 
 	vector<int> intersection(const vector<vector<int>> &input) {

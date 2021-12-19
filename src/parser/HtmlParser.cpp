@@ -31,6 +31,8 @@
 #include "text/Text.h"
 #include <curl/curl.h>
 
+using namespace std;
+
 const vector<string> non_content_tags{"script", "noscript", "style", "embed", "label", "form", "input",
 	"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 

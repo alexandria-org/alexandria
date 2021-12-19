@@ -42,37 +42,35 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-using namespace std;
-
 class LinkIndexerRunner {
 
 public:
 
-	LinkIndexerRunner(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
-		const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	LinkIndexerRunner(const std::string &db_name, const std::string &domain_db_name, const std::string &hash_table_name, const std::string &domain_hash_table_name,
+		const std::string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~LinkIndexerRunner();
 
-	void run(const vector<string> &local_files);
+	void run(const std::vector<std::string> &local_files);
 	void merge();
 	void sort();
 
 private:
 
 	const SubSystem *m_sub_system;
-	const string m_cc_batch;
-	const string m_db_name;
-	const string m_domain_db_name;
-	const string m_hash_table_name;
-	const string m_domain_hash_table_name;
-	mutex m_hash_table_mutexes[Config::ht_num_shards];
-	mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
-	mutex m_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
-	mutex m_domain_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
+	const std::string m_cc_batch;
+	const std::string m_db_name;
+	const std::string m_domain_db_name;
+	const std::string m_hash_table_name;
+	const std::string m_domain_hash_table_name;
+	std::mutex m_hash_table_mutexes[Config::ht_num_shards];
+	std::mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
+	std::mutex m_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
+	std::mutex m_domain_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
 
 	UrlToDomain *m_url_to_domain;
 
-	string run_index_thread_with_local_files(const vector<string> &local_files, int id);
-	string run_link_index_thread(const vector<string> &warc_paths, int id);
-	string run_merge_thread(size_t shard_id);
+	std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id);
+	std::string run_link_index_thread(const std::vector<std::string> &warc_paths, int id);
+	std::string run_merge_thread(size_t shard_id);
 
 };

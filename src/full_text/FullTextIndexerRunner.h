@@ -38,19 +38,17 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-using namespace std;
-
 class FullTextIndexerRunner {
 
 public:
 
-	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system);
-	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch);
-	FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const SubSystem *sub_system);
+	FullTextIndexerRunner(const std::string &db_name, const std::string &hash_table_name, const std::string &cc_batch, const SubSystem *sub_system);
+	FullTextIndexerRunner(const std::string &db_name, const std::string &hash_table_name, const std::string &cc_batch);
+	FullTextIndexerRunner(const std::string &db_name, const std::string &hash_table_name, const SubSystem *sub_system);
 	~FullTextIndexerRunner();
 
 	void run(size_t partition, size_t max_partitions);
-	void run(const vector<string> &local_files, size_t partition);
+	void run(const std::vector<std::string> &local_files, size_t partition);
 	void run_link();
 	void merge(size_t partition);
 	void sort(size_t partition);
@@ -58,18 +56,18 @@ public:
 
 private:
 
-	const string m_cc_batch;
-	const string m_db_name;
-	const string m_hash_table_name;
+	const std::string m_cc_batch;
+	const std::string m_db_name;
+	const std::string m_hash_table_name;
 	const SubSystem *m_sub_system;
 
-	mutex m_hash_table_mutexes[Config::ht_num_shards];
-	mutex m_full_text_mutexes[Config::ft_num_shards];
-	mutex m_write_url_to_domain_mutex;
+	std::mutex m_hash_table_mutexes[Config::ht_num_shards];
+	std::mutex m_full_text_mutexes[Config::ft_num_shards];
+	std::mutex m_write_url_to_domain_mutex;
 
 	bool m_did_allocate_sub_system;
 
-	string run_index_thread_with_local_files(const vector<string> &local_files, int id, size_t partition);
-	string run_merge_thread(size_t shard_id, size_t partition);
+	std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id, size_t partition);
+	std::string run_merge_thread(size_t shard_id, size_t partition);
 
 };

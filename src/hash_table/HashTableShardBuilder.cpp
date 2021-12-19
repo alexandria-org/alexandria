@@ -29,6 +29,8 @@
 #include "system/Logger.h"
 #include "file/File.h"
 
+using namespace std;
+
 HashTableShardBuilder::HashTableShardBuilder(const string &db_name, size_t shard_id)
 : m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(25 + rand() % 10)
 {
@@ -55,8 +57,8 @@ void HashTableShardBuilder::write() {
 		// Compress data
 		stringstream ss(iter.second);
 
-		filtering_istream compress_stream;
-		compress_stream.push(gzip_compressor());
+		boost::iostreams::filtering_istream compress_stream;
+		compress_stream.push(boost::iostreams::gzip_compressor());
 		compress_stream.push(ss);
 
 		stringstream compressed;

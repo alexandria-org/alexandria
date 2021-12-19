@@ -37,19 +37,17 @@
 
 #include "HashTable.h"
 
-using namespace std;
-
 class HashTableShard {
 
 public:
 
-	HashTableShard(const string &db_name, size_t shard_id);
+	HashTableShard(const std::string &db_name, size_t shard_id);
 	~HashTableShard();
 
-	string find(uint64_t key);
+	std::string find(uint64_t key);
 
-	string filename_data() const;
-	string filename_pos() const;
+	std::string filename_data() const;
+	std::string filename_pos() const;
 	size_t shard_id() const;
 	size_t size() const;
 	size_t file_size() const;
@@ -57,7 +55,7 @@ public:
 
 private:
 
-	const string m_db_name;
+	const std::string m_db_name;
 	size_t m_shard_id;
 	bool m_loaded;
 	size_t m_size;
@@ -65,9 +63,9 @@ private:
 	const int m_significant = 12;
 
 	// Maps keys to positions in file.
-	unordered_map<uint64_t, pair<size_t, size_t>> m_pos;
+	std::unordered_map<uint64_t, std::pair<size_t, size_t>> m_pos;
 
 	void load();
-	string data_at_position(size_t pos);
+	std::string data_at_position(size_t pos);
 
 };

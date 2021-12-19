@@ -29,6 +29,8 @@
 #include "HashTableShardBuilder.h"
 #include "system/Logger.h"
 
+using namespace std;
+
 HashTable::HashTable(const string &db_name)
 : m_db_name(db_name)
 {

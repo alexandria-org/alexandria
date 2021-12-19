@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(logger) {
 	Logger::join_logger_thread();
 
 	ifstream logfile(Config::log_file_path);
-	logfile.seekg(-12, ios::end);
+	logfile.seekg(-12, std::ios::end);
 	string line1, line2;
 	getline(logfile, line1);
 	getline(logfile, line2);

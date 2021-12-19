@@ -27,6 +27,8 @@
 #include "config.h"
 #include "File.h"
 
+using namespace std;
+
 namespace File {
 	string read_test_file(const string &file_name) {
 

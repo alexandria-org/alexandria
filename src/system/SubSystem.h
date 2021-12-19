@@ -36,9 +36,6 @@
 #include "file/TsvFileRemote.h"
 #include "common/Dictionary.h"
 
-using namespace boost::iostreams;
-using namespace std;
-
 class SubSystem {
 
 public:
@@ -49,12 +46,12 @@ public:
 	const Dictionary *domain_index() const;
 	const Dictionary *dictionary() const;
 	const Dictionary *full_text_dictionary() const;
-	const vector<string> words() const;
+	const std::vector<std::string> words() const;
 
 private:
 	Dictionary *m_domain_index;
 	Dictionary *m_dictionary;
 	Dictionary *m_full_text_dictionary;
-	vector<string> m_words;
+	std::vector<std::string> m_words;
 
 };

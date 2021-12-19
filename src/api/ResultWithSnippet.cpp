@@ -27,6 +27,8 @@
 #include "ResultWithSnippet.h"
 #include "text/Text.h"
 
+using namespace std;
+
 ResultWithSnippet::ResultWithSnippet(const string &tsv_data, const FullTextRecord &res)
 : m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
 	size_t pos_start = 0;

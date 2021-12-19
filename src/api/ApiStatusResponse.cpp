@@ -29,8 +29,8 @@
 
 #include "json.hpp"
 
-using json = nlohmann::json;
 using namespace std;
+using json = nlohmann::json;
 
 ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
 

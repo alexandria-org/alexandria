@@ -33,6 +33,8 @@
 #include "text/Text.h"
 #include "parser/Parser.h"
 
+using namespace std;
+
 namespace Transfer {
 
 	hash<string> hasher;

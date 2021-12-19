@@ -30,16 +30,14 @@
 #include "hash_table/HashTable.h"
 #include "hash_table/HashTableShardBuilder.h"
 
-using namespace std;
-
 namespace HashTableHelper {
 
-	void truncate(const string &hash_table_name);
-	vector<HashTableShardBuilder *> create_shard_builders(const string &hash_table_name);
-	void delete_shard_builders(vector<HashTableShardBuilder *> &shards);
-	void add_data(vector<HashTableShardBuilder *> &shards, uint64_t key, const string &value);
-	void write(vector<HashTableShardBuilder *> &shards);
-	void sort(vector<HashTableShardBuilder *> &shards);
-	void optimize(vector<HashTableShardBuilder *> &shards);
+	void truncate(const std::string &hash_table_name);
+	std::vector<HashTableShardBuilder *> create_shard_builders(const std::string &hash_table_name);
+	void delete_shard_builders(std::vector<HashTableShardBuilder *> &shards);
+	void add_data(std::vector<HashTableShardBuilder *> &shards, uint64_t key, const std::string &value);
+	void write(std::vector<HashTableShardBuilder *> &shards);
+	void sort(std::vector<HashTableShardBuilder *> &shards);
+	void optimize(std::vector<HashTableShardBuilder *> &shards);
 
 }

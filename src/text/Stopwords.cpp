@@ -26,6 +26,8 @@
 
 #include "Stopwords.h"
 
+using namespace std;
+
 bool Stopwords::is_stop_word(const string &word) {
 	return (s_english.find(word) != s_english.end()) || (s_swedish.find(word) != s_swedish.end());
 }

@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(download_warc) {
 }
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {
-	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", ios::binary);
+	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", std::ios::binary);
 
 	Warc::Parser pp;
 	pp.parse_stream(infile);
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 	string response;
 	{
 		Warc::Parser pp;
-		ifstream infile(Config::test_data_path + "warc_test.gz", ios::binary);
+		ifstream infile(Config::test_data_path + "warc_test.gz", std::ios::binary);
 		pp.parse_stream(infile);
 
 		response = pp.result();
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 	Warc::Parser pp;
 
 	for (const string &filename : files) {
-		ifstream infile(filename, ios::binary);
+		ifstream infile(filename, std::ios::binary);
 		pp.parse_stream(infile);
 	}
 
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 BOOST_AUTO_TEST_CASE(parse_cc_batch_301) {
 
 	Warc::Parser pp;
-	ifstream infile(Config::test_data_path + "long_warc.gz", ios::binary);
+	ifstream infile(Config::test_data_path + "long_warc.gz", std::ios::binary);
 	pp.parse_stream(infile);
 
 }

@@ -29,12 +29,10 @@
 #include <vector>
 #include <span>
 
-using namespace std;
-
 namespace Sort {
 
 	template<typename DataRecord, typename F>
-	void merge_arrays(const vector<DataRecord> &arr1, const vector<DataRecord> &arr2, F compare, vector<DataRecord> &arr3) {
+	void merge_arrays(const std::vector<DataRecord> &arr1, const std::vector<DataRecord> &arr2, F compare, std::vector<DataRecord> &arr3) {
 
 		size_t i = 0, j = 0;
 
@@ -51,7 +49,7 @@ namespace Sort {
 	}
 
 	template<typename DataRecord, typename F>
-	void merge_arrays(const span<DataRecord> *arr1, const span<DataRecord> *arr2, F compare, vector<DataRecord> &arr3) {
+	void merge_arrays(const std::span<DataRecord> *arr1, const std::span<DataRecord> *arr2, F compare, std::vector<DataRecord> &arr3) {
 
 		size_t i = 0, j = 0;
 
@@ -68,21 +66,21 @@ namespace Sort {
 	}
 
 	template<typename DataRecord>
-	void merge_arrays(const vector<DataRecord> &arr1, const vector<DataRecord> &arr2, vector<DataRecord> &arr3) {
+	void merge_arrays(const std::vector<DataRecord> &arr1, const std::vector<DataRecord> &arr2, std::vector<DataRecord> &arr3) {
 		merge_arrays(arr1, arr2, [](const DataRecord &a, const DataRecord &b) {
 			return a < b;
 		}, arr3);
 	}
 
 	template<typename DataRecord>
-	void merge_arrays(const vector<vector<DataRecord>> &arrays, vector<DataRecord> &res) {
+	void merge_arrays(const std::vector<std::vector<DataRecord>> &arrays, std::vector<DataRecord> &res) {
 		merge_arrays(arrays, [](const DataRecord &a, const DataRecord &b) {
 			return a < b;
 		}, res);
 	}
 
 	template<typename DataRecord, typename F>
-	void merge_array_range(const vector<vector<DataRecord>> &arrays, size_t i, size_t j, F compare, vector<DataRecord> &res) {
+	void merge_array_range(const std::vector<std::vector<DataRecord>> &arrays, size_t i, size_t j, F compare, std::vector<DataRecord> &res) {
 		if (i == j) {
 			for (const DataRecord &rec : arrays[i]) {
 				res.push_back(rec);
@@ -90,8 +88,8 @@ namespace Sort {
 		} else if (j - i == 1) {
 			merge_arrays(arrays[i], arrays[j], compare, res);
 		} else {
-			vector<DataRecord> out1;
-			vector<DataRecord> out2;
+			std::vector<DataRecord> out1;
+			std::vector<DataRecord> out2;
 
 			merge_array_range(arrays, i, (i + j)/2, compare, out1);
 			merge_array_range(arrays, (i + j)/2 + 1, j, compare, out2);
@@ -101,13 +99,13 @@ namespace Sort {
 	}
 
 	template<typename DataRecord, typename F>
-	void merge_arrays(const vector<vector<DataRecord>> &arrays, F compare, vector<DataRecord> &res) {
+	void merge_arrays(const std::vector<std::vector<DataRecord>> &arrays, F compare, std::vector<DataRecord> &res) {
 		if (arrays.size() == 0) return;
 		merge_array_range(arrays, 0, arrays.size() - 1, compare, res);
 	}
 
 	template<typename DataRecord, typename F>
-	void merge_array_range(const vector<span<DataRecord> *> &arrays, size_t i, size_t j, F compare, vector<DataRecord> &res) {
+	void merge_array_range(const std::vector<std::span<DataRecord> *> &arrays, size_t i, size_t j, F compare, std::vector<DataRecord> &res) {
 		if (i == j) {
 			for (const DataRecord &rec : *(arrays[i])) {
 				res.push_back(rec);
@@ -115,8 +113,8 @@ namespace Sort {
 		} else if (j - i == 1) {
 			merge_arrays(arrays[i], arrays[j], compare, res);
 		} else {
-			vector<DataRecord> out1;
-			vector<DataRecord> out2;
+			std::vector<DataRecord> out1;
+			std::vector<DataRecord> out2;
 
 			merge_array_range(arrays, i, (i + j)/2, compare, out1);
 			merge_array_range(arrays, (i + j)/2 + 1, j, compare, out2);
@@ -126,7 +124,7 @@ namespace Sort {
 	}
 
 	template<typename DataRecord, typename F>
-	void merge_arrays(const vector<span<DataRecord> *> &arrays, F compare, vector<DataRecord> &res) {
+	void merge_arrays(const std::vector<std::span<DataRecord> *> &arrays, F compare, std::vector<DataRecord> &res) {
 		if (arrays.size() == 0) return;
 		merge_array_range(arrays, 0, arrays.size() - 1, compare, res);
 	}

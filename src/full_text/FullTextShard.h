@@ -42,8 +42,6 @@ template<typename DataRecord> class FullTextShard;
 
 #include "system/Logger.h"
 
-using namespace std;
-
 /*
 File format explained
 
@@ -60,16 +58,16 @@ class FullTextShard {
 
 public:
 
-	FullTextShard(const string &db_name, size_t shard_id, size_t partition);
+	FullTextShard(const std::string &db_name, size_t shard_id, size_t partition);
 	~FullTextShard();
 
 	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
-	size_t read_key_pos(ifstream &reader, uint64_t key);
+	size_t read_key_pos(std::ifstream &reader, uint64_t key);
 	size_t total_num_results(uint64_t key);
 
-	string mountpoint() const;
-	string filename() const;
-	string key_filename() const;
+	std::string mountpoint() const;
+	std::string filename() const;
+	std::string key_filename() const;
 	size_t shard_id() const;
 	bool empty() const;
 
@@ -77,7 +75,7 @@ public:
 
 private:
 
-	string m_db_name;
+	std::string m_db_name;
 	size_t m_shard_id;
 	size_t m_partition;
 
@@ -89,7 +87,7 @@ private:
 };
 
 template<typename DataRecord>
-FullTextShard<DataRecord>::FullTextShard(const string &db_name, size_t shard, size_t partition)
+FullTextShard<DataRecord>::FullTextShard(const std::string &db_name, size_t shard, size_t partition)
 : m_db_name(db_name), m_shard_id(shard), m_partition(partition) {
 }
 
@@ -100,7 +98,7 @@ FullTextShard<DataRecord>::~FullTextShard() {
 template<typename DataRecord>
 void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord> *result_set) {
 
-	ifstream reader(filename(), ios::binary);
+	std::ifstream reader(filename(), std::ios::binary);
 
 	size_t key_pos = read_key_pos(reader, key);
 
@@ -134,19 +132,19 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	char buffer[64];
 
 	// Read position and length.
-	reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, ios::beg);
+	reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
 	reader.read(buffer, 8);
 	size_t pos = *((size_t *)(&buffer[0]));
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
 	reader.read(buffer, 8);
 	size_t len = *((size_t *)(&buffer[0]));
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, std::ios::beg);
 	reader.read(buffer, 8);
 	size_t total_num_results = *((size_t *)(&buffer[0]));
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, std::ios::beg);
 
 	size_t num_records = len / sizeof(DataRecord);
 	if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
@@ -161,11 +159,11 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
  * Reads the exact position of the key, returns SIZE_MAX if the key was not found.
  * */
 template<typename DataRecord>
-size_t FullTextShard<DataRecord>::read_key_pos(ifstream &reader, uint64_t key) {
+size_t FullTextShard<DataRecord>::read_key_pos(std::ifstream &reader, uint64_t key) {
 
 	const size_t hash_pos = key % Config::shard_hash_table_size;
 
-	ifstream key_reader(key_filename(), ios::binary);
+	std::ifstream key_reader(key_filename(), std::ios::binary);
 
 	key_reader.seekg(hash_pos * sizeof(size_t));
 
@@ -178,7 +176,7 @@ size_t FullTextShard<DataRecord>::read_key_pos(ifstream &reader, uint64_t key) {
 template<typename DataRecord>
 size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
 
-	ifstream reader(filename(), ios::binary);
+	std::ifstream reader(filename(), std::ios::binary);
 
 	size_t key_pos = read_key_pos(reader, key);
 
@@ -209,7 +207,7 @@ size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
 
 	char buffer[64];
 
-	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, ios::beg);
+	reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, std::ios::beg);
 	reader.read(buffer, 8);
 	size_t total_num_results = *((size_t *)(&buffer[0]));
 
@@ -217,19 +215,19 @@ size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
 }
 
 template<typename DataRecord>
-string FullTextShard<DataRecord>::mountpoint() const {
-	if (m_partition < 1) return to_string(m_shard_id % 4);
-	return to_string((m_shard_id % 4) + 4);
+std::string FullTextShard<DataRecord>::mountpoint() const {
+	if (m_partition < 1) return std::to_string(m_shard_id % 4);
+	return std::to_string((m_shard_id % 4) + 4);
 }
 
 template<typename DataRecord>
-string FullTextShard<DataRecord>::filename() const {
-	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".idx";
+std::string FullTextShard<DataRecord>::filename() const {
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".idx";
 }
 
 template<typename DataRecord>
-string FullTextShard<DataRecord>::key_filename() const {
-	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + to_string(m_shard_id) + ".keys";
+std::string FullTextShard<DataRecord>::key_filename() const {
+	return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".keys";
 }
 
 template<typename DataRecord>
@@ -239,8 +237,8 @@ size_t FullTextShard<DataRecord>::shard_id() const {
 
 template<typename DataRecord>
 size_t FullTextShard<DataRecord>::disk_size() const {
-	ifstream reader(filename(), ios::binary);
-	reader.seekg(0, ios::end);
+	std::ifstream reader(filename(), std::ios::binary);
+	reader.seekg(0, std::ios::end);
 	const size_t file_size = reader.tellg();
 	return file_size;
 }

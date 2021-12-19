@@ -30,8 +30,6 @@
 #include <sstream>
 #include <vector>
 
-using namespace std;
-
 #define CC_ROW_LEN 5
 
 class DictionaryRow {
@@ -40,8 +38,8 @@ public:
 
 	DictionaryRow();
 	DictionaryRow(const DictionaryRow &row);
-	explicit DictionaryRow(const string &row);
-	explicit DictionaryRow(stringstream &stream);
+	explicit DictionaryRow(const std::string &row);
+	explicit DictionaryRow(std::stringstream &stream);
 	~DictionaryRow();
 
 	int get_int(int column) const;
@@ -49,8 +47,8 @@ public:
 	double get_double(int column) const;
 
 private:
-	vector<double> m_columns;
+	std::vector<double> m_columns;
 
-	void read_stream(stringstream &stream);
+	void read_stream(std::stringstream &stream);
 
 };

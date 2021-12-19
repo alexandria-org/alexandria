@@ -28,6 +28,9 @@
 #include "System.h"
 #include "Logger.h"
 
+using namespace boost::iostreams;
+using namespace std;
+
 SubSystem::SubSystem() {
 
 	LOG_INFO("download domain_info.tsv");

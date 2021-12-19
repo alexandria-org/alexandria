@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 1000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + to_string(i));
+			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
 		HashTableHelper::write(shards);
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 
 		// Add 1000 elements.
 		for (size_t i = 1000; i < 2000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + to_string(i));
+			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
 		HashTableHelper::write(shards);
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 
 		// Add 1000 elements.
 		for (size_t i = 100000; i < 200000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + to_string(i));
+			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
 		HashTableHelper::write(shards);
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 100000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + to_string(i));
+			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
 		HashTableHelper::write(shards);
