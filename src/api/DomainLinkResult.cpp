@@ -26,6 +26,7 @@
 
 #include "DomainLinkResult.h"
 #include "text/Text.h"
+#include "domain_link/FullTextRecord.h"
 
 using namespace std;
 

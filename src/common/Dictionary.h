@@ -28,9 +28,11 @@
 
 #include <map>
 #include <unordered_map>
-#include "file/TsvFile.h"
-
 #include "DictionaryRow.h"
+
+namespace File {
+	class TsvFile;
+}
 
 class Dictionary {
 

@@ -28,7 +28,10 @@
 
 #include <iostream>
 #include <vector>
-#include "Worker.h"
+
+namespace Worker {
+	struct Status;
+}
 
 class ApiStatusResponse {
 

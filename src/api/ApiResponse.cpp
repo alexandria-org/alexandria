@@ -25,6 +25,8 @@
  */
 
 #include "ApiResponse.h"
+#include "api/ResultWithSnippet.h"
+#include "full_text/SearchMetric.h"
 #include "parser/Unicode.h"
 #include "json.hpp"
 

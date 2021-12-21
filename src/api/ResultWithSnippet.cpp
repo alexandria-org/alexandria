@@ -26,6 +26,7 @@
 
 #include "ResultWithSnippet.h"
 #include "text/Text.h"
+#include "full_text/FullTextRecord.h"
 
 using namespace std;
 

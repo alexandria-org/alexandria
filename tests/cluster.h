@@ -25,7 +25,7 @@
  */
 
 //#include "algorithm/HyperBall.h"
-#include "cluster/Cluster.h"
+#include "cluster/Document.h"
 #include "transfer/Transfer.h"
 #include "hash/Hash.h"
 #include "system/Logger.h"

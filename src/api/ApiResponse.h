@@ -29,8 +29,8 @@
 #include <iostream>
 #include <vector>
 
-#include "api/ResultWithSnippet.h"
-#include "full_text/SearchMetric.h"
+class ResultWithSnippet;
+struct SearchMetric;
 
 class ApiResponse {
 

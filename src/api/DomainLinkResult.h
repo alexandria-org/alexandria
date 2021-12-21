@@ -28,7 +28,10 @@
 
 #include <iostream>
 #include "parser/URL.h"
-#include "domain_link/FullTextRecord.h"
+
+namespace DomainLink {
+	struct FullTextRecord;
+}
 
 class DomainLinkResult {
 

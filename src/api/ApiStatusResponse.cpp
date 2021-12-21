@@ -27,6 +27,7 @@
 #include "ApiStatusResponse.h"
 #include <system/Profiler.h>
 
+#include "Worker.h"
 #include "json.hpp"
 
 using namespace std;

@@ -28,7 +28,8 @@
 
 #include <iostream>
 #include "parser/URL.h"
-#include "full_text/FullTextRecord.h"
+
+struct FullTextRecord;
 
 class ResultWithSnippet {
 

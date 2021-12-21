@@ -26,6 +26,8 @@
 
 #include "Dictionary.h"
 #include "system/Logger.h"
+#include "file/TsvFile.h"
+#include "DictionaryRow.h"
 
 using namespace std;
 
