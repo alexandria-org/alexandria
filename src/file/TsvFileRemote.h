@@ -26,21 +26,24 @@
 
 #pragma once
 
-#include "Transfer.h"
 #include "TsvFile.h"
 
-class TsvFileRemote : public TsvFile {
+namespace File {
 
-public:
+	class TsvFileRemote : public TsvFile {
 
-	explicit TsvFileRemote(const std::string &file_name);
-	~TsvFileRemote();
+	public:
 
-	std::string get_path() const;
+		explicit TsvFileRemote(const std::string &file_name);
+		~TsvFileRemote();
 
-private:
+		std::string get_path() const;
 
-	int download_file();
-	void create_directory();
+	private:
 
-};
+		int download_file();
+		void create_directory();
+
+	};
+
+}

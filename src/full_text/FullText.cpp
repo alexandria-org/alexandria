@@ -119,7 +119,7 @@ namespace FullText {
 
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset) {
 		
-		TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -146,7 +146,7 @@ namespace FullText {
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
 		
-		TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -198,13 +198,13 @@ namespace FullText {
 
 		size_t items = 0;
 		for (const string &batch : Config::batches) {
-			TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 			items += warc_paths.size();
 		}
 		for (const string &batch : Config::link_batches) {
-			TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 			items += warc_paths.size();

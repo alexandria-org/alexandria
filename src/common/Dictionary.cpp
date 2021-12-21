@@ -33,7 +33,7 @@ Dictionary::Dictionary() {
 
 }
 
-Dictionary::Dictionary(TsvFile &tsv_file) {
+Dictionary::Dictionary(File::TsvFile &tsv_file) {
 	while (!tsv_file.eof()) {
 		string line = tsv_file.get_line();
 		stringstream ss(line);

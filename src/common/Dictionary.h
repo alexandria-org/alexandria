@@ -37,7 +37,7 @@ class Dictionary {
 public:
 
 	Dictionary();
-	explicit Dictionary(TsvFile &tsv_file);
+	explicit Dictionary(File::TsvFile &tsv_file);
 	~Dictionary();
 
 	std::unordered_map<size_t, DictionaryRow>::const_iterator find(const std::string &key) const;

@@ -4,6 +4,9 @@ tmp/*
 src/*.o
 tests/*.o
 build/*
+documentation/*.aux
+documentation/*.log
+.DS_Store
 config/config.h
 response.txt
 cc_parser.zip

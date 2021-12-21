@@ -29,13 +29,17 @@
 #include <iostream>
 #include <vector>
 
-class TsvRow {
+namespace File {
 
-public:
-	explicit TsvRow(const std::string &line);
-	~TsvRow();
+	class TsvRow {
 
-private:
-	std::vector<std::string> m_cols;
+	public:
+		explicit TsvRow(const std::string &line);
+		~TsvRow();
 
-};
+	private:
+		std::vector<std::string> m_cols;
+
+	};
+
+}
