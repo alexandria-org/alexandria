@@ -80,4 +80,6 @@ make run_tests -j24
 
 ## Coding rules
 1. Never put "using namespace..." in header files.
-
+2. Namspaces and Classes written by us should be CamelCase
+3. Everything else should be lower_case
+4. All files within a sub directory must contain namespace that is the same as the directory. For example src/file/TsvFile.h must declare everything within the namespace File.
