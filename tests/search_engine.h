@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 
 	size_t links_applied;
 	{
-		vector<DomainLinkFullTextRecord> links;
+		vector<DomainLink::FullTextRecord> links;
 		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(0);
 		
 		links_applied = SearchEngine::apply_domain_link_scores(links, results);
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 	}
 
 	{
-		vector<DomainLinkFullTextRecord> links = {DomainLinkFullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_domain = 9999}};
+		vector<DomainLink::FullTextRecord> links = {DomainLink::FullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_domain = 9999}};
 		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(1);
 
 		float score_before = 0.1;

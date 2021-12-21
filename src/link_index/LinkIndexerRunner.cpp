@@ -27,7 +27,7 @@
 #include "config.h"
 #include "LinkIndexerRunner.h"
 #include "LinkIndexer.h"
-#include "DomainLinkIndexer.h"
+#include "domain_link/Indexer.h"
 #include <math.h>
 #include "system/Logger.h"
 #include "full_text/FullText.h"
@@ -136,7 +136,7 @@ string LinkIndexerRunner::run_index_thread_with_local_files(const vector<string>
 	}
 
 	LinkIndexer indexer(id, m_db_name, m_sub_system, m_url_to_domain);
-	DomainLinkIndexer domain_link_indexer(id, m_domain_db_name, m_sub_system, m_url_to_domain);
+	DomainLink::Indexer domain_link_indexer(id, m_domain_db_name, m_sub_system, m_url_to_domain);
 	size_t idx = 1;
 	for (const string &local_file : local_files) {
 

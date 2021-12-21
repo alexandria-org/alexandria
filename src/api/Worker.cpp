@@ -31,8 +31,8 @@ namespace Worker {
 
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index");
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("link_index");
-		vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-			FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
+		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
+			FullText::create_index_array<DomainLink::FullTextRecord>("domain_link_index");
 
 		stringstream response_stream;
 		Api::search(query, hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
@@ -41,7 +41,7 @@ namespace Worker {
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
 		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
-		FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 		SearchAllocation::delete_allocation(allocation);
 	}
@@ -70,8 +70,8 @@ namespace Worker {
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index");
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array =
 			FullText::create_index_array<LinkFullTextRecord>("link_index");
-		vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-			FullText::create_index_array<DomainLinkFullTextRecord>("domain_link_index");
+		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
+			FullText::create_index_array<DomainLink::FullTextRecord>("domain_link_index");
 
 		LOG_INFO("Server has started...");
 
@@ -121,7 +121,7 @@ namespace Worker {
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
 		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
-		FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 		SearchAllocation::delete_allocation(allocation);
 

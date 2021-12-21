@@ -47,7 +47,7 @@ using json = nlohmann::json;
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
@@ -71,10 +71,10 @@ namespace Api {
 
 		metric.m_total_found = 0;
 
-		vector<DomainLinkFullTextRecord> domain_links;
+		vector<DomainLink::FullTextRecord> domain_links;
 		if (domain_link_index_array.size()) {
-			Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
-			domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage, domain_link_index_array, {}, {}, query,
+			Profiler::instance profiler_domain_links("SearchEngine::search<DomainLink::FullTextRecord>");
+			domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage, domain_link_index_array, {}, {}, query,
 				100000, metric);
 			profiler_domain_links.stop();
 
@@ -102,7 +102,7 @@ namespace Api {
 	}
 
 	void search_all(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
@@ -125,8 +125,8 @@ namespace Api {
 
 		metric.m_total_found = 0;
 
-		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLinkFullTextRecord>");
-		vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage,
+		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLink::FullTextRecord>");
+		vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
 			domain_link_index_array, {}, {}, query, 10000, metric);
 		profiler_domain_links.stop();
 

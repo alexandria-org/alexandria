@@ -36,30 +36,34 @@
 #include "hash_table/HashTableShardBuilder.h"
 #include "full_text/UrlToDomain.h"
 #include "full_text/FullTextShardBuilder.h"
-#include "DomainLinkFullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
 
-class DomainLinkIndexer {
+namespace DomainLink {
 
-public:
+	class Indexer {
 
-	DomainLinkIndexer(int id, const std::string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
-	~DomainLinkIndexer();
+	public:
 
-	void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
-	void write_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
-	void flush_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+		Indexer(int id, const std::string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+		~Indexer();
 
-private:
+		void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
+		void write_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+		void flush_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
 
-	int m_indexer_id;
-	const std::string m_db_name;
-	const SubSystem *m_sub_system;
-	UrlToDomain *m_url_to_domain;
-	std::hash<std::string> m_hasher;
+	private:
 
-	std::map<size_t, std::vector<FullTextShardBuilder<DomainLinkFullTextRecord> *>> m_shards;
+		int m_indexer_id;
+		const std::string m_db_name;
+		const SubSystem *m_sub_system;
+		UrlToDomain *m_url_to_domain;
+		std::hash<std::string> m_hasher;
 
-	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const std::string &link_text,
-		float score);
+		std::map<size_t, std::vector<FullTextShardBuilder<DomainLink::FullTextRecord> *>> m_shards;
 
-};
+		void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
+			const std::string &link_text, float score);
+
+	};
+
+}

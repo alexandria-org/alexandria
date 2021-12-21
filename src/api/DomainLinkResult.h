@@ -28,12 +28,12 @@
 
 #include <iostream>
 #include "parser/URL.h"
-#include "link_index/DomainLinkFullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
 
 class DomainLinkResult {
 
 public:
-	DomainLinkResult(const std::string &tsv_data, const DomainLinkFullTextRecord &res);
+	DomainLinkResult(const std::string &tsv_data, const DomainLink::FullTextRecord &res);
 	~DomainLinkResult();
 
 	const URL &source_url() const { return m_source_url; };

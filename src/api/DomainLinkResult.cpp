@@ -29,7 +29,7 @@
 
 using namespace std;
 
-DomainLinkResult::DomainLinkResult(const string &tsv_data, const DomainLinkFullTextRecord &res)
+DomainLinkResult::DomainLinkResult(const string &tsv_data, const DomainLink::FullTextRecord &res)
 : m_score(res.m_score), m_link_hash(res.m_value) {
 
 	string source_host;

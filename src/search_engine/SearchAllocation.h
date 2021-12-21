@@ -29,7 +29,7 @@
 #include "full_text/FullTextResultSet.h"
 #include "full_text/FullTextRecord.h"
 #include "link_index/LinkFullTextRecord.h"
-#include "link_index/DomainLinkFullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
 #include "config.h"
 #include <map>
 #include <vector>
@@ -56,7 +56,7 @@ namespace SearchAllocation {
 	struct Allocation {
 		Storage<FullTextRecord> *storage;
 		Storage<LinkFullTextRecord> *link_storage;
-		Storage<DomainLinkFullTextRecord> *domain_link_storage;
+		Storage<DomainLink::FullTextRecord> *domain_link_storage;
 	};
 
 	template <typename DataRecord>

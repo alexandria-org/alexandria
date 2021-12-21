@@ -35,7 +35,7 @@
 #include "full_text/FullTextIndexer.h"
 #include "full_text/UrlToDomain.h"
 #include "LinkFullTextRecord.h"
-#include "DomainLinkFullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
 #include "full_text/FullTextRecord.h"
 
 #include <boost/iostreams/filtering_stream.hpp>

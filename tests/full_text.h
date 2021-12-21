@@ -235,14 +235,14 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
 		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
-		vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array =
-			FullText::create_index_array<DomainLinkFullTextRecord>("test_domain_link_index");
+		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
+			FullText::create_index_array<DomainLink::FullTextRecord>("test_domain_link_index");
 
 		{
 			const string query = "Testing the test from test04.links.gz";
 			struct SearchMetric metric;
 
-			vector<DomainLinkFullTextRecord> links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage,
+			vector<DomainLink::FullTextRecord> links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
 				domain_link_index_array, {}, {}, query, 1000, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 1);
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
 				1000, metric);
-			vector<DomainLinkFullTextRecord> domain_links = SearchEngine::search<DomainLinkFullTextRecord>(allocation->domain_link_storage,
+			vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
 				domain_link_index_array, {}, {}, query, 1000, metric);
 
 			vector<FullTextRecord> results_no_domainlinks = SearchEngine::search_deduplicate(allocation->storage, index_array, links, {}, query,
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
 		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
-		FullText::delete_index_array<DomainLinkFullTextRecord>(domain_link_index_array);
+		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 	}
 
 	SearchAllocation::delete_allocation(allocation);

@@ -31,17 +31,17 @@
 #include "full_text/FullTextRecord.h"
 
 #include "link_index/LinkFullTextRecord.h"
-#include "link_index/DomainLinkFullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
 #include "search_engine/SearchAllocation.h"
 
 namespace Api {
 
 	void search(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
 	void search_all(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLinkFullTextRecord> *> domain_link_index_array,
+		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
 	void word_stats(const std::string &query, std::vector<FullTextIndex<FullTextRecord> *> index_array,
