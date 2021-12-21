@@ -26,13 +26,21 @@
 
 #pragma once
 
-#include "hash_table/HashTable.h"
-#include "full_text/FullTextIndex.h"
-#include "full_text/FullTextRecord.h"
+#include <iostream>
+#include <vector>
 
-#include "link/FullTextRecord.h"
-#include "domain_link/FullTextRecord.h"
-#include "search_engine/SearchAllocation.h"
+class FullTextRecord;
+template<typename DataRecord> class FullTextIndex;
+class HashTable;
+namespace Link {
+	struct FullTextRecord;
+}
+namespace DomainLink {
+	struct FullTextRecord;
+}
+namespace SearchAllocation {
+	struct Allocation;
+}
 
 namespace Api {
 

@@ -27,9 +27,17 @@
 #include "Api.h"
 #include "ApiResponse.h"
 
+#include "hash_table/HashTable.h"
 #include "post_processor/PostProcessor.h"
 
 #include "full_text/SearchMetric.h"
+#include "full_text/FullTextIndex.h"
+#include "full_text/FullTextRecord.h"
+
+#include "link/FullTextRecord.h"
+#include "domain_link/FullTextRecord.h"
+
+#include "search_engine/SearchAllocation.h"
 
 #include "search_engine/SearchEngine.h"
 #include "stats/Stats.h"
