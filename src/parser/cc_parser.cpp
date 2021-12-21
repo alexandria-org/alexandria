@@ -30,6 +30,7 @@
 #include "system/ThreadPool.h"
 #include "system/Logger.h"
 #include "text/Text.h"
+#include "transfer/Transfer.h"
 #include <iostream>
 
 using namespace std;

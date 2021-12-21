@@ -32,10 +32,11 @@ set(SRC_CLASSES
 	"src/api/Worker.cpp"
 
 	"src/file/File.cpp"
-	"src/file/Transfer.cpp"
 	"src/file/TsvFile.cpp"
 	"src/file/TsvFileRemote.cpp"
 	"src/file/TsvRow.cpp"
+
+	"src/transfer/Transfer.cpp"
 
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"
@@ -45,10 +46,11 @@ set(SRC_CLASSES
 	"src/search_engine/SearchEngine.cpp"
 	"src/search_engine/SearchAllocation.cpp"
 
-	"src/link_index/Link.cpp"
-	"src/link_index/LinkIndexer.cpp"
-	"src/link_index/DomainLinkIndexer.cpp"
-	"src/link_index/LinkIndexerRunner.cpp"
+	"src/link/Link.cpp"
+	"src/link/Indexer.cpp"
+	"src/link/IndexerRunner.cpp"
+
+	"src/domain_link/Indexer.cpp"
 
 	"src/hash_table/HashTable.cpp"
 	"src/hash_table/HashTableShard.cpp"

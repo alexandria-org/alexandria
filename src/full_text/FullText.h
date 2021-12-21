@@ -30,7 +30,7 @@
 #include <map>
 #include <cstdint>
 #include "parser/URL.h"
-#include "link_index/Link.h"
+#include "link/Link.h"
 #include "text/Text.h"
 #include "UrlToDomain.h"
 #include "FullTextRecord.h"
@@ -86,9 +86,9 @@ namespace FullText {
 	bool should_index_url(const URL &url, size_t partition);
 	bool should_index_url_on_partition(const URL &url, size_t partition);
 
-	size_t link_to_node(const Link &link);
-	bool should_index_link(const Link &link);
-	bool should_index_link(const Link &link, size_t partition);
+	size_t link_to_node(const Link::Link &link);
+	bool should_index_link(const Link::Link &link);
+	bool should_index_link(const Link::Link &link, size_t partition);
 
 	template<typename DataRecord>
 	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name) {

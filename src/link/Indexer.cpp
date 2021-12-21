@@ -25,17 +25,15 @@
  */
 
 #include "config.h"
-#include "Indexer.h"
+#include "link/Indexer.h"
 #include "system/Logger.h"
 #include "text/Text.h"
 #include "full_text/FullText.h"
-#include "domain_link/FullTextRecord.h"
-#include "link/Link.h"
 #include <math.h>
 
 using namespace std;
 
-namespace DomainLink {
+namespace Link {
 
 	Indexer::Indexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 	: m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
@@ -43,8 +41,8 @@ namespace DomainLink {
 		m_url_to_domain = url_to_domain;
 		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
 			for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
-				FullTextShardBuilder<::DomainLink::FullTextRecord> *shard_builder =
-					new FullTextShardBuilder<::DomainLink::FullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, partition,
+				FullTextShardBuilder<::Link::FullTextRecord> *shard_builder =
+					new FullTextShardBuilder<::Link::FullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, partition,
 						Config::li_cached_bytes_per_shard);
 				m_shards[partition].push_back(shard_builder);
 			}
@@ -53,7 +51,7 @@ namespace DomainLink {
 
 	Indexer::~Indexer() {
 		for (auto &iter : m_shards) {
-			for (FullTextShardBuilder<::DomainLink::FullTextRecord> *shard : iter.second) {
+			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
 				delete shard;
 			}
 		}
@@ -67,24 +65,22 @@ namespace DomainLink {
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 			URL target_url(col_values[2], col_values[3]);
-			float target_harmonic = target_url.harmonic(m_sub_system);
 
-			if (m_url_to_domain->has_domain(target_url.host_hash())) {
+			if (m_url_to_domain->has_url(target_url.hash())) {
+
+				float target_harmonic = target_url.harmonic(m_sub_system);
 
 				URL source_url(col_values[0], col_values[1]);
 				float source_harmonic = source_url.harmonic(m_sub_system);
 
+
 				const string link_text = col_values[4].substr(0, 1000);
 
-				const Link::Link link(source_url, target_url, source_harmonic, target_harmonic);
+				const Link link(source_url, target_url, source_harmonic, target_harmonic);
 
-				uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
+				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
 				const size_t partition = link_hash % Config::ft_num_partitions;
-
-#ifdef COMPILE_WITH_LINK_INDEX
-				shard_builders[link_hash % Config::ht_num_shards]->add(link_hash, line);
-#endif
 
 				add_expanded_data_to_shards(partition, link_hash, source_url, target_url, link_text, source_harmonic);			
 			}
@@ -92,7 +88,7 @@ namespace DomainLink {
 
 		// sort shards.
 		for (auto &iter : m_shards) {
-			for (FullTextShardBuilder<::DomainLink::FullTextRecord> *shard : iter.second) {
+			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
 				shard->sort_cache();
 			}
 		}
@@ -102,7 +98,7 @@ namespace DomainLink {
 		{
 			for (auto &iter : m_shards) {
 				size_t idx = 0;
-				for (FullTextShardBuilder<::DomainLink::FullTextRecord> *shard : iter.second) {
+				for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
 					if (shard->full()) {
 						write_mutexes[iter.first][idx].lock();
 						shard->append();
@@ -119,7 +115,7 @@ namespace DomainLink {
 		{
 			for (auto &iter : m_shards) {
 				size_t idx = 0;
-				for (FullTextShardBuilder<::DomainLink::FullTextRecord> *shard : iter.second) {
+				for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
 					write_mutexes[iter.first][idx].lock();
 					shard->append();
 					write_mutexes[iter.first][idx].unlock();
@@ -139,8 +135,8 @@ namespace DomainLink {
 			const uint64_t word_hash = m_hasher(word);
 			const size_t shard_id = word_hash % Config::ft_num_shards;
 
-			m_shards[partition][shard_id]->add(word_hash, ::DomainLink::FullTextRecord{.m_value = link_hash, .m_score = score,
-				.m_source_domain = source_url.host_hash(), .m_target_domain = target_url.host_hash()});
+			m_shards[partition][shard_id]->add(word_hash, ::Link::FullTextRecord{.m_value = link_hash, .m_score = score,
+				.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
 		}
 	}
 

@@ -47,7 +47,7 @@ using json = nlohmann::json;
 namespace Api {
 
 	void search(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
@@ -55,13 +55,13 @@ namespace Api {
 		struct SearchMetric metric;
 		SearchEngine::reset_search_metric(metric);
 
-		vector<LinkFullTextRecord> links;
+		vector<Link::FullTextRecord> links;
 		if (link_index_array.size()) {
-			Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
-			links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query, 500000, metric);
+			Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
+			links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query, 500000, metric);
 			profiler_links.stop();
 
-			sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
 				return a.m_target_hash < b.m_target_hash;
 			});
 
@@ -102,7 +102,7 @@ namespace Api {
 	}
 
 	void search_all(const string &query, HashTable &hash_table, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
@@ -110,13 +110,13 @@ namespace Api {
 		struct SearchMetric metric;
 		SearchEngine::reset_search_metric(metric);
 
-		vector<LinkFullTextRecord> links;
+		vector<Link::FullTextRecord> links;
 		if (link_index_array.size()) {
-			Profiler::instance profiler_links("SearchEngine::search<LinkFullTextRecord>");
-			links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query, 500000, metric);
+			Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
+			links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query, 500000, metric);
 			profiler_links.stop();
 
-			sort(links.begin(), links.end(), [](const LinkFullTextRecord &a, const LinkFullTextRecord &b) {
+			sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
 				return a.m_target_hash < b.m_target_hash;
 			});
 
@@ -169,12 +169,12 @@ namespace Api {
 	}
 
 	void word_stats(const string &query, vector<FullTextIndex<FullTextRecord> *> index_array,
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, stringstream &response_stream) {
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
 		map<string, double> word_stats = Stats::word_stats<FullTextRecord>(index_array, query, index_size);
-		map<string, double> link_word_stats = Stats::word_stats<LinkFullTextRecord>(link_index_array, query, link_index_size);
+		map<string, double> link_word_stats = Stats::word_stats<Link::FullTextRecord>(link_index_array, query, link_index_size);
 
 		double time_ms = profiler.get();
 

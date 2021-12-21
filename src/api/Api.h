@@ -30,22 +30,22 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextRecord.h"
 
-#include "link_index/LinkFullTextRecord.h"
+#include "link/FullTextRecord.h"
 #include "domain_link/FullTextRecord.h"
 #include "search_engine/SearchAllocation.h"
 
 namespace Api {
 
 	void search(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
 	void search_all(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
 	void word_stats(const std::string &query, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<LinkFullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, std::stringstream &response_stream);
+		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, std::stringstream &response_stream);
 
 	void url(const std::string &url_str, HashTable &hash_table, std::stringstream &response_stream);
 

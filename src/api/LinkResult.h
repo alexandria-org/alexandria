@@ -28,12 +28,12 @@
 
 #include <iostream>
 #include "parser/URL.h"
-#include "link_index/LinkFullTextRecord.h"
+#include "link/FullTextRecord.h"
 
 class LinkResult {
 
 public:
-	LinkResult(const std::string &tsv_data, const LinkFullTextRecord &res);
+	LinkResult(const std::string &tsv_data, const Link::FullTextRecord &res);
 	~LinkResult();
 
 	const URL &source_url() const { return m_source_url; };

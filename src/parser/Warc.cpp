@@ -3,6 +3,7 @@
 #include "tlds.h"
 #include "text/Text.h"
 #include "system/Logger.h"
+#include "transfer/Transfer.h"
 
 using namespace std;
 

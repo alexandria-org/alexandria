@@ -34,7 +34,7 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexer.h"
 #include "full_text/UrlToDomain.h"
-#include "LinkFullTextRecord.h"
+#include "link/FullTextRecord.h"
 #include "domain_link/FullTextRecord.h"
 #include "full_text/FullTextRecord.h"
 
@@ -42,35 +42,39 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-class LinkIndexerRunner {
+namespace Link {
 
-public:
+	class IndexerRunner {
 
-	LinkIndexerRunner(const std::string &db_name, const std::string &domain_db_name, const std::string &hash_table_name, const std::string &domain_hash_table_name,
-		const std::string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
-	~LinkIndexerRunner();
+	public:
 
-	void run(const std::vector<std::string> &local_files);
-	void merge();
-	void sort();
+		IndexerRunner(const std::string &db_name, const std::string &domain_db_name, const std::string &hash_table_name, const std::string &domain_hash_table_name,
+			const std::string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+		~IndexerRunner();
 
-private:
+		void run(const std::vector<std::string> &local_files);
+		void merge();
+		void sort();
 
-	const SubSystem *m_sub_system;
-	const std::string m_cc_batch;
-	const std::string m_db_name;
-	const std::string m_domain_db_name;
-	const std::string m_hash_table_name;
-	const std::string m_domain_hash_table_name;
-	std::mutex m_hash_table_mutexes[Config::ht_num_shards];
-	std::mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
-	std::mutex m_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
-	std::mutex m_domain_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
+	private:
 
-	UrlToDomain *m_url_to_domain;
+		const SubSystem *m_sub_system;
+		const std::string m_cc_batch;
+		const std::string m_db_name;
+		const std::string m_domain_db_name;
+		const std::string m_hash_table_name;
+		const std::string m_domain_hash_table_name;
+		std::mutex m_hash_table_mutexes[Config::ht_num_shards];
+		std::mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
+		std::mutex m_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
+		std::mutex m_domain_link_mutexes[Config::ft_num_partitions][Config::ft_num_shards];
 
-	std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id);
-	std::string run_link_index_thread(const std::vector<std::string> &warc_paths, int id);
-	std::string run_merge_thread(size_t shard_id);
+		UrlToDomain *m_url_to_domain;
 
-};
+		std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id);
+		std::string run_link_index_thread(const std::vector<std::string> &warc_paths, int id);
+		std::string run_merge_thread(size_t shard_id);
+
+	};
+
+}

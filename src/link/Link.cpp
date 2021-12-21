@@ -24,41 +24,50 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "Link.h"
 
-#include <iostream>
-#include <istream>
-#include <vector>
-#include <mutex>
+using namespace std;
 
-#include "parser/URL.h"
-#include "system/SubSystem.h"
-#include "hash_table/HashTableShardBuilder.h"
-#include "full_text/UrlToDomain.h"
-#include "full_text/FullTextShardBuilder.h"
+namespace Link {
 
-class LinkIndexer {
+	Link::Link() {
 
-public:
+	}
 
-	LinkIndexer(int id, const std::string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
-	~LinkIndexer();
+	Link::Link(const string &standard_link_data) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, standard_link_data, boost::is_any_of("\t"));
 
-	void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
-	void write_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
-	void flush_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+			m_source_url = URL(col_values[0], col_values[1]);
+			m_target_url = URL(col_values[2], col_values[3]);
+			m_link_text = col_values[4].substr(0, 1000);
 
-private:
+			m_target_host_hash = m_target_url.host_hash();
+			m_source_harmonic = 0;
+			m_target_harmonic = 0;
+	}
 
-	int m_indexer_id;
-	const std::string m_db_name;
-	const SubSystem *m_sub_system;
-	UrlToDomain *m_url_to_domain;
-	std::hash<std::string> m_hasher;
+	Link::Link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic)
+	:
+		m_source_url(source_url),
+		m_target_url(target_url),
+		m_target_host_hash(target_url.host_hash()),
+		m_source_harmonic(source_harmonic),
+		m_target_harmonic(target_harmonic)
+	{
+	}
 
-	std::map<size_t, std::vector<FullTextShardBuilder<LinkFullTextRecord> *>> m_shards;
+	Link::~Link() {
 
-	void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url, const std::string &link_text,
-		float score);
+	}
 
-};
+	float Link::url_score() const {
+		return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f);
+	}
+
+	float Link::domain_score() const {
+		return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f)/100.0;
+	}
+
+}
+

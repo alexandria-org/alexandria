@@ -26,31 +26,15 @@
 
 #pragma once
 
-#include "parser/URL.h"
+namespace Link {
 
-class Link {
+	struct FullTextRecord {
 
-public:
-	Link();
-	explicit Link(const std::string &standard_link_data);
-	Link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic);
-	~Link();
+		uint64_t m_value;
+		float m_score;
+		uint64_t m_source_domain;
+		uint64_t m_target_hash;
 
-	float url_score() const;
-	float domain_score() const;
+	};
 
-	const URL &source_url() const { return m_source_url; }
-	const URL &target_url() const { return m_target_url; }
-	const uint64_t &target_host_hash() const { return m_target_host_hash; }
-	const float &source_harmonic() const { return m_source_harmonic; }
-	const float &target_harmonic() const { return m_target_harmonic; }
-
-private:
-	URL m_source_url;
-	URL m_target_url;
-	uint64_t m_target_host_hash;
-	float m_source_harmonic;
-	float m_target_harmonic;
-	std::string m_link_text;
-};
-
+}

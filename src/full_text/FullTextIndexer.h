@@ -41,7 +41,7 @@ class FullTextIndexer;
 #include "parser/URL.h"
 #include "system/SubSystem.h"
 #include "hash_table/HashTableShardBuilder.h"
-#include "link_index/Link.h"
+#include "link/Link.h"
 #include "FullTextRecord.h"
 
 class FullTextIndexer {
@@ -61,8 +61,8 @@ public:
 	void flush_cache(std::mutex *write_mutexes);
 	void read_url_to_domain();
 	void write_url_to_domain();
-	void add_domain_link(uint64_t word_hash, const Link &link);
-	void add_url_link(uint64_t word_hash, const Link &link);
+	void add_domain_link(uint64_t word_hash, const Link::Link &link);
+	void add_url_link(uint64_t word_hash, const Link::Link &link);
 
 	bool has_key(uint64_t key) const {
 		return m_url_to_domain->url_to_domain().count(key) > 0;

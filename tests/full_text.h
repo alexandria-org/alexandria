@@ -32,7 +32,6 @@
 #include "full_text/UrlToDomain.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
-#include "link_index/LinkIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
 
 BOOST_AUTO_TEST_SUITE(full_text)
@@ -91,12 +90,12 @@ BOOST_AUTO_TEST_CASE(indexer) {
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
 
 		const string query = "Url1.com";
 		struct SearchMetric metric;
 
-		vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+		vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
 			1000, metric);
 		vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index_array, links, {}, query, 1000, metric);
 
@@ -108,7 +107,7 @@ BOOST_AUTO_TEST_CASE(indexer) {
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("http://url1.com/test").hash());
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
-		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+		FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
 	}
 
 	SearchAllocation::delete_allocation(allocation);
@@ -160,13 +159,13 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
 
 		const string query = "Url8.com";
 		struct SearchMetric metric;
 
 		{
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+			vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
 				1000, metric);
 			vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index_array, links, {}, query, 1000, metric);
 
@@ -179,7 +178,7 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		}
 
 		{
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+			vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
 				1, metric);
 
 			BOOST_CHECK_EQUAL(links.size(), 1);
@@ -187,7 +186,7 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		}
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
-		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+		FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
 	}
 
 	SearchAllocation::delete_allocation(allocation);
@@ -234,7 +233,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 		// Make searches.
 		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-		vector<FullTextIndex<LinkFullTextRecord> *> link_index_array = FullText::create_index_array<LinkFullTextRecord>("test_link_index");
+		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
 		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
 			FullText::create_index_array<DomainLink::FullTextRecord>("test_domain_link_index");
 
@@ -254,7 +253,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			const string query = "Url6.com";
 			struct SearchMetric metric;
 
-			vector<LinkFullTextRecord> links = SearchEngine::search<LinkFullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
+			vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index_array, {}, {}, query,
 				1000, metric);
 			vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
 				domain_link_index_array, {}, {}, query, 1000, metric);
@@ -270,7 +269,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 			BOOST_CHECK_EQUAL(results_no_domainlinks.size(), 2);
 
 			bool has_link = false;
-			for (const LinkFullTextRecord &link : links) {
+			for (const Link::FullTextRecord &link : links) {
 				if (link.m_value == URL("http://url6.com/").link_hash(URL("http://url7.com/test"), "Link to url7.com from url6.com")) {
 					has_link = true;
 				}
@@ -287,7 +286,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 		}
 
 		FullText::delete_index_array<FullTextRecord>(index_array);
-		FullText::delete_index_array<LinkFullTextRecord>(link_index_array);
+		FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
 		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 	}
 

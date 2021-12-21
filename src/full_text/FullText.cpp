@@ -27,7 +27,8 @@
 #include "FullText.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndexerRunner.h"
-#include "link_index/LinkIndexerRunner.h"
+#include "link/IndexerRunner.h"
+#include "transfer/Transfer.h"
 #include "search_engine/SearchEngine.h"
 
 using namespace std;
@@ -263,7 +264,7 @@ namespace FullText {
 	void index_link_files(const string &batch, const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const vector<string> &files, const SubSystem *sub_system, UrlToDomain *url_to_domain) {
 
-		LinkIndexerRunner indexer(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
+		Link::IndexerRunner indexer(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_to_domain);
 		indexer.run(files);
 	}
 
@@ -329,17 +330,17 @@ namespace FullText {
 		return (url.hash() % Config::ft_num_partitions) == partition;
 	}
 
-	size_t link_to_node(const Link &link) {
+	size_t link_to_node(const Link::Link &link) {
 		return link.target_url().host_hash() % Config::nodes_in_cluster;
 	}
 
 	// Returns true if this link belongs on this node.
-	bool should_index_link(const Link &link) {
+	bool should_index_link(const Link::Link &link) {
 		return link_to_node(link) == Config::node_id;
 	}
 
 	// Returns true if this link belongs on this node and in this partition.
-	bool should_index_link(const Link &link, size_t partition) {
+	bool should_index_link(const Link::Link &link, size_t partition) {
 		return link_to_node(link) == Config::node_id && (link.target_url().hash() % Config::ft_num_partitions) == partition;
 	}
 

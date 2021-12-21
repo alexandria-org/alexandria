@@ -38,7 +38,6 @@ template<typename DataRecord> class FullTextIndex;
 #include "FullTextRecord.h"
 #include "FullTextShard.h"
 #include "SearchMetric.h"
-#include "link_index/LinkFullTextRecord.h"
 #include "text/Text.h"
 
 #include "system/Logger.h"

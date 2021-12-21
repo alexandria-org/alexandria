@@ -29,7 +29,7 @@
 
 using namespace std;
 
-LinkResult::LinkResult(const string &tsv_data, const LinkFullTextRecord &res)
+LinkResult::LinkResult(const string &tsv_data, const Link::FullTextRecord &res)
 : m_score(res.m_score), m_link_hash(res.m_value) {
 	size_t pos_start = 0;
 	size_t pos_end = 0;

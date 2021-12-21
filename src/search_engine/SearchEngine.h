@@ -33,7 +33,7 @@
 #include "full_text/FullTextRecord.h"
 #include "full_text/FullTextShard.h"
 #include "full_text/SearchMetric.h"
-#include "link_index/LinkFullTextRecord.h"
+#include "link/FullTextRecord.h"
 #include "domain_link/FullTextRecord.h"
 #include "system/Logger.h"
 #include "system/Profiler.h"
@@ -63,14 +63,14 @@ namespace SearchEngine {
 	*/
 	template<typename DataRecord>
 	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
+		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric);
 
 	/*
 		Only for FullTextRecords since deduplication requires domain hashes.
 	*/
 	vector<FullTextRecord> search_deduplicate(SearchAllocation::Storage<FullTextRecord> *storage,
-		const vector<FullTextIndex<FullTextRecord> *> &index_array, const vector<LinkFullTextRecord> &links,
+		const vector<FullTextIndex<FullTextRecord> *> &index_array, const vector<Link::FullTextRecord> &links,
 		const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
 
 	/*
@@ -128,7 +128,7 @@ namespace SearchEngine {
 		Add scores for the given links to the result set. The links are assumed to be ordered by link.m_target_hash ascending.
 	*/
 	template<typename DataRecord>
-	size_t apply_link_scores(const vector<LinkFullTextRecord> &links, FullTextResultSet<DataRecord> *results) {
+	size_t apply_link_scores(const vector<Link::FullTextRecord> &links, FullTextResultSet<DataRecord> *results) {
 
 		if (typeid(DataRecord) != typeid(FullTextRecord)) return 0;
 		if (links.size() == 0) return 0;
@@ -485,7 +485,7 @@ namespace SearchEngine {
 
 	template <typename DataRecord>
 	FullTextResultSet<DataRecord> *search_partition(SearchAllocation::Storage<DataRecord> *storage,
-			const vector<FullTextShard<DataRecord> *> &shards, const vector<LinkFullTextRecord> &links,
+			const vector<FullTextShard<DataRecord> *> &shards, const vector<Link::FullTextRecord> &links,
 			const vector<DomainLink::FullTextRecord> &domain_links, size_t partition_id, const string &query, size_t limit, struct SearchMetric &metric) {
 
 		reset_search_metric(metric);
@@ -567,7 +567,7 @@ namespace SearchEngine {
 
 	template<typename DataRecord>
 	vector<DataRecord> search_wrapper(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
+		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
 		assert(index_array.size() == Config::ft_num_partitions);
@@ -666,7 +666,7 @@ namespace SearchEngine {
 
 	template<typename DataRecord>
 	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
-		const vector<LinkFullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
+		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
 		vector<DataRecord> complete_result = search_wrapper(storage, index_array, links, domain_links, query, limit, metric);

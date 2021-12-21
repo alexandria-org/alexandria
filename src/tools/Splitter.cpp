@@ -1,5 +1,6 @@
 
 #include "Splitter.h"
+#include "link/Link.h"
 
 using namespace std;
 
@@ -101,7 +102,7 @@ namespace Tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				const Link link(line);
+				const Link::Link link(line);
 				const size_t node_id = FullText::link_to_node(link);
 				cache[node_id].push_back(line);
 			}

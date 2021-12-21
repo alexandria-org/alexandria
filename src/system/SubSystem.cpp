@@ -34,11 +34,11 @@ using namespace std;
 SubSystem::SubSystem() {
 
 	LOG_INFO("download domain_info.tsv");
-	TsvFileRemote domain_index(System::domain_index_filename());
+	File::TsvFileRemote domain_index(System::domain_index_filename());
 	m_domain_index = new Dictionary(domain_index);
 
 	LOG_INFO("download dictionary.tsv");
-	TsvFileRemote dictionary(System::dictionary_filename());
+	File::TsvFileRemote dictionary(System::dictionary_filename());
 	m_dictionary = new Dictionary(dictionary);
 
 	dictionary.read_column_into(0, m_words);

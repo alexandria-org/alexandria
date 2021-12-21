@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(apply_link_scores) {
 	size_t links_applied;
 
 	{
-		vector<LinkFullTextRecord> links;
+		vector<Link::FullTextRecord> links;
 		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(0);
 
 		links_applied = SearchEngine::apply_link_scores(links, results);
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(apply_link_scores) {
 		delete results;
 	}
 
-	vector<LinkFullTextRecord> links = {LinkFullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_hash = 10123}};
+	vector<Link::FullTextRecord> links = {Link::FullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_hash = 10123}};
 	FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(1);
 	FullTextRecord *data = results->data_pointer();
 	data[0] = FullTextRecord{.m_value = 10123, .m_score = 0.1, .m_domain_hash = 9999};

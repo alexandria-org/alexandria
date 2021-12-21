@@ -31,7 +31,7 @@ namespace SearchAllocation {
 	Allocation *create_allocation() {
 		Allocation *allocation = new Allocation;
 		allocation->storage = create_storage<FullTextRecord>();
-		allocation->link_storage = create_storage<LinkFullTextRecord>();
+		allocation->link_storage = create_storage<Link::FullTextRecord>();
 		allocation->domain_link_storage = create_storage<DomainLink::FullTextRecord>();
 		return allocation;
 	}
