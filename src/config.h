@@ -34,7 +34,7 @@ namespace Config {
 	*/
 
 	// Full text indexer config
-	inline const unsigned long long ft_num_shards = 24;
+	inline const unsigned long long ft_num_shards = 1024;
 	inline const unsigned long long ft_num_partitions = 2;
 	inline const unsigned long long ft_max_keys = 0xFFFFFFFF; // Should not be used, remove...
 	inline const unsigned long long ft_max_cache_gb = 30;
@@ -50,7 +50,7 @@ namespace Config {
 	inline const unsigned long long li_indexer_max_cache_size = 500;
 
 	// Hash table indexer config
-	inline const unsigned long long ht_num_shards = 1024;
+	inline const unsigned long long ht_num_shards = 1031;
 	inline const unsigned long long ht_num_buckets = 8;
 	inline const unsigned long long ht_key_size = 8;
 

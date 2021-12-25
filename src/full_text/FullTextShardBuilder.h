@@ -196,6 +196,8 @@ void FullTextShardBuilder<DataRecord>::append() {
 
 	m_records.clear();
 	m_keys.clear();
+	m_records.shrink_to_fit();
+	m_keys.shrink_to_fit();
 }
 
 template<typename DataRecord>
@@ -251,8 +253,8 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 		}
 	}
 
-	delete key_buffer;
-	delete buffer;
+	delete [] key_buffer;
+	delete [] buffer;
 }
 
 template<typename DataRecord>
