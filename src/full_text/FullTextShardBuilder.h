@@ -233,8 +233,22 @@ void FullTextShardBuilder<DataRecord>::read_append_cache() {
 	const size_t buffer_len = 100000;
 	const size_t buffer_size = sizeof(DataRecord) * buffer_len;
 	const size_t key_buffer_size = sizeof(uint64_t) * buffer_len;
-	char *buffer = new char[buffer_size];
-	char *key_buffer = new char[key_buffer_size];
+	char *buffer;
+	char *key_buffer;
+	try {
+		buffer = new char[buffer_size];
+	} catch (std::bad_alloc &exception) {
+		std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+		std::cout << "tried to allocate: " << buffer_size << " bytes" << std::endl;
+		return;
+	}
+	try {
+		key_buffer = new char[key_buffer_size];
+	} catch (std::bad_alloc &exception) {
+		std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+		std::cout << "tried to allocate: " << key_buffer_size << " bytes" << std::endl;
+		return;
+	}
 
 	reader.seekg(0, std::ios::beg);
 
@@ -328,7 +342,13 @@ void FullTextShardBuilder<DataRecord>::read_data_to_cache() {
 	if (file_size == 0) return;
 	reader.seekg(0, std::ios::beg);
 
-	m_buffer = new char[m_buffer_len];
+	try {
+		m_buffer = new char[m_buffer_len];
+	} catch (std::bad_alloc &exception) {
+		std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+		std::cout << "tried to allocate: " << m_buffer_len << " bytes" << std::endl;
+		return;
+	}
 	while (read_page(reader)) {
 	}
 	delete m_buffer;
@@ -345,7 +365,14 @@ bool FullTextShardBuilder<DataRecord>::read_page(std::ifstream &reader) {
 
 	uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
-	char *vector_buffer = new char[num_keys * 8];
+	char *vector_buffer;
+	try {
+		vector_buffer = new char[num_keys * 8];
+	} catch (std::bad_alloc &exception) {
+		std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+		std::cout << "tried to allocate: " << num_keys << " keys" << std::endl;
+		return false;
+	}
 
 	// Read the keys.
 	reader.read(vector_buffer, num_keys * 8);
