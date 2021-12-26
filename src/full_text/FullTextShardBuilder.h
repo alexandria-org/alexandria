@@ -412,10 +412,8 @@ bool FullTextShardBuilder<DataRecord>::read_page(std::ifstream &reader) {
 	size_t total_read_data = 0;
 	size_t key_id = 0;
 	size_t num_records_for_key = lens[key_id] / sizeof(DataRecord);
-	const size_t pos_start = reader.tellg();
 	while (total_read_data < data_size) {
 		const size_t to_read_now = std::min(m_buffer_len, data_size - total_read_data);
-		const size_t pos_now = reader.tellg();
 		reader.read(m_buffer, to_read_now);
 		const size_t read_len = reader.gcount();
 
