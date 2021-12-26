@@ -27,6 +27,7 @@ namespace Config {
 	bool return_snippets = true;
 	size_t shard_hash_table_size = 100000;
 	size_t html_parser_long_text_len = 1000;
+	size_t ft_shard_builder_buffer_len = 240000;
 
 	void read_config(const string &config_file) {
 

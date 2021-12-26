@@ -80,7 +80,7 @@ private:
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 	const size_t m_max_num_keys = 10000;
-	const size_t m_buffer_len = m_max_num_keys * sizeof(DataRecord); // 1m elements
+	const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
 	char *m_buffer;
 
 	std::vector<uint64_t> m_keys;
@@ -412,8 +412,11 @@ bool FullTextShardBuilder<DataRecord>::read_page(std::ifstream &reader) {
 	size_t total_read_data = 0;
 	size_t key_id = 0;
 	size_t num_records_for_key = lens[key_id] / sizeof(DataRecord);
+	const size_t pos_start = reader.tellg();
 	while (total_read_data < data_size) {
-		reader.read(m_buffer, std::min(m_buffer_len, data_size));
+		const size_t to_read_now = std::min(m_buffer_len, data_size - total_read_data);
+		const size_t pos_now = reader.tellg();
+		reader.read(m_buffer, to_read_now);
 		const size_t read_len = reader.gcount();
 
 		if (read_len == 0) {

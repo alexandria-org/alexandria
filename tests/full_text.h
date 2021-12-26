@@ -25,6 +25,7 @@
  */
 
 #include "full_text/FullText.h"
+#include "api/Api.h"
 #include "parser/URL.h"
 #include "hash_table/HashTable.h"
 #include "hash_table/HashTableHelper.h"
@@ -33,6 +34,10 @@
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextIndexerRunner.h"
 #include "search_engine/SearchEngine.h"
+
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 BOOST_AUTO_TEST_SUITE(full_text)
 
@@ -346,6 +351,47 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	// Reset.
 	Config::nodes_in_cluster = initial_nodes_in_cluster;
 	Config::node_id = 0;
+}
+
+BOOST_AUTO_TEST_CASE(shard_buffer_size) {
+
+	size_t initial_buffer_len = Config::ft_shard_builder_buffer_len;
+	Config::ft_shard_builder_buffer_len = 48;
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_main_index");
+
+	HashTableHelper::truncate("test_main_index");
+
+	// Index full text twice
+	{
+		SubSystem *sub_system = new SubSystem();
+		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
+		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
+	}
+
+	HashTable hash_table("test_main_index");
+	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+
+	{
+		stringstream response_stream;
+		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index_array, {}, {}, allocation, response_stream);
+
+		string response = response_stream.str();
+
+		json json_obj = json::parse(response);
+
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 0);
+
+		BOOST_CHECK(json_obj.contains("results"));
+		BOOST_CHECK_EQUAL(json_obj["results"].size(), 1000);
+	}
+
+	Config::ft_shard_builder_buffer_len = initial_buffer_len;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

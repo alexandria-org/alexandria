@@ -28,6 +28,7 @@ namespace Config {
 	extern bool return_snippets;
 	extern size_t shard_hash_table_size;
 	extern size_t html_parser_long_text_len;
+	extern size_t ft_shard_builder_buffer_len;
 
 	/*
 		Constants only configurable at compilation time.
