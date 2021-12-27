@@ -182,7 +182,7 @@ namespace FullText {
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system,
 		Worker::Status &status) {
 
-		const size_t limit = 500;
+		const size_t limit = 1000;
 		size_t offset = 0;
 
 		while (true) {
