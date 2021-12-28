@@ -238,6 +238,7 @@ size_t FullTextShard<DataRecord>::shard_id() const {
 template<typename DataRecord>
 size_t FullTextShard<DataRecord>::disk_size() const {
 	std::ifstream reader(filename(), std::ios::binary);
+	if (!reader.is_open()) return 0;
 	reader.seekg(0, std::ios::end);
 	const size_t file_size = reader.tellg();
 	return file_size;
@@ -245,6 +246,6 @@ size_t FullTextShard<DataRecord>::disk_size() const {
 
 template<typename DataRecord>
 bool FullTextShard<DataRecord>::empty() const {
-	return disk_size() > 0;
+	return disk_size() == 0;
 }
 

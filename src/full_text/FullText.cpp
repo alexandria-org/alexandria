@@ -140,7 +140,6 @@ namespace FullText {
 	bool is_indexed() {
 		// Check if main_index, link_index and domain_link_index has at least one url.
 		FullTextShard<FullTextRecord> shard1("main_index_0", 0, 0);
-		cout << shard1.filename() << endl;
 
 		return !shard1.empty();
 	}
