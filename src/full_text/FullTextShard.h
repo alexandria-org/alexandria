@@ -58,12 +58,12 @@ class FullTextShard {
 
 public:
 
-	FullTextShard(const std::string &db_name, size_t shard_id, size_t partition);
+	FullTextShard(const std::string &db_name, size_t shard_id);
 	~FullTextShard();
 
-	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set);
-	size_t read_key_pos(std::ifstream &reader, uint64_t key);
-	size_t total_num_results(uint64_t key);
+	void find(uint64_t key, FullTextResultSet<DataRecord> *result_set) const;
+	size_t read_key_pos(std::ifstream &reader, uint64_t key) const;
+	size_t total_num_results(uint64_t key) const;
 
 	std::string mountpoint() const;
 	std::string filename() const;
@@ -77,18 +77,12 @@ private:
 
 	std::string m_db_name;
 	size_t m_shard_id;
-	size_t m_partition;
-
-	size_t m_data_start;
-	size_t m_pos_start;
-	size_t m_len_start;
-	size_t m_total_start;
 	
 };
 
 template<typename DataRecord>
-FullTextShard<DataRecord>::FullTextShard(const std::string &db_name, size_t shard, size_t partition)
-: m_db_name(db_name), m_shard_id(shard), m_partition(partition) {
+FullTextShard<DataRecord>::FullTextShard(const std::string &db_name, size_t shard)
+: m_db_name(db_name), m_shard_id(shard) {
 }
 
 template<typename DataRecord>
@@ -96,7 +90,7 @@ FullTextShard<DataRecord>::~FullTextShard() {
 }
 
 template<typename DataRecord>
-void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord> *result_set) {
+void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord> *result_set) const {
 
 	std::ifstream reader(filename(), std::ios::binary);
 
@@ -159,7 +153,7 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
  * Reads the exact position of the key, returns SIZE_MAX if the key was not found.
  * */
 template<typename DataRecord>
-size_t FullTextShard<DataRecord>::read_key_pos(std::ifstream &reader, uint64_t key) {
+size_t FullTextShard<DataRecord>::read_key_pos(std::ifstream &reader, uint64_t key) const {
 
 	const size_t hash_pos = key % Config::shard_hash_table_size;
 
@@ -174,7 +168,7 @@ size_t FullTextShard<DataRecord>::read_key_pos(std::ifstream &reader, uint64_t k
 }
 
 template<typename DataRecord>
-size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
+size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) const {
 
 	std::ifstream reader(filename(), std::ios::binary);
 
@@ -216,8 +210,7 @@ size_t FullTextShard<DataRecord>::total_num_results(uint64_t key) {
 
 template<typename DataRecord>
 std::string FullTextShard<DataRecord>::mountpoint() const {
-	if (m_partition < 1) return std::to_string(m_shard_id % 4);
-	return std::to_string((m_shard_id % 4) + 4);
+	return std::to_string(m_shard_id % 8);
 }
 
 template<typename DataRecord>

@@ -39,21 +39,16 @@ namespace Link {
 	: m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 	{
 		m_url_to_domain = url_to_domain;
-		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-			for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
-				FullTextShardBuilder<::Link::FullTextRecord> *shard_builder =
-					new FullTextShardBuilder<::Link::FullTextRecord>(m_db_name + "_" + to_string(partition), shard_id, partition,
-						Config::li_cached_bytes_per_shard);
-				m_shards[partition].push_back(shard_builder);
-			}
+		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+			FullTextShardBuilder<::Link::FullTextRecord> *shard_builder =
+				new FullTextShardBuilder<::Link::FullTextRecord>(m_db_name, shard_id, Config::li_cached_bytes_per_shard);
+			m_shards.push_back(shard_builder);
 		}
 	}
 
 	Indexer::~Indexer() {
-		for (auto &iter : m_shards) {
-			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
-				delete shard;
-			}
+		for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {
+			delete shard;
 		}
 	}
 
@@ -80,53 +75,43 @@ namespace Link {
 
 				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-				const size_t partition = link_hash % Config::ft_num_partitions;
-
-				add_expanded_data_to_shards(partition, link_hash, source_url, target_url, link_text, source_harmonic);			
+				add_expanded_data_to_shards(link_hash, source_url, target_url, link_text, source_harmonic);			
 			}
 		}
 
 		// sort shards.
-		for (auto &iter : m_shards) {
-			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
-				shard->sort_cache();
-			}
+		for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {
+			shard->sort_cache();
 		}
 	}
 
-	void Indexer::write_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
+	void Indexer::write_cache(mutex write_mutexes[Config::ft_num_shards]) {
 		{
-			for (auto &iter : m_shards) {
-				size_t idx = 0;
-				for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
-					if (shard->full()) {
-						write_mutexes[iter.first][idx].lock();
-						shard->append();
-						write_mutexes[iter.first][idx].unlock();
-					}
-
-					idx++;
-				}
-			}
-		}
-	}
-
-	void Indexer::flush_cache(mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]) {
-		{
-			for (auto &iter : m_shards) {
-				size_t idx = 0;
-				for (FullTextShardBuilder<::Link::FullTextRecord> *shard : iter.second) {
-					write_mutexes[iter.first][idx].lock();
+			size_t idx = 0;
+			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {
+				if (shard->full()) {
+					write_mutexes[idx].lock();
 					shard->append();
-					write_mutexes[iter.first][idx].unlock();
-
-					idx++;
+					write_mutexes[idx].unlock();
 				}
+				idx++;
 			}
 		}
 	}
 
-	void Indexer::add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
+	void Indexer::flush_cache(mutex write_mutexes[Config::ft_num_shards]) {
+		{
+			size_t idx = 0;
+			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {
+				write_mutexes[idx].lock();
+				shard->append();
+				write_mutexes[idx].unlock();
+				idx++;
+			}
+		}
+	}
+
+	void Indexer::add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
 		const string &link_text, float score) {
 
 		vector<string> words = Text::get_expanded_full_text_words(link_text);
@@ -135,7 +120,7 @@ namespace Link {
 			const uint64_t word_hash = m_hasher(word);
 			const size_t shard_id = word_hash % Config::ft_num_shards;
 
-			m_shards[partition][shard_id]->add(word_hash, ::Link::FullTextRecord{.m_value = link_hash, .m_score = score,
+			m_shards[shard_id]->add(word_hash, ::Link::FullTextRecord{.m_value = link_hash, .m_score = score,
 				.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});
 		}
 	}

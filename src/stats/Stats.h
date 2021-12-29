@@ -36,7 +36,7 @@ namespace Stats {
 	std::hash<std::string> hasher;
 
 	template<typename DataRecord>
-	std::map<std::string, double> word_stats(std::vector<FullTextIndex<DataRecord> *> index_array, const std::string &query, size_t index_size);
+	std::map<std::string, double> word_stats(const FullTextIndex<DataRecord> &index, const std::string &query, size_t index_size);
 
 	template<typename DataRecord>
 	std::map<std::string, double> get_word_counts(const std::vector<FullTextShard<DataRecord> *> &shards, const std::string &query) {
@@ -60,24 +60,9 @@ namespace Stats {
 	}
 
 	template<typename DataRecord>
-	std::map<std::string, double> word_stats(std::vector<FullTextIndex<DataRecord> *> index_array, const std::string &query, size_t index_size) {
+	std::map<std::string, double> word_stats(const FullTextIndex<DataRecord> &index, const std::string &query, size_t index_size) {
 
-		std::vector<std::future<std::map<std::string, double>>> futures;
-
-		size_t idx = 0;
-		for (FullTextIndex<DataRecord> *index : index_array) {
-			std::future<std::map<std::string, double>> future = async(get_word_counts<DataRecord>, index->shards(), query);
-			futures.push_back(move(future));
-			idx++;
-		}
-
-		std::map<std::string, double> complete_result;
-		for (auto &future : futures) {
-			std::map<std::string, double> result = future.get();
-			for (const auto &iter : result) {
-				complete_result[iter.first] += (double)iter.second;
-			}
-		}
+		std::map<std::string, double> complete_result = get_word_counts<DataRecord>(index.shards(), query);
 
 		for (const auto &iter : complete_result) {
 			complete_result[iter.first] /= index_size;

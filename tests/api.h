@@ -65,12 +65,12 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
+		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("Meta Description Text", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("more uniq", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -127,10 +127,52 @@ BOOST_AUTO_TEST_CASE(api_search) {
 		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
 
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
+	SearchAllocation::delete_allocation(allocation);
+}
+
+/*
+ * Index without snippets and see that you get url hashes in binary format from /
+ * */
+BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
+
+	Config::return_snippets = false;
+	Config::n_grams = 5;
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("test_main_index");
+	FullText::truncate_index("test_link_index");
+
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
+	// Index full text
+	{
+		SubSystem *sub_system = new SubSystem();
+		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+	}
+
+	HashTable hash_table("test_main_index");
+	HashTable link_hash_table("test_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+
+	{
+		stringstream response_stream;
+		Api::ids("url1.com h1 text", index, allocation, response_stream);
+
+		string response = response_stream.str();
+
+		const char *str = response.c_str();
+
+		BOOST_CHECK_EQUAL(response.size(), 1 * sizeof(uint64_t));
+		BOOST_CHECK_EQUAL(*((uint64_t *)&str[0]), URL("http://url1.com/test").hash());
+	}
 
 	SearchAllocation::delete_allocation(allocation);
+
+	Config::return_snippets = true;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_compact) {
@@ -163,12 +205,12 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
+		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -185,7 +227,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 	{
 
 		stringstream response_stream;
-		Api::word_stats("Meta Description Text", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -206,7 +248,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("more uniq", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -223,9 +265,6 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 		BOOST_CHECK(json_obj["index"].contains("total"));
 		BOOST_CHECK_EQUAL(json_obj["index"]["total"], 8);
 	}
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
 
 	SearchAllocation::delete_allocation(allocation);
 }
@@ -264,14 +303,13 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
-	vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLink::FullTextRecord>("test_domain_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
+	FullTextIndex<DomainLink::FullTextRecord> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+		Api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -286,10 +324,6 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 		BOOST_CHECK(json_obj["results"][0].contains("url"));
 		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://url1.com/test");
 	}
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
-	FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 	SearchAllocation::delete_allocation(allocation);
 }
@@ -324,14 +358,13 @@ BOOST_AUTO_TEST_CASE(many_links) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
-	vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLink::FullTextRecord>("test_domain_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
+	FullTextIndex<DomainLink::FullTextRecord> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+		Api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -342,10 +375,6 @@ BOOST_AUTO_TEST_CASE(many_links) {
 		BOOST_CHECK_EQUAL(json_obj["total_found"], 6);
 		BOOST_CHECK_EQUAL(json_obj["link_url_matches"], 15);
 	}
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
-	FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 	SearchAllocation::delete_allocation(allocation);
 
@@ -382,12 +411,12 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::word_stats("uniq", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -408,7 +437,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("test07.links.gz", index_array, link_index_array, hash_table.size(), link_hash_table.size(), response_stream);
+		Api::word_stats("test07.links.gz", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -419,9 +448,6 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		BOOST_CHECK(json_obj.contains("time_ms"));
 	}
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
 }
 
 BOOST_AUTO_TEST_CASE(api_hash_table) {

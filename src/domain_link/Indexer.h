@@ -48,8 +48,8 @@ namespace DomainLink {
 		~Indexer();
 
 		void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
-		void write_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
-		void flush_cache(std::mutex write_mutexes[Config::ft_num_partitions][Config::ft_num_shards]);
+		void write_cache(std::mutex write_mutexes[Config::ft_num_shards]);
+		void flush_cache(std::mutex write_mutexes[Config::ft_num_shards]);
 
 	private:
 
@@ -59,9 +59,9 @@ namespace DomainLink {
 		UrlToDomain *m_url_to_domain;
 		std::hash<std::string> m_hasher;
 
-		std::map<size_t, std::vector<FullTextShardBuilder<DomainLink::FullTextRecord> *>> m_shards;
+		std::vector<FullTextShardBuilder<DomainLink::FullTextRecord> *> m_shards;
 
-		void add_expanded_data_to_shards(size_t partition, uint64_t link_hash, const URL &source_url, const URL &target_url,
+		void add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
 			const std::string &link_text, float score);
 
 	};

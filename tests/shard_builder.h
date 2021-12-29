@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_SUITE(shard_builder)
 
 BOOST_AUTO_TEST_CASE(shard_builder) {
 
-	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10, 0);
+	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10);
 
 	builder.truncate();
 	builder.truncate_cache_files();
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 	builder.merge();
 
-	FullTextShard<FullTextRecord> shard("single_db_test", 10, 0);
+	FullTextShard<FullTextRecord> shard("single_db_test", 10);
 
 	FullTextResultSet<FullTextRecord> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
 	shard.find(123456ull, &result_set);
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 BOOST_AUTO_TEST_CASE(shard_builder2) {
 
-	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10, 0);
+	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10);
 
 	builder.truncate();
 	builder.truncate_cache_files();
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 	builder.append();
 	builder.merge();
 
-	FullTextShard<FullTextRecord> shard("single_db_test", 10, 0);
+	FullTextShard<FullTextRecord> shard("single_db_test", 10);
 
 	FullTextResultSet<FullTextRecord> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
 	shard.find(123456ull, &result_set);

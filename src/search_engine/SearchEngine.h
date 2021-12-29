@@ -62,7 +62,7 @@ namespace SearchEngine {
 		Our main search routine, no deduplication just raw search.
 	*/
 	template<typename DataRecord>
-	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
+	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric);
 
@@ -70,7 +70,7 @@ namespace SearchEngine {
 		Only for FullTextRecords since deduplication requires domain hashes.
 	*/
 	vector<FullTextRecord> search_deduplicate(SearchAllocation::Storage<FullTextRecord> *storage,
-		const vector<FullTextIndex<FullTextRecord> *> &index_array, const vector<Link::FullTextRecord> &links,
+		const FullTextIndex<FullTextRecord> &index, const vector<Link::FullTextRecord> &links,
 		const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric);
 
 	/*
@@ -78,8 +78,12 @@ namespace SearchEngine {
 		or equal to Config::n_gram.
 	*/
 	template<typename DataRecord>
-	vector<DataRecord> search_exact(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,	
+	vector<DataRecord> search_exact(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const string &query, size_t limit, struct SearchMetric &metric);
+
+	template<typename DataRecord>
+	vector<DataRecord> search_ids(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
+		const string &query, size_t limit);
 
 }
 
@@ -484,26 +488,22 @@ namespace SearchEngine {
 	}
 
 	template <typename DataRecord>
-	FullTextResultSet<DataRecord> *search_partition(SearchAllocation::Storage<DataRecord> *storage,
+	FullTextResultSet<DataRecord> *make_search(SearchAllocation::Storage<DataRecord> *storage,
 			const vector<FullTextShard<DataRecord> *> &shards, const vector<Link::FullTextRecord> &links,
-			const vector<DomainLink::FullTextRecord> &domain_links, size_t partition_id, const string &query, size_t limit, struct SearchMetric &metric) {
+			const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit, struct SearchMetric &metric) {
 
 		reset_search_metric(metric);
 
 		vector<string> words = Text::get_full_text_words(query, Config::query_max_words);
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
-		if (storage->result_sets[partition_id].size() == 0) {
-			LOG_ERROR("Non empty result_set passed to search_partition");
-		}
-
-		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(storage->result_sets[partition_id], shards, words);
+		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(storage->result_sets, shards, words);
 
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
 
 			// We need to calculate the intersection of the given results.
-			flat_result = storage->intersected_result[partition_id];
+			flat_result = storage->intersected_result;
 			flat_result->resize(0);
 			calculate_intersection<DataRecord>(result_vector, flat_result);
 
@@ -527,25 +527,21 @@ namespace SearchEngine {
 	}
 
 	template <typename DataRecord>
-	FullTextResultSet<DataRecord> *search_partition_exact(SearchAllocation::Storage<DataRecord> *storage,
-			const vector<FullTextShard<DataRecord> *> &shards, size_t partition_id, const string &query, size_t limit, struct SearchMetric &metric) {
+	FullTextResultSet<DataRecord> *make_search_exact(SearchAllocation::Storage<DataRecord> *storage,
+			const vector<FullTextShard<DataRecord> *> &shards, const string &query, size_t limit, struct SearchMetric &metric) {
 
 		reset_search_metric(metric);
 
 		vector<string> words = Text::get_full_text_words(query, Config::query_max_words);
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
-		if (storage->result_sets[partition_id].size() == 0) {
-			LOG_ERROR("Non empty result_set passed to search_partition");
-		}
-
-		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards_exact<DataRecord>(storage->result_sets[partition_id], shards, words);
+		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards_exact<DataRecord>(storage->result_sets, shards, words);
 
 		FullTextResultSet<DataRecord> *flat_result;
 		if (result_vector.size() > 1) {
 
 			// We need to calculate the intersection of the given results.
-			flat_result = storage->intersected_result[partition_id];
+			flat_result = storage->intersected_result;
 			flat_result->resize(0);
 			calculate_intersection<DataRecord>(result_vector, flat_result);
 
@@ -566,48 +562,14 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search_wrapper(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
+	vector<DataRecord> search_wrapper(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
-		assert(index_array.size() == Config::ft_num_partitions);
 
-		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
+		FullTextResultSet<DataRecord> *result = make_search<DataRecord>(storage, index.shards(), links, domain_links, query, limit, metric);
 
-		vector<future<FullTextResultSet<DataRecord> *>> futures;
-
-		size_t partition_id = 0;
-		for (FullTextIndex<DataRecord> *index : index_array) {
-
-			auto fut = async(search_partition<DataRecord>, storage, index->shards(), links, domain_links, partition_id, query, limit,
-				std::ref(metrics_vector[partition_id]));
-
-			futures.push_back(move(fut));
-
-			partition_id++;
-		}
-
-		vector<span<DataRecord> *> result_arrays;
-		vector<FullTextResultSet<DataRecord> *> result_pointers;
-		for (auto &fut : futures) {
-			FullTextResultSet<DataRecord> *result = fut.get();
-			result_pointers.push_back(result);
-			result_arrays.push_back(result->span_pointer());
-		}
-
-		vector<DataRecord> complete_result;
-		Sort::merge_arrays(result_arrays, [](const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
-		}, complete_result);
-
-		metric.m_total_found = 0;
-		metric.m_link_domain_matches = 0;
-		metric.m_link_url_matches = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_found += m.m_total_found;
-			metric.m_link_domain_matches += m.m_link_domain_matches;
-			metric.m_link_url_matches += m.m_link_url_matches;
-		}
+		vector<DataRecord> complete_result(result->span_pointer()->begin(), result->span_pointer()->end());
 
 		// Sort.
 		sort_by_score<DataRecord>(complete_result);
@@ -616,47 +578,12 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search_wrapper_exact(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
+	vector<DataRecord> search_wrapper_exact(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const string &query, size_t limit, struct SearchMetric &metric) {
 
-		assert(index_array.size() == Config::ft_num_partitions);
+		FullTextResultSet<DataRecord> *result = make_search_exact<DataRecord>(storage, index.shards(), query, limit, metric);
 
-		vector<struct SearchMetric> metrics_vector(index_array.size(), SearchMetric{});
-
-		vector<future<FullTextResultSet<DataRecord> *>> futures;
-
-		size_t partition_id = 0;
-		for (FullTextIndex<DataRecord> *index : index_array) {
-
-			auto fut = async(search_partition_exact<DataRecord>, storage, index->shards(), partition_id, query, limit,
-				std::ref(metrics_vector[partition_id]));
-
-			futures.push_back(move(fut));
-
-			partition_id++;
-		}
-
-		vector<span<DataRecord> *> result_arrays;
-		vector<FullTextResultSet<DataRecord> *> result_pointers;
-		for (auto &fut : futures) {
-			FullTextResultSet<DataRecord> *result = fut.get();
-			result_pointers.push_back(result);
-			result_arrays.push_back(result->span_pointer());
-		}
-
-		vector<DataRecord> complete_result;
-		Sort::merge_arrays(result_arrays, [](const DataRecord &a, const DataRecord &b) {
-			return a.m_value < b.m_value;
-		}, complete_result);
-
-		metric.m_total_found = 0;
-		metric.m_link_domain_matches = 0;
-		metric.m_link_url_matches = 0;
-		for (const struct SearchMetric &m : metrics_vector) {
-			metric.m_total_found += m.m_total_found;
-			metric.m_link_domain_matches += m.m_link_domain_matches;
-			metric.m_link_url_matches += m.m_link_url_matches;
-		}
+		vector<DataRecord> complete_result(result->span_pointer()->begin(), result->span_pointer()->end());
 
 		// Sort.
 		sort_by_score<DataRecord>(complete_result);
@@ -665,11 +592,11 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,
+	vector<DataRecord> search(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const vector<Link::FullTextRecord> &links, const vector<DomainLink::FullTextRecord> &domain_links, const string &query, size_t limit,
 		struct SearchMetric &metric) {
 
-		vector<DataRecord> complete_result = search_wrapper(storage, index_array, links, domain_links, query, limit, metric);
+		vector<DataRecord> complete_result = search_wrapper(storage, index, links, domain_links, query, limit, metric);
 		
 		if (complete_result.size() > limit) {
 			complete_result.resize(limit);
@@ -679,16 +606,31 @@ namespace SearchEngine {
 	}
 
 	template<typename DataRecord>
-	vector<DataRecord> search_exact(SearchAllocation::Storage<DataRecord> *storage, const vector<FullTextIndex<DataRecord> *> &index_array,	
+	vector<DataRecord> search_exact(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const string &query, size_t limit, struct SearchMetric &metric) {
 
-		vector<DataRecord> complete_result = search_wrapper_exact(storage, index_array, query, limit, metric);
+		vector<DataRecord> complete_result = search_wrapper_exact(storage, index, query, limit, metric);
 		
 		if (complete_result.size() > limit) {
 			complete_result.resize(limit);
 		}
 
 		return complete_result;
+	}
+
+	template<typename DataRecord>
+	vector<DataRecord> search_ids(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
+		const string &query, size_t limit) {
+
+		vector<string> words = Text::get_expanded_full_text_words(query);
+
+		uint64_t key = Hash::str(boost::algorithm::join(words, " "));
+
+		index.shards()[key % Config::ft_num_shards]->find(key, storage->result_sets[0]);
+
+		vector<DataRecord> ret(storage->result_sets[0]->span_pointer()->begin(), storage->result_sets[0]->span_pointer()->end());
+
+		return ret;
 	}
 
 }

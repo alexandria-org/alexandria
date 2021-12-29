@@ -47,8 +47,8 @@ class FullTextShardBuilder {
 
 public:
 
-	FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition);
-	FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard);
+	FullTextShardBuilder(const std::string &db_name, size_t shard_id);
+	FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t bytes_per_shard);
 	~FullTextShardBuilder();
 
 	void add(uint64_t key, const DataRecord &record);
@@ -76,7 +76,6 @@ private:
 	const std::string m_db_name;
 	const size_t m_shard_id;
 	const size_t m_max_cache_size;
-	const size_t m_partition;
 
 	const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 	const size_t m_max_num_keys = 10000;
@@ -101,13 +100,13 @@ private:
 };
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id)
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)) {
 }
 
 template<typename DataRecord>
-FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t partition, size_t bytes_per_shard)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)), m_partition(partition) {
+FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id, size_t bytes_per_shard)
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(bytes_per_shard / sizeof(DataRecord)) {
 }
 
 template<typename DataRecord>
@@ -125,7 +124,7 @@ void FullTextShardBuilder<DataRecord>::add(uint64_t key, const DataRecord &recor
 
 template<typename DataRecord>
 void FullTextShardBuilder<DataRecord>::sort_cache() {
-	const size_t max_results_per_partition = Config::ft_max_results_per_section * Config::ft_max_sections;
+	const size_t max_results = Config::ft_max_results_per_section * Config::ft_max_sections;
 	for (auto &iter : m_cache) {
 		// Make elements unique.
 		std::sort(iter.second.begin(), iter.second.end(), [](const DataRecord &a, const DataRecord &b) {
@@ -144,9 +143,9 @@ void FullTextShardBuilder<DataRecord>::sort_cache() {
 				return a.m_score > b.m_score;
 			});
 
-			// Cap results at the maximum number of results per partition.
-			if (iter.second.size() > max_results_per_partition) {
-				iter.second.resize(max_results_per_partition);
+			// Cap results at the maximum number of results.
+			if (iter.second.size() > max_results) {
+				iter.second.resize(max_results);
 			}
 
 			// Order each section by value.
@@ -542,8 +541,7 @@ void FullTextShardBuilder<DataRecord>::reset_key_file(std::ofstream &key_writer)
 
 template<typename DataRecord>
 std::string FullTextShardBuilder<DataRecord>::mountpoint() const {
-	if (m_partition < 1) return std::to_string(m_shard_id % 4);
-	return std::to_string((m_shard_id % 4) + 4);
+	return std::to_string(m_shard_id % 8);
 }
 
 template<typename DataRecord>

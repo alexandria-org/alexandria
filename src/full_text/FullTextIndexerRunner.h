@@ -47,12 +47,11 @@ public:
 	FullTextIndexerRunner(const std::string &db_name, const std::string &hash_table_name, const SubSystem *sub_system);
 	~FullTextIndexerRunner();
 
-	void run(size_t partition, size_t max_partitions);
-	void run(const std::vector<std::string> &local_files, size_t partition);
+	void run(const std::vector<std::string> &local_files);
 	void run_link();
-	void merge(size_t partition);
-	void sort(size_t partition);
-	void truncate_cache(size_t partition);
+	void merge();
+	void sort();
+	void truncate_cache();
 
 private:
 
@@ -67,7 +66,7 @@ private:
 
 	bool m_did_allocate_sub_system;
 
-	std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id, size_t partition);
-	std::string run_merge_thread(size_t shard_id, size_t partition);
+	std::string run_index_thread_with_local_files(const std::vector<std::string> &local_files, int id);
+	std::string run_merge_thread(size_t shard_id);
 
 };

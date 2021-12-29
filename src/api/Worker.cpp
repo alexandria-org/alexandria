@@ -29,19 +29,14 @@ namespace Worker {
 		HashTable hash_table_link("link_index");
 		HashTable hash_table_domain_link("domain_link_index");
 
-		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index");
-		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("link_index");
-		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
-			FullText::create_index_array<DomainLink::FullTextRecord>("domain_link_index");
+		FullTextIndex<FullTextRecord> index("main_index");
+		FullTextIndex<Link::FullTextRecord> link_index("link_index");
+		FullTextIndex<DomainLink::FullTextRecord> domain_link_index("domain_link_index");
 
 		stringstream response_stream;
-		Api::search(query, hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+		Api::search(query, hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		cout << response_stream.rdbuf() << endl;
-
-		FullText::delete_index_array<FullTextRecord>(index_array);
-		FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
-		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 		SearchAllocation::delete_allocation(allocation);
 	}
@@ -67,11 +62,9 @@ namespace Worker {
 		HashTable hash_table_link("link_index");
 		HashTable hash_table_domain_link("domain_link_index");
 
-		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("main_index");
-		vector<FullTextIndex<Link::FullTextRecord> *> link_index_array =
-			FullText::create_index_array<Link::FullTextRecord>("link_index");
-		vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
-			FullText::create_index_array<DomainLink::FullTextRecord>("domain_link_index");
+		FullTextIndex<FullTextRecord> index("main_index");
+		FullTextIndex<Link::FullTextRecord> link_index("link_index");
+		FullTextIndex<DomainLink::FullTextRecord> domain_link_index("domain_link_index");
 
 		LOG_INFO("Server has started...");
 
@@ -105,11 +98,11 @@ namespace Worker {
 			}
 
 			if (query.find("q") != query.end() && deduplicate) {
-				Api::search(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+				Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 			} else if (query.find("q") != query.end() && !deduplicate) {
-				Api::search_all(query["q"], hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+				Api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 			} else if (query.find("s") != query.end()) {
-				Api::word_stats(query["s"], index_array, link_index_array, hash_table.size(), hash_table_link.size(), response_stream);
+				Api::word_stats(query["s"], index, link_index, hash_table.size(), hash_table_link.size(), response_stream);
 			} else if (query.find("u") != query.end()) {
 				Api::url(query["u"], hash_table, response_stream);
 			}
@@ -118,10 +111,6 @@ namespace Worker {
 
 			FCGX_Finish_r(&request);
 		}
-
-		FullText::delete_index_array<FullTextRecord>(index_array);
-		FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
-		FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 		SearchAllocation::delete_allocation(allocation);
 

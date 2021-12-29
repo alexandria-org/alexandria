@@ -52,11 +52,11 @@ BOOST_AUTO_TEST_CASE(deduplication) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
 
 	{
 		stringstream response_stream;
-		Api::search("The Wikipedia", hash_table, index_array, {}, {}, allocation, response_stream);
+		Api::search("The Wikipedia", hash_table, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -110,12 +110,12 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
 	HashTable hash_table("test_main_index");
 	HashTable link_hash_table("test_link_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
+		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -127,9 +127,6 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 		BOOST_CHECK(json_obj.contains("results"));
 		BOOST_CHECK_EQUAL(json_obj["results"].size(), 1);
 	}
-
-	FullText::delete_index_array(index_array);
-	FullText::delete_index_array(link_index_array);
 
 	SearchAllocation::delete_allocation(allocation);
 
@@ -169,14 +166,13 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
-	vector<FullTextIndex<Link::FullTextRecord> *> link_index_array = FullText::create_index_array<Link::FullTextRecord>("test_link_index");
-	vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array =
-		FullText::create_index_array<DomainLink::FullTextRecord>("test_domain_link_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
+	FullTextIndex<DomainLink::FullTextRecord> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url2.com", hash_table, index_array, link_index_array, {}, allocation, response_stream);
+		Api::search("url2.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -191,7 +187,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search_all("site:url2.com", hash_table, index_array, link_index_array, domain_link_index_array, allocation, response_stream);
+		Api::search_all("site:url2.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -203,10 +199,6 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 		BOOST_CHECK(json_obj.contains("results"));
 		BOOST_CHECK_EQUAL(json_obj["results"].size(), 19);
 	}
-
-	FullText::delete_index_array<FullTextRecord>(index_array);
-	FullText::delete_index_array<Link::FullTextRecord>(link_index_array);
-	FullText::delete_index_array<DomainLink::FullTextRecord>(domain_link_index_array);
 
 	SearchAllocation::delete_allocation(allocation);
 	

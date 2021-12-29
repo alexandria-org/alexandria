@@ -48,11 +48,11 @@ class FullTextIndexer {
 
 public:
 
-	FullTextIndexer(int id, const std::string &db_name, size_t partition, const SubSystem *sub_system, UrlToDomain *url_to_domain);
+	FullTextIndexer(int id, const std::string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain);
 	~FullTextIndexer();
 
 	size_t add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream,
-		const std::vector<size_t> &cols, const std::vector<float> &scores, size_t partition, const std::string &batch);
+		const std::vector<size_t> &cols, const std::vector<float> &scores, const std::string &batch);
 	void add_link_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
 	void add_text(std::vector<HashTableShardBuilder *> &shard_builders, const std::string &key, const std::string &text,
 		float score);

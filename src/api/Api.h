@@ -44,17 +44,34 @@ namespace SearchAllocation {
 
 namespace Api {
 
-	void search(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+	void search(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
-	void search_all(const std::string &query, HashTable &hash_table, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, std::vector<FullTextIndex<DomainLink::FullTextRecord> *> domain_link_index_array,
+	void search(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
+		const FullTextIndex<Link::FullTextRecord> &link_index,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
 
-	void word_stats(const std::string &query, std::vector<FullTextIndex<FullTextRecord> *> index_array,
-		std::vector<FullTextIndex<Link::FullTextRecord> *> link_index_array, size_t index_size, size_t link_index_size, std::stringstream &response_stream);
+	void search(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
+		const FullTextIndex<Link::FullTextRecord> &link_index, const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index,
+		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
+
+	void search_all(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
+		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
+
+	void search_all(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
+		const FullTextIndex<Link::FullTextRecord> &link_index,
+		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
+
+	void search_all(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
+		const FullTextIndex<Link::FullTextRecord> &link_index, const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index,
+		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
+
+	void word_stats(const std::string &query, const FullTextIndex<FullTextRecord> &index, const FullTextIndex<Link::FullTextRecord> &link_index,
+		size_t index_size, size_t link_index_size, std::stringstream &response_stream);
 
 	void url(const std::string &url_str, HashTable &hash_table, std::stringstream &response_stream);
+
+	void ids(const std::string &query, const FullTextIndex<FullTextRecord> &index, SearchAllocation::Allocation *allocation,
+		std::stringstream &response_stream);
 
 }

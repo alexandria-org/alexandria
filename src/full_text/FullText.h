@@ -50,8 +50,6 @@ namespace FullText {
 	std::map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system);
 	void add_words_to_word_map(const vector<string> &words, float score, std::map<uint64_t, float> &word_map);
 
-	vector<string> make_partition_from_files(const vector<string> &files, size_t partition, size_t max_partitions);
-
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset);
 	bool is_indexed();
 	size_t total_urls_in_batches();
@@ -83,31 +81,8 @@ namespace FullText {
 
 	size_t url_to_node(const URL &url);
 	bool should_index_url(const URL &url);
-	bool should_index_url(const URL &url, size_t partition);
-	bool should_index_url_on_partition(const URL &url, size_t partition);
 
 	size_t link_to_node(const Link::Link &link);
 	bool should_index_link(const Link::Link &link);
-	bool should_index_link(const Link::Link &link, size_t partition);
-
-	template<typename DataRecord>
-	vector<FullTextIndex<DataRecord> *> create_index_array(const string &db_name) {
-
-		vector<FullTextIndex<DataRecord> *> index_array;
-		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-			index_array.push_back(new FullTextIndex<DataRecord>(db_name + "_" + std::to_string(partition), partition));
-		}
-
-		return index_array;
-	}
-
-	template<typename DataRecord>
-	void delete_index_array(const vector<FullTextIndex<DataRecord> *> &index_array) {
-
-		for (FullTextIndex<DataRecord> *index : index_array) {
-			delete index;
-		}
-
-	}
 
 }

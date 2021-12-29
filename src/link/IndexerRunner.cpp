@@ -208,26 +208,14 @@ namespace Link {
 
 	string IndexerRunner::run_merge_thread(size_t shard_id) {
 
-		/*
-		FullTextShardBuilder<FullTextRecord> adjustment_shard("adjustments", shard_id);
-		adjustment_shard.merge();
+		{
+			FullTextShardBuilder<::Link::FullTextRecord> shard(m_db_name, shard_id);
+			shard.merge();
+		}
 
-		FullTextShardBuilder<FullTextRecord> domain_adjustment_shard("domain_adjustments", shard_id);
-		domain_adjustment_shard.merge();*/
-
-		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-
-			{
-				const string db_name = m_db_name + "_" + to_string(partition);
-				FullTextShardBuilder<::Link::FullTextRecord> shard(db_name, shard_id, partition);
-				shard.merge();
-			}
-
-			{
-				const string db_name = m_domain_db_name + "_" + to_string(partition);
-				FullTextShardBuilder<::Link::FullTextRecord> shard(db_name, shard_id, partition);
-				shard.merge();
-			}
+		{
+			FullTextShardBuilder<::Link::FullTextRecord> shard(m_domain_db_name, shard_id);
+			shard.merge();
 		}
 
 		return "";

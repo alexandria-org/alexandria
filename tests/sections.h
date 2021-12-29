@@ -59,11 +59,11 @@ BOOST_AUTO_TEST_CASE(sections) {
 	}
 
 	HashTable hash_table("test_main_index");
-	vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+	FullTextIndex<FullTextRecord> index("test_main_index");
 
 	{
 		stringstream response_stream;
-		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index_array, {}, {}, allocation, response_stream);
+		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(sections) {
 		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 0);
 
 		BOOST_CHECK(json_obj.contains("results"));
-		BOOST_CHECK_EQUAL(json_obj["results"].size(), 160);
+		BOOST_CHECK_EQUAL(json_obj["results"].size(), 80);
 	}
 
 	// Reset.

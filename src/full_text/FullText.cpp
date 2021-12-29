@@ -48,16 +48,11 @@ namespace FullText {
 	}
 
 	void truncate_index(const string &index_name) {
-		for (size_t partition = 0; partition < Config::ft_num_partitions; partition++) {
-
-			const string db_name = index_name + "_" + to_string(partition);
-
-			for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
-				FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-					new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id, partition);
-				shard_builder->truncate();
-				delete shard_builder;
-			}
+		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+			FullTextShardBuilder<struct FullTextRecord> *shard_builder =
+				new FullTextShardBuilder<struct FullTextRecord>(index_name, shard_id);
+			shard_builder->truncate();
+			delete shard_builder;
 		}
 	}
 
@@ -99,23 +94,12 @@ namespace FullText {
 		}
 	}
 
-	vector<string> make_partition_from_files(const vector<string> &files, size_t partition, size_t max_partitions) {
-		vector<string> ret;
-		for (size_t i = 0; i < files.size(); i++) {
-			if ((i % max_partitions) == partition) {
-				ret.push_back(files[i]);
-			}
-		}
-
-		return ret;
-	}
-
 	void index_files(const string &batch, const string &db_name, const string &hash_table_name, const vector<string> &files,
 			const SubSystem *sub_system) {
-		for (size_t partition_num = 0; partition_num < Config::ft_num_partitions; partition_num++) {
-			FullTextIndexerRunner indexer(db_name + "_" + to_string(partition_num), hash_table_name, batch, sub_system);
-			indexer.run(files, partition_num);
-		}
+
+		FullTextIndexerRunner indexer(db_name, hash_table_name, batch, sub_system);
+		indexer.run(files);
+
 	}
 
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset) {
@@ -139,7 +123,7 @@ namespace FullText {
 
 	bool is_indexed() {
 		// Check if main_index, link_index and domain_link_index has at least one url.
-		FullTextShard<FullTextRecord> shard1("main_index_0", 0, 0);
+		FullTextShard<FullTextRecord> shard1("main_index_0", 0);
 
 		return !shard1.empty();
 	}
@@ -319,16 +303,6 @@ namespace FullText {
 		return url_to_node(url) == Config::node_id;
 	}
 
-	// Returns true if this url belongs on this node and in this partition.
-	bool should_index_url(const URL &url, size_t partition) {
-		return url_to_node(url) == Config::node_id && (url.hash() % Config::ft_num_partitions) == partition;
-	}
-
-	// Returns true if this url belongs on this partition.
-	bool should_index_url_on_partition(const URL &url, size_t partition) {
-		return (url.hash() % Config::ft_num_partitions) == partition;
-	}
-
 	size_t link_to_node(const Link::Link &link) {
 		return link.target_url().host_hash() % Config::nodes_in_cluster;
 	}
@@ -336,11 +310,6 @@ namespace FullText {
 	// Returns true if this link belongs on this node.
 	bool should_index_link(const Link::Link &link) {
 		return link_to_node(link) == Config::node_id;
-	}
-
-	// Returns true if this link belongs on this node and in this partition.
-	bool should_index_link(const Link::Link &link, size_t partition) {
-		return link_to_node(link) == Config::node_id && (link.target_url().hash() % Config::ft_num_partitions) == partition;
 	}
 
 }

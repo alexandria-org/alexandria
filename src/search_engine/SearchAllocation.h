@@ -44,13 +44,12 @@ namespace SearchAllocation {
 	struct Storage {
 		/*
 			result_sets holds pre-allocated object of class FullTextResultSet.
-			result_sets[0 ... Config::ft_num_partitions][0 ... Config::query_max_words]
-			first element in the map contains the partition number and the second is the index of the queried word
+			result_sets[0 ... Config::query_max_words]
 		*/
-		std::map<size_t, std::vector<FullTextResultSet<DataRecord> *>> result_sets;
+		std::vector<FullTextResultSet<DataRecord> *> result_sets;
 
 		// To hold the intersection of the result sets.
-		std::map<size_t, FullTextResultSet<DataRecord> *> intersected_result;
+		FullTextResultSet<DataRecord> * intersected_result;
 	};
 
 	struct Allocation {
@@ -64,13 +63,10 @@ namespace SearchAllocation {
 		Storage<DataRecord> *storage = new Storage<DataRecord>;
 
 		// Allocate result_sets.
-		for (size_t i = 0; i < Config::ft_num_partitions; i++) {
-			storage->result_sets[i].resize(Config::query_max_words, NULL);
-			for (size_t j = 0; j < Config::query_max_words; j++) {
-				storage->result_sets[i][j] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
-			}
-			storage->intersected_result[i] = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
+		for (size_t j = 0; j < Config::query_max_words; j++) {
+			storage->result_sets.push_back(new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections));
 		}
+		storage->intersected_result = new FullTextResultSet<DataRecord>(Config::ft_max_results_per_section * Config::ft_max_sections);
 
 		return storage;
 	}
@@ -79,13 +75,10 @@ namespace SearchAllocation {
 	void delete_storage(Storage<DataRecord> *storage) {
 
 		// delete result_sets.
-		for (size_t i = 0; i < Config::ft_num_partitions; i++) {
-			for (size_t j = 0; j < Config::query_max_words; j++) {
-				delete storage->result_sets[i][j];
-			}
-			delete storage->intersected_result[i];
+		for (size_t j = 0; j < Config::query_max_words; j++) {
+			delete storage->result_sets[j];
 		}
-
+		delete storage->intersected_result;
 		delete storage;
 	}
 

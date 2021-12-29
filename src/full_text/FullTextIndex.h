@@ -46,28 +46,27 @@ template<typename DataRecord>
 class FullTextIndex {
 
 public:
-	FullTextIndex(const std::string &name, size_t partition);
+	FullTextIndex(const std::string &name);
 	~FullTextIndex();
 
 	size_t disk_size() const;
 
-	const std::vector<FullTextShard<DataRecord> *> &shards() { return m_shards; };
-	const std::vector<FullTextShard<DataRecord> *> *shard_ptr() { return &m_shards; };
+	const std::vector<FullTextShard<DataRecord> *> &shards() const { return m_shards; };
+	const std::vector<FullTextShard<DataRecord> *> *shard_ptr() const { return &m_shards; };
 
 private:
 
 	std::string m_db_name;
-	size_t m_partition;
 	std::vector<FullTextShard<DataRecord> *> m_shards;
 
 };
 
 template<typename DataRecord>
-FullTextIndex<DataRecord>::FullTextIndex(const std::string &db_name, size_t partition)
-: m_db_name(db_name), m_partition(partition)
+FullTextIndex<DataRecord>::FullTextIndex(const std::string &db_name)
+: m_db_name(db_name)
 {
 	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
-		m_shards.push_back(new FullTextShard<DataRecord>(m_db_name, shard_id, partition));
+		m_shards.push_back(new FullTextShard<DataRecord>(m_db_name, shard_id));
 	}
 }
 

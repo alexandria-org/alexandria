@@ -84,20 +84,18 @@ BOOST_AUTO_TEST_CASE(n_gram) {
 		HashTable hash_table("test_main_index");
 
 		// Make searches.
-		vector<FullTextIndex<FullTextRecord> *> index_array = FullText::create_index_array<FullTextRecord>("test_main_index");
+		FullTextIndex<FullTextRecord> index("test_main_index");
 
 		const string query = "The latter is commonly used";
 		struct SearchMetric metric;
 
-		vector<FullTextRecord> results = SearchEngine::search_exact(allocation->storage, index_array, query, 1000, metric);
+		vector<FullTextRecord> results = SearchEngine::search_exact(allocation->storage, index, query, 1000, metric);
 
 		BOOST_CHECK_EQUAL(results.size(), 1);
 		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
 		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
 		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 0);
 		BOOST_CHECK_EQUAL(results[0].m_value, URL("https://en.wikipedia.org/wiki/A").hash());
-
-		FullText::delete_index_array<FullTextRecord>(index_array);
 	}
 
 	SearchAllocation::delete_allocation(allocation);

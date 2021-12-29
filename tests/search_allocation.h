@@ -32,8 +32,6 @@ BOOST_AUTO_TEST_SUITE(search_allocation)
 BOOST_AUTO_TEST_CASE(create) {
 	SearchAllocation::Storage<FullTextRecord> *search_alloc = SearchAllocation::create_storage<FullTextRecord>();
 
-	BOOST_CHECK(search_alloc->result_sets.size() == Config::ft_num_partitions);
-
 	SearchAllocation::delete_storage(search_alloc);
 }
 

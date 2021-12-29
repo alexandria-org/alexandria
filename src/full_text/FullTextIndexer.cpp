@@ -32,13 +32,13 @@
 
 using namespace std;
 
-FullTextIndexer::FullTextIndexer(int id, const string &db_name, size_t partition, const SubSystem *sub_system, UrlToDomain *url_to_domain)
+FullTextIndexer::FullTextIndexer(int id, const string &db_name, const SubSystem *sub_system, UrlToDomain *url_to_domain)
 : m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 {
 	m_url_to_domain = url_to_domain;
 	for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
 		FullTextShardBuilder<struct FullTextRecord> *shard_builder =
-			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id, partition);
+			new FullTextShardBuilder<struct FullTextRecord>(db_name, shard_id);
 		m_shards.push_back(shard_builder);
 	}
 }
@@ -50,7 +50,7 @@ FullTextIndexer::~FullTextIndexer() {
 }
 
 size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-	const vector<size_t> &cols, const vector<float> &scores, size_t partition, const string &batch) {
+	const vector<size_t> &cols, const vector<float> &scores, const string &batch) {
 
 	string line;
 	size_t added_urls = 0;
@@ -60,35 +60,35 @@ size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 		URL url(col_values[0]);
 
-		if (FullText::should_index_url_on_partition(url, partition)) {
+		float harmonic = url.harmonic(m_sub_system);
 
-			float harmonic = url.harmonic(m_sub_system);
+		m_url_to_domain->add_url(url.hash(), url.host_hash());
 
-			m_url_to_domain->add_url(url.hash(), url.host_hash());
+		uint64_t key_hash = url.hash();
 
-			uint64_t key_hash = url.hash();
+		if (Config::return_snippets) {
 			shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line + "\t" + batch);
-
-			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
-
-			size_t score_index = 0;
-			map<uint64_t, float> word_map;
-
-			add_data_to_word_map(word_map, site_colon, 20*harmonic);
-
-			for (size_t col_index : cols) {
-				add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
-				score_index++;
-			}
-			for (const auto &iter : word_map) {
-				const uint64_t word_hash = iter.first;
-				const size_t shard_id = word_hash % Config::ft_num_shards;
-				m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
-			}
-			word_map.clear();
-
-			added_urls++;
 		}
+
+		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+
+		size_t score_index = 0;
+		map<uint64_t, float> word_map;
+
+		add_data_to_word_map(word_map, site_colon, 20*harmonic);
+
+		for (size_t col_index : cols) {
+			add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
+			score_index++;
+		}
+		for (const auto &iter : word_map) {
+			const uint64_t word_hash = iter.first;
+			const size_t shard_id = word_hash % Config::ft_num_shards;
+			m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
+		}
+		word_map.clear();
+
+		added_urls++;
 	}
 
 	return added_urls;

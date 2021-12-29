@@ -36,10 +36,9 @@ namespace Config {
 
 	// Full text indexer config
 	inline const unsigned long long ft_num_shards = 2048;
-	inline const unsigned long long ft_num_partitions = 2;
 	inline const unsigned long long ft_max_keys = 0xFFFFFFFF; // Should not be used, remove...
 	inline const unsigned long long ft_max_cache_gb = 30;
-	inline const unsigned long long ft_num_threads_indexing = 24;
+	inline const unsigned long long ft_num_threads_indexing = 1;
 	inline const unsigned long long ft_num_threads_merging = 24;
 	inline const double ft_cached_bytes_per_shard  = (ft_max_cache_gb * 1000ul*1000ul*1000ul) / (ft_num_shards * ft_num_threads_indexing);
 
