@@ -136,7 +136,7 @@ void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, 
 	}
 }
 
-size_t FullTextIndexer::write_cache(mutex *write_mutexes) {
+size_t FullTextIndexer::write_cache(vector<mutex> &write_mutexes) {
 	size_t idx = 0;
 	size_t ret = 0;
 	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
@@ -154,7 +154,7 @@ size_t FullTextIndexer::write_cache(mutex *write_mutexes) {
 	return ret;
 }
 
-size_t FullTextIndexer::write_large(mutex *write_mutexes) {
+size_t FullTextIndexer::write_large(vector<mutex> &write_mutexes) {
 	size_t idx = 0;
 	size_t ret = 0;
 	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
@@ -174,7 +174,7 @@ size_t FullTextIndexer::write_large(mutex *write_mutexes) {
 	return ret;
 }
 
-void FullTextIndexer::flush_cache(mutex *write_mutexes) {
+void FullTextIndexer::flush_cache(vector<mutex> &write_mutexes) {
 	size_t idx = 0;
 	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
 		write_mutexes[idx].lock();

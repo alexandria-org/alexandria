@@ -56,9 +56,9 @@ public:
 	void add_link_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
 	void add_text(std::vector<HashTableShardBuilder *> &shard_builders, const std::string &key, const std::string &text,
 		float score);
-	size_t write_cache(std::mutex *write_mutexes);
-	size_t write_large(std::mutex *write_mutexes);
-	void flush_cache(std::mutex *write_mutexes);
+	size_t write_cache(std::vector<std::mutex> &write_mutexes);
+	size_t write_large(std::vector<std::mutex> &write_mutexes);
+	void flush_cache(std::vector<std::mutex> &write_mutexes);
 	void read_url_to_domain();
 	void write_url_to_domain();
 	void add_domain_link(uint64_t word_hash, const Link::Link &link);

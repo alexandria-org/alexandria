@@ -19,9 +19,6 @@ namespace Config {
 	extern size_t deduplicate_domain_count;
 	extern size_t pre_result_limit;
 	extern size_t result_limit;
-	extern size_t ft_max_sections;
-	extern size_t ft_max_results_per_section;
-	extern size_t ft_section_depth;
 	extern std::string file_upload_user;
 	extern std::string file_upload_password;
 	extern size_t n_grams;
@@ -35,12 +32,14 @@ namespace Config {
 	*/
 
 	// Full text indexer config
-	inline const unsigned long long ft_num_shards = 2048;
-	inline const unsigned long long ft_max_keys = 0xFFFFFFFF; // Should not be used, remove...
-	inline const unsigned long long ft_max_cache_gb = 30;
-	inline const unsigned long long ft_num_threads_indexing = 1;
-	inline const unsigned long long ft_num_threads_merging = 24;
-	inline const double ft_cached_bytes_per_shard  = (ft_max_cache_gb * 1000ul*1000ul*1000ul) / (ft_num_shards * ft_num_threads_indexing);
+	extern size_t ft_num_shards;
+	extern size_t ft_max_sections;
+	extern size_t ft_max_results_per_section;
+	extern size_t ft_section_depth;
+	extern size_t ft_max_cache_gb;
+	extern size_t ft_num_threads_indexing;
+	extern size_t ft_num_threads_merging;
+	double ft_cached_bytes_per_shard();
 
 	// Link indexer config
 	inline const unsigned long long li_max_cache_gb = 4;

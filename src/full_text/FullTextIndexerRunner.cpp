@@ -35,21 +35,36 @@
 using namespace std;
 
 FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch, const SubSystem *sub_system)
-: m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
+:
+	m_cc_batch(cc_batch),
+	m_db_name(db_name),
+	m_hash_table_name(hash_table_name),
+	m_hash_table_mutexes(Config::ft_num_shards),
+	m_full_text_mutexes(Config::ft_num_shards)
 {
 	m_sub_system = sub_system;
 	m_did_allocate_sub_system = false;
 }
 
 FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const string &cc_batch)
-: m_cc_batch(cc_batch), m_db_name(db_name), m_hash_table_name(hash_table_name)
+:
+	m_cc_batch(cc_batch),
+	m_db_name(db_name),
+	m_hash_table_name(hash_table_name),
+	m_hash_table_mutexes(Config::ft_num_shards),
+	m_full_text_mutexes(Config::ft_num_shards)
 {
 	m_sub_system = new SubSystem();
 	m_did_allocate_sub_system = true;
 }
 
 FullTextIndexerRunner::FullTextIndexerRunner(const string &db_name, const string &hash_table_name, const SubSystem *sub_system)
-: m_cc_batch("none"), m_db_name(db_name), m_hash_table_name(hash_table_name)
+:
+	m_cc_batch("none"),
+	m_db_name(db_name),
+	m_hash_table_name(hash_table_name),
+	m_hash_table_mutexes(Config::ft_num_shards),
+	m_full_text_mutexes(Config::ft_num_shards)
 {
 	m_sub_system = sub_system;
 	m_did_allocate_sub_system = false;

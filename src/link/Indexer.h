@@ -48,8 +48,8 @@ namespace Link {
 		~Indexer();
 
 		void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
-		void write_cache(std::mutex write_mutexes[Config::ft_num_shards]);
-		void flush_cache(std::mutex write_mutexes[Config::ft_num_shards]);
+		void write_cache(std::vector<std::mutex> &write_mutexes);
+		void flush_cache(std::vector<std::mutex> &write_mutexes);
 
 	private:
 

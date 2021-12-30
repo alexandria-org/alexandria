@@ -64,10 +64,10 @@ namespace Link {
 		const std::string m_domain_db_name;
 		const std::string m_hash_table_name;
 		const std::string m_domain_hash_table_name;
-		std::mutex m_hash_table_mutexes[Config::ht_num_shards];
-		std::mutex m_domain_hash_table_mutexes[Config::ht_num_shards];
-		std::mutex m_link_mutexes[Config::ft_num_shards];
-		std::mutex m_domain_link_mutexes[Config::ft_num_shards];
+		std::vector<std::mutex> m_hash_table_mutexes;
+		std::vector<std::mutex> m_domain_hash_table_mutexes;
+		std::vector<std::mutex> m_link_mutexes;
+		std::vector<std::mutex> m_domain_link_mutexes;
 
 		UrlToDomain *m_url_to_domain;
 

@@ -85,7 +85,7 @@ namespace Link {
 		}
 	}
 
-	void Indexer::write_cache(mutex write_mutexes[Config::ft_num_shards]) {
+	void Indexer::write_cache(vector<mutex> &write_mutexes) {
 		{
 			size_t idx = 0;
 			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {
@@ -99,7 +99,7 @@ namespace Link {
 		}
 	}
 
-	void Indexer::flush_cache(mutex write_mutexes[Config::ft_num_shards]) {
+	void Indexer::flush_cache(vector<mutex> &write_mutexes) {
 		{
 			size_t idx = 0;
 			for (FullTextShardBuilder<::Link::FullTextRecord> *shard : m_shards) {

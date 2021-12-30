@@ -101,7 +101,7 @@ private:
 
 template<typename DataRecord>
 FullTextShardBuilder<DataRecord>::FullTextShardBuilder(const std::string &db_name, size_t shard_id)
-: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard / sizeof(DataRecord)) {
+: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard() / sizeof(DataRecord)) {
 }
 
 template<typename DataRecord>

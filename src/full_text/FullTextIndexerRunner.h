@@ -60,8 +60,8 @@ private:
 	const std::string m_hash_table_name;
 	const SubSystem *m_sub_system;
 
-	std::mutex m_hash_table_mutexes[Config::ht_num_shards];
-	std::mutex m_full_text_mutexes[Config::ft_num_shards];
+	std::vector<std::mutex> m_hash_table_mutexes;
+	std::vector<std::mutex> m_full_text_mutexes;
 	std::mutex m_write_url_to_domain_mutex;
 
 	bool m_did_allocate_sub_system;

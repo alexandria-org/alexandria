@@ -40,8 +40,16 @@ namespace Link {
 
 	IndexerRunner::IndexerRunner(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const string &cc_batch, const SubSystem *sub_system, UrlToDomain *url_to_domain)
-	: m_cc_batch(cc_batch), m_db_name(db_name), m_domain_db_name(domain_db_name), m_hash_table_name(hash_table_name),
-		m_domain_hash_table_name(domain_hash_table_name)
+	:
+		m_cc_batch(cc_batch),
+		m_db_name(db_name),
+		m_domain_db_name(domain_db_name),
+		m_hash_table_name(hash_table_name),
+		m_domain_hash_table_name(domain_hash_table_name),
+		m_hash_table_mutexes(Config::ft_num_shards),
+		m_domain_hash_table_mutexes(Config::ft_num_shards),
+		m_link_mutexes(Config::ft_num_shards),
+		m_domain_link_mutexes(Config::ft_num_shards)
 	{
 		m_sub_system = sub_system;
 		m_url_to_domain = url_to_domain;
