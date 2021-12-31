@@ -33,6 +33,7 @@ namespace Config {
 	size_t ft_max_cache_gb = 30;
 	size_t ft_num_threads_indexing = 24;
 	size_t ft_num_threads_merging = 24;
+	size_t ft_num_threads_appending = 8;
 
 	double ft_cached_bytes_per_shard() {
 		return (ft_max_cache_gb * 1000ul*1000ul*1000ul) / (ft_num_shards * ft_num_threads_indexing);
@@ -103,6 +104,8 @@ namespace Config {
 				ft_num_threads_indexing = stoi(parts[1]);
 			} else if (parts[0] == "ft_num_threads_merging") {
 				ft_num_threads_merging = stoi(parts[1]);
+			} else if (parts[0] == "ft_num_threads_appending") {
+				ft_num_threads_appending = stoi(parts[1]);
 			} else if (parts[0] == "file_upload_user") {
 				file_upload_user = parts[1];
 			} else if (parts[0] == "file_upload_password") {

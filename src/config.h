@@ -39,6 +39,7 @@ namespace Config {
 	extern size_t ft_max_cache_gb;
 	extern size_t ft_num_threads_indexing;
 	extern size_t ft_num_threads_merging;
+	extern size_t ft_num_threads_appending;
 	double ft_cached_bytes_per_shard();
 
 	// Link indexer config

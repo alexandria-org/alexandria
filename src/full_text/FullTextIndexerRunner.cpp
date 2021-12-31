@@ -174,7 +174,7 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 
 		if (stream.is_open()) {
 			indexer.add_stream(shard_builders, stream, {1, 2, 3, 4}, {10.0, 3.0, 2.0, 1}, m_cc_batch);
-			indexer.write_cache(m_full_text_mutexes);
+			indexer.write_cache(m_write_mutex);
 		}
 
 		stream.close();

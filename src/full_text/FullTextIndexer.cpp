@@ -136,27 +136,34 @@ void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, 
 	}
 }
 
-size_t FullTextIndexer::write_cache(vector<mutex> &write_mutexes) {
-	size_t idx = 0;
-	size_t ret = 0;
-	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
-		if (shard->over_full()) {
-			write_mutexes[idx].lock();
-			shard->append();
-			ret++;
-			write_mutexes[idx].unlock();
-		} else if (shard->full()) {
-			if (write_mutexes[idx].try_lock()) {
-				shard->append();
-				ret++;
-				write_mutexes[idx].unlock();
-			}
-		}
+size_t FullTextIndexer::write_cache(mutex &write_mutex) {
 
-		idx++;
+	vector<FullTextShardBuilder<struct FullTextRecord> *> full_shards;
+
+	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
+		if (shard->full()) {
+			full_shards.push_back(shard);
+		}
+	}
+	if (full_shards.size()) {
+		write_mutex.lock();
+
+		ThreadPool pool(Config::ft_num_threads_appending);
+		std::vector<std::future<void>> results;
+		for (FullTextShardBuilder<struct FullTextRecord> *shard : full_shards) {
+			results.emplace_back(pool.enqueue([shard] {
+				shard->append();
+			}));
+		}
+		
+		for (auto &fut : results) {
+			fut.get();
+		}
+	
+		write_mutex.unlock();
 	}
 
-	return ret;
+	return full_shards.size();
 }
 
 size_t FullTextIndexer::write_large(vector<mutex> &write_mutexes) {

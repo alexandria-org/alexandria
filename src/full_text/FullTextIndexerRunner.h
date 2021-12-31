@@ -62,6 +62,7 @@ private:
 
 	std::vector<std::mutex> m_hash_table_mutexes;
 	std::vector<std::mutex> m_full_text_mutexes;
+	std::mutex m_write_mutex;
 	std::mutex m_write_url_to_domain_mutex;
 
 	bool m_did_allocate_sub_system;
