@@ -54,6 +54,7 @@ public:
 	void add(uint64_t key, const DataRecord &record);
 	void sort_cache();
 	bool full() const;
+	bool over_full() const;
 	void append();
 	void merge();
 	bool should_merge();
@@ -174,6 +175,11 @@ void FullTextShardBuilder<DataRecord>::order_sections_by_value(std::vector<DataR
 template<typename DataRecord>
 bool FullTextShardBuilder<DataRecord>::full() const {
 	return cache_size() > m_max_cache_size;
+}
+
+template<typename DataRecord>
+bool FullTextShardBuilder<DataRecord>::over_full() const {
+	return cache_size() > 2*m_max_cache_size;
 }
 
 template<typename DataRecord>

@@ -140,7 +140,12 @@ size_t FullTextIndexer::write_cache(vector<mutex> &write_mutexes) {
 	size_t idx = 0;
 	size_t ret = 0;
 	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
-		if (shard->full()) {
+		if (shard->over_full()) {
+			write_mutexes[idx].lock();
+			shard->append();
+			ret++;
+			write_mutexes[idx].unlock();
+		} else if (shard->full()) {
 			if (write_mutexes[idx].try_lock()) {
 				shard->append();
 				ret++;
