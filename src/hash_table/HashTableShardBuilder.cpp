@@ -101,6 +101,8 @@ void HashTableShardBuilder::optimize() {
 
 	ifstream infile(filename_data(), ios::binary);
 
+	if (!infile.is_open()) return;
+
 	const size_t buffer_len = 1024*1024*20;
 	char *buffer = new char[buffer_len];
 
@@ -110,17 +112,17 @@ void HashTableShardBuilder::optimize() {
 	map<size_t, string> hash_map;
 	while (!infile.eof()) {
 		size_t key;
-		infile.read((char *)&key, Config::ht_key_size);
+		if (!infile.read((char *)&key, Config::ht_key_size)) break;
 
 		size_t data_len;
-		infile.read((char *)&data_len, sizeof(size_t));
+		if (!infile.read((char *)&data_len, sizeof(size_t))) break;
 
 		if (data_len > buffer_len) {
 			LOG_INFO("data_len " + to_string(data_len) + "is larger than buffer_len " + to_string(buffer_len) + " in file " + filename_data());
 			infile.seekg(data_len, ios::cur);
 			continue;
 		} else {
-			infile.read(buffer, data_len);
+			if (!infile.read(buffer, data_len)) break;
 		}
 
 		hash_map[key] = string(buffer, data_len);

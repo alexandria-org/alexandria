@@ -48,6 +48,13 @@ namespace Worker {
 
 	}
 
+	void output_binary_response(FCGX_Request &request, stringstream &response) {
+
+		FCGX_FPrintF(request.out, "Content-type: application/octet-stream\r\n\r\n");
+		FCGX_FPrintF(request.out, "%s", response.str().c_str());
+
+	}
+
 	void *run_worker(void *data) {
 
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
@@ -99,15 +106,20 @@ namespace Worker {
 
 			if (query.find("q") != query.end() && deduplicate) {
 				Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+				output_response(request, response_stream);
 			} else if (query.find("q") != query.end() && !deduplicate) {
 				Api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+				output_response(request, response_stream);
 			} else if (query.find("s") != query.end()) {
 				Api::word_stats(query["s"], index, link_index, hash_table.size(), hash_table_link.size(), response_stream);
+				output_response(request, response_stream);
 			} else if (query.find("u") != query.end()) {
 				Api::url(query["u"], hash_table, response_stream);
+				output_response(request, response_stream);
+			} else if (query.find("i") != query.end()) {
+				Api::ids(query["i"], index, allocation, response_stream);
+				output_binary_response(request, response_stream);
 			}
-
-			output_response(request, response_stream);
 
 			FCGX_Finish_r(&request);
 		}

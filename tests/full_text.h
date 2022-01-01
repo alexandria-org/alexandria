@@ -363,7 +363,27 @@ BOOST_AUTO_TEST_CASE(shard_buffer_size) {
 		BOOST_CHECK_EQUAL(json_obj["results"].size(), 1000);
 	}
 
+	SearchAllocation::delete_allocation(allocation);
+
 	Config::ft_shard_builder_buffer_len = initial_buffer_len;
+}
+
+BOOST_AUTO_TEST_CASE(is_indexed) {
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
+	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_index("main_index");
+
+	// Index full text
+	{
+		SubSystem *sub_system = new SubSystem();
+		FullText::index_batch("main_index", "main_index", "ALEXANDRIA-TEST-08", sub_system);
+	}
+
+	BOOST_CHECK(FullText::is_indexed());
+
+	SearchAllocation::delete_allocation(allocation);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -167,6 +167,14 @@ BOOST_AUTO_TEST_CASE(optimize) {
 		BOOST_CHECK_EQUAL(shard.find(2), "data element 2 v2");
 		BOOST_CHECK_EQUAL(shard.find(3), "data element 3 v2");
 	}
+}
+
+BOOST_AUTO_TEST_CASE(optimize_empty) {
+
+	HashTableHelper::truncate("main_index");
+
+	vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
+	HashTableHelper::optimize(shards);
 
 }
 
