@@ -630,6 +630,8 @@ namespace SearchEngine {
 
 		vector<DataRecord> ret(storage->result_sets[0]->span_pointer()->begin(), storage->result_sets[0]->span_pointer()->end());
 
+		storage->result_sets[0]->close_sections();
+
 		return ret;
 	}
 

@@ -51,7 +51,7 @@ namespace Worker {
 	void output_binary_response(FCGX_Request &request, stringstream &response) {
 
 		FCGX_FPrintF(request.out, "Content-type: application/octet-stream\r\n\r\n");
-		FCGX_FPrintF(request.out, "%s", response.str().c_str());
+		FCGX_PutStr(response.str().c_str(), response.str().size(), request.out);
 
 	}
 

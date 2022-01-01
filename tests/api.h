@@ -170,6 +170,15 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 		BOOST_CHECK_EQUAL(*((uint64_t *)&str[0]), URL("http://url1.com/test").hash());
 	}
 
+	{
+		stringstream response_stream;
+		Api::ids("h1 text", index, allocation, response_stream);
+
+		string response = response_stream.str();
+
+		BOOST_CHECK_EQUAL(response.size(), 8 * sizeof(uint64_t));
+	}
+
 	SearchAllocation::delete_allocation(allocation);
 
 	Config::return_snippets = true;
