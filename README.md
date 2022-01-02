@@ -84,3 +84,9 @@ make run_tests -j24
 2. Namspaces and Classes written by us should be CamelCase
 3. Everything else should be lower_case
 4. All files within a sub directory must contain namespace that is the same as the directory. For example src/file/TsvFile.h must declare everything within the namespace File.
+
+## Notes
+On nodes with spinning disks we should turn off energy saving:
+```
+hdparm -B 255 /dev/sda
+```
