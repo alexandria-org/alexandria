@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(indexer) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -67,8 +67,9 @@ BOOST_AUTO_TEST_CASE(indexer) {
 
 	{
 		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
-			"ALEXANDRIA-TEST-01");
+			"ALEXANDRIA-TEST-01", url_to_domain);
 	}
 
 	{
@@ -104,7 +105,7 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 	FullText::truncate_index("test_domain_link_index");
@@ -119,22 +120,21 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
 	}
 
+	UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
+	url_to_domain->read();
+	BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
+
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
-
-		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
-
 		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
-			"ALEXANDRIA-TEST-01");
+			"ALEXANDRIA-TEST-01", url_to_domain);
 
 	}
 
 	{
 		// Index more links and see if they get added with deduplication.
 		FullText::index_single_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index",
-			"ALEXANDRIA-TEST-02");
+			"ALEXANDRIA-TEST-02", url_to_domain);
 	}
 
 	{
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_link_index");
 	FullText::truncate_index("test_domain_link_index");
 
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 10);

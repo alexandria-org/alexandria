@@ -11,8 +11,13 @@ namespace Config {
 	extern std::string master;
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;
+
+	extern bool index_snippets;
+	extern bool index_text;
+
 	extern std::vector<std::string> batches;
 	extern std::vector<std::string> link_batches;
+
 	extern size_t worker_count;
 	extern size_t query_max_words;
 	extern size_t query_max_len;
@@ -22,7 +27,6 @@ namespace Config {
 	extern std::string file_upload_user;
 	extern std::string file_upload_password;
 	extern size_t n_grams;
-	extern bool return_snippets;
 	extern size_t shard_hash_table_size;
 	extern size_t html_parser_long_text_len;
 	extern size_t ft_shard_builder_buffer_len;

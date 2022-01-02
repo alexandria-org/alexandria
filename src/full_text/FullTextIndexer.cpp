@@ -66,27 +66,30 @@ size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 
 		uint64_t key_hash = url.hash();
 
-		if (Config::return_snippets) {
+		if (Config::index_snippets) {
 			shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line + "\t" + batch);
 		}
 
-		const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+		if (Config::index_text) {
 
-		size_t score_index = 0;
-		map<uint64_t, float> word_map;
+			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
-		add_data_to_word_map(word_map, site_colon, 20*harmonic);
+			size_t score_index = 0;
+			map<uint64_t, float> word_map;
 
-		for (size_t col_index : cols) {
-			add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
-			score_index++;
+			add_data_to_word_map(word_map, site_colon, 20*harmonic);
+
+			for (size_t col_index : cols) {
+				add_expanded_data_to_word_map(word_map, col_values[col_index], scores[score_index]*harmonic);
+				score_index++;
+			}
+			for (const auto &iter : word_map) {
+				const uint64_t word_hash = iter.first;
+				const size_t shard_id = word_hash % Config::ft_num_shards;
+				m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
+			}
+			word_map.clear();
 		}
-		for (const auto &iter : word_map) {
-			const uint64_t word_hash = iter.first;
-			const size_t shard_id = word_hash % Config::ft_num_shards;
-			m_shards[shard_id]->add(word_hash, FullTextRecord{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
-		}
-		word_map.clear();
 
 		added_urls++;
 	}

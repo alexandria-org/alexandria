@@ -77,7 +77,7 @@ namespace FullText {
 		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status);
 
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
-		const string &domain_hash_table_name, const string &batch);
+		const string &domain_hash_table_name, const string &batch, UrlToDomain *url_to_domain);
 
 	size_t url_to_node(const URL &url);
 	bool should_index_url(const URL &url);

@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
  * */
 BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
-	Config::return_snippets = false;
+	Config::index_snippets = false;
 	Config::n_grams = 5;
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
@@ -181,14 +181,14 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 	SearchAllocation::delete_allocation(allocation);
 
-	Config::return_snippets = true;
+	Config::index_snippets = true;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 	FullText::truncate_index("test_domain_link_index");
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(many_links) {
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(many_links) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(many_links) {
 
 BOOST_AUTO_TEST_CASE(api_word_stats) {
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		BOOST_CHECK_EQUAL(url_to_domain->size(), 8);
@@ -461,7 +461,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 BOOST_AUTO_TEST_CASE(api_hash_table) {
 
-	FullText::truncate_url_to_domain("main_index");
+	FullText::truncate_url_to_domain("test_main_index");
 	FullText::truncate_index("test_main_index");
 	FullText::truncate_index("test_link_index");
 
@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
 		url_to_domain->read();
 
 		SubSystem *sub_system = new SubSystem();

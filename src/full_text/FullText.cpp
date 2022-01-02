@@ -39,7 +39,7 @@ namespace FullText {
 
 	void truncate_url_to_domain(const string &index_name) {
 
-		for (size_t bucket_id = 1; bucket_id < 8; bucket_id++) {
+		for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
 			const string file_name = "/mnt/"+to_string(bucket_id)+"/full_text/url_to_domain_"+index_name+".fti";
 			ofstream outfile(file_name, ios::binary | ios::trunc);
 			outfile.close();
@@ -122,10 +122,24 @@ namespace FullText {
 	}
 
 	bool is_indexed() {
+
+		// First check if file /mnt/0/indexed exists.
+		ifstream infile("/mnt/0/indexed");
+		if (infile.is_open()) {
+			return true;
+		}
+
 		// Check if main_index, link_index and domain_link_index has at least one url.
 		FullTextShard<FullTextRecord> shard1("main_index", 0);
 
 		return !shard1.empty();
+	}
+
+	void mark_indexed() {
+		ofstream outfile("/mnt/0/indexed", ios::trunc);
+		if (outfile.is_open()) {
+			outfile << 1;
+		}
 	}
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
@@ -202,6 +216,8 @@ namespace FullText {
 		for (const string &batch : Config::batches) {
 			index_batch(db_name, hash_table_name, batch, sub_system);
 		}
+
+		mark_indexed();
 	}
 
 	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status) {
@@ -284,9 +300,8 @@ namespace FullText {
 	}
 
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
-		const string &domain_hash_table_name, const string &batch) {
+		const string &domain_hash_table_name, const string &batch, UrlToDomain *url_to_domain) {
 
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
 		SubSystem *sub_system = new SubSystem();
 
 		url_to_domain->read();

@@ -10,6 +10,10 @@ namespace Config {
 	string master = "localhost";
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
+
+	bool index_snippets = true;
+	bool index_text = true;
+
 	vector<string> batches;
 	vector<string> link_batches;
 	size_t worker_count = 8;
@@ -21,7 +25,6 @@ namespace Config {
 	string file_upload_user = "";
 	string file_upload_password = "";
 	size_t n_grams = 1;
-	bool return_snippets = true;
 	size_t shard_hash_table_size = 100000;
 	size_t html_parser_long_text_len = 1000;
 	size_t ft_shard_builder_buffer_len = 240000;
@@ -112,8 +115,8 @@ namespace Config {
 				file_upload_password = parts[1];
 			} else if (parts[0] == "n_grams") {
 				n_grams = stoull(parts[1]);
-			} else if (parts[0] == "return_snippets") {
-				return_snippets = static_cast<bool>(stoull(parts[1]));
+			} else if (parts[0] == "index_snippets") {
+				index_snippets = static_cast<bool>(stoull(parts[1]));
 			} else if (parts[0] == "shard_hash_table_size") {
 				shard_hash_table_size = stoull(parts[1]);
 			} else if (parts[0] == "html_parser_long_text_len") {

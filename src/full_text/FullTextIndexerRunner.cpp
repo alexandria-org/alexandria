@@ -165,7 +165,7 @@ string FullTextIndexerRunner::run_index_thread_with_local_files(const vector<str
 		shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
 	}
 
-	UrlToDomain url_to_domain("main_index");
+	UrlToDomain url_to_domain(m_db_name);
 	FullTextIndexer indexer(id, m_db_name, m_sub_system, &url_to_domain);
 	size_t idx = 1;
 	for (const string &local_file : local_files) {
