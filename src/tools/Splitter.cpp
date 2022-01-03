@@ -1,6 +1,19 @@
 
 #include "Splitter.h"
+#include "config.h"
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <cmath>
+#include <thread>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/filesystem.hpp>
 #include "link/Link.h"
+#include "full_text/FullText.h"
+#include "algorithm/Algorithm.h"
+#include "parser/URL.h"
+#include "system/System.h"
 
 using namespace std;
 

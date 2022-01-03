@@ -83,6 +83,7 @@ set(SRC_CLASSES
 	"src/algorithm/HyperBall.cpp"
 
 	"src/tools/Splitter.cpp"
+	"src/tools/Counter.cpp"
 	"src/tools/CalculateHarmonic.cpp"
 
 	"src/cluster/Document.cpp"

@@ -28,7 +28,7 @@
 
 namespace Tools {
 
-	void run_splitter();
+	void run_counter();
 
 }
 
