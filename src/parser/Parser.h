@@ -34,5 +34,6 @@ namespace Parser {
 	const int ERROR = 1;
 
 	std::string urldecode(const std::string &str);
+	std::string urlencode(const std::string &str);
 	std::string get_http_header(const std::string &record, const std::string &key);
 }

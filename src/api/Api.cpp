@@ -348,9 +348,57 @@ namespace Api {
 		vector<FullTextRecord> results = SearchEngine::search_ids(allocation->storage, index, query, Config::result_limit);
 
 		for (const FullTextRecord &result : results) {
-			response_stream.write((char *)&result.m_value, sizeof(uint64_t));
+			response_stream.write((char *)&result, sizeof(FullTextRecord));
 		}
 
+	}
+
+	void search_remote(const std::string &query, HashTable &hash_table, const FullTextIndex<Link::FullTextRecord> &link_index,
+		const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index, SearchAllocation::Allocation *allocation,
+		std::stringstream &response_stream) {
+
+		Profiler::instance profiler;
+
+		future<FullTextResultSet<FullTextRecord> *> fut = async(SearchEngine::search_remote<FullTextRecord>, query, allocation->storage);
+
+		FullTextResultSet<FullTextRecord> *result_set = fut.get();
+		vector<FullTextRecord> results(result_set->span_pointer()->begin(), result_set->span_pointer()->end());
+
+		struct SearchMetric metric;
+		SearchEngine::reset_search_metric(metric);
+
+		vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query,
+			500000, metric);
+
+		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+			return a.m_target_hash < b.m_target_hash;
+		});
+
+		const size_t links_handled = links.size();
+		const size_t total_url_links_found = metric.m_total_found;
+
+		vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
+			domain_link_index, {}, {}, query, 100000, metric);
+
+		const size_t total_domain_links_found = metric.m_total_found;
+
+		metric.m_links_handled = links_handled;
+		metric.m_total_url_links_found = total_url_links_found;
+		metric.m_total_domain_links_found = total_domain_links_found;
+
+		vector<ResultWithSnippet> with_snippets;
+		for (FullTextRecord &res : results) {
+			const string tsv_data = hash_table.find(res.m_value);
+			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+		}
+
+		metric.m_links_handled = links_handled;
+		metric.m_total_url_links_found = total_url_links_found;
+		metric.m_total_domain_links_found = total_domain_links_found;
+
+		ApiResponse response(with_snippets, metric, profiler.get());
+
+		response_stream << response;
 	}
 
 }

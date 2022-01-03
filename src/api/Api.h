@@ -74,4 +74,11 @@ namespace Api {
 	void ids(const std::string &query, const FullTextIndex<FullTextRecord> &index, SearchAllocation::Allocation *allocation,
 		std::stringstream &response_stream);
 
+	/*
+	 * Make search on remote server but with links and url index on this server.
+	 * */
+	void search_remote(const std::string &query, HashTable &hash_table, const FullTextIndex<Link::FullTextRecord> &link_index,
+		const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index, SearchAllocation::Allocation *allocation,
+		std::stringstream &response_stream);
+
 }

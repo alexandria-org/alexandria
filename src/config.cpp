@@ -8,6 +8,7 @@ namespace Config {
 
 	string node = "test0001";
 	string master = "localhost";
+	string data_node = "65.21.205.72";
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
 

@@ -37,6 +37,8 @@
 #include "domain_link/FullTextRecord.h"
 #include "system/Logger.h"
 #include "system/Profiler.h"
+#include "parser/Parser.h"
+#include "transfer/Transfer.h"
 #include "hash/Hash.h"
 #include "sort/Sort.h"
 #include "algorithm/Algorithm.h"
@@ -84,6 +86,9 @@ namespace SearchEngine {
 	template<typename DataRecord>
 	vector<DataRecord> search_ids(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const string &query, size_t limit);
+
+	template<typename DataRecord>
+	FullTextResultSet<DataRecord> *search_remote(const std::string &query, SearchAllocation::Storage<DataRecord> *storage);
 
 }
 
@@ -633,6 +638,23 @@ namespace SearchEngine {
 		storage->result_sets[0]->close_sections();
 
 		return ret;
+	}
+
+	template<typename DataRecord>
+	FullTextResultSet<DataRecord> *search_remote(const std::string &query, SearchAllocation::Storage<DataRecord> *storage) {
+		storage->result_sets[0]->resize(0);
+
+		string buffer;
+		int error;
+		std::cout << Config::data_node + "/?i=" + Parser::urlencode(query) << std::endl;
+		Transfer::url_to_string(Config::data_node + "/?i=" + Parser::urlencode(query), buffer, error);
+		if (error == Transfer::OK) {
+			const size_t num_records = buffer.size() / sizeof(DataRecord);
+			DataRecord *data_ptr = storage->result_sets[0]->data_pointer();
+			memcpy(data_ptr, buffer.c_str(), buffer.size());
+			storage->result_sets[0]->resize(num_records);
+		}
+		return storage->result_sets[0];
 	}
 
 }

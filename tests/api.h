@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 		const char *str = response.c_str();
 
-		BOOST_CHECK_EQUAL(response.size(), 1 * sizeof(uint64_t));
+		BOOST_CHECK_EQUAL(response.size(), 1 * sizeof(FullTextRecord));
 		BOOST_CHECK_EQUAL(*((uint64_t *)&str[0]), URL("http://url1.com/test").hash());
 	}
 
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 		string response = response_stream.str();
 
-		BOOST_CHECK_EQUAL(response.size(), 8 * sizeof(uint64_t));
+		BOOST_CHECK_EQUAL(response.size(), 8 * sizeof(FullTextRecord));
 	}
 
 	SearchAllocation::delete_allocation(allocation);
@@ -521,7 +521,61 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 		BOOST_CHECK_EQUAL(json_obj["response"], "");
 	}
+}
 
+BOOST_AUTO_TEST_CASE(api_no_text) {
+
+	Config::index_text = false;
+
+	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+
+	FullText::truncate_url_to_domain("test_main_index");
+	FullText::truncate_index("test_main_index");
+	FullText::truncate_index("test_link_index");
+
+	HashTableHelper::truncate("test_main_index");
+	HashTableHelper::truncate("test_link_index");
+	HashTableHelper::truncate("test_domain_link_index");
+
+	{
+		// Index full text
+		SubSystem *sub_system = new SubSystem();
+		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-09", sub_system);
+	}
+
+	{
+		// Index links
+		UrlToDomain *url_to_domain = new UrlToDomain("test_main_index");
+		url_to_domain->read();
+
+		SubSystem *sub_system = new SubSystem();
+
+		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-09",
+			sub_system, url_to_domain);
+	}
+
+	HashTable hash_table("test_main_index");
+	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
+	FullTextIndex<DomainLink::FullTextRecord> domain_link_index("test_domain_link_index");
+
+	{
+		stringstream response_stream;
+		Api::search_remote("Africultures.com", hash_table, link_index, domain_link_index, allocation, response_stream);
+
+		string response = response_stream.str();
+
+		json json_obj = json::parse(response);
+
+		BOOST_CHECK(json_obj.contains("status"));
+		BOOST_CHECK_EQUAL(json_obj["status"], "success");
+
+		BOOST_CHECK(json_obj.contains("time_ms"));
+		BOOST_CHECK(json_obj.contains("results"));
+
+		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://africultures.com/evenements/?no=3270");
+	}
+
+	SearchAllocation::delete_allocation(allocation);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

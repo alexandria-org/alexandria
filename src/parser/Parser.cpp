@@ -25,6 +25,7 @@
  */
 
 #include "Parser.h"
+#include <curl/curl.h>
 
 using namespace std;
 
@@ -61,6 +62,22 @@ namespace Parser {
 		delete ret;
 
 		return ret_str;
+	}
+
+	string urlencode(const string &str) {
+		CURL *curl = curl_easy_init();
+		if (curl) {
+			char *output = curl_easy_escape(curl, str.c_str(), str.size());
+			if (output) {
+				string ret(output);
+				curl_free(output);
+				curl_easy_cleanup(curl);
+				return ret;
+			}
+			curl_easy_cleanup(curl);
+		}
+
+		return str;
 	}
 
 	string get_http_header(const string &record, const string &key) {

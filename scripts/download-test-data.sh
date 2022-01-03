@@ -46,3 +46,9 @@ wget -r -l1 --no-parent http://node0003.alexandria.org/files/perf/fti_domain_lin
 wget -r -l1 --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_6_859.idx -O /mnt/0/full_text/fti_domain_link_index_6_859.idx --http-user=alexandria --http-password=wmXN6U4u
 wget -r -l1 --no-parent http://node0003.alexandria.org/files/perf/fti_domain_link_index_7_859.idx -O /mnt/0/full_text/fti_domain_link_index_7_859.idx --http-user=alexandria --http-password=wmXN6U4u
 
+mkdir node0003.alexandria.org/nodes
+mkdir node0003.alexandria.org/nodes/test0001
+mkdir node0003.alexandria.org/upload-tmp
+
+chown -R www-data:www-data node0003.alexandria.org
+
