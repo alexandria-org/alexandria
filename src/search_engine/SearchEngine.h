@@ -646,7 +646,6 @@ namespace SearchEngine {
 
 		string buffer;
 		int error;
-		std::cout << Config::data_node + "/?i=" + Parser::urlencode(query) << std::endl;
 		Transfer::url_to_string(Config::data_node + "/?i=" + Parser::urlencode(query), buffer, error);
 		if (error == Transfer::OK) {
 			const size_t num_records = buffer.size() / sizeof(DataRecord);

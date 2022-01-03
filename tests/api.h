@@ -525,6 +525,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 BOOST_AUTO_TEST_CASE(api_no_text) {
 
+	Config::index_snippets = true;
 	Config::index_text = false;
 
 	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
@@ -560,7 +561,7 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 
 	{
 		stringstream response_stream;
-		Api::search_remote("Africultures.com", hash_table, link_index, domain_link_index, allocation, response_stream);
+		Api::search_remote("1936.com", hash_table, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -572,10 +573,13 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 		BOOST_CHECK(json_obj.contains("time_ms"));
 		BOOST_CHECK(json_obj.contains("results"));
 
-		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://africultures.com/evenements/?no=3270");
+		BOOST_CHECK_EQUAL(json_obj["results"][0]["url"], "http://1936.com/");
+		BOOST_CHECK(json_obj["results"][0]["score"] > 4.0);
 	}
 
 	SearchAllocation::delete_allocation(allocation);
+
+	Config::index_text = true;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

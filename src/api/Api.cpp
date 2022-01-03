@@ -361,9 +361,6 @@ namespace Api {
 
 		future<FullTextResultSet<FullTextRecord> *> fut = async(SearchEngine::search_remote<FullTextRecord>, query, allocation->storage);
 
-		FullTextResultSet<FullTextRecord> *result_set = fut.get();
-		vector<FullTextRecord> results(result_set->span_pointer()->begin(), result_set->span_pointer()->end());
-
 		struct SearchMetric metric;
 		SearchEngine::reset_search_metric(metric);
 
@@ -385,6 +382,15 @@ namespace Api {
 		metric.m_links_handled = links_handled;
 		metric.m_total_url_links_found = total_url_links_found;
 		metric.m_total_domain_links_found = total_domain_links_found;
+
+		FullTextResultSet<FullTextRecord> *result_set = fut.get();
+
+		SearchEngine::apply_link_scores(links, result_set);
+		SearchEngine::apply_domain_link_scores(domain_links, result_set);
+
+		vector<FullTextRecord> results(result_set->span_pointer()->begin(), result_set->span_pointer()->end());
+
+		SearchEngine::sort_by_score(results);
 
 		vector<ResultWithSnippet> with_snippets;
 		for (FullTextRecord &res : results) {
