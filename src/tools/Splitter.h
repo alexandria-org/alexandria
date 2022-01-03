@@ -29,6 +29,7 @@
 namespace Tools {
 
 	void run_splitter();
+	void run_splitter_with_links();
 
 }
 

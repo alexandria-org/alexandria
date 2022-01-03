@@ -3,6 +3,7 @@
 #include "config.h"
 #include <iostream>
 #include <vector>
+#include <unordered_set>
 #include <fstream>
 #include <cmath>
 #include <thread>
@@ -52,7 +53,6 @@ namespace Tools {
 	}
 
 	void splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
-		return;
 
 		const size_t max_cache_size = 150000;
 		size_t thread_id = System::thread_id();
@@ -139,6 +139,25 @@ namespace Tools {
 			}
 		}
 		write_file_mutex.unlock();
+	}
+
+	unordered_set<size_t> build_link_set(const vector<string> &warc_paths, size_t hash_min, size_t hash_max) {
+
+		unordered_set<size_t> result;
+		for (const string &warc_path : warc_paths) {
+			ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			string line;
+			while (getline(decompress_stream, line)) {
+				const Link::Link link(line);
+				result.insert(link.target_url().hash());
+			}
+		}
+
+		return result;
 	}
 
 	void create_warc_directories() {
@@ -240,5 +259,61 @@ namespace Tools {
 			one_thread.join();
 		}
 	}
+
+	void run_splitter_with_links_interval(size_t hash_min, size_t hash_max) {
+
+		const size_t num_threads = 12;
+
+		vector<string> link_files;
+		for (const string &batch : Config::link_batches) {
+
+			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+
+			ifstream infile(file_name);
+
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			string line;
+			while (getline(decompress_stream, line)) {
+				string warc_path = string("/mnt/") + line;
+				const size_t pos = warc_path.find(".warc.gz");
+
+				if (pos != string::npos) {
+					warc_path.replace(pos, 8, ".links.gz");
+				}
+
+				link_files.push_back(warc_path);
+
+				break;
+			}
+		}
+
+		vector<vector<string>> link_thread_input;
+		Algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
+
+		vector<future<unordered_set<size_t>>> futures;
+
+		for (size_t i = 0; i < link_thread_input.size(); i++) {
+			futures.emplace_back(std::async(launch::async, build_link_set, link_thread_input[i], hash_min, hash_max));
+		}
+
+		unordered_set<size_t> total_result;
+		for (auto &fut : futures) {
+			unordered_set<size_t> result = fut.get();
+			total_result.insert(result.begin(), result.end());
+		}
+
+		cout << "size: " << total_result.size() << endl;
+	}
+
+	void run_splitter_with_links() {
+		const size_t chunk = SIZE_MAX >> 4;
+		for (size_t offs = 0; offs < SIZE_MAX; offs += chunk) {
+			run_splitter_with_links_interval(offs, offs + chunk);
+		}
+	}
+
 
 }
