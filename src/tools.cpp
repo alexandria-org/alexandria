@@ -65,6 +65,8 @@ int main(int argc, const char **argv) {
 		Tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {
 		Tools::download_batch(string(argv[2]));
+	} else if (arg == "--prepare-batch") {
+		Tools::prepare_batch(string(argv[2]));
 	} else if (arg == "--harmonic-hosts") {
 		Tools::calculate_harmonic_hosts();
 	} else if (arg == "--harmonic-links") {
