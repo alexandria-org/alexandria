@@ -27,6 +27,7 @@
 #include "config.h"
 #include "tools/Splitter.h"
 #include "tools/Counter.h"
+#include "tools/Download.h"
 #include "tools/CalculateHarmonic.h"
 #include <iostream>
 #include <set>
@@ -62,6 +63,8 @@ int main(int argc, const char **argv) {
 		Tools::run_counter();
 	} else if (arg == "--split-with-links") {
 		Tools::run_splitter_with_links();
+	} else if (arg == "--download-batch") {
+		Tools::download_batch(string(argv[2]));
 	} else if (arg == "--harmonic-hosts") {
 		Tools::calculate_harmonic_hosts();
 	} else if (arg == "--harmonic-links") {

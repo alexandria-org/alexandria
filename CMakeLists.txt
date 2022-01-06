@@ -84,6 +84,7 @@ set(SRC_CLASSES
 
 	"src/tools/Splitter.cpp"
 	"src/tools/Counter.cpp"
+	"src/tools/Download.cpp"
 	"src/tools/CalculateHarmonic.cpp"
 
 	"src/cluster/Document.cpp"
