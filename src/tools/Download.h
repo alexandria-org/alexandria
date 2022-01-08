@@ -32,7 +32,7 @@
 namespace Tools {
 
 	std::vector<std::string> download_batch(const std::string &batch);
-	void prepare_batch(const std::string &batch);
+	void prepare_batch(size_t batch_num);
 
 }
 

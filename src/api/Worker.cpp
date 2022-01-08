@@ -105,8 +105,15 @@ namespace Worker {
 			}
 
 			if (query.find("q") != query.end() && deduplicate) {
-				Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
-				output_response(request, response_stream);
+				if (Config::index_text) {
+		LOG_INFO("Api::search");
+					Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+					output_response(request, response_stream);
+				} else {
+		LOG_INFO("Api::search_remote");
+					Api::search_remote(query["q"], hash_table, link_index, domain_link_index, allocation, response_stream);
+					output_response(request, response_stream);
+				}
 			} else if (query.find("q") != query.end() && !deduplicate) {
 				Api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 				output_response(request, response_stream);

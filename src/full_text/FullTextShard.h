@@ -41,6 +41,7 @@ template<typename DataRecord> class FullTextShard;
 #include "FullTextResultSet.h"
 
 #include "system/Logger.h"
+#include "system/Profiler.h"
 
 /*
 File format explained
@@ -102,14 +103,22 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 	}
 
 	// Read page.
+	Profiler::instance prof2("read keys");
 	reader.seekg(key_pos);
 
 	size_t num_keys;
 	reader.read((char *)&num_keys, sizeof(size_t));
 
+
+	LOG_INFO("num keys: " + std::to_string(num_keys));
+
 	uint64_t *keys = new uint64_t[num_keys];
 
 	reader.read((char *)keys, num_keys * sizeof(uint64_t));
+
+	prof2.stop();
+
+	Profiler::instance prof3("find key");
 
 	size_t key_data_pos = SIZE_MAX;
 	for (size_t i = 0; i < num_keys; i++) {
@@ -123,7 +132,11 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
 		return;
 	}
 
+	prof3.stop();
+
 	char buffer[64];
+
+	Profiler::instance prof4("read data");
 
 	// Read position and length.
 	reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
@@ -154,6 +167,8 @@ void FullTextShard<DataRecord>::find(uint64_t key, FullTextResultSet<DataRecord>
  * */
 template<typename DataRecord>
 size_t FullTextShard<DataRecord>::read_key_pos(std::ifstream &reader, uint64_t key) const {
+
+	Profiler::instance prof1("read_key_pos " + key_filename());
 
 	const size_t hash_pos = key % Config::shard_hash_table_size;
 

@@ -57,29 +57,10 @@ namespace Tools {
 			}
 			files_to_download.push_back(warc_path);
 
-			// DEBUG
-			if (files_to_download.size() > 100) break;
+			//if (files_to_download.size() == 100) break;
 		}
 
 		return Transfer::download_gz_files_to_disk(files_to_download);
-	}
-
-	vector<string> download_links(size_t batch_start, size_t batch_end) {
-
-		vector<string> return_files;
-		for (size_t batch = batch_start; batch < batch_end; batch++) {
-			File::TsvFileRemote warc_paths_file(string("crawl-data/LINK-") + to_string(batch) + "/warc.paths.gz");
-			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths);
-
-			// DEBUG
-			warc_paths.resize(100);
-
-			vector<string> files = Transfer::download_gz_files_to_disk(warc_paths);
-			return_files.insert(return_files.end(), files.begin(), files.end());
-		}
-
-		return return_files;
 	}
 
 	unordered_set<size_t> make_url_set_one_thread(const vector<string> &files) {
@@ -87,12 +68,8 @@ namespace Tools {
 		unordered_set<size_t> result;
 		for (const string &file_path : files) {
 			ifstream infile(file_path);
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(infile);
-
 			string line;
-			while (getline(decompress_stream, line)) {
+			while (getline(infile, line)) {
 				const Link::Link link(line);
 				result.insert(link.target_url().hash());
 			}
@@ -102,49 +79,47 @@ namespace Tools {
 	}
 
 	unordered_set<size_t> make_url_set(const vector<string> &files) {
-		const size_t num_threads = 24;
-
-		vector<vector<string>> link_thread_input;
-		Algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), link_thread_input);
-
-		vector<future<unordered_set<size_t>>> futures;
-
-		for (size_t i = 0; i < link_thread_input.size(); i++) {
-			futures.emplace_back(std::async(launch::async, make_url_set_one_thread, link_thread_input[i]));
-		}
 
 		unordered_set<size_t> total_result;
-		for (auto &fut : futures) {
-			unordered_set<size_t> result = fut.get();
-			total_result.insert(result.begin(), result.end());
+		size_t idx = 0;
+		for (const string &file_path : files) {
+			ifstream infile(file_path);
+			string line;
+			while (getline(infile, line)) {
+				const Link::Link link(line);
+				total_result.insert(link.target_url().hash());
+			}
+			cout << "size: " << total_result.size() << " done " << (++idx) << "/" << files.size() << endl;
 		}
 
 		return total_result;
 	}
 
 	void upload_cache(size_t file_index, size_t thread_id, const string &data, size_t node_id) {
-		const string filename = "crawl-data/NODE-" + to_string(node_id) + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + "-" +
+		const string filename = "crawl-data/NODE-" + to_string(node_id) + "-small/files/" + to_string(thread_id) + "-" + to_string(file_index) + "-" +
 			to_string(Profiler::now_micro()) + ".gz";
 
-		Transfer::upload_gz_file(filename, data);
+		int error = Transfer::upload_gz_file(filename, data);
+		if (error == Transfer::ERROR) {
+			LOG_INFO("Upload failed!");
+		}
 	}
 
-	void parse_urls_with_links_thread(const vector<string> &warc_paths, const unordered_set<size_t> url_set) {
+	void parse_urls_with_links_thread(const vector<string> &warc_paths, const unordered_set<size_t> &url_set) {
 
 		const size_t max_cache_size = 150000;
 		size_t thread_id = System::thread_id();
 		size_t file_index = 1;
 
+		LOG_INFO("url_set.size() == " + to_string(url_set.size()));
+
 		vector<vector<string>> file_names(Config::nodes_in_cluster);
 		vector<vector<string>> cache(Config::nodes_in_cluster);
 		for (const string &warc_path : warc_paths) {
 			ifstream infile(warc_path);
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(infile);
 
 			string line;
-			while (getline(decompress_stream, line)) {
+			while (getline(infile, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 
 				if (url_set.count(url.hash())) {
@@ -155,16 +130,22 @@ namespace Tools {
 
 			for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
 				if (cache[node_id].size() > max_cache_size) {
-					upload_cache(file_index++, thread_id, boost::algorithm::join(cache[node_id], "\n"), node_id);
+					const string cache_data = boost::algorithm::join(cache[node_id], "\n");
+					cache[node_id].clear();
+					upload_cache(file_index++, thread_id, cache_data, node_id);
 				}
 			}
 		}
 		for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
-			upload_cache(file_index++, thread_id, boost::algorithm::join(cache[node_id], "\n"), node_id);
+			if (cache[node_id].size() > 0) {
+				const string cache_data = boost::algorithm::join(cache[node_id], "\n");
+				cache[node_id].clear();
+				upload_cache(file_index++, thread_id, cache_data, node_id);
+			}
 		}
 	}
 
-	void upload_urls_with_links(const vector<string> &local_files, const unordered_set<size_t> url_set) {
+	void upload_urls_with_links(const vector<string> &local_files, const unordered_set<size_t> &url_set) {
 		size_t num_threads = 24;
 
 		vector<vector<string>> thread_input;
@@ -172,7 +153,7 @@ namespace Tools {
 
 		vector<thread> threads;
 
-		for (size_t i = 0; i < num_threads; i++) {
+		for (size_t i = 0; i < thread_input.size(); i++) {
 			threads.emplace_back(thread(parse_urls_with_links_thread, thread_input[i], cref(url_set)));
 		}
 
@@ -181,18 +162,16 @@ namespace Tools {
 		}
 	}
 
-	void prepare_batch(const string &batch) {
+	void prepare_batch(size_t batch_num) {
 
-		const vector<string> files = download_batch(batch);
+		const vector<string> files = download_batch("NODE-" + to_string(batch_num));
+		const vector<string> link_files = download_batch("LINK-" + to_string(batch_num));
 
-		for (size_t i = 0; i < 4; i++) {
-			const size_t start = i * 6;
-			const size_t stop = (i + 1) * 6;
-			const vector<string> link_files = download_links(start, stop);
-			unordered_set<size_t> url_set = make_url_set(link_files);
+		unordered_set<size_t> url_set = make_url_set(link_files);
+		upload_urls_with_links(files, url_set);
 
-			upload_urls_with_links(files, url_set);
-		}
+		Transfer::delete_downloaded_files(link_files);
+		Transfer::delete_downloaded_files(files);
 	}
 
 }

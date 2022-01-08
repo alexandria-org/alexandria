@@ -118,6 +118,8 @@ namespace Config {
 				n_grams = stoull(parts[1]);
 			} else if (parts[0] == "index_snippets") {
 				index_snippets = static_cast<bool>(stoull(parts[1]));
+			} else if (parts[0] == "index_text") {
+				index_text = static_cast<bool>(stoull(parts[1]));
 			} else if (parts[0] == "shard_hash_table_size") {
 				shard_hash_table_size = stoull(parts[1]);
 			} else if (parts[0] == "html_parser_long_text_len") {

@@ -357,6 +357,8 @@ namespace Api {
 		const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index, SearchAllocation::Allocation *allocation,
 		std::stringstream &response_stream) {
 
+		LOG_INFO("SEARCHING REMOTE");
+
 		Profiler::instance profiler;
 
 		future<FullTextResultSet<FullTextRecord> *> fut = async(SearchEngine::search_remote<FullTextRecord>, query, allocation->storage);
