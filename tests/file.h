@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(tsv_file_exists) {
 
 	BOOST_CHECK(manual_paths_file.is_open());
 	BOOST_CHECK(warc_paths.size() > 0);
-	BOOST_CHECK(warc_paths[0] == "/crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz");
+	BOOST_CHECK(warc_paths[0] == "crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz");
 }
 
 BOOST_AUTO_TEST_CASE(tsv_file_dont_exists) {
