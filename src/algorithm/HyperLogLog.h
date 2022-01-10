@@ -48,6 +48,7 @@ namespace Algorithm {
 			HyperLogLog(const HyperLogLog &other);
 			~HyperLogLog();
 			void insert(T v);
+			void insert_hash(size_t x);
 			size_t size() const;
 			char leading_zeros_plus_one(size_t x) const;
 			size_t num_zero_registers() const;
@@ -87,6 +88,12 @@ namespace Algorithm {
 	template<typename T>
 	void HyperLogLog<T>::insert(T v) {
 		size_t x = m_hasher(std::to_string(v));
+		size_t j = x >> (64-m_b);
+		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
+	}
+
+	template<typename T>
+	void HyperLogLog<T>::insert_hash(size_t x) {
 		size_t j = x >> (64-m_b);
 		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}

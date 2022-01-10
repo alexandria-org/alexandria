@@ -46,6 +46,7 @@ namespace Tools {
 
 		Algorithm::HyperLogLog<size_t> *counter = new Algorithm::HyperLogLog<size_t>();
 
+		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
 			ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
@@ -55,8 +56,14 @@ namespace Tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
-				counter->insert(url.hash());
+				counter->insert_hash(url.hash());
 			}
+
+			if (idx % 100 == 0) {
+				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+			} 
+
+			idx++;
 		}
 
 		return counter;
@@ -66,6 +73,7 @@ namespace Tools {
 
 		Algorithm::HyperLogLog<size_t> *counter = new Algorithm::HyperLogLog<size_t>();
 
+		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
 			ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
@@ -75,8 +83,14 @@ namespace Tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const Link::Link link(line);
-				counter->insert(link.target_url().hash());
+				counter->insert_hash(link.target_url().hash());
 			}
+
+			if (idx % 100 == 0) {
+				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+			} 
+
+			idx++;
 		}
 
 		return counter;
