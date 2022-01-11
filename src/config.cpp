@@ -8,7 +8,7 @@ namespace Config {
 
 	string node = "test0001";
 	string master = "localhost";
-	string data_node = "65.21.205.72";
+	string data_node;
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
 
@@ -74,6 +74,8 @@ namespace Config {
 				node = parts[1];
 			} else if (parts[0] == "master") {
 				master = parts[1];
+			} else if (parts[0] == "data_node") {
+				data_node = parts[1];
 			} else if (parts[0] == "nodes_in_cluster") {
 				nodes_in_cluster = stoi(parts[1]);
 			} else if (parts[0] == "node_id") {
