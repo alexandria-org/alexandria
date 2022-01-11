@@ -50,10 +50,11 @@ FullTextIndexer::~FullTextIndexer() {
 }
 
 size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
-	const vector<size_t> &cols, const vector<float> &scores, const string &batch) {
+	const vector<size_t> &cols, const vector<float> &scores, const string &batch, mutex &write_mutex) {
 
 	string line;
 	size_t added_urls = 0;
+	const size_t check_for_full_shards_every = 1000;
 	while (getline(stream, line)) {
 		vector<string> col_values;
 		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -92,51 +93,15 @@ size_t FullTextIndexer::add_stream(vector<HashTableShardBuilder *> &shard_builde
 		}
 
 		added_urls++;
+
+		if (added_urls % check_for_full_shards_every == 0) {
+			write_cache(write_mutex);
+		}
 	}
+
+	write_cache(write_mutex);
 
 	return added_urls;
-}
-
-void FullTextIndexer::add_link_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream) {
-
-	string line;
-	while (getline(stream, line)) {
-		vector<string> col_values;
-		boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-		URL source_url(col_values[0], col_values[1]);
-		float source_harmonic = source_url.harmonic(m_sub_system);
-
-		URL target_url(col_values[2], col_values[3]);
-
-		//uint64_t key_hash = target_url.hash();
-		//shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, target_url.str());
-
-		const string site_colon = "link:" + target_url.host() + " link:www." + target_url.host(); 
-		add_data_to_shards(target_url, site_colon, source_harmonic);
-
-		add_data_to_shards(target_url, col_values[4], source_harmonic);
-	}
-
-	// sort shards.
-	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
-		shard->sort_cache();
-	}
-}
-
-void FullTextIndexer::add_text(vector<HashTableShardBuilder *> &shard_builders, const string &key, const string &text,
-		float score) {
-
-	URL url(key);
-	uint64_t key_hash = url.hash();
-	shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, key);
-
-	add_data_to_shards(url, text, score);
-
-	// sort shards.
-	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
-		shard->sort_cache();
-	}
 }
 
 size_t FullTextIndexer::write_cache(mutex &write_mutex) {
@@ -167,26 +132,6 @@ size_t FullTextIndexer::write_cache(mutex &write_mutex) {
 	}
 
 	return full_shards.size();
-}
-
-size_t FullTextIndexer::write_large(vector<mutex> &write_mutexes) {
-	size_t idx = 0;
-	size_t ret = 0;
-	for (FullTextShardBuilder<struct FullTextRecord> *shard : m_shards) {
-		if (shard->should_merge()) {
-			write_mutexes[idx].lock();
-			if (shard->should_merge()) {
-				LOG_INFO("MERGING shard: " + shard->target_filename());
-				shard->merge();
-				ret++;
-			}
-			write_mutexes[idx].unlock();
-		}
-
-		idx++;
-	}
-
-	return ret;
 }
 
 void FullTextIndexer::flush_cache(vector<mutex> &write_mutexes) {

@@ -52,10 +52,7 @@ public:
 	~FullTextIndexer();
 
 	size_t add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream,
-		const std::vector<size_t> &cols, const std::vector<float> &scores, const std::string &batch);
-	void add_link_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
-	void add_text(std::vector<HashTableShardBuilder *> &shard_builders, const std::string &key, const std::string &text,
-		float score);
+		const std::vector<size_t> &cols, const std::vector<float> &scores, const std::string &batch, std::mutex &write_mutex);
 	size_t write_cache(std::mutex &write_mutex);
 	size_t write_large(std::vector<std::mutex> &write_mutexes);
 	void flush_cache(std::vector<std::mutex> &write_mutexes);
