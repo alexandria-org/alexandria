@@ -6,6 +6,7 @@ tests/*.o
 build/*
 documentation/*.aux
 documentation/*.log
+documentation/statues_swe.pdf
 .DS_Store
 config/config.h
 response.txt
