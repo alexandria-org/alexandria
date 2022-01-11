@@ -64,7 +64,7 @@ namespace Link {
 		std::vector<std::future<string>> results;
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing), chunks);
+		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
 
 		int id = 1;
 		for (const vector<string> &chunk : chunks) {

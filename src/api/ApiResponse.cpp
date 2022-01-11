@@ -31,7 +31,7 @@
 #include "json.hpp"
 
 using namespace std;
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {
 
