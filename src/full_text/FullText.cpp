@@ -28,8 +28,10 @@
 #include "FullTextShardBuilder.h"
 #include "FullTextIndexerRunner.h"
 #include "link/IndexerRunner.h"
+#include "link/LinkCounter.h"
 #include "transfer/Transfer.h"
 #include "search_engine/SearchEngine.h"
+#include "hash_table/HashTableHelper.h"
 
 using namespace std;
 
@@ -326,5 +328,36 @@ namespace FullText {
 	bool should_index_link(const Link::Link &link) {
 		return link_to_node(link) == Config::node_id;
 	}
+
+	void count_link_batch(const string &db_name, const string &batch, map<size_t, set<size_t>> &counter) {
+
+		const size_t limit = 1000;
+		size_t offset = 0;
+
+		while (true) {
+			vector<string> files = download_link_batch(batch, limit, offset);
+			if (files.size() == 0) break;
+			Link::run_link_counter(db_name, batch, files, counter);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
+		}
+	}
+
+	void count_all_links(const string &db_name, Worker::Status &status) {
+
+		map<size_t, set<size_t>> counter;
+
+		for (const string &batch : Config::link_batches) {
+			count_link_batch(db_name, batch, counter);
+		}
+
+		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders(db_name);
+		HashTableHelper::optimize(shards);
+
+		// Upload link counts.
+		Link::upload_link_counts(db_name, counter);
+
+	}
+
 
 }

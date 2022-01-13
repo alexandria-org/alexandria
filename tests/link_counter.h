@@ -24,54 +24,41 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
-
-#include "config.h"
-
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include <vector>
-#include <set>
 #include <map>
+#include <set>
+#include "api/Worker.h"
+#include "full_text/FullText.h"
 
-using std::string;
-using std::vector;
-using std::ifstream;
-using std::stringstream;
-using std::set;
-using std::map;
-using std::pair;
+BOOST_AUTO_TEST_SUITE(link_counter)
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
-#include "cc_parser.h"
-#include "hash.h"
-#include "shard_builder.h"
-#include "n_gram.h"
-#include "link_counter.h"
+BOOST_AUTO_TEST_CASE(link_counter) {
 
+	std::map<size_t, std::set<size_t>> counter;
+
+	HashTableHelper::truncate("test_main_index");
+	FullText::count_link_batch("test_main_index", "ALEXANDRIA-TEST-01", counter);
+
+	BOOST_CHECK_EQUAL(counter.size(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(link_counter2) {
+
+	std::map<size_t, std::set<size_t>> counter;
+
+	Config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
+
+	HashTableHelper::truncate("test_main_index");
+
+	Worker::Status status;
+	FullText::count_all_links("test_main_index", status);
+
+	File::TsvFileRemote top_links("urls/link_counts/top_1.gz");
+
+	vector<string> top_urls;
+	top_links.read_column_into(0, top_urls);
+
+	BOOST_REQUIRE_EQUAL(top_urls.size(), 13);
+	BOOST_CHECK(top_urls[0] == "http://url7.com/test");
+}
+
+BOOST_AUTO_TEST_SUITE_END()

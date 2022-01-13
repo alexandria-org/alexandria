@@ -49,6 +49,7 @@ set(SRC_CLASSES
 	"src/link/Link.cpp"
 	"src/link/Indexer.cpp"
 	"src/link/IndexerRunner.cpp"
+	"src/link/LinkCounter.cpp"
 
 	"src/domain_link/Indexer.cpp"
 

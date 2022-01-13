@@ -24,54 +24,14 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
-
-#include "config.h"
-
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include <vector>
-#include <set>
+#include <string>
 #include <map>
+#include <set>
+#include <vector>
 
-using std::string;
-using std::vector;
-using std::ifstream;
-using std::stringstream;
-using std::set;
-using std::map;
-using std::pair;
+namespace Link {
+	void run_link_counter(const std::string &db_name, const std::string &batch, const std::vector<std::string> &files,
+			std::map<size_t, std::set<size_t>> &counter);
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
-#include "cc_parser.h"
-#include "hash.h"
-#include "shard_builder.h"
-#include "n_gram.h"
-#include "link_counter.h"
-
+	void upload_link_counts(const std::string &db_name, std::map<size_t, std::set<size_t>> &counter);
+}

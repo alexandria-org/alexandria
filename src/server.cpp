@@ -123,6 +123,16 @@ int main(int argc, const char **argv) {
 
 		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
 
+	} else if (arg == "count_link") {
+
+		Worker::Status status;
+		status.items = FullText::total_urls_in_batches();
+		status.items_indexed = 0;
+		status.start_time = Profiler::timestamp();
+		Worker::start_status_server(status);
+
+		FullText::count_all_links("main_index", status);
+
 	} else if (arg == "optimize") {
 
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
