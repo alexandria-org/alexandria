@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_SUITE(link_counter)
 
 BOOST_AUTO_TEST_CASE(link_counter) {
 
-	std::map<size_t, std::set<size_t>> counter;
+	std::map<size_t, std::map<size_t, float>> counter;
 
 	HashTableHelper::truncate("test_main_index");
 	FullText::count_link_batch("test_main_index", "ALEXANDRIA-TEST-01", counter);

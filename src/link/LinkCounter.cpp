@@ -25,6 +25,7 @@
  */
 
 #include <math.h>
+#include "hash/Hash.h"
 #include "hash_table/HashTable.h"
 #include "hash_table/HashTableShardBuilder.h"
 #include "parser/URL.h"
@@ -39,7 +40,8 @@ using namespace std;
 
 namespace Link {
 
-	void count_links_in_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream, map<size_t, set<size_t>> &counter) {
+	void count_links_in_stream(const SubSystem *sub_system, vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
+			map<size_t, map<size_t, float>> &counter) {
 
 		string line;
 		while (getline(stream, line)) {
@@ -50,18 +52,20 @@ namespace Link {
 			URL target_url(col_values[2], col_values[3]);
 			URL source_url(col_values[0], col_values[1]);
 
-			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
+			const uint64_t link_hash = Hash::str(source_url.host_top_domain());
 			const uint64_t target_url_hash = target_url.hash();
 
-			counter[target_url_hash].insert(link_hash);
+			float harmonic = source_url.harmonic(sub_system);
+
+			counter[target_url_hash][link_hash] = expm1(25.0*harmonic) / 50.0;
 			shard_builders[target_url_hash % Config::ht_num_shards]->add(target_url_hash, target_url.str());
 		}
 	}
 
-	map<size_t, set<size_t>> run_count_thread_with_local_files(const string &db_name, const vector<string> &local_files,
+	map<size_t, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, const string &db_name, const vector<string> &local_files,
 			vector<mutex> &write_mutexes) {
 
-		map<size_t, set<size_t>> counter;
+		map<size_t, map<size_t, float>> counter;
 
 		vector<HashTableShardBuilder *> shard_builders;
 		for (size_t i = 0; i < Config::ht_num_shards; i++) {
@@ -75,7 +79,7 @@ namespace Link {
 
 			if (stream.is_open()) {
 				{
-					count_links_in_stream(shard_builders, stream, counter);
+					count_links_in_stream(sub_system, shard_builders, stream, counter);
 				}
 			}
 
@@ -119,10 +123,12 @@ namespace Link {
 		}
 	}
 
-	void run_link_counter(const string &db_name, const string &batch, const vector<string> &local_files, map<size_t, set<size_t>> &counter) {
+	void run_link_counter(const string &db_name, const string &batch, const vector<string> &local_files, map<size_t, map<size_t, float>> &counter) {
+
+		SubSystem *sub_system = new SubSystem();
 
 		ThreadPool pool(Config::ft_num_threads_indexing);
-		std::vector<std::future<map<size_t, set<size_t>>>> results;
+		std::vector<std::future<map<size_t, map<size_t, float>>>> results;
 
 		vector<vector<string>> chunks;
 		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
@@ -132,19 +138,21 @@ namespace Link {
 		for (const vector<string> &chunk : chunks) {
 
 			results.emplace_back(
-				pool.enqueue([db_name, chunk, &write_mutexes] {
-					return run_count_thread_with_local_files(db_name, chunk, write_mutexes);
+				pool.enqueue([sub_system, db_name, chunk, &write_mutexes] {
+					return run_count_thread_with_local_files(sub_system, db_name, chunk, write_mutexes);
 				})
 			);
 
 		}
 
 		for(auto && result: results) {
-			map<size_t, set<size_t>> count_part = result.get();
+			map<size_t, map<size_t, float>> count_part = result.get();
 			for (const auto &iter : count_part) {
 				counter[iter.first].insert(iter.second.begin(), iter.second.end());
 			}
 		}
+
+		delete sub_system;
 
 		sort_hash_table(db_name);
 	}
@@ -154,24 +162,33 @@ namespace Link {
 		Transfer::upload_gz_file("urls/link_counts/top_" + to_string(file_num) + ".gz", file_data);
 	}
 
-	void upload_link_counts(const std::string &db_name, std::map<size_t, std::set<size_t>> &counter) {
+	float calculate_score(const map<size_t, float> &scores) {
+		float score = 0.0f;
+		for (const auto &iter : scores) {
+			score += iter.second;
+		}
+		return score;
+	}
+
+	void upload_link_counts(const std::string &db_name, std::map<size_t, std::map<size_t, float>> &counter) {
 
 		struct link_count {
 			size_t link_hash;
 			size_t count;
+			float score;
 		};
 
 		vector<struct link_count> counter_vec;
 
 		for (auto &iter : counter) {
-			counter_vec.emplace_back(link_count {.link_hash = iter.first, .count = iter.second.size()});
+			counter_vec.emplace_back(link_count {.link_hash = iter.first, .count = iter.second.size(), .score = calculate_score(iter.second)});
 			iter.second.clear();
 		}
 
 		counter.clear();
 
 		sort(counter_vec.begin(), counter_vec.end(), [](const struct link_count &a, const struct link_count &b) {
-			return a.count > b.count;
+			return a.score > b.score;
 		});
 
 		HashTable hash_table(db_name);
@@ -180,7 +197,7 @@ namespace Link {
 		for (const auto &count : counter_vec) {
 			const string url = hash_table.find(count.link_hash);
 
-			file_lines.push_back(url + "\t" + to_string(count.count));
+			file_lines.push_back(url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
 
 			if (file_lines.size() >= 1000000) {
 				upload_link_counts_file(file_lines, ++file_num);

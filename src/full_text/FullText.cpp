@@ -329,7 +329,7 @@ namespace FullText {
 		return link_to_node(link) == Config::node_id;
 	}
 
-	void count_link_batch(const string &db_name, const string &batch, map<size_t, set<size_t>> &counter) {
+	void count_link_batch(const string &db_name, const string &batch, map<size_t, map<size_t, float>> &counter) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;
@@ -345,7 +345,7 @@ namespace FullText {
 
 	void count_all_links(const string &db_name, Worker::Status &status) {
 
-		map<size_t, set<size_t>> counter;
+		map<size_t, map<size_t, float>> counter;
 
 		for (const string &batch : Config::link_batches) {
 			count_link_batch(db_name, batch, counter);
@@ -358,6 +358,5 @@ namespace FullText {
 		Link::upload_link_counts(db_name, counter);
 
 	}
-
 
 }

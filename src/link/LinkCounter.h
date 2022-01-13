@@ -26,12 +26,11 @@
 
 #include <string>
 #include <map>
-#include <set>
 #include <vector>
 
 namespace Link {
 	void run_link_counter(const std::string &db_name, const std::string &batch, const std::vector<std::string> &files,
-			std::map<size_t, std::set<size_t>> &counter);
+			std::map<size_t, std::map<size_t, float>> &counter);
 
-	void upload_link_counts(const std::string &db_name, std::map<size_t, std::set<size_t>> &counter);
+	void upload_link_counts(const std::string &db_name, std::map<size_t, std::map<size_t, float>> &counter);
 }
