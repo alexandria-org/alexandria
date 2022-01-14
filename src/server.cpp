@@ -118,6 +118,7 @@ int main(int argc, const char **argv) {
 
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
 		HashTableHelper::optimize(shards);
+		HashTableHelper::delete_shard_builders(shards);
 
 	} else if (arg == "link") {
 
@@ -137,6 +138,7 @@ int main(int argc, const char **argv) {
 
 		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
 		HashTableHelper::optimize(shards);
+		HashTableHelper::delete_shard_builders(shards);
 
 	} else if (arg == "truncate_link") {
 

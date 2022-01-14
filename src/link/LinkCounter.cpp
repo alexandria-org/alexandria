@@ -157,9 +157,9 @@ namespace Link {
 		sort_hash_table(db_name);
 	}
 
-	void upload_link_counts_file(const vector<string> &lines, size_t file_num) {
+	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t file_num) {
 		const string file_data = boost::algorithm::join(lines, "\n");
-		Transfer::upload_gz_file("urls/link_counts/top_" + to_string(file_num) + ".gz", file_data);
+		Transfer::upload_gz_file("urls/link_counts/" + batch + "/top_" + to_string(file_num) + ".gz", file_data);
 	}
 
 	float calculate_score(const map<size_t, float> &scores) {
@@ -170,7 +170,7 @@ namespace Link {
 		return score;
 	}
 
-	void upload_link_counts(const std::string &db_name, std::map<size_t, std::map<size_t, float>> &counter) {
+	void upload_link_counts(const std::string &db_name, const string &batch, std::map<size_t, std::map<size_t, float>> &counter) {
 
 		struct link_count {
 			size_t link_hash;
@@ -200,12 +200,12 @@ namespace Link {
 			file_lines.push_back(url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
 
 			if (file_lines.size() >= 1000000) {
-				upload_link_counts_file(file_lines, ++file_num);
+				upload_link_counts_file(file_lines, batch, ++file_num);
 				file_lines.clear();
 			}
 
 		}
-		upload_link_counts_file(file_lines, ++file_num);
+		upload_link_counts_file(file_lines, batch, ++file_num);
 	}
 
 }

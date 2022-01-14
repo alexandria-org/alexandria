@@ -345,18 +345,17 @@ namespace FullText {
 
 	void count_all_links(const string &db_name, Worker::Status &status) {
 
-		map<size_t, map<size_t, float>> counter;
-
 		for (const string &batch : Config::link_batches) {
+			map<size_t, map<size_t, float>> counter;
 			count_link_batch(db_name, batch, counter);
+
+			vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders(db_name);
+			HashTableHelper::optimize(shards);
+			HashTableHelper::delete_shard_builders(shards);
+
+			// Upload link counts.
+			Link::upload_link_counts(db_name, batch, counter);
 		}
-
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders(db_name);
-		HashTableHelper::optimize(shards);
-
-		// Upload link counts.
-		Link::upload_link_counts(db_name, counter);
-
 	}
 
 }
