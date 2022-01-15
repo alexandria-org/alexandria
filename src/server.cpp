@@ -56,8 +56,6 @@ void runner(void) {
 	}
 }
 
-#include "leveldb/db.h"
-
 int main(int argc, const char **argv) {
 
 	/*leveldb::DB *db;

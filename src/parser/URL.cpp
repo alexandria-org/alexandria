@@ -62,6 +62,10 @@ string URL::str() const {
 	return m_url_string;
 }
 
+string URL::key() const {
+	return m_host + m_path + m_query;
+}
+
 uint64_t URL::hash() const {
 	return m_hasher(m_host + m_path + m_query);
 }

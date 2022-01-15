@@ -44,6 +44,7 @@ public:
 
 	void set_url_string(const std::string &url);
 	std::string str() const;
+	std::string key() const;
 
 	uint64_t hash() const;
 	uint64_t host_hash() const;

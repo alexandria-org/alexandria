@@ -24,55 +24,30 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
+#include "urlstore/UrlStore.h"
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
+BOOST_AUTO_TEST_SUITE(url_store)
 
-#include "config.h"
+BOOST_AUTO_TEST_CASE(local) {
+	URL url("https://www.example.com");
+	UrlStore::UrlData url_data = {
+		.url = url.str(),
+		.link_count = 0,
+		.http_code = 200,
+		.location = "",
+		.last_visited = 20220101
+	};
+	UrlStore::UrlStore url_db("/tmp/testdb");
+	url_db.set(url, url_data);
+	url_data = url_db.get(url);
 
-#include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include <vector>
-#include <set>
-#include <map>
+	BOOST_CHECK_EQUAL(url_data.url, url.str());
+	BOOST_CHECK_EQUAL(url_data.link_count, 0);
+	BOOST_CHECK_EQUAL(url_data.http_code, 200);
+	BOOST_CHECK_EQUAL(url_data.location, "");
+	BOOST_CHECK_EQUAL(url_data.last_visited, 20220101);
 
-using std::string;
-using std::vector;
-using std::ifstream;
-using std::stringstream;
-using std::set;
-using std::map;
-using std::pair;
+	UrlStore::print_url_data(url_data);
+}
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
-#include "cc_parser.h"
-#include "hash.h"
-#include "shard_builder.h"
-#include "n_gram.h"
-#include "link_counter.h"
-#include "url_store.h"
-
+BOOST_AUTO_TEST_SUITE_END()

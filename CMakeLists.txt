@@ -69,6 +69,8 @@ set(SRC_CLASSES
 	"src/parser/URL.cpp"
 	"src/parser/Warc.cpp"
 	"src/parser/cc_parser.cpp"
+
+	"src/urlstore/UrlStore.cpp"
 	
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"
@@ -129,12 +131,12 @@ target_link_libraries(tools PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
 target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}

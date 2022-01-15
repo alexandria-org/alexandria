@@ -35,9 +35,9 @@ docker exec -it alexandria /bin/bash
 mkdir /alexandria/build
 cd /alexandria/build
 
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 or
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
+cmake .. -DCMAKE_BUILD_TYPE=Release
 
 make -j4 run_tests
 ```
@@ -57,9 +57,9 @@ make -j4 run_tests
 mkdir build
 cd build
 
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=./deps/out
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 or
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=./deps/out
+cmake .. -DCMAKE_BUILD_TYPE=Release
 
 make -j24
 ```

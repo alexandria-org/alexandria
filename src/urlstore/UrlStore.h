@@ -24,55 +24,39 @@
  * SOFTWARE.
  */
 
-#define BOOST_TEST_MODULE "Unit tests for alexandria.org"
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
-
-#include "config.h"
+#pragma once
 
 #include <iostream>
-#include <stdlib.h>
-#include <fstream>
-#include <streambuf>
-#include <math.h>
-#include <vector>
-#include <set>
-#include <map>
+#include "leveldb/db.h"
+#include "parser/URL.h"
 
-using std::string;
-using std::vector;
-using std::ifstream;
-using std::stringstream;
-using std::set;
-using std::map;
-using std::pair;
+namespace UrlStore {
 
-#include "search_allocation.h"
-#include "file.h"
-#include "url.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "hash_table.h"
-#include "full_text.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_log_log.h"
-#include "hyper_ball.h"
-#include "cluster.h"
-#include "cc_parser.h"
-#include "hash.h"
-#include "shard_builder.h"
-#include "n_gram.h"
-#include "link_counter.h"
-#include "url_store.h"
+	struct UrlData {
+		std::string url;
+		size_t link_count;
+		size_t http_code;
+		std::string location;
+		size_t last_visited;
+	};
 
+	class UrlStore {
+		public:
+			UrlStore(const std::string &server_path);
+			~UrlStore();
+
+			void set(const URL &url, const UrlData &data);
+			UrlData get(const URL &url);
+
+		private:
+			leveldb::DB *m_db;
+
+			std::string data_to_str(const UrlData &data) const;
+			UrlData str_to_data(const std::string &str) const;
+
+	};
+
+	void print_url_data(const UrlData &data);
+
+
+}
