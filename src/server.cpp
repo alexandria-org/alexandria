@@ -56,7 +56,46 @@ void runner(void) {
 	}
 }
 
+#include "leveldb/db.h"
+
 int main(int argc, const char **argv) {
+
+	/*
+	leveldb::DB *db;
+	leveldb::Options options;
+	options.create_if_missing = true;
+	leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+
+	leveldb::Status s;
+
+	{
+		leveldb::Slice key = "example.com";
+		s = db->Put(leveldb::WriteOptions(), key, "https://example.com");
+	}
+	{
+		leveldb::Slice key = "example.com/sub1";
+		s = db->Put(leveldb::WriteOptions(), key, "https://example.com/sub1");
+	}
+	{
+		leveldb::Slice key = "example.com/sub2";
+		s = db->Put(leveldb::WriteOptions(), key, "https://example.com/sub2");
+	}
+	{
+		leveldb::Slice key = "spelagratis.nu/";
+		s = db->Put(leveldb::WriteOptions(), key, "https://spelagratis.nu/");
+	}
+	{
+		leveldb::Slice key = "abba.se/test1";
+		s = db->Put(leveldb::WriteOptions(), key, "https://abba.se/test1");
+	}
+
+	leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+	for (it->Seek("example.com"); it->Valid() && it->key().ToString() < "example.coma"; it->Next()) {
+		cout << it->key().ToString() << ": "  << it->value().ToString() << endl;
+	}
+
+	return 0;*/
+
 
 	/*{
 		vector<thread> threads;

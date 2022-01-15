@@ -6,10 +6,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-add_compile_options(-Wall -Werror -Wpedantic)
 project(alexandria LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+add_subdirectory("deps/leveldb/")
 
 find_package(Threads REQUIRED)
 FIND_PACKAGE(CURL REQUIRED)
@@ -120,6 +121,10 @@ target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
+target_compile_options(tools PUBLIC -Wall -Werror -Wpedantic)
+target_compile_options(run_tests PUBLIC -Wall -Werror -Wpedantic)
+target_compile_options(server PUBLIC -Wall -Werror -Wpedantic)
+
 target_link_libraries(tools PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
@@ -134,5 +139,5 @@ target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
 
