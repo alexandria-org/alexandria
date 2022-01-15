@@ -60,8 +60,7 @@ void runner(void) {
 
 int main(int argc, const char **argv) {
 
-	/*
-	leveldb::DB *db;
+	/*leveldb::DB *db;
 	leveldb::Options options;
 	options.create_if_missing = true;
 	leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);

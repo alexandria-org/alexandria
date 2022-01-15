@@ -30,6 +30,7 @@
 #include "tools/Counter.h"
 #include "tools/Download.h"
 #include "tools/CalculateHarmonic.h"
+#include "parser/URL.h"
 #include <iostream>
 #include <set>
 
@@ -51,7 +52,11 @@ int main(int argc, const char **argv) {
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
-		Config::read_config("/etc/alexandria.conf");
+		try {
+			Config::read_config("/etc/alexandria.conf");
+		} catch (...) {
+
+		}
 	}
 
 	if (argc < 2) {
@@ -78,6 +83,12 @@ int main(int argc, const char **argv) {
 		Tools::calculate_harmonic_links();
 	} else if (arg == "--harmonic") {
 		Tools::calculate_harmonic();
+	} else if (arg == "--host-hash") {
+		URL url(argv[2]);
+		cout << url.host_hash() << endl;
+	} else if (arg == "--host-hash-mod") {
+		URL url(argv[2]);
+		cout << url.host_hash() % stoull(argv[3]) << endl;
 	} else {
 		help();
 	}

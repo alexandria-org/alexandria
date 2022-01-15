@@ -28,6 +28,13 @@
 
 BOOST_AUTO_TEST_SUITE(text)
 
+BOOST_AUTO_TEST_CASE(get_full_text_words) {
+	vector<string> words = Text::get_full_text_words("C++ map");
+	for (const string &word : words) {
+		std::cout << word << std::endl;
+	}
+}
+
 BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
 	vector<string> words = Text::get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\
 		jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih");
@@ -97,6 +104,7 @@ BOOST_AUTO_TEST_CASE(clean_word) {
 		vector<string>({"html", "sitemap", "14"}));
 	BOOST_CHECK(Text::get_words_without_stopwords("Archives.com zfreeti.com best. stream. in .the world") ==
 		vector<string>({"best", "stream", "world"}));
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
