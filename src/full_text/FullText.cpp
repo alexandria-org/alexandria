@@ -384,7 +384,9 @@ namespace FullText {
 					.last_visited = 0
 				};
 
-				cout << target_url.str() << " num: " << num << endl;
+				if (num % 1000000 == 0) {
+					cout << target_url.str() << " num: " << num << endl;
+				}
 
 				url_store.set(target_url, data);
 
@@ -395,7 +397,7 @@ namespace FullText {
 
 	void testing() {
 
-		UrlStore::UrlStore url_store("/mnt/urlstore");
+		UrlStore::UrlStore url_store("/mnt/0/urlstore");
 
 		const size_t limit = 100;
 		size_t offset = 0;
