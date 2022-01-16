@@ -87,5 +87,6 @@ namespace FullText {
 
 	void count_link_batch(const string &db_name, const string &batch, std::map<size_t, std::map<size_t, float>> &counter);
 	void count_all_links(const string &db_name, Worker::Status &status);
+	void testing();
 
 }
