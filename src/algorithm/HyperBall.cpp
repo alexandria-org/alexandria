@@ -80,7 +80,7 @@ namespace Algorithm {
 			}
 			LOG_INFO("Finished run t = " + to_string(t));
 			t += 1.0;
-			if (t > 20.0) break;
+			if (t > 40.0) break;
 		}
 
 		return harmonic;
