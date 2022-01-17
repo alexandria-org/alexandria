@@ -35,6 +35,8 @@ namespace Config {
 	extern std::string node;
 	extern std::string master;
 	extern std::string data_node;
+	extern std::string url_store_host;
+
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;
 

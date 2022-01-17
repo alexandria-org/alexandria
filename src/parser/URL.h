@@ -35,6 +35,7 @@ class URL {
 
 public:
 	URL();
+	URL(const URL &url);
 	explicit URL(const std::string &url);
 	explicit URL(const std::string &host, const std::string &path);
 	~URL();

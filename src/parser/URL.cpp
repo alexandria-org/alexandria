@@ -36,6 +36,12 @@ URL::URL() {
 	m_status = ::Parser::OK;
 }
 
+URL::URL(const URL &url) :
+	m_url_string(url.str())
+{
+	m_status = parse();
+}
+
 URL::URL(const string &url) :
 	m_url_string(url)
 {

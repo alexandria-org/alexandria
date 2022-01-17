@@ -17,6 +17,7 @@
 #include "ApiStatusResponse.h"
 #include "link/FullTextRecord.h"
 #include "system/Logger.h"
+#include "urlstore/UrlStore.h"
 
 using namespace std;
 
@@ -51,7 +52,9 @@ namespace Worker {
 	void output_binary_response(FCGX_Request &request, stringstream &response) {
 
 		FCGX_FPrintF(request.out, "Content-type: application/octet-stream\r\n\r\n");
-		FCGX_PutStr(response.str().c_str(), response.str().size(), request.out);
+		string data_out = response.str();
+		cout << "OUTPUTTING : " << data_out.size() << " bytes" << endl;
+		FCGX_PutStr(data_out.c_str(), response.str().size(), request.out);
 
 	}
 
@@ -87,7 +90,16 @@ namespace Worker {
 				break;
 			}
 
-			string uri = FCGX_GetParam("REQUEST_URI", request.envp);
+			const char *uri_ptr = FCGX_GetParam("REQUEST_URI", request.envp);
+			const char *req_ptr = FCGX_GetParam("REQUEST_METHOD", request.envp);
+			if ((uri_ptr == nullptr) || (req_ptr == nullptr)) {
+				FCGX_Finish_r(&request);
+				continue;
+			}
+			string uri(uri_ptr);
+			string request_method(req_ptr);
+
+			cout << request_method << endl;
 
 			LOG_INFO("Serving request: " + uri);
 
@@ -106,11 +118,9 @@ namespace Worker {
 
 			if (query.find("q") != query.end() && deduplicate) {
 				if (Config::index_text) {
-		LOG_INFO("Api::search");
 					Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				} else {
-		LOG_INFO("Api::search_remote");
 					Api::search_remote(query["q"], hash_table, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				}
@@ -197,6 +207,97 @@ namespace Worker {
 		}
 	}
 
+	void urlstore_server() {
+		FCGX_Init();
+
+		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
+		if (socket_id < 0) {
+			LOG_INFO("Could not open socket, exiting");
+			return;
+		}
+
+		FCGX_Request request;
+		FCGX_InitRequest(&request, socket_id, 0);
+
+		LOG_INFO("Urlstore server has started...");
+
+		UrlStore::UrlStore url_store("/mnt/0/urlstore");
+
+		const size_t max_post_len = 100*1024*1024;
+		const size_t buffer_len = 1024*1024;
+		char *buffer = new char[buffer_len];
+
+		int error = 0;
+		while (true) {
+
+			error = 0;
+
+			int accept_response = FCGX_Accept_r(&request);
+			if (accept_response < 0) {
+				break;
+			}
+
+			const char *uri_ptr = FCGX_GetParam("REQUEST_URI", request.envp);
+			const char *req_ptr = FCGX_GetParam("REQUEST_METHOD", request.envp);
+
+			if ((uri_ptr == nullptr) || (req_ptr == nullptr)) {
+				FCGX_Finish_r(&request);
+				continue;
+			}
+
+			string uri(uri_ptr);
+			string request_method(req_ptr);
+
+			stringstream response_stream;
+
+			if (request_method == "PUT") {
+				string post_data;
+				while (true) {
+
+					const size_t read_bytes = FCGX_GetStr(buffer, buffer_len, request.in);
+					if (read_bytes == 0) break;
+
+					if (post_data.size() + read_bytes > max_post_len) {
+						error = 1;
+						LOG_ERROR("Posted data larger then " + to_string(max_post_len) + ", ignoring request");
+						break;
+					}
+					post_data.append(buffer, read_bytes);
+				}
+
+				if (error == 0) {
+					UrlStore::handle_put_request(url_store, post_data, response_stream);
+				}
+			} else if (request_method == "GET") {
+
+				//char **env = request.envp;
+				//while (*(++env)) cout << *env << endl;
+
+				const char *accept_ptr = FCGX_GetParam("HTTP_ACCEPT", request.envp);
+				string accept = "text/html";
+				if (accept_ptr != nullptr) {
+					accept = string(accept_ptr);
+				}
+				
+				const char *uri_ptr = FCGX_GetParam("REQUEST_URI", request.envp);
+				if (uri_ptr != nullptr) {
+					string uri(uri_ptr);
+					uri.replace(0, 10, "");
+					if (accept == "application/octet-stream") {
+						UrlStore::handle_binary_get_request(url_store, URL(uri), response_stream);
+						output_binary_response(request, response_stream);
+					} else {
+						UrlStore::handle_get_request(url_store, URL(uri), response_stream);
+						output_response(request, response_stream);
+					}
+				}
+			}
+
+
+			FCGX_Finish_r(&request);
+		}
+	}
+
 	thread download_server_thread;
 	void start_download_server() {
 
@@ -208,6 +309,13 @@ namespace Worker {
 	void start_status_server(Status &status) {
 
 		status_server_thread = std::move(thread(status_server, &status));
+
+	}
+
+	thread urlstore_server_thread;
+	void start_urlstore_server() {
+
+		urlstore_server_thread = std::move(thread(urlstore_server));
 
 	}
 }

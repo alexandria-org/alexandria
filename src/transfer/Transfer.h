@@ -41,6 +41,11 @@ namespace Transfer {
 	const int OK = 0;
 	const int ERROR = 1;
 
+	struct Response {
+		std::string body;
+		size_t code;
+	};
+
 	size_t curl_stringstream_writer(void *ptr, size_t size, size_t nmemb, std::stringstream *ss);
 	size_t curl_ostream_writer(void *ptr, size_t size, size_t nmemb, std::ostream *os);
 
@@ -62,5 +67,16 @@ namespace Transfer {
 
 	int upload_file(const std::string &path, const std::string &data);
 	int upload_gz_file(const std::string &path, const std::string &data);
+
+	/*
+	 * Perform simple GET request and return response.
+	 * */
+	Response get(const std::string &url);
+	Response get(const std::string &url, std::vector<std::string> headers);
+
+	/*
+	 * Perform simple PUT request and return response.
+	 * */
+	Response put(const std::string &url, const std::string &data);
 
 }

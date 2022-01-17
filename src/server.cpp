@@ -59,31 +59,6 @@ void runner(void) {
 
 int main(int argc, const char **argv) {
 
-	/*{
-		vector<thread> threads;
-		for (size_t i = 0; i < 10; i++) {
-			threads.emplace_back(std::move(thread(runner)));
-		}
-
-		for (thread &th : threads) {
-			th.join();
-		}
-
-	}
-	return 0;
-	{
-		const size_t data_len = 8000000*24;
-		char *random_data = new char[data_len];
-		for (size_t i = 0; i < data_len; i++) random_data[i] = rand();
-
-		ofstream outfile("/mnt/0/asd", ios::trunc);
-		for (size_t i = 0; i < 200*5*4; i++) {
-			outfile.write(random_data, data_len);
-		}
-	}
-
-	return 0;*/
-
 	Logger::start_logger_thread();
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
@@ -92,18 +67,11 @@ int main(int argc, const char **argv) {
 		Config::read_config("/etc/alexandria.conf");
 	}
 
-	FullText::testing();
-	return 0;
-
-	/*Worker::test_search(string(argv[1]));
-
-	Logger::join_logger_thread();
-
-	return 0;*/
-
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (argc == 1 && FullText::is_indexed()) {
+	if (true || (argc == 1 && FullText::is_indexed())) {
+
+		Worker::start_urlstore_server();
 
 		cout << "starting download server" << endl;
 		Worker::start_download_server();

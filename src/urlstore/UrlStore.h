@@ -27,36 +27,50 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include "leveldb/db.h"
 #include "parser/URL.h"
 
 namespace UrlStore {
 
+	const int OK = 0;
+	const int ERROR = 1;
+
 	struct UrlData {
-		std::string url;
+		URL url;
+		URL redirect;
 		size_t link_count;
 		size_t http_code;
-		std::string location;
 		size_t last_visited;
 	};
+
+	std::string data_to_str(const UrlData &data);
+	UrlData str_to_data(const char *cstr, size_t len);
+	UrlData str_to_data(const std::string &str);
 
 	class UrlStore {
 		public:
 			UrlStore(const std::string &server_path);
 			~UrlStore();
 
-			void set(const URL &url, const UrlData &data);
+			void set(const UrlData &data);
 			UrlData get(const URL &url);
 
 		private:
 			leveldb::DB *m_db;
 
-			std::string data_to_str(const UrlData &data) const;
-			UrlData str_to_data(const std::string &str) const;
 
 	};
 
 	void print_url_data(const UrlData &data);
+
+	void handle_put_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
+	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
+	void handle_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
+
+	void set(const std::vector<UrlData> &data);
+	void set(const UrlData &data);
+	int get(const URL &url, UrlData &data);
 
 
 }

@@ -24,6 +24,7 @@ namespace Worker {
 	void start_server();
 	void start_download_server();
 	void start_status_server(Status &status);
+	void start_urlstore_server();
 
 }
 

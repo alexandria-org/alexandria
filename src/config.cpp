@@ -34,6 +34,8 @@ namespace Config {
 	string node = "test0001";
 	string master = "localhost";
 	string data_node;
+	string url_store_host = "http://localhost";
+
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
 
