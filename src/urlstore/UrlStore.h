@@ -28,8 +28,11 @@
 
 #include <iostream>
 #include <vector>
+#include <bitset>
 #include "leveldb/db.h"
 #include "parser/URL.h"
+
+#define URL_STORE_NUM_FIELDS 4
 
 namespace UrlStore {
 
@@ -70,6 +73,8 @@ namespace UrlStore {
 
 	void set(const std::vector<UrlData> &data);
 	void set(const UrlData &data);
+	void update(const std::vector<UrlData> &data, const std::bitset<URL_STORE_NUM_FIELDS> &update);
+	void update(const UrlData &data, const std::bitset<URL_STORE_NUM_FIELDS> &update);
 	int get(const URL &url, UrlData &data);
 
 

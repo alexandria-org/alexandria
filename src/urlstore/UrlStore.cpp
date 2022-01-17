@@ -202,6 +202,14 @@ namespace UrlStore {
 		Transfer::put(Config::url_store_host + "/urlstore", put_data);
 	}
 
+	void update(const std::vector<UrlData> &data, const std::bitset<URL_STORE_NUM_FIELDS> &update) {
+
+	}
+
+	void update(const UrlData &data, const std::bitset<URL_STORE_NUM_FIELDS> &update) {
+
+	}
+
 	int get(const URL &url, UrlData &data) {
 		Transfer::Response res = Transfer::get(Config::url_store_host + "/urlstore/" + url.str(), {"Accept: application/octet-stream"});
 		if (res.code == 200) {

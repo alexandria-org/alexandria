@@ -44,6 +44,8 @@ BOOST_AUTO_TEST_CASE(logger) {
 
 	BOOST_CHECK_EQUAL(line1, "test1");
 	BOOST_CHECK_EQUAL(line2, "test2");
+
+	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

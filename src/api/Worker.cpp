@@ -4,6 +4,8 @@
 #include "config.h"
 #include "parser/URL.h"
 #include "parser/cc_parser.h"
+#include <pthread.h>
+#include <signal.h>
 
 #include "post_processor/PostProcessor.h"
 #include "api/ApiResponse.h"
@@ -312,10 +314,30 @@ namespace Worker {
 
 	}
 
+	void signal_handler(int signal) {
+		FCGX_ShutdownPending();
+	}
+
 	thread urlstore_server_thread;
 	void start_urlstore_server() {
 
+		struct sigaction sa;
+
+		sigemptyset(&sa.sa_mask);
+		sa.sa_handler = signal_handler;
+		sa.sa_flags = 0;
+		if (sigaction(SIGUSR2, &sa, NULL) == -1) {
+			
+		}
+
 		urlstore_server_thread = std::move(thread(urlstore_server));
+
+	}
+
+	void join_urlstore_server() {
+
+		pthread_kill(urlstore_server_thread.native_handle(), SIGUSR2);
+		urlstore_server_thread.join();
 
 	}
 }

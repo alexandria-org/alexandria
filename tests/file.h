@@ -214,7 +214,6 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 	}
 
 	Logger::join_logger_thread();
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()
