@@ -25,8 +25,6 @@
  */
 
 #include "urlstore/UrlStore.h"
-#include "api/Worker.h"
-#include "system/Logger.h"
 
 BOOST_AUTO_TEST_SUITE(url_store)
 
@@ -47,13 +45,9 @@ BOOST_AUTO_TEST_CASE(local) {
 	BOOST_CHECK_EQUAL(url_data.link_count, 0);
 	BOOST_CHECK_EQUAL(url_data.http_code, 200);
 	BOOST_CHECK_EQUAL(url_data.last_visited, 20220101);
-
-	UrlStore::print_url_data(url_data);
 }
 
 BOOST_AUTO_TEST_CASE(server) {
-
-	Worker::start_urlstore_server();
 
 	URL url("https://www.example.com");
 	URL url2 = url;
@@ -75,12 +69,10 @@ BOOST_AUTO_TEST_CASE(server) {
 	BOOST_CHECK_EQUAL(ret_data.http_code, 200);
 	BOOST_CHECK_EQUAL(ret_data.last_visited, 20220101);
 
-	Worker::join_urlstore_server();
 }
 
 BOOST_AUTO_TEST_CASE(update) {
 
-	Worker::start_urlstore_server();
 
 	URL url("https://www.example.com");
 	URL url2 = url;
@@ -95,24 +87,23 @@ BOOST_AUTO_TEST_CASE(update) {
 
 	UrlStore::UrlData url_data2 = {
 		.url = url,
-		.redirect = URL(),
+		.redirect = URL("https://www.test.com"),
 		.link_count = 10,
 		.http_code = 0,
 		.last_visited = 20220110
 	};
 
-	UrlStore::update(url_data, std::bitset<4>{0B0001});
+	UrlStore::update(url_data2, UrlStore::update_last_visited | UrlStore::update_redirect);
 
 	UrlStore::UrlData ret_data;
 	int error = UrlStore::get(url, ret_data);
 
 	BOOST_CHECK_EQUAL(error, UrlStore::OK);
 	BOOST_CHECK_EQUAL(ret_data.url.str(), url.str());
+	BOOST_CHECK_EQUAL(ret_data.redirect.str(), "https://www.test.com");
 	BOOST_CHECK_EQUAL(ret_data.link_count, 0);
 	BOOST_CHECK_EQUAL(ret_data.http_code, 200);
 	BOOST_CHECK_EQUAL(ret_data.last_visited, 20220110);
-
-	Worker::join_urlstore_server();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

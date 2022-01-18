@@ -27,7 +27,6 @@
 #include "transfer/Transfer.h"
 #include "text/Text.h"
 #include "file/TsvFileRemote.h"
-#include "system/Logger.h"
 #include "hash/Hash.h"
 
 BOOST_AUTO_TEST_SUITE(file)
@@ -176,8 +175,6 @@ BOOST_AUTO_TEST_CASE(head_content_len) {
 
 BOOST_AUTO_TEST_CASE(test_upload) {
 
-	Logger::start_logger_thread();
-
 	{
 		int error;
 		string buffer;
@@ -187,13 +184,9 @@ BOOST_AUTO_TEST_CASE(test_upload) {
 		error = Transfer::upload_file("multipart_test", buffer);
 		BOOST_CHECK_EQUAL(error, Transfer::OK);
 	}
-
-	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_CASE(test_upload_gz) {
-
-	Logger::start_logger_thread();
 
 	{
 		int error;
@@ -212,8 +205,6 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
 		BOOST_CHECK_EQUAL(Hash::str(result_back), Hash::str(buffer));
 	}
-
-	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

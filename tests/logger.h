@@ -30,11 +30,11 @@
 BOOST_AUTO_TEST_SUITE(logger)
 
 BOOST_AUTO_TEST_CASE(logger) {
-	Logger::start_logger_thread();
+
 	Logger::log_string("test1");
 	Logger::log_string("test2");
 
-	Logger::join_logger_thread();
+	Logger::sync();
 
 	ifstream logfile(Config::log_file_path);
 	logfile.seekg(-12, std::ios::end);
@@ -44,8 +44,6 @@ BOOST_AUTO_TEST_CASE(logger) {
 
 	BOOST_CHECK_EQUAL(line1, "test1");
 	BOOST_CHECK_EQUAL(line2, "test2");
-
-	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

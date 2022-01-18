@@ -50,6 +50,7 @@ namespace Logger {
 
 	void start_logger_thread();
 	void join_logger_thread();
+	void sync();
 
 	class LoggedException : public std::exception {
 

@@ -166,6 +166,10 @@ namespace Logger {
 		}
 	}
 
+	void sync() {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
 	LoggedException::LoggedException(const string &message, const string &file, int line)
 	: m_message(message), m_file(file), m_line(line)
 	{

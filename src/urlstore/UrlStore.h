@@ -39,6 +39,11 @@ namespace UrlStore {
 	const int OK = 0;
 	const int ERROR = 1;
 
+	const size_t update_redirect     = 0B00000001;
+	const size_t update_link_count   = 0B00000010;
+	const size_t update_http_code    = 0B00000100;
+	const size_t update_last_visited = 0B00001000;
+
 	struct UrlData {
 		URL url;
 		URL redirect;
@@ -73,8 +78,8 @@ namespace UrlStore {
 
 	void set(const std::vector<UrlData> &data);
 	void set(const UrlData &data);
-	void update(const std::vector<UrlData> &data, const std::bitset<URL_STORE_NUM_FIELDS> &update);
-	void update(const UrlData &data, const std::bitset<URL_STORE_NUM_FIELDS> &update);
+	void update(const std::vector<UrlData> &data, size_t update_bitmask);
+	void update(const UrlData &data, size_t update_bitmask);
 	int get(const URL &url, UrlData &data);
 
 

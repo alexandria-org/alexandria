@@ -55,7 +55,6 @@ namespace Worker {
 
 		FCGX_FPrintF(request.out, "Content-type: application/octet-stream\r\n\r\n");
 		string data_out = response.str();
-		cout << "OUTPUTTING : " << data_out.size() << " bytes" << endl;
 		FCGX_PutStr(data_out.c_str(), response.str().size(), request.out);
 
 	}
@@ -145,6 +144,8 @@ namespace Worker {
 
 		SearchAllocation::delete_allocation(allocation);
 
+		FCGX_Free(&request, true);
+
 		return NULL;
 	}
 
@@ -170,6 +171,8 @@ namespace Worker {
 		for (size_t i = 0; i < Config::worker_count; i++) {
 			pthread_join(thread_ids[i], NULL);
 		}
+
+		close(socket_id);
 	}
 
 	void download_server() {
@@ -207,6 +210,9 @@ namespace Worker {
 
 			FCGX_Finish_r(&request);
 		}
+
+		FCGX_Free(&request, true);
+		close(socket_id);
 	}
 
 	void urlstore_server() {
@@ -298,6 +304,9 @@ namespace Worker {
 
 			FCGX_Finish_r(&request);
 		}
+
+		FCGX_Free(&request, true);
+		close(socket_id);
 	}
 
 	thread download_server_thread;
@@ -331,7 +340,6 @@ namespace Worker {
 		}
 
 		urlstore_server_thread = std::move(thread(urlstore_server));
-
 	}
 
 	void join_urlstore_server() {

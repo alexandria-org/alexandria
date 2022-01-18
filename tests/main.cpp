@@ -26,6 +26,7 @@
 
 #define BOOST_TEST_MODULE "Unit tests for alexandria.org"
 
+#define BOOST_TEST_NO_MAIN
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
@@ -75,4 +76,27 @@ using std::pair;
 #include "n_gram.h"
 #include "link_counter.h"
 #include "url_store.h"
+
+void run_before() {
+	Logger::start_logger_thread();
+	Worker::start_urlstore_server();
+}
+
+void run_after() {
+	Worker::join_urlstore_server();
+	Logger::join_logger_thread();
+}
+
+
+int BOOST_TEST_CALL_DECL
+main(int argc, char* argv[]) {
+
+	run_before();
+
+    int ret = ::boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
+
+	run_after();
+
+	return ret;
+}
 

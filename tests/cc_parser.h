@@ -52,8 +52,6 @@ BOOST_AUTO_TEST_CASE(download_warc_paths) {
 
 BOOST_AUTO_TEST_CASE(download_warc) {
 
-	Logger::start_logger_thread();
-
 	string buffer;
 	Warc::multipart_download("http://alexandria-test-data.s3.amazonaws.com/multipart_test", [&buffer](const string &data) {
 		buffer.append(data);
@@ -61,8 +59,6 @@ BOOST_AUTO_TEST_CASE(download_warc) {
 
 	BOOST_CHECK_EQUAL(buffer.size(), 15728640);
 	BOOST_CHECK_EQUAL(Hash::str(buffer), 1803966798292769636ull);
-
-	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {

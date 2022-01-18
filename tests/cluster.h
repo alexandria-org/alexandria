@@ -28,12 +28,10 @@
 #include "cluster/Document.h"
 #include "transfer/Transfer.h"
 #include "hash/Hash.h"
-#include "system/Logger.h"
 
 BOOST_AUTO_TEST_SUITE(cluster)
 
 BOOST_AUTO_TEST_CASE(cluster) {
-	Logger::start_logger_thread();
 	{
 		int error;
 		stringstream ss;
@@ -50,7 +48,6 @@ BOOST_AUTO_TEST_CASE(cluster) {
 
 		//Cluster::print_document(corpus, documents[key]);
 	}
-	Logger::join_logger_thread();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

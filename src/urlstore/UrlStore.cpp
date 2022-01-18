@@ -113,7 +113,6 @@ namespace UrlStore {
 	void UrlStore::set(const UrlData &data) {
 		leveldb::Slice key = data.url.key();
 		string str = data_to_str(data);
-		cout << "setting data at key: " << data.url.key() << endl;
 		leveldb::Status s = m_db->Put(leveldb::WriteOptions(), key, str);
 		if (!s.ok()) {
 			cerr << s.ToString() << endl;
@@ -123,7 +122,6 @@ namespace UrlStore {
 	UrlData UrlStore::get(const URL &url) {
 		leveldb::Slice key = url.key();
 		string value;
-		cout << "fetching key: " << url.key() << endl;
 		leveldb::Status s = m_db->Get(leveldb::ReadOptions(), key, &value);
 
 		if (s.ok()) {
@@ -150,12 +148,21 @@ namespace UrlStore {
 		return print_url_data(data, cout);
 	}
 
+	void apply_update(UrlData &dest, const UrlData &src, size_t update_bitmask) {
+		if (update_bitmask & update_redirect) dest.redirect = src.redirect;
+		if (update_bitmask & update_link_count) dest.link_count = src.link_count;
+		if (update_bitmask & update_http_code) dest.http_code = src.http_code;
+		if (update_bitmask & update_last_visited) dest.last_visited = src.last_visited;
+	}
+
 	void handle_put_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream) {
 
 		const char *cstr = post_data.c_str();
 		const size_t len = post_data.size();
+		if (len < 2*sizeof(size_t)) return;
+		const size_t update_bitmask = *((size_t *)&cstr[0]);
 
-		size_t iter = 0;
+		size_t iter = sizeof(size_t);
 		while (iter < len) {
 			size_t data_len = *((size_t *)&cstr[iter]);
 			iter += sizeof(size_t);
@@ -163,7 +170,13 @@ namespace UrlStore {
 			if (data_len + iter > len) break;
 
 			UrlData data = str_to_data(&cstr[iter], data_len);
-			store.set(data);
+			if (update_bitmask) {
+				UrlData to_update = store.get(data.url);
+				apply_update(to_update, data, update_bitmask);
+				store.set(to_update);
+			} else {
+				store.set(data);
+			}
 
 			iter += data_len;
 		}
@@ -171,13 +184,11 @@ namespace UrlStore {
 
 	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream) {
 		UrlData data = store.get(url);
-		cout << "GOT SOME DATA" << endl;
 		print_binary_url_data(data, response_stream);
 	}
 
 	void handle_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream) {
 		UrlData data = store.get(url);
-		cout << "GOT SOME DATA" << endl;
 		print_url_data(data, response_stream);
 	}
 
@@ -188,26 +199,32 @@ namespace UrlStore {
 		append_to.append(data_str);
 	}
 
+	void append_bitmask(size_t bitmask, string &append_to) {
+		append_to.append((char *)&bitmask, sizeof(size_t));
+	}
+
 	void set(const vector<UrlData> &datas) {
+		update(datas, 0x0);
+	}
+
+	void set(const UrlData &data) {
+		update(data, 0x0);
+	}
+
+	void update(const std::vector<UrlData> &datas, size_t update_bitmask) {
 		string put_data;
+		append_bitmask(update_bitmask, put_data);
 		for (const UrlData &data : datas) {
 			append_data_str(data, put_data);
 		}
 		Transfer::put(Config::url_store_host + "/urlstore", put_data);
 	}
 
-	void set(const UrlData &data) {
+	void update(const UrlData &data, size_t update_bitmask) {
 		string put_data;
+		append_bitmask(update_bitmask, put_data);
 		append_data_str(data, put_data);
 		Transfer::put(Config::url_store_host + "/urlstore", put_data);
-	}
-
-	void update(const std::vector<UrlData> &data, const std::bitset<URL_STORE_NUM_FIELDS> &update) {
-
-	}
-
-	void update(const UrlData &data, const std::bitset<URL_STORE_NUM_FIELDS> &update) {
-
 	}
 
 	int get(const URL &url, UrlData &data) {

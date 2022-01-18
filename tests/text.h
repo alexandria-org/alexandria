@@ -30,9 +30,9 @@ BOOST_AUTO_TEST_SUITE(text)
 
 BOOST_AUTO_TEST_CASE(get_full_text_words) {
 	vector<string> words = Text::get_full_text_words("C++ map");
-	for (const string &word : words) {
+	/*for (const string &word : words) {
 		std::cout << word << std::endl;
-	}
+	}*/
 }
 
 BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
