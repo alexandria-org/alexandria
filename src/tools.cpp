@@ -31,6 +31,7 @@
 #include "tools/Download.h"
 #include "tools/CalculateHarmonic.h"
 #include "parser/URL.h"
+#include "api/Worker.h"
 #include <iostream>
 #include <set>
 
@@ -73,6 +74,8 @@ int main(int argc, const char **argv) {
 		Tools::run_counter();
 	} else if (arg == "--count-links") {
 		Tools::count_all_links();
+	} else if (arg == "--urlstore") {
+		Worker::start_urlstore_server();
 	} else if (arg == "--split-with-links") {
 		Tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {

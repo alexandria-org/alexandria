@@ -103,6 +103,8 @@ namespace Config {
 				master = parts[1];
 			} else if (parts[0] == "data_node") {
 				data_node = parts[1];
+			} else if (parts[0] == "url_store_host") {
+				url_store_host = parts[1];
 			} else if (parts[0] == "nodes_in_cluster") {
 				nodes_in_cluster = stoi(parts[1]);
 			} else if (parts[0] == "node_id") {
