@@ -35,6 +35,8 @@
 #include "config.h"
 #include "parser/URL.h"
 #include "link/Link.h"
+#include "link/LinkCounter.h"
+#include "transfer/Transfer.h"
 #include "algorithm/HyperLogLog.h"
 #include "algorithm/Algorithm.h"
 
@@ -191,5 +193,48 @@ namespace Tools {
 		cout << "Uniq links: " << link_counter.size() << endl;
 	}
 
+	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
+		
+		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		vector<string> warc_paths;
+		warc_paths_file.read_column_into(0, warc_paths);
+
+		vector<string> files_to_download;
+		for (size_t i = offset; i < warc_paths.size() && i < (offset + limit); i++) {
+			string warc_path = warc_paths[i];
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".links.gz");
+			}
+			files_to_download.push_back(warc_path);
+		}
+
+		return Transfer::download_gz_files_to_disk(files_to_download);
+	}
+
+	void count_link_batch(const string &batch, map<size_t, map<size_t, float>> &counter) {
+
+		const size_t limit = 10;
+		size_t offset = 0;
+
+		while (true) {
+			vector<string> files = download_link_batch(batch, limit, offset);
+			if (files.size() == 0) break;
+			Link::run_link_counter(batch, files, counter);
+			Transfer::delete_downloaded_files(files);
+			offset += files.size();
+			break;
+		}
+	}
+
+	void count_all_links() {
+		for (const string &batch : Config::link_batches) {
+			map<size_t, map<size_t, float>> counter;
+			count_link_batch(batch, counter);
+
+			// Upload link counts.
+			Link::upload_link_counts(batch, counter);
+		}
+	}
 }
 

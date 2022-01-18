@@ -76,6 +76,7 @@ using std::pair;
 #include "n_gram.h"
 #include "link_counter.h"
 #include "url_store.h"
+#include "key_value_store.h"
 
 void run_before() {
 	Logger::start_logger_thread();

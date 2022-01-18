@@ -83,6 +83,8 @@ set(SRC_CLASSES
 
 	"src/config.cpp"
 
+	"src/KeyValueStore.cpp"
+
 	"src/algorithm/Algorithm.cpp"
 	"src/algorithm/HyperBall.cpp"
 

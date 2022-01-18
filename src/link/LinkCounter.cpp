@@ -28,9 +28,11 @@
 #include "hash/Hash.h"
 #include "hash_table/HashTable.h"
 #include "hash_table/HashTableShardBuilder.h"
+#include "KeyValueStore.h"
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
 #include "system/Logger.h"
+#include "urlstore/UrlStore.h"
 #include "algorithm/Algorithm.h"
 #include "config.h"
 #include <vector>
@@ -40,7 +42,7 @@ using namespace std;
 
 namespace Link {
 
-	void count_links_in_stream(const SubSystem *sub_system, vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
+	void count_links_in_stream(const SubSystem *sub_system, KeyValueStore &kv_store, basic_istream<char> &stream,
 			map<size_t, map<size_t, float>> &counter) {
 
 		string line;
@@ -58,19 +60,14 @@ namespace Link {
 			float harmonic = source_url.harmonic(sub_system);
 
 			counter[target_url_hash][link_hash] = expm1(25.0*harmonic) / 50.0;
-			shard_builders[target_url_hash % Config::ht_num_shards]->add(target_url_hash, target_url.str());
+			kv_store.set(to_string(target_url_hash), target_url.str());
 		}
 	}
 
-	map<size_t, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, const string &db_name, const vector<string> &local_files,
-			vector<mutex> &write_mutexes) {
+	map<size_t, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, const vector<string> &local_files,
+			KeyValueStore &kv_store) {
 
 		map<size_t, map<size_t, float>> counter;
-
-		vector<HashTableShardBuilder *> shard_builders;
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			shard_builders.push_back(new HashTableShardBuilder(db_name, i));
-		}
 
 		size_t idx = 1;
 		for (const string &local_file : local_files) {
@@ -79,51 +76,21 @@ namespace Link {
 
 			if (stream.is_open()) {
 				{
-					count_links_in_stream(sub_system, shard_builders, stream, counter);
+					count_links_in_stream(sub_system, kv_store, stream, counter);
 				}
 			}
 
 			stream.close();
-
-			for (size_t i = 0; i < Config::ht_num_shards; i++) {
-				if (shard_builders[i]->full()) {
-					write_mutexes[i].lock();
-					shard_builders[i]->write();
-					write_mutexes[i].unlock();
-				}
-			}
 
 			LOG_INFO("Done " + to_string(idx) + " out of " + to_string(local_files.size()));
 
 			idx++;
 		}
 
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			write_mutexes[i].lock();
-			shard_builders[i]->write();
-			write_mutexes[i].unlock();
-		}
-
-		for (HashTableShardBuilder *shard_builder : shard_builders) {
-			delete shard_builder;
-		}
-
 		return counter;
 	}
 
-	void sort_hash_table(const string &db_name) {
-
-		LOG_INFO("Sorting...");
-		
-		// Loop over hash table shards and sort them.
-		for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
-			HashTableShardBuilder *shard = new HashTableShardBuilder(db_name, shard_id);
-			shard->sort();
-			delete shard;
-		}
-	}
-
-	void run_link_counter(const string &db_name, const string &batch, const vector<string> &local_files, map<size_t, map<size_t, float>> &counter) {
+	void run_link_counter(const string &batch, const vector<string> &local_files, map<size_t, map<size_t, float>> &counter) {
 
 		SubSystem *sub_system = new SubSystem();
 
@@ -133,19 +100,19 @@ namespace Link {
 		vector<vector<string>> chunks;
 		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
 
-		vector<mutex> write_mutexes(Config::ht_num_shards);
+		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
 
 		for (const vector<string> &chunk : chunks) {
 
 			results.emplace_back(
-				pool.enqueue([sub_system, db_name, chunk, &write_mutexes] {
-					return run_count_thread_with_local_files(sub_system, db_name, chunk, write_mutexes);
+				pool.enqueue([sub_system, chunk, &kv_store] {
+					return run_count_thread_with_local_files(sub_system, chunk, kv_store);
 				})
 			);
 
 		}
 
-		for(auto && result: results) {
+		for (auto && result: results) {
 			map<size_t, map<size_t, float>> count_part = result.get();
 			for (const auto &iter : count_part) {
 				counter[iter.first].insert(iter.second.begin(), iter.second.end());
@@ -153,8 +120,6 @@ namespace Link {
 		}
 
 		delete sub_system;
-
-		sort_hash_table(db_name);
 	}
 
 	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t file_num) {
@@ -170,7 +135,9 @@ namespace Link {
 		return score;
 	}
 
-	void upload_link_counts(const std::string &db_name, const string &batch, std::map<size_t, std::map<size_t, float>> &counter) {
+	void upload_link_counts(const string &batch, std::map<size_t, std::map<size_t, float>> &counter) {
+
+		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
 
 		struct link_count {
 			size_t link_hash;
@@ -191,21 +158,32 @@ namespace Link {
 			return a.score > b.score;
 		});
 
-		HashTable hash_table(db_name);
 		vector<string> file_lines;
+		vector<UrlStore::UrlData> url_data;
 		size_t file_num = 0;
 		for (const auto &count : counter_vec) {
-			const string url = hash_table.find(count.link_hash);
+			const string url = kv_store.get(to_string(count.link_hash));
 
 			file_lines.push_back(url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
+			url_data.emplace_back(UrlStore::UrlData{
+				.url = URL(url),
+				.redirect = URL(),
+				.link_count = count.count,
+				.http_code = 0,
+				.last_visited = 0
+			});
 
 			if (file_lines.size() >= 1000000) {
 				upload_link_counts_file(file_lines, batch, ++file_num);
 				file_lines.clear();
+				UrlStore::set(url_data);
+				url_data.clear();
+				return;
 			}
 
 		}
 		upload_link_counts_file(file_lines, batch, ++file_num);
+		UrlStore::set(url_data);
 	}
 
 }

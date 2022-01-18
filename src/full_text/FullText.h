@@ -85,8 +85,4 @@ namespace FullText {
 	size_t link_to_node(const Link::Link &link);
 	bool should_index_link(const Link::Link &link);
 
-	void count_link_batch(const string &db_name, const string &batch, std::map<size_t, std::map<size_t, float>> &counter);
-	void count_all_links(const string &db_name, Worker::Status &status);
-	void testing();
-
 }

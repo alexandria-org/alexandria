@@ -98,13 +98,7 @@ int main(int argc, const char **argv) {
 
 	} else if (arg == "count_link") {
 
-		Worker::Status status;
-		status.items = FullText::total_urls_in_batches();
-		status.items_indexed = 0;
-		status.start_time = Profiler::timestamp();
-		Worker::start_status_server(status);
-
-		FullText::count_all_links("main_index", status);
+		//FullText::count_all_links("main_index", status);
 
 	} else if (arg == "optimize") {
 

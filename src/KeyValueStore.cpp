@@ -24,12 +24,34 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "KeyValueStore.h"
 
-namespace Tools {
+using namespace std;
 
-	void run_counter();
-	void count_all_links();
-
+KeyValueStore::KeyValueStore(const string &db_name) {
+	leveldb::Options options;
+	options.create_if_missing = true;
+	leveldb::Status status = leveldb::DB::Open(options, db_name, &m_db);
 }
+
+KeyValueStore::~KeyValueStore() {
+	delete m_db;
+}
+
+string KeyValueStore::get(const string &key_str) const {
+	leveldb::Slice key = key_str;
+	string value;
+	leveldb::Status s = m_db->Get(leveldb::ReadOptions(), key, &value);
+	return value;
+}
+
+void KeyValueStore::set(const string &key_str, const string &value) {
+	leveldb::Slice key = key_str;
+	leveldb::Status s = m_db->Put(leveldb::WriteOptions(), key, value);
+	if (!s.ok()) {
+		cerr << s.ToString() << endl;
+	}
+}
+	
+
 

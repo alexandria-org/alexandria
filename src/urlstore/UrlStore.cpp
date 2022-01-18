@@ -100,35 +100,20 @@ namespace UrlStore {
 		return str_to_data(str.c_str(), str.size());
 	}
 
-	UrlStore::UrlStore(const string &server_path) {
-		leveldb::Options options;
-		options.create_if_missing = true;
-		leveldb::Status status = leveldb::DB::Open(options, server_path, &m_db);
+	UrlStore::UrlStore(const string &server_path) :
+		m_db(server_path) {
 	}
 
 	UrlStore::~UrlStore() {
-		delete m_db;
 	}
 
 	void UrlStore::set(const UrlData &data) {
-		leveldb::Slice key = data.url.key();
-		string str = data_to_str(data);
-		leveldb::Status s = m_db->Put(leveldb::WriteOptions(), key, str);
-		if (!s.ok()) {
-			cerr << s.ToString() << endl;
-		}
+		m_db.set(data.url.key(), data_to_str(data));
 	}
 
 	UrlData UrlStore::get(const URL &url) {
-		leveldb::Slice key = url.key();
-		string value;
-		leveldb::Status s = m_db->Get(leveldb::ReadOptions(), key, &value);
-
-		if (s.ok()) {
-			return str_to_data(value);
-		} else {
-			cerr << s.ToString() << endl;
-		}
+		string value = m_db.get(url.key());
+		if (value.size()) return str_to_data(value);
 		return UrlData{};
 	}
 

@@ -71,6 +71,8 @@ int main(int argc, const char **argv) {
 		Tools::run_splitter();
 	} else if (arg == "--count") {
 		Tools::run_counter();
+	} else if (arg == "--count-links") {
+		Tools::count_all_links();
 	} else if (arg == "--split-with-links") {
 		Tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {

@@ -29,7 +29,7 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
-#include "leveldb/db.h"
+#include "KeyValueStore.h"
 #include "parser/URL.h"
 
 #define URL_STORE_NUM_FIELDS 4
@@ -65,7 +65,7 @@ namespace UrlStore {
 			UrlData get(const URL &url);
 
 		private:
-			leveldb::DB *m_db;
+			KeyValueStore m_db;
 
 
 	};

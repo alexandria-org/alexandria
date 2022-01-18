@@ -24,12 +24,19 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "KeyValueStore.h"
 
-namespace Tools {
+BOOST_AUTO_TEST_SUITE(key_value_store)
 
-	void run_counter();
-	void count_all_links();
+BOOST_AUTO_TEST_CASE(get_set) {
+
+	KeyValueStore kv_store("/tmp/testdb");
+	kv_store.set("key", "hejsan");
+	BOOST_CHECK_EQUAL(kv_store.get("key"), "hejsan");
+
+	kv_store.set("key", "svejsan");
+	BOOST_CHECK_EQUAL(kv_store.get("key"), "svejsan");
 
 }
 
+BOOST_AUTO_TEST_SUITE_END()

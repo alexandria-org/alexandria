@@ -23,13 +23,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+// Wrapper for https://github.com/google/leveldb
 
 #pragma once
 
-namespace Tools {
+#include <iostream>
+#include "leveldb/db.h"
 
-	void run_counter();
-	void count_all_links();
+class KeyValueStore {
 
-}
+	public:
+		explicit KeyValueStore(const std::string &db_name);
+		~KeyValueStore();
+
+		std::string get(const std::string &key) const;
+		void set(const std::string &key, const std::string &value);
+	
+	private:
+		leveldb::DB *m_db;
+
+};
+
 
