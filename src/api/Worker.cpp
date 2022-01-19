@@ -227,7 +227,7 @@ namespace Worker {
 
 		LOG_INFO("Urlstore server has started...");
 
-		UrlStore::UrlStore url_store("/mnt/0/urlstore");
+		UrlStore::UrlStore url_store(Config::url_store_path);
 
 		const size_t max_post_len = 1024*1024*1024;
 		const size_t buffer_len = 1024*1024;

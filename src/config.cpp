@@ -35,6 +35,7 @@ namespace Config {
 	string master = "localhost";
 	string data_node;
 	string url_store_host = "http://localhost";
+	string url_store_path = "/alexandria/urlstore";
 
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;
@@ -105,6 +106,8 @@ namespace Config {
 				data_node = parts[1];
 			} else if (parts[0] == "url_store_host") {
 				url_store_host = parts[1];
+			} else if (parts[0] == "url_store_path") {
+				url_store_path = parts[1];
 			} else if (parts[0] == "nodes_in_cluster") {
 				nodes_in_cluster = stoi(parts[1]);
 			} else if (parts[0] == "node_id") {
