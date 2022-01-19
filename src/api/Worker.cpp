@@ -100,8 +100,6 @@ namespace Worker {
 			string uri(uri_ptr);
 			string request_method(req_ptr);
 
-			cout << request_method << endl;
-
 			LOG_INFO("Serving request: " + uri);
 
 			URL url("http://alexandria.org" + uri);
@@ -231,7 +229,7 @@ namespace Worker {
 
 		UrlStore::UrlStore url_store("/mnt/0/urlstore");
 
-		const size_t max_post_len = 100*1024*1024;
+		const size_t max_post_len = 1024*1024*1024;
 		const size_t buffer_len = 1024*1024;
 		char *buffer = new char[buffer_len];
 
@@ -345,6 +343,12 @@ namespace Worker {
 	void join_urlstore_server() {
 
 		pthread_kill(urlstore_server_thread.native_handle(), SIGUSR2);
+		urlstore_server_thread.join();
+
+	}
+
+	void wait_for_urlstore_server() {
+
 		urlstore_server_thread.join();
 
 	}

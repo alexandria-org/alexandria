@@ -31,6 +31,8 @@
 #include <bitset>
 #include "KeyValueStore.h"
 #include "parser/URL.h"
+#include "leveldb/db.h"
+#include "leveldb/write_batch.h"
 
 #define URL_STORE_NUM_FIELDS 4
 
@@ -63,6 +65,7 @@ namespace UrlStore {
 
 			void set(const UrlData &data);
 			UrlData get(const URL &url);
+			leveldb::DB *db() { return m_db.db(); }
 
 		private:
 			KeyValueStore m_db;

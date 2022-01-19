@@ -148,6 +148,7 @@ namespace UrlStore {
 		const size_t update_bitmask = *((size_t *)&cstr[0]);
 
 		size_t iter = sizeof(size_t);
+		leveldb::WriteBatch batch;
 		while (iter < len) {
 			size_t data_len = *((size_t *)&cstr[iter]);
 			iter += sizeof(size_t);
@@ -159,12 +160,14 @@ namespace UrlStore {
 				UrlData to_update = store.get(data.url);
 				apply_update(to_update, data, update_bitmask);
 				store.set(to_update);
+				batch.Put(to_update.url.key(), data_to_str(to_update));
 			} else {
-				store.set(data);
+				batch.Put(data.url.key(), data_to_str(data));
 			}
 
 			iter += data_len;
 		}
+		store.db()->Write(leveldb::WriteOptions(), &batch);
 	}
 
 	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream) {

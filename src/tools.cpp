@@ -76,6 +76,7 @@ int main(int argc, const char **argv) {
 		Tools::count_all_links();
 	} else if (arg == "--urlstore") {
 		Worker::start_urlstore_server();
+		Worker::wait_for_urlstore_server();
 	} else if (arg == "--split-with-links") {
 		Tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {

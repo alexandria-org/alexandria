@@ -26,6 +26,7 @@ namespace Worker {
 	void start_status_server(Status &status);
 	void start_urlstore_server();
 	void join_urlstore_server();
+	void wait_for_urlstore_server();
 
 }
 
