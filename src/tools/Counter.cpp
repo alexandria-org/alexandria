@@ -214,17 +214,20 @@ namespace Tools {
 
 	void count_link_batch(const string &batch, map<size_t, map<size_t, float>> &counter) {
 
-		const size_t limit = 10;
+		SubSystem *sub_system = new SubSystem();
+
+		const size_t limit = 100;
 		size_t offset = 0;
 
 		while (true) {
 			vector<string> files = download_link_batch(batch, limit, offset);
 			if (files.size() == 0) break;
-			Link::run_link_counter(batch, files, counter);
+			Link::run_link_counter(sub_system, batch, files, counter);
 			Transfer::delete_downloaded_files(files);
 			offset += files.size();
-			break;
 		}
+
+		delete sub_system;
 	}
 
 	void count_all_links() {
@@ -234,6 +237,7 @@ namespace Tools {
 
 			// Upload link counts.
 			Link::upload_link_counts(batch, counter);
+			break;
 		}
 	}
 }

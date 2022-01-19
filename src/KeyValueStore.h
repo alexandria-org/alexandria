@@ -38,7 +38,9 @@ class KeyValueStore {
 
 		std::string get(const std::string &key) const;
 		void set(const std::string &key, const std::string &value);
-	
+
+		leveldb::DB *db() { return m_db; }
+
 	private:
 		leveldb::DB *m_db;
 

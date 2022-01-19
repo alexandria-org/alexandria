@@ -31,6 +31,7 @@ using namespace std;
 KeyValueStore::KeyValueStore(const string &db_name) {
 	leveldb::Options options;
 	options.create_if_missing = true;
+	//options.write_buffer_size = 4ull * 100ull * 1024ull * 1024ull;
 	leveldb::Status status = leveldb::DB::Open(options, db_name, &m_db);
 }
 

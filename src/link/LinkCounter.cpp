@@ -37,6 +37,8 @@
 #include "config.h"
 #include <vector>
 #include <mutex>
+#include "leveldb/db.h"
+#include "leveldb/write_batch.h"
 
 using namespace std;
 
@@ -46,6 +48,7 @@ namespace Link {
 			map<size_t, map<size_t, float>> &counter) {
 
 		string line;
+		map<size_t, string> small_cache;
 		while (getline(stream, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -60,8 +63,25 @@ namespace Link {
 			float harmonic = source_url.harmonic(sub_system);
 
 			counter[target_url_hash][link_hash] = expm1(25.0*harmonic) / 50.0;
-			kv_store.set(to_string(target_url_hash), target_url.str());
+			small_cache[target_url_hash] = target_url.str();
+
+			if (small_cache.size() > 1000000) {
+				leveldb::WriteBatch batch;
+				for (const auto &iter : small_cache) {
+					//kv_store.set(to_string(iter.first), iter.second);
+					batch.Put(to_string(iter.first), iter.second);
+				}
+				kv_store.db()->Write(leveldb::WriteOptions(), &batch);
+				small_cache.clear();
+			}
 		}
+
+		leveldb::WriteBatch batch;
+		for (const auto &iter : small_cache) {
+			//kv_store.set(to_string(iter.first), iter.second);
+			batch.Put(to_string(iter.first), iter.second);
+		}
+		kv_store.db()->Write(leveldb::WriteOptions(), &batch);
 	}
 
 	map<size_t, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, const vector<string> &local_files,
@@ -90,9 +110,8 @@ namespace Link {
 		return counter;
 	}
 
-	void run_link_counter(const string &batch, const vector<string> &local_files, map<size_t, map<size_t, float>> &counter) {
-
-		SubSystem *sub_system = new SubSystem();
+	void run_link_counter(const SubSystem *sub_system, const string &batch, const vector<string> &local_files,
+			map<size_t, map<size_t, float>> &counter) {
 
 		ThreadPool pool(Config::ft_num_threads_indexing);
 		std::vector<std::future<map<size_t, map<size_t, float>>>> results;
@@ -118,8 +137,6 @@ namespace Link {
 				counter[iter.first].insert(iter.second.begin(), iter.second.end());
 			}
 		}
-
-		delete sub_system;
 	}
 
 	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t file_num) {
@@ -178,7 +195,6 @@ namespace Link {
 				file_lines.clear();
 				UrlStore::set(url_data);
 				url_data.clear();
-				return;
 			}
 
 		}

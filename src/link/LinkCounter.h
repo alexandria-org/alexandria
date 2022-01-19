@@ -29,6 +29,7 @@
 #include <vector>
 
 namespace Link {
-	void run_link_counter(const std::string &batch, const std::vector<std::string> &files, std::map<size_t, std::map<size_t, float>> &counter);
+	void run_link_counter(const SubSystem *sub_system, const std::string &batch, const std::vector<std::string> &files,
+			std::map<size_t, std::map<size_t, float>> &counter);
 	void upload_link_counts(const std::string &batch, std::map<size_t, std::map<size_t, float>> &counter);
 }
