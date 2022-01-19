@@ -191,9 +191,12 @@ namespace Link {
 			});
 
 			if (file_lines.size() >= 1000000) {
-				upload_link_counts_file(file_lines, batch, ++file_num);
+				file_num++;
+				thread th1(upload_link_counts_file, file_lines, batch, file_num);
+				thread th2([&url_data] (){ UrlStore::set(url_data); });
+				th1.join();
+				th2.join();
 				file_lines.clear();
-				UrlStore::set(url_data);
 				url_data.clear();
 			}
 
