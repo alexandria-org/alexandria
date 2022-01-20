@@ -28,6 +28,7 @@
 #include "config.h"
 #include "transfer/Transfer.h"
 #include "parser/URL.h"
+#include "system/Profiler.h"
 
 using namespace std;
 
@@ -142,6 +143,8 @@ namespace UrlStore {
 
 	void handle_put_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream) {
 
+		Profiler::instance prof1("parse and put in batch");
+
 		const char *cstr = post_data.c_str();
 		const size_t len = post_data.size();
 		if (len < 2*sizeof(size_t)) return;
@@ -167,6 +170,9 @@ namespace UrlStore {
 
 			iter += data_len;
 		}
+		prof1.stop();
+
+		Profiler::instance prof2("leveldb Write");
 		store.db()->Write(leveldb::WriteOptions(), &batch);
 	}
 

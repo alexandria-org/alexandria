@@ -19,6 +19,7 @@
 #include "ApiStatusResponse.h"
 #include "link/FullTextRecord.h"
 #include "system/Logger.h"
+#include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
 
 using namespace std;
@@ -258,6 +259,7 @@ namespace Worker {
 
 			if (request_method == "PUT") {
 				string post_data;
+				Profiler::instance prof("[urlstore] read put data");
 				while (true) {
 
 					const size_t read_bytes = FCGX_GetStr(buffer, buffer_len, request.in);
@@ -270,9 +272,12 @@ namespace Worker {
 					}
 					post_data.append(buffer, read_bytes);
 				}
+				prof.stop();
 
 				if (error == 0) {
 					UrlStore::handle_put_request(url_store, post_data, response_stream);
+					FCGX_FPrintF(request.out, "Content-type: text/html\r\n\r\n");
+					FCGX_FPrintF(request.out, "%s", "Data Uploaded");
 				}
 			} else if (request_method == "GET") {
 
