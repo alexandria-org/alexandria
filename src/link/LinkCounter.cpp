@@ -32,6 +32,7 @@
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
 #include "system/Logger.h"
+#include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
 #include "algorithm/Algorithm.h"
 #include "config.h"
@@ -155,6 +156,8 @@ namespace Link {
 	void upload_link_counts(const string &batch, std::map<size_t, std::map<size_t, float>> &counter) {
 
 		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
+		LOG_INFO("Compacting /mnt/0/tmp_kwstore");
+		kv_store.db()->CompactRange(nullptr, nullptr);
 
 		struct link_count {
 			size_t link_hash;
@@ -191,6 +194,7 @@ namespace Link {
 			});
 
 			if (file_lines.size() >= 1000000) {
+				Profiler::instance prof1("Uploading results");
 				file_num++;
 				thread th1(upload_link_counts_file, file_lines, batch, file_num);
 				thread th2([&url_data] (){ UrlStore::set(url_data); });

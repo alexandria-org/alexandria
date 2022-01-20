@@ -33,6 +33,7 @@ namespace Config {
 
 	string node = "test0001";
 	string master = "localhost";
+	string upload = "localhost";
 	string data_node;
 	string url_store_host = "http://localhost";
 	string url_store_path = "/alexandria/urlstore";
@@ -102,6 +103,9 @@ namespace Config {
 				node = parts[1];
 			} else if (parts[0] == "master") {
 				master = parts[1];
+				upload = parts[1];
+			} else if (parts[0] == "upload") {
+				upload = parts[1];
 			} else if (parts[0] == "data_node") {
 				data_node = parts[1];
 			} else if (parts[0] == "url_store_host") {

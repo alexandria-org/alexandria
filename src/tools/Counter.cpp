@@ -39,6 +39,7 @@
 #include "transfer/Transfer.h"
 #include "algorithm/HyperLogLog.h"
 #include "algorithm/Algorithm.h"
+#include "urlstore/UrlStore.h"
 
 using namespace std;
 
@@ -231,6 +232,7 @@ namespace Tools {
 	}
 
 	void count_all_links() {
+
 		for (const string &batch : Config::link_batches) {
 			map<size_t, map<size_t, float>> counter;
 			count_link_batch(batch, counter);

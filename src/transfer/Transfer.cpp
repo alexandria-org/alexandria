@@ -29,6 +29,7 @@
 #include <fstream>
 #include "system/ThreadPool.h"
 #include "system/Logger.h"
+#include "system/Profiler.h"
 #include "file/File.h"
 #include "text/Text.h"
 #include "parser/Parser.h"
@@ -368,7 +369,7 @@ namespace Transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = "http://" + Config::master + "/" + path;
+			const string url = "http://" + Config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
@@ -400,7 +401,7 @@ namespace Transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = "http://" + Config::master + "/" + path;
+			const string url = "http://" + Config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
@@ -499,13 +500,14 @@ namespace Transfer {
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_stream);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stringstream_writer);
 
+			Profiler::instance prof1("Transfer::put curl_easy_perform");
 			curl_easy_perform(curl);
+			prof1.stop();
 
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
 			response.body = response_stream.str();
 
 			curl_easy_cleanup(curl);
-
 		}
 
 		return response;
