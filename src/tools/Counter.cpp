@@ -213,34 +213,39 @@ namespace Tools {
 		return Transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	void count_link_batch(const string &batch, map<size_t, map<size_t, float>> &counter) {
+	void count_link_batch(const SubSystem *sub_system, const string &batch, size_t sub_batch, const vector<string> &files,
+			map<string, map<size_t, float>> &counter) {
 
-		SubSystem *sub_system = new SubSystem();
+		const size_t chunk_size = 500;
 
-		const size_t limit = 100;
-		size_t offset = 0;
+		vector<vector<string>> chunks;
+		Algorithm::vector_chunk(files, chunk_size, chunks);
 
-		while (true) {
-			vector<string> files = download_link_batch(batch, limit, offset);
-			if (files.size() == 0) break;
-			Link::run_link_counter(sub_system, batch, files, counter);
-			Transfer::delete_downloaded_files(files);
-			offset += files.size();
+		for (const vector<string> &chunk : chunks) {
+			Link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);
 		}
 
-		delete sub_system;
 	}
 
 	void count_all_links() {
 
-		for (const string &batch : Config::link_batches) {
-			map<size_t, map<size_t, float>> counter;
-			count_link_batch(batch, counter);
+		SubSystem *sub_system = new SubSystem();
 
-			// Upload link counts.
-			Link::upload_link_counts(batch, counter);
-			break;
+		for (const string &batch : Config::link_batches) {
+
+			vector<string> files = download_link_batch(batch, 50000, 0);
+
+			for (size_t sub_batch = 0; sub_batch < 5; sub_batch++) {
+
+				map<string, map<size_t, float>> counter;
+				count_link_batch(sub_system, batch, sub_batch, files, counter);
+				// Upload link counts.
+				Link::upload_link_counts(batch, sub_batch, counter);
+			}
+
+			Transfer::delete_downloaded_files(files);
 		}
+		delete sub_system;
 	}
 }
 

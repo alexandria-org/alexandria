@@ -45,26 +45,28 @@ using namespace std;
 
 namespace Link {
 
-	void count_links_in_stream(const SubSystem *sub_system, KeyValueStore &kv_store, basic_istream<char> &stream,
-			map<size_t, map<size_t, float>> &counter) {
+	void count_links_in_stream(const SubSystem *sub_system, size_t sub_batch, KeyValueStore &kv_store, basic_istream<char> &stream,
+			map<string, map<size_t, float>> &counter) {
 
 		string line;
-		map<size_t, string> small_cache;
+		//map<size_t, string> small_cache;
 		while (getline(stream, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
-			const string link_text = col_values[4].substr(0, 1000);
 			URL target_url(col_values[2], col_values[3]);
-			URL source_url(col_values[0], col_values[1]);
-
-			const uint64_t link_hash = Hash::str(source_url.host_top_domain());
 			const uint64_t target_url_hash = target_url.hash();
+			if (target_url_hash % 5 == sub_batch) {
 
-			float harmonic = source_url.harmonic(sub_system);
+				const string link_text = col_values[4].substr(0, 1000);
+				URL source_url(col_values[0], col_values[1]);
 
-			counter[target_url_hash][link_hash] = expm1(25.0*harmonic) / 50.0;
-			small_cache[target_url_hash] = target_url.str();
+				const uint64_t link_hash = Hash::str(source_url.host_top_domain());
+				float harmonic = source_url.harmonic(sub_system);
+
+				counter[target_url.str()][link_hash] = expm1(25.0*harmonic) / 50.0;
+			}
+			/*small_cache[target_url_hash] = target_url.str();
 
 			if (small_cache.size() > 1000000) {
 				leveldb::WriteBatch batch;
@@ -74,21 +76,22 @@ namespace Link {
 				}
 				kv_store.db()->Write(leveldb::WriteOptions(), &batch);
 				small_cache.clear();
-			}
+			}*/
 		}
 
-		leveldb::WriteBatch batch;
+		/*leveldb::WriteBatch batch;
 		for (const auto &iter : small_cache) {
 			//kv_store.set(to_string(iter.first), iter.second);
 			batch.Put(to_string(iter.first), iter.second);
 		}
 		kv_store.db()->Write(leveldb::WriteOptions(), &batch);
+		*/
 	}
 
-	map<size_t, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, const vector<string> &local_files,
-			KeyValueStore &kv_store) {
+	map<string, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, size_t sub_batch,
+			const vector<string> &local_files, KeyValueStore &kv_store) {
 
-		map<size_t, map<size_t, float>> counter;
+		map<string, map<size_t, float>> counter;
 
 		size_t idx = 1;
 		for (const string &local_file : local_files) {
@@ -97,13 +100,13 @@ namespace Link {
 
 			if (stream.is_open()) {
 				{
-					count_links_in_stream(sub_system, kv_store, stream, counter);
+					count_links_in_stream(sub_system, sub_batch, kv_store, stream, counter);
 				}
 			}
 
 			stream.close();
 
-			LOG_INFO("Done " + to_string(idx) + " out of " + to_string(local_files.size()));
+			LOG_INFO("Done " + to_string(idx) + " out of " + to_string(local_files.size()) + " on sub_batch = " + to_string(sub_batch));
 
 			idx++;
 		}
@@ -111,11 +114,11 @@ namespace Link {
 		return counter;
 	}
 
-	void run_link_counter(const SubSystem *sub_system, const string &batch, const vector<string> &local_files,
-			map<size_t, map<size_t, float>> &counter) {
+	void run_link_counter(const SubSystem *sub_system, const string &batch, size_t sub_batch, const vector<string> &local_files,
+			map<string, map<size_t, float>> &counter) {
 
 		ThreadPool pool(Config::ft_num_threads_indexing);
-		std::vector<std::future<map<size_t, map<size_t, float>>>> results;
+		std::vector<std::future<map<string, map<size_t, float>>>> results;
 
 		vector<vector<string>> chunks;
 		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
@@ -125,24 +128,24 @@ namespace Link {
 		for (const vector<string> &chunk : chunks) {
 
 			results.emplace_back(
-				pool.enqueue([sub_system, chunk, &kv_store] {
-					return run_count_thread_with_local_files(sub_system, chunk, kv_store);
+				pool.enqueue([sub_system, sub_batch, chunk, &kv_store] {
+					return run_count_thread_with_local_files(sub_system, sub_batch, chunk, kv_store);
 				})
 			);
 
 		}
 
 		for (auto && result: results) {
-			map<size_t, map<size_t, float>> count_part = result.get();
+			map<string, map<size_t, float>> count_part = result.get();
 			for (const auto &iter : count_part) {
 				counter[iter.first].insert(iter.second.begin(), iter.second.end());
 			}
 		}
 	}
 
-	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t file_num) {
+	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t sub_batch, size_t file_num) {
 		const string file_data = boost::algorithm::join(lines, "\n");
-		Transfer::upload_gz_file("urls/link_counts/" + batch + "/top_" + to_string(file_num) + ".gz", file_data);
+		Transfer::upload_gz_file("urls/link_counts/" + batch + "/"+to_string(sub_batch)+"/top_" + to_string(file_num) + ".gz", file_data);
 	}
 
 	float calculate_score(const map<size_t, float> &scores) {
@@ -153,14 +156,14 @@ namespace Link {
 		return score;
 	}
 
-	void upload_link_counts(const string &batch, std::map<size_t, std::map<size_t, float>> &counter) {
+	void upload_link_counts(const string &batch, size_t sub_batch, std::map<string, std::map<size_t, float>> &counter) {
 
-		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
-		LOG_INFO("Compacting /mnt/0/tmp_kwstore");
-		kv_store.db()->CompactRange(nullptr, nullptr);
+		//KeyValueStore kv_store("/mnt/0/tmp_kwstore");
+		//LOG_INFO("Compacting /mnt/0/tmp_kwstore");
+		//kv_store.db()->CompactRange(nullptr, nullptr);
 
 		struct link_count {
-			size_t link_hash;
+			string url;
 			size_t count;
 			float score;
 		};
@@ -168,7 +171,8 @@ namespace Link {
 		vector<struct link_count> counter_vec;
 
 		for (auto &iter : counter) {
-			counter_vec.emplace_back(link_count {.link_hash = iter.first, .count = iter.second.size(), .score = calculate_score(iter.second)});
+			counter_vec.emplace_back(link_count {.url = iter.first, .count = iter.second.size(),
+					.score = calculate_score(iter.second)});
 			iter.second.clear();
 		}
 
@@ -182,11 +186,11 @@ namespace Link {
 		vector<UrlStore::UrlData> url_data;
 		size_t file_num = 0;
 		for (const auto &count : counter_vec) {
-			const string url = kv_store.get(to_string(count.link_hash));
+			//const string url = kv_store.get(to_string(count.link_hash));
 
-			file_lines.push_back(url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
+			file_lines.push_back(count.url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
 			url_data.emplace_back(UrlStore::UrlData{
-				.url = URL(url),
+				.url = URL(count.url),
 				.redirect = URL(),
 				.link_count = count.count,
 				.http_code = 0,
@@ -196,8 +200,8 @@ namespace Link {
 			if (file_lines.size() >= 1000000) {
 				Profiler::instance prof1("Uploading results");
 				file_num++;
-				thread th1(upload_link_counts_file, file_lines, batch, file_num);
-				thread th2([&url_data] (){ UrlStore::set(url_data); });
+				thread th1(upload_link_counts_file, file_lines, batch, sub_batch, file_num);
+				thread th2([&url_data] (){ UrlStore::set_deferred(url_data); });
 				th1.join();
 				th2.join();
 				file_lines.clear();
@@ -205,7 +209,7 @@ namespace Link {
 			}
 
 		}
-		upload_link_counts_file(file_lines, batch, ++file_num);
+		upload_link_counts_file(file_lines, batch, sub_batch, ++file_num);
 		UrlStore::set(url_data);
 	}
 
