@@ -25,6 +25,9 @@
  */
 
 #include "urlstore/UrlStore.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 BOOST_AUTO_TEST_SUITE(url_store)
 
@@ -104,6 +107,99 @@ BOOST_AUTO_TEST_CASE(update) {
 	BOOST_CHECK_EQUAL(ret_data.link_count, 0);
 	BOOST_CHECK_EQUAL(ret_data.http_code, 200);
 	BOOST_CHECK_EQUAL(ret_data.last_visited, 20220110);
+}
+
+BOOST_AUTO_TEST_CASE(get_many) {
+
+	vector<URL> urls = {
+		URL("https://www.example1.com"),
+		URL("https://www.example2.com"),
+		URL("https://www.example3.com"),
+		URL("https://www.example4.com"),
+		URL("https://www.example5.com"),
+		URL("https://www.example6.com"),
+		URL("https://www.example7.com")
+	};
+
+	vector<UrlStore::UrlData> datas;
+	size_t idx = 1;
+	for (const URL &url : urls) {
+		datas.emplace_back(UrlStore::UrlData{
+			.url = url,
+			.redirect = URL(),
+			.link_count = idx++,
+			.http_code = 200,
+			.last_visited = 20220101
+		});
+	}
+	UrlStore::set(datas);
+
+	vector<UrlStore::UrlData> ret_data;
+	int error = UrlStore::get(urls, ret_data);
+
+	BOOST_CHECK_EQUAL(error, UrlStore::OK);
+	BOOST_CHECK_EQUAL(ret_data.size(), 7);
+	size_t i = 0;
+	for (const URL &url : urls) {
+		BOOST_CHECK_EQUAL(ret_data[i].url.str(), url.str());
+		BOOST_CHECK_EQUAL(ret_data[i].link_count, i + 1);
+		BOOST_CHECK_EQUAL(ret_data[i].last_visited, 20220101);
+		i++;
+	}
+}
+
+BOOST_AUTO_TEST_CASE(get_json) {
+
+	vector<URL> urls = {
+		URL("https://www.example1.com"),
+		URL("https://www.example2.com"),
+		URL("https://www.example3.com"),
+		URL("https://www.example4.com"),
+		URL("https://www.example5.com"),
+		URL("https://www.example6.com"),
+		URL("https://www.example7.com")
+	};
+
+	vector<UrlStore::UrlData> datas;
+	size_t idx = 1;
+	for (const URL &url : urls) {
+		datas.emplace_back(UrlStore::UrlData{
+			.url = url,
+			.redirect = URL(),
+			.link_count = idx++,
+			.http_code = 200,
+			.last_visited = 20220101
+		});
+	}
+	UrlStore::set(datas);
+
+	{
+		Transfer::Response res = Transfer::get(Config::url_store_host + "/urlstore/https://www.example1.com");
+		json json_obj = json::parse(res.body);
+
+		BOOST_CHECK_EQUAL(json_obj["url"], "https://www.example1.com");
+		BOOST_CHECK_EQUAL(json_obj["last_visited"], 20220101);
+	}
+
+	{
+		vector<string> lines;
+		for (const auto &url : urls) {
+			lines.push_back(url.str());
+		}
+		Transfer::Response res = Transfer::post(Config::url_store_host + "/urlstore", boost::algorithm::join(lines, "\n"));
+
+		json ret_data = json::parse(res.body);
+
+		BOOST_CHECK_EQUAL(ret_data.size(), 7);
+		size_t i = 0;
+		for (const URL &url : urls) {
+			BOOST_CHECK_EQUAL(ret_data[i]["url"], url.str());
+			BOOST_CHECK_EQUAL(ret_data[i]["link_count"], i + 1);
+			BOOST_CHECK_EQUAL(ret_data[i]["last_visited"], 20220101);
+			i++;
+		}
+	}
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

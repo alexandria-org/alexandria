@@ -302,6 +302,39 @@ namespace Worker {
 						output_response(request, response_stream);
 					}
 				}
+			} else if (request_method == "POST") {
+
+				const char *accept_ptr = FCGX_GetParam("HTTP_ACCEPT", request.envp);
+				string accept = "text/html";
+				if (accept_ptr != nullptr) {
+					accept = string(accept_ptr);
+				}
+
+				string post_data;
+				Profiler::instance prof("[urlstore] read post data");
+				while (true) {
+
+					const size_t read_bytes = FCGX_GetStr(buffer, buffer_len, request.in);
+					if (read_bytes == 0) break;
+
+					if (post_data.size() + read_bytes > max_post_len) {
+						error = 1;
+						LOG_ERROR("Posted data larger then " + to_string(max_post_len) + ", ignoring request");
+						break;
+					}
+					post_data.append(buffer, read_bytes);
+				}
+				prof.stop();
+
+				if (error == 0) {
+					if (accept == "application/octet-stream") {
+						UrlStore::handle_binary_post_request(url_store, post_data, response_stream);
+						output_binary_response(request, response_stream);
+					} else {
+						UrlStore::handle_post_request(url_store, post_data, response_stream);
+						output_response(request, response_stream);
+					}
+				}
 			}
 
 

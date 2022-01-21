@@ -78,12 +78,15 @@ namespace UrlStore {
 	void handle_put_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
 	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
 	void handle_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
+	void handle_binary_post_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
+	void handle_post_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
 
 	void set(const std::vector<UrlData> &data);
 	void set(const UrlData &data);
 	void update(const std::vector<UrlData> &data, size_t update_bitmask);
 	void update(const UrlData &data, size_t update_bitmask);
 	int get(const URL &url, UrlData &data);
+	int get(const std::vector<URL> &urls, std::vector<UrlData> &data);
 
 
 }

@@ -443,7 +443,7 @@ namespace Transfer {
 		return get(url, vector<string>{});
 	}
 
-	Response get(const string &url, vector<string> headers) {
+	Response get(const string &url, const vector<string> &headers) {
 		CURL *curl = curl_easy_init();
 		struct curl_slist *header_list = NULL;
 		Response response = {.body = "", .code = 0};
@@ -466,6 +466,54 @@ namespace Transfer {
 			curl_easy_perform(curl);
 
 			curl_slist_free_all(header_list);
+
+			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
+			response.body = response_stream.str();
+
+			curl_easy_cleanup(curl);
+		}
+
+		return response;
+	}
+
+	/*
+	 * Perform simple POST request and return response.
+	 * */
+	Response post(const string &url, const string &data) {
+		return post(url, data, {});
+	}
+
+	Response post(const string &url, const string &data, const vector<string> &headers) {
+		CURL *curl = curl_easy_init();
+		struct curl_slist *header_list = NULL;
+		Response response = {.body = "", .code = 0};
+		if (curl) {
+
+			for (const string &header : headers) {
+				header_list = curl_slist_append(header_list, header.c_str());
+			}
+
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+			struct curl_string_read_struct arg;
+			arg.buffer = data.c_str();
+			arg.buffer_len = data.size();
+			arg.offset = 0;
+
+			curl_easy_setopt(curl, CURLOPT_POST, 1l);
+			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
+			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
+
+			stringstream response_stream;
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_stream);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stringstream_writer);
+
+			Profiler::instance prof1("Transfer::post curl_easy_perform");
+			curl_easy_perform(curl);
+			prof1.stop();
 
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
 			response.body = response_stream.str();

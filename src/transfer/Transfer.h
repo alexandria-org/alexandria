@@ -72,7 +72,13 @@ namespace Transfer {
 	 * Perform simple GET request and return response.
 	 * */
 	Response get(const std::string &url);
-	Response get(const std::string &url, std::vector<std::string> headers);
+	Response get(const std::string &url, const std::vector<std::string> &headers);
+
+	/*
+	 * Perform simple POST request and return response.
+	 * */
+	Response post(const std::string &url, const std::string &data);
+	Response post(const std::string &url, const std::string &data, const std::vector<std::string> &headers);
 
 	/*
 	 * Perform simple PUT request and return response.

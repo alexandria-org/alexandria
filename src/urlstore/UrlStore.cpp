@@ -29,8 +29,10 @@
 #include "transfer/Transfer.h"
 #include "parser/URL.h"
 #include "system/Profiler.h"
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::ordered_json;
 
 namespace UrlStore {
 
@@ -122,12 +124,19 @@ namespace UrlStore {
 		stream << data_to_str(data);
 	}
 
+	json data_to_json(const UrlData &data) {
+		json message;
+		message["url"] = data.url.str();
+		message["redirect"] = data.redirect.str();
+		message["link_count"] = data.link_count;
+		message["http_code"] = data.http_code;
+		message["last_visited"] = data.last_visited;
+
+		return message;
+	}
+
 	void print_url_data(const UrlData &data, ostream &stream) {
-		stream << "url: " << data.url << endl;
-		stream << "redirect: " << data.redirect << endl;
-		stream << "link_count: " << data.link_count << endl;
-		stream << "http_code: " << data.http_code << endl;
-		stream << "last_visited: " << data.last_visited << endl;
+		stream << data_to_json(data).dump(4);
 	}
 
 	void print_url_data(const UrlData &data) {
@@ -186,6 +195,38 @@ namespace UrlStore {
 		print_url_data(data, response_stream);
 	}
 
+	vector<URL> post_data_to_urls(const string &post_data) {
+		vector<URL> urls;
+		stringstream ss(post_data);
+		string line;
+		while (getline(ss, line)) {
+			urls.emplace_back(URL(line));
+		}
+		return urls;
+	}
+
+	void handle_binary_post_request(UrlStore &store, const string &post_data, std::stringstream &response_stream) {
+		vector<URL> urls = post_data_to_urls(post_data);
+		for (const URL &url : urls) {
+			UrlData data = store.get(url);
+			const string bin_data = data_to_str(data);
+			const size_t len = bin_data.size();
+			response_stream.write((char *)&len, sizeof(size_t));
+			response_stream.write(bin_data.c_str(), len);
+		}
+	}
+
+	void handle_post_request(UrlStore &store, const string &post_data, std::stringstream &response_stream) {
+		vector<URL> urls = post_data_to_urls(post_data);
+		json arr;
+		for (const URL &url : urls) {
+			UrlData data = store.get(url);
+			json message = data_to_json(data);
+			arr.push_back(message);
+		}
+		response_stream << arr.dump(4);
+	}
+
 	void append_data_str(const UrlData &data, string &append_to) {
 		string data_str = data_to_str(data);
 		size_t data_len = data_str.size();
@@ -225,6 +266,33 @@ namespace UrlStore {
 		Transfer::Response res = Transfer::get(Config::url_store_host + "/urlstore/" + url.str(), {"Accept: application/octet-stream"});
 		if (res.code == 200) {
 			data = str_to_data(res.body);
+			return OK;
+		}
+		return ERROR;
+	}
+
+	int get(const std::vector<URL> &urls, std::vector<UrlData> &data) {
+		vector<string> post_urls;
+		for (const URL &url : urls) {
+			post_urls.push_back(url.str());
+		}
+		const string post_data = boost::algorithm::join(post_urls, "\n");
+		Transfer::Response res = Transfer::post(Config::url_store_host + "/urlstore", post_data, {"Accept: application/octet-stream"});
+		if (res.code == 200) {
+
+			const size_t len = res.body.size();
+			const char *cstr = res.body.c_str();
+			size_t iter = 0;
+			while (iter < len) {
+				size_t data_len = *((size_t *)&cstr[iter]);
+				iter += sizeof(size_t);
+
+				if (data_len + iter > len) break;
+
+				data.emplace_back(str_to_data(&cstr[iter], data_len));
+
+				iter += data_len;
+			}
 			return OK;
 		}
 		return ERROR;
