@@ -75,6 +75,7 @@ namespace UrlStore {
 
 	void print_url_data(const UrlData &data);
 
+	void handle_deferred_put_request(const std::string &write_data);
 	void handle_put_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
 	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
 	void handle_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream);
@@ -85,5 +86,6 @@ namespace UrlStore {
 	void update(const UrlData &data, size_t update_bitmask);
 	int get(const URL &url, UrlData &data);
 
+	void store_write_data(const std::string &write_data);
 
 }
