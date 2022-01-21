@@ -37,8 +37,8 @@ namespace Config {
 	extern std::string upload;
 	extern std::string data_node;
 	extern std::string url_store_host;
-
 	extern std::string url_store_path;
+	extern std::string url_store_cache_path;
 
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;

@@ -29,6 +29,7 @@
 #include "transfer/Transfer.h"
 #include "parser/URL.h"
 #include "system/Profiler.h"
+#include "file/File.h"
 #include "json.hpp"
 
 using namespace std;
@@ -150,11 +151,6 @@ namespace UrlStore {
 		if (update_bitmask & update_last_visited) dest.last_visited = src.last_visited;
 	}
 
-	void handle_deferred_put_request(const std::string &write_data) {
-		// Only save put data to disk. Then a background job will consume the files.
-		store_write_data(write_data);
-	}
-
 	void handle_put_request(UrlStore &store, const std::string &write_data, std::stringstream &response_stream) {
 
 		Profiler::instance prof1("parse and put in batch");
@@ -162,33 +158,39 @@ namespace UrlStore {
 		const char *cstr = write_data.c_str();
 		const size_t len = write_data.size();
 		if (len < 2*sizeof(size_t)) return;
-		const size_t update_bitmask = *((size_t *)&cstr[0]);
+		const size_t deferr_bitmask = *((size_t *)&cstr[0]);
 
-		size_t iter = sizeof(size_t);
-		leveldb::WriteBatch batch;
-		while (iter < len) {
-			size_t data_len = *((size_t *)&cstr[iter]);
-			iter += sizeof(size_t);
+		if (deferr_bitmask) {
+			// Only save put data to disk. Then a background job will consume the files.
+			store_write_data(store, write_data);
+		} else {
+			const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
-			if (data_len + iter > len) break;
+			size_t iter = sizeof(size_t) * 2;
+			leveldb::WriteBatch batch;
+			while (iter < len) {
+				size_t data_len = *((size_t *)&cstr[iter]);
+				iter += sizeof(size_t);
 
-			UrlData data = str_to_data(&cstr[iter], data_len);
-			if (update_bitmask) {
-				UrlData to_update = store.get(data.url);
-				apply_update(to_update, data, update_bitmask);
-				store.set(to_update);
-				batch.Put(to_update.url.key(), data_to_str(to_update));
-			} else {
-				batch.Put(data.url.key(), data_to_str(data));
+				if (data_len + iter > len) break;
+
+				UrlData data = str_to_data(&cstr[iter], data_len);
+				if (update_bitmask) {
+					UrlData to_update = store.get(data.url);
+					apply_update(to_update, data, update_bitmask);
+					store.set(to_update);
+					batch.Put(to_update.url.key(), data_to_str(to_update));
+				} else {
+					batch.Put(data.url.key(), data_to_str(data));
+				}
+
+				iter += data_len;
 			}
+			prof1.stop();
 
-			iter += data_len;
+			Profiler::instance prof2("leveldb Write");
+			store.db()->Write(leveldb::WriteOptions(), &batch);
 		}
-		prof1.stop();
-
-		Profiler::instance prof2("leveldb Write");
-		store.db()->Write(leveldb::WriteOptions(), &batch);
-
 	}
 
 	void handle_binary_get_request(UrlStore &store, const URL &url, std::stringstream &response_stream) {
@@ -245,7 +247,11 @@ namespace UrlStore {
 	}
 
 	void set(const vector<UrlData> &datas) {
-		update(datas, 0x0);
+		update(datas, 0x0, 0x0);
+	}
+
+	void set_deferred(const vector<UrlData> &datas) {
+		update(datas, 0x0, 0x1);
 	}
 
 	void set(const UrlData &data) {
@@ -253,7 +259,12 @@ namespace UrlStore {
 	}
 
 	void update(const std::vector<UrlData> &datas, size_t update_bitmask) {
+		update(datas, update_bitmask, 0x0);
+	}
+
+	void update(const std::vector<UrlData> &datas, size_t update_bitmask, size_t deferred) {
 		string put_data;
+		append_bitmask(deferred, put_data);
 		append_bitmask(update_bitmask, put_data);
 		for (const UrlData &data : datas) {
 			append_data_str(data, put_data);
@@ -263,6 +274,7 @@ namespace UrlStore {
 
 	void update(const UrlData &data, size_t update_bitmask) {
 		string put_data;
+		append_bitmask(0x0, put_data); // Single updates don't need to be dereferred.
 		append_bitmask(update_bitmask, put_data);
 		append_data_str(data, put_data);
 		Transfer::put(Config::url_store_host + "/urlstore", put_data);
@@ -304,7 +316,7 @@ namespace UrlStore {
 		return ERROR;
 	}
 	
-	void store_write_data(const string &write_data) {
+	void store_write_data(UrlStore &store, const string &write_data) {
 		using namespace std::chrono;
 		auto now = std::chrono::system_clock::now();
 		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
@@ -312,9 +324,13 @@ namespace UrlStore {
 		auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
 		long micros = value.count();
 
-		const string filename = "/mnt/4/urlstore_cache/" + to_string(micros) + "-" + to_string(rand()) + ".cache";
+		const string filename = Config::url_store_cache_path + "/" + to_string(micros) + "-" + to_string(rand()) + ".cache";
 		ofstream outfile(filename, ios::binary | ios::trunc);
 		outfile << write_data;
+
+		outfile.close();
+
+		store.m_inserts.push_back(filename);
 	}
 
 	void consume_write_data(UrlStore &store, const string &write_data) {
@@ -323,9 +339,10 @@ namespace UrlStore {
 		const char *cstr = write_data.c_str();
 		const size_t len = write_data.size();
 		if (len < 2*sizeof(size_t)) return;
-		const size_t update_bitmask = *((size_t *)&cstr[0]);
+		//const size_t deferr_bitmask = *((size_t *)&cstr[0]);
+		const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
-		size_t iter = sizeof(size_t);
+		size_t iter = sizeof(size_t) * 2;
 		leveldb::WriteBatch batch;
 		while (iter < len) {
 			size_t data_len = *((size_t *)&cstr[iter]);
@@ -349,5 +366,22 @@ namespace UrlStore {
 
 		Profiler::instance prof2("leveldb Write");
 		store.db()->Write(leveldb::WriteOptions(), &batch);
+	}
+
+	void run_inserter(UrlStore &url_store) {
+		// Only run one thread right now...
+		if (url_store.m_inserts.size()) {
+			const string filename = url_store.m_inserts.front();
+			url_store.m_inserts.pop_front();
+
+			ifstream infile(filename, ios::binary);
+			stringstream buffer;
+			buffer << infile.rdbuf();
+			const string write_data = buffer.str();
+
+			consume_write_data(url_store, write_data);
+
+			File::delete_file(filename);
+		}
 	}
 }

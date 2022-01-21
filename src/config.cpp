@@ -37,6 +37,7 @@ namespace Config {
 	string data_node;
 	string url_store_host = "http://localhost";
 	string url_store_path = "/alexandria/urlstore";
+	string url_store_cache_path = "/mnt/4/urlstore_cache";
 
 	size_t nodes_in_cluster = 1;
 	size_t node_id = 0;

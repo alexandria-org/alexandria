@@ -6,6 +6,7 @@
 #include "parser/cc_parser.h"
 #include <pthread.h>
 #include <signal.h>
+#include <boost/filesystem.hpp>
 
 #include "post_processor/PostProcessor.h"
 #include "api/ApiResponse.h"
@@ -23,6 +24,7 @@
 #include "urlstore/UrlStore.h"
 
 using namespace std;
+using namespace std::literals::chrono_literals;
 
 namespace Worker {
 
@@ -214,6 +216,19 @@ namespace Worker {
 		close(socket_id);
 	}
 
+	void urlstore_inserter(UrlStore::UrlStore &url_store) {
+		while (true) {
+			UrlStore::run_inserter(url_store);
+			this_thread::sleep_for(100ms);
+		}
+	}
+
+	thread urlstore_inserter_thread;
+	void start_urlstore_inserter(UrlStore::UrlStore &url_store) {
+		boost::filesystem::create_directories(Config::url_store_cache_path);
+		urlstore_inserter_thread = std::move(thread(urlstore_inserter, std::ref(url_store)));
+	}
+
 	void urlstore_server() {
 		FCGX_Init();
 
@@ -229,6 +244,8 @@ namespace Worker {
 		LOG_INFO("Urlstore server has started...");
 
 		UrlStore::UrlStore url_store(Config::url_store_path);
+
+		start_urlstore_inserter(url_store);
 
 		const size_t max_post_len = 1024*1024*1024;
 		const size_t buffer_len = 1024*1024;

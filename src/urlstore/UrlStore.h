@@ -28,7 +28,7 @@
 
 #include <iostream>
 #include <vector>
-#include <bitset>
+#include <deque>
 #include "KeyValueStore.h"
 #include "parser/URL.h"
 #include "leveldb/db.h"
@@ -67,9 +67,10 @@ namespace UrlStore {
 			UrlData get(const URL &url);
 			leveldb::DB *db() { return m_db.db(); }
 
+			std::deque<std::string> m_inserts;
+
 		private:
 			KeyValueStore m_db;
-
 
 	};
 
@@ -82,13 +83,16 @@ namespace UrlStore {
 	void handle_binary_post_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
 	void handle_post_request(UrlStore &store, const std::string &post_data, std::stringstream &response_stream);
 
+	void set_deferred(const std::vector<UrlData> &data);
 	void set(const std::vector<UrlData> &data);
 	void set(const UrlData &data);
+	void update(const std::vector<UrlData> &datas, size_t update_bitmask, size_t deferred);
 	void update(const std::vector<UrlData> &data, size_t update_bitmask);
 	void update(const UrlData &data, size_t update_bitmask);
 	int get(const URL &url, UrlData &data);
 	int get(const std::vector<URL> &urls, std::vector<UrlData> &data);
 
-	void store_write_data(const std::string &write_data);
+	void store_write_data(UrlStore &store, const std::string &write_data);
+	void run_inserter(UrlStore &url_store);
 
 }
