@@ -84,7 +84,6 @@ void run_before() {
 }
 
 void run_after() {
-	Worker::join_urlstore_server();
 	Logger::join_logger_thread();
 }
 

@@ -33,6 +33,9 @@ KeyValueStore::KeyValueStore(const string &db_name) {
 	options.create_if_missing = true;
 	options.write_buffer_size = 64ull * 1024ull * 1024ull;
 	leveldb::Status status = leveldb::DB::Open(options, db_name, &m_db);
+	if (!status.ok()) {
+		cout << "Could not open database: " << db_name << endl;
+	}
 }
 
 KeyValueStore::~KeyValueStore() {

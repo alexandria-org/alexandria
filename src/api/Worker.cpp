@@ -229,23 +229,12 @@ namespace Worker {
 		urlstore_inserter_thread = std::move(thread(urlstore_inserter, std::ref(url_store)));
 	}
 
-	void urlstore_server() {
-		FCGX_Init();
-
-		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
-		if (socket_id < 0) {
-			LOG_INFO("Could not open socket, exiting");
-			return;
-		}
+	void urlstore_worker(UrlStore::UrlStore &url_store, int socket_id, mutex &accept_mutex) {
 
 		FCGX_Request request;
 		FCGX_InitRequest(&request, socket_id, 0);
 
-		LOG_INFO("Urlstore server has started...");
-
-		UrlStore::UrlStore url_store(Config::url_store_path);
-
-		start_urlstore_inserter(url_store);
+		LOG_INFO("Urlstore worker has started...");
 
 		const size_t max_post_len = 1024*1024*1024;
 		const size_t buffer_len = 1024*1024;
@@ -256,7 +245,9 @@ namespace Worker {
 
 			error = 0;
 
+			accept_mutex.lock();
 			int accept_response = FCGX_Accept_r(&request);
+			accept_mutex.unlock();
 			if (accept_response < 0) {
 				break;
 			}
@@ -359,7 +350,6 @@ namespace Worker {
 		}
 
 		FCGX_Free(&request, true);
-		close(socket_id);
 	}
 
 	thread download_server_thread;
@@ -380,26 +370,39 @@ namespace Worker {
 		FCGX_ShutdownPending();
 	}
 
+	void start_urlstore_workers() {
+
+
+		UrlStore::UrlStore url_store;
+		start_urlstore_inserter(url_store);
+
+		FCGX_Init();
+		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
+		if (socket_id < 0) {
+			LOG_INFO("Could not open socket, exiting");
+			return;
+		}
+
+		vector<thread> threads;
+
+		mutex accept_mutex;
+
+		for (size_t i = 0; i < Config::worker_count; i++) {
+			threads.emplace_back(thread(urlstore_worker, ref(url_store), socket_id, ref(accept_mutex)));
+		}
+
+		for (auto &thread : threads) {
+			thread.join();
+		}
+
+		close(socket_id);
+	}
+
 	thread urlstore_server_thread;
 	void start_urlstore_server() {
 
-		struct sigaction sa;
-
-		sigemptyset(&sa.sa_mask);
-		sa.sa_handler = signal_handler;
-		sa.sa_flags = 0;
-		if (sigaction(SIGUSR2, &sa, NULL) == -1) {
-			
-		}
-
-		urlstore_server_thread = std::move(thread(urlstore_server));
-	}
-
-	void join_urlstore_server() {
-
-		pthread_kill(urlstore_server_thread.native_handle(), SIGUSR2);
-		urlstore_server_thread.join();
-
+		urlstore_server_thread = std::move(thread(start_urlstore_workers));
+		this_thread::sleep_for(100ms);
 	}
 
 	void wait_for_urlstore_server() {

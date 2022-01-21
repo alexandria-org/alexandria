@@ -29,6 +29,7 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include "config.h"
 #include "KeyValueStore.h"
 #include "parser/URL.h"
 #include "leveldb/db.h"
@@ -58,19 +59,37 @@ namespace UrlStore {
 	UrlData str_to_data(const char *cstr, size_t len);
 	UrlData str_to_data(const std::string &str);
 
-	class UrlStore {
+	class UrlStoreBatch {
 		public:
-			UrlStore(const std::string &server_path);
-			~UrlStore();
+			UrlStoreBatch();
+			~UrlStoreBatch();
 
 			void set(const UrlData &data);
-			UrlData get(const URL &url);
-			leveldb::DB *db() { return m_db.db(); }
 
-			std::deque<std::string> m_inserts;
+			std::vector<leveldb::WriteBatch> m_batches;
+	};
+
+	class UrlStore {
+		public:
+			UrlStore();
+			explicit UrlStore(const std::string &path_prefix);
+			~UrlStore();
+
+			// Key value interface
+			void set(const UrlData &data);
+			UrlData get(const URL &url);
+
+			// Bulk inserts.
+			void write_batch(UrlStoreBatch &batch);
+
+			// Pending inserts.
+			bool has_pending_insert();
+			std::string next_pending_insert();
+			void add_pending_insert(const std::string &file);
 
 		private:
-			KeyValueStore m_db;
+			std::vector<KeyValueStore *> m_shards;
+			std::deque<std::string> m_pending_inserts;
 
 	};
 

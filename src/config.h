@@ -40,6 +40,8 @@ namespace Config {
 	extern std::string url_store_path;
 	extern std::string url_store_cache_path;
 
+	const size_t url_store_shards = 24;
+
 	extern size_t nodes_in_cluster;
 	extern size_t node_id;
 

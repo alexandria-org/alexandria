@@ -31,6 +31,7 @@
 #include "system/Profiler.h"
 #include "file/File.h"
 #include "json.hpp"
+#include <boost/filesystem.hpp>
 
 using namespace std;
 using json = nlohmann::ordered_json;
@@ -104,21 +105,67 @@ namespace UrlStore {
 		return str_to_data(str.c_str(), str.size());
 	}
 
-	UrlStore::UrlStore(const string &server_path) :
-		m_db(server_path) {
+	UrlStoreBatch::UrlStoreBatch()
+	: m_batches(Config::url_store_shards)
+	{
+		
+	}
+
+	UrlStoreBatch::~UrlStoreBatch() {
+
+	}
+
+	void UrlStoreBatch::set(const UrlData &data) {
+		const size_t shard = data.url.hash() % Config::url_store_shards;
+		m_batches[shard].Put(data.url.key(), data_to_str(data));
+	}
+
+	UrlStore::UrlStore() : UrlStore("/mnt") {
+	}
+
+	UrlStore::UrlStore(const string &path_prefix)  {
+		for (size_t i = 0; i < Config::url_store_shards; i++) {
+			boost::filesystem::create_directories(path_prefix + "/" + to_string(i % 8) + "/url_store_" + to_string(i));
+			m_shards.push_back(new KeyValueStore(path_prefix + "/" + to_string(i % 8) + "/url_store_" + to_string(i)));
+		}
 	}
 
 	UrlStore::~UrlStore() {
+		for (KeyValueStore *shard : m_shards) {
+			delete shard;
+		}
 	}
 
 	void UrlStore::set(const UrlData &data) {
-		m_db.set(data.url.key(), data_to_str(data));
+		const size_t shard = data.url.hash() % Config::url_store_shards;
+		m_shards[shard]->set(data.url.key(), data_to_str(data));
 	}
 
 	UrlData UrlStore::get(const URL &url) {
-		string value = m_db.get(url.key());
+		const size_t shard = url.hash() % Config::url_store_shards;
+		string value = m_shards[shard]->get(url.key());
 		if (value.size()) return str_to_data(value);
 		return UrlData{};
+	}
+
+	void UrlStore::write_batch(UrlStoreBatch &batch) {
+		for (size_t shard = 0; shard < Config::url_store_shards; shard++) {
+			m_shards[shard]->db()->Write(leveldb::WriteOptions(), &batch.m_batches[shard]);
+		}
+	}
+
+	bool UrlStore::has_pending_insert() {
+		return m_pending_inserts.size() > 0;
+	}
+
+	string UrlStore::next_pending_insert() {
+		string file = m_pending_inserts.front();
+		m_pending_inserts.pop_front();
+		return file;
+	}
+
+	void UrlStore::add_pending_insert(const string &file) {
+		m_pending_inserts.push_back(file);
 	}
 
 	void print_binary_url_data(const UrlData &data, ostream &stream) {
@@ -167,7 +214,7 @@ namespace UrlStore {
 			const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
 			size_t iter = sizeof(size_t) * 2;
-			leveldb::WriteBatch batch;
+			UrlStoreBatch batch;
 			while (iter < len) {
 				size_t data_len = *((size_t *)&cstr[iter]);
 				iter += sizeof(size_t);
@@ -178,10 +225,9 @@ namespace UrlStore {
 				if (update_bitmask) {
 					UrlData to_update = store.get(data.url);
 					apply_update(to_update, data, update_bitmask);
-					store.set(to_update);
-					batch.Put(to_update.url.key(), data_to_str(to_update));
+					batch.set(to_update);
 				} else {
-					batch.Put(data.url.key(), data_to_str(data));
+					batch.set(data);
 				}
 
 				iter += data_len;
@@ -189,7 +235,7 @@ namespace UrlStore {
 			prof1.stop();
 
 			Profiler::instance prof2("leveldb Write");
-			store.db()->Write(leveldb::WriteOptions(), &batch);
+			store.write_batch(batch);
 		}
 	}
 
@@ -330,7 +376,7 @@ namespace UrlStore {
 
 		outfile.close();
 
-		store.m_inserts.push_back(filename);
+		store.add_pending_insert(filename);
 	}
 
 	void consume_write_data(UrlStore &store, const string &write_data) {
@@ -343,7 +389,7 @@ namespace UrlStore {
 		const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
 		size_t iter = sizeof(size_t) * 2;
-		leveldb::WriteBatch batch;
+		UrlStoreBatch batch;
 		while (iter < len) {
 			size_t data_len = *((size_t *)&cstr[iter]);
 			iter += sizeof(size_t);
@@ -354,10 +400,9 @@ namespace UrlStore {
 			if (update_bitmask) {
 				UrlData to_update = store.get(data.url);
 				apply_update(to_update, data, update_bitmask);
-				store.set(to_update);
-				batch.Put(to_update.url.key(), data_to_str(to_update));
+				batch.set(to_update);
 			} else {
-				batch.Put(data.url.key(), data_to_str(data));
+				batch.set(data);
 			}
 
 			iter += data_len;
@@ -365,14 +410,13 @@ namespace UrlStore {
 		prof1.stop();
 
 		Profiler::instance prof2("leveldb Write");
-		store.db()->Write(leveldb::WriteOptions(), &batch);
+		store.write_batch(batch);
 	}
 
 	void run_inserter(UrlStore &url_store) {
 		// Only run one thread right now...
-		if (url_store.m_inserts.size()) {
-			const string filename = url_store.m_inserts.front();
-			url_store.m_inserts.pop_front();
+		if (url_store.has_pending_insert()) {
+			const string filename = url_store.next_pending_insert();
 
 			ifstream infile(filename, ios::binary);
 			stringstream buffer;
