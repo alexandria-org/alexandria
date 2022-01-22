@@ -87,6 +87,9 @@ namespace UrlStore {
 			std::string next_pending_insert();
 			void add_pending_insert(const std::string &file);
 
+			void compact_all();
+			void compact_all_if_full();
+
 		private:
 			std::vector<KeyValueStore *> m_shards;
 			std::deque<std::string> m_pending_inserts;
@@ -113,5 +116,6 @@ namespace UrlStore {
 
 	void store_write_data(UrlStore &store, const std::string &write_data);
 	void run_inserter(UrlStore &url_store);
+	void testing();
 
 }

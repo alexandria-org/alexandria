@@ -34,6 +34,7 @@
 #include "api/Worker.h"
 #include <iostream>
 #include <set>
+#include "urlstore/UrlStore.h"
 
 using namespace std;
 
@@ -66,6 +67,9 @@ int main(int argc, const char **argv) {
 	}
 
 	const string arg(argv[1]);
+
+
+	UrlStore::testing();
 
 
 	if (arg == "--split") {

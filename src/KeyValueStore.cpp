@@ -56,6 +56,16 @@ void KeyValueStore::set(const string &key_str, const string &value) {
 		cerr << s.ToString() << endl;
 	}
 }
-	
 
+bool KeyValueStore::is_full() {
+	string num_files;
+	m_db->GetProperty("leveldb.num-files-at-level0", &num_files);
+	size_t num = stoull(num_files);
+
+	return num > 10;
+}
+
+void KeyValueStore::compact() {
+	m_db->CompactRange(nullptr, nullptr);
+}
 

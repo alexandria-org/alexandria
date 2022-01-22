@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <thread>
 #include "UrlStore.h"
 #include "config.h"
 #include "transfer/Transfer.h"
@@ -166,6 +167,27 @@ namespace UrlStore {
 
 	void UrlStore::add_pending_insert(const string &file) {
 		m_pending_inserts.push_back(file);
+	}
+
+	void UrlStore::compact_all_if_full() {
+		for (KeyValueStore *shard : m_shards) {
+			if (shard->is_full()) {
+				compact_all();
+				break;
+			}
+		}
+	}
+
+	void UrlStore::compact_all() {
+		vector<thread> threads;
+		for (KeyValueStore *shard : m_shards) {
+			threads.emplace_back(thread([shard]() {
+				shard->compact();
+			}));
+		}
+		for (thread &th : threads) {
+			th.join();
+		}
 	}
 
 	void print_binary_url_data(const UrlData &data, ostream &stream) {
@@ -413,10 +435,11 @@ namespace UrlStore {
 		store.write_batch(batch);
 	}
 
-	void run_inserter(UrlStore &url_store) {
-		// Only run one thread right now...
+	void run_one_inserter(UrlStore &url_store, mutex &_mutex) {
+		_mutex.lock();
 		if (url_store.has_pending_insert()) {
 			const string filename = url_store.next_pending_insert();
+			_mutex.unlock();
 
 			ifstream infile(filename, ios::binary);
 			stringstream buffer;
@@ -426,6 +449,72 @@ namespace UrlStore {
 			consume_write_data(url_store, write_data);
 
 			File::delete_file(filename);
+
+			return;
 		}
+		_mutex.unlock();
+
+	}
+
+	void run_inserter(UrlStore &url_store) {
+
+		url_store.compact_all_if_full();
+
+		if (url_store.has_pending_insert()) {
+
+			const size_t num_threads = 16;
+			vector<thread> threads;
+			mutex _mutex;
+			for (size_t i = 0; i < num_threads; i++) {
+				threads.emplace_back(thread(run_one_inserter, ref(url_store), ref(_mutex)));
+			}
+
+			for (thread &th : threads) {
+				th.join();
+			}
+		}
+
+	}
+
+	void testing() {
+		leveldb::DB *db;
+		leveldb::Options options;
+		options.create_if_missing = true;
+		options.write_buffer_size = 64ull * 1024ull * 1024ull;
+		leveldb::Status status = leveldb::DB::Open(options, "/mnt/0/testdb0", &db);
+		if (!status.ok()) {
+			cout << "Could not open database: " << endl;
+		}
+
+		while (true) {
+			leveldb::WriteBatch batch;
+			for (size_t i = 0; i < 1000000; i++) {
+				batch.Put(to_string(rand()), to_string(rand()) + to_string(rand()) + to_string(rand()) + to_string(rand()));
+			}
+			db->Write(leveldb::WriteOptions(), &batch);
+
+			{
+				string num_files;
+				db->GetProperty("leveldb.num-files-at-level0", &num_files);
+				if (num_files == "12") {
+					cout << "compacting all!" << endl;
+					db->CompactRange(nullptr, nullptr);
+				}
+			}
+
+			cout << "leveldb.num-files-at-level: ";
+			for (size_t level = 0; level < 10; level++) {
+				string num_files;
+				db->GetProperty("leveldb.num-files-at-level" + to_string(level), &num_files);
+				cout << num_files << " ";
+			}
+			cout << endl;
+
+			string stats;
+			db->GetProperty("leveldb.stats", &stats);
+			cout << stats << endl;
+		}
+
+		delete db;
 	}
 }
