@@ -68,10 +68,6 @@ int main(int argc, const char **argv) {
 
 	const string arg(argv[1]);
 
-
-	UrlStore::testing();
-
-
 	if (arg == "--split") {
 		Tools::run_splitter();
 	} else if (arg == "--count") {
