@@ -30,6 +30,7 @@
 #include "transfer/Transfer.h"
 #include "parser/URL.h"
 #include "system/Profiler.h"
+#include "system/Logger.h"
 #include "file/File.h"
 #include "json.hpp"
 #include <boost/filesystem.hpp>
@@ -179,6 +180,7 @@ namespace UrlStore {
 	}
 
 	void UrlStore::compact_all() {
+		LOG_INFO("Compacting all shards!");
 		vector<thread> threads;
 		for (KeyValueStore *shard : m_shards) {
 			threads.emplace_back(thread([shard]() {
@@ -188,6 +190,7 @@ namespace UrlStore {
 		for (thread &th : threads) {
 			th.join();
 		}
+		LOG_INFO("Done compacting!");
 	}
 
 	void print_binary_url_data(const UrlData &data, ostream &stream) {
