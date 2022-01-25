@@ -19,5 +19,7 @@ gunzip zlib-1.2.11.tar.gz
 tar -xvf zlib-1.2.11.tar
 
 git clone --recurse-submodules https://github.com/google/leveldb.git
-git clone https://github.com/google/robotstxt.git
+git clone https://github.com/abseil/abseil-cpp.git
+wget https://raw.githubusercontent.com/google/robotstxt/master/robots.cc
+wget https://raw.githubusercontent.com/google/robotstxt/master/robots.h
 

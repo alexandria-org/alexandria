@@ -10,8 +10,8 @@ project(alexandria LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-add_subdirectory("deps/leveldb/")
-add_subdirectory("deps/robotstxt/")
+add_subdirectory("deps/leveldb")
+add_subdirectory("deps/abseil-cpp")
 
 find_package(Threads REQUIRED)
 FIND_PACKAGE(CURL REQUIRED)
@@ -22,7 +22,6 @@ find_package(fcgi)
 include_directories(src/)
 include_directories(deps/)
 include_directories(tests/)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/deps/robotstxt/libs/abseil-cpp-src/)
 
 set(SRC_CLASSES
 	
@@ -96,6 +95,8 @@ set(SRC_CLASSES
 	"src/tools/CalculateHarmonic.cpp"
 
 	"src/cluster/Document.cpp"
+
+	"deps/robots.cc"
 )
 
 set(SRC_COMMON
@@ -127,23 +128,23 @@ target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
-target_compile_options(tools PUBLIC -Wall -Werror -Wpedantic)
-target_compile_options(run_tests PUBLIC -Wall -Werror -Wpedantic)
-target_compile_options(server PUBLIC -Wall -Werror -Wpedantic)
+target_compile_options(tools PUBLIC -Wall -Werror)
+target_compile_options(run_tests PUBLIC -Wall -Werror)
+target_compile_options(server PUBLIC -Wall -Werror)
 
 target_link_libraries(tools PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
 target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb robots)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
 

@@ -198,7 +198,6 @@ namespace Link {
 			});
 
 			if (file_lines.size() >= 1000000) {
-				Profiler::instance prof1("Uploading results");
 				file_num++;
 				thread th1(upload_link_counts_file, file_lines, batch, sub_batch, file_num);
 				thread th2([&url_data] (){ UrlStore::set_deferred(url_data); });

@@ -29,13 +29,18 @@
 BOOST_AUTO_TEST_SUITE(robo)
 
 BOOST_AUTO_TEST_CASE(roboparse) {
-	std::string robots_content = "";
-	std::string user_agent = "AlexandriaBot 1.0";
-	std::vector<std::string> user_agents(1, user_agent);
+	std::string robots_content = "Sitemap: https://www.omnible.se/sitemap.xml\n"
+		"User-agent: AlexandriaBot\n"
+		"Disallow: *\n"
+		"User-agent: *   # all agents\n"
+		"Disallow: /*crawl=no*\n"
+		"Disallow: /basket/add*\n"
+	;
+	std::cout << robots_content << std::endl;
+	std::string user_agent = "AlexandriaBot";
 	googlebot::RobotsMatcher matcher;
-	std::string url = "/";
-	bool allowed = matcher.AllowedByRobots(robots_content, &user_agents, url);
-	//matcher.disallow();
+	std::string url = "/visit";
+	bool allowed = matcher.OneAgentAllowedByRobots(robots_content, user_agent, url);
 	BOOST_CHECK(allowed);
 }
 

@@ -69,9 +69,9 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (true || (argc == 1 && FullText::is_indexed())) {
+	if (argc == 1 && FullText::is_indexed()) {
 
-		Worker::start_urlstore_server();
+		//Worker::start_urlstore_server();
 
 		cout << "starting download server" << endl;
 		Worker::start_download_server();
