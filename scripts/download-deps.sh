@@ -19,4 +19,5 @@ gunzip zlib-1.2.11.tar.gz
 tar -xvf zlib-1.2.11.tar
 
 git clone --recurse-submodules https://github.com/google/leveldb.git
+git clone https://github.com/google/robotstxt.git
 

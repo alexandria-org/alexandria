@@ -31,7 +31,8 @@ using namespace std;
 KeyValueStore::KeyValueStore(const string &db_name) {
 	leveldb::Options options;
 	options.create_if_missing = true;
-	options.write_buffer_size = 64ull * 1024ull * 1024ull;
+	options.write_buffer_size = 1024ull * 1024ull * 1024ull;
+	options.max_open_files = 100000;
 	leveldb::Status status = leveldb::DB::Open(options, db_name, &m_db);
 	if (!status.ok()) {
 		cout << "Could not open database: " << db_name << endl;
@@ -62,7 +63,16 @@ bool KeyValueStore::is_full() {
 	m_db->GetProperty("leveldb.num-files-at-level0", &num_files);
 	size_t num = stoull(num_files);
 
-	return num > 10;
+	cout << "level0: " << num << " - ";
+	cout << "leveldb.num-files-at-level: ";
+	for (size_t level = 0; level < 10; level++) {
+		string num_files;
+		m_db->GetProperty("leveldb.num-files-at-level" + to_string(level), &num_files);
+		cout << num_files << " ";
+	}
+	cout << endl;
+
+	return num >= 10;
 }
 
 void KeyValueStore::compact() {

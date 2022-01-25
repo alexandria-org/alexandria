@@ -11,6 +11,7 @@ project(alexandria LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 add_subdirectory("deps/leveldb/")
+add_subdirectory("deps/robotstxt/")
 
 find_package(Threads REQUIRED)
 FIND_PACKAGE(CURL REQUIRED)
@@ -21,6 +22,7 @@ find_package(fcgi)
 include_directories(src/)
 include_directories(deps/)
 include_directories(tests/)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/deps/robotstxt/libs/abseil-cpp-src/)
 
 set(SRC_CLASSES
 	
@@ -138,7 +140,7 @@ target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb robots)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}

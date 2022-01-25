@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <future>
 #include <thread>
 #include "UrlStore.h"
 #include "config.h"
@@ -180,7 +181,7 @@ namespace UrlStore {
 	}
 
 	void UrlStore::compact_all() {
-		LOG_INFO("Compacting all shards!");
+		Profiler::instance prof("Compacting all shards!");
 		vector<thread> threads;
 		for (KeyValueStore *shard : m_shards) {
 			threads.emplace_back(thread([shard]() {
@@ -190,7 +191,6 @@ namespace UrlStore {
 		for (thread &th : threads) {
 			th.join();
 		}
-		LOG_INFO("Done compacting!");
 	}
 
 	void print_binary_url_data(const UrlData &data, ostream &stream) {
@@ -225,8 +225,6 @@ namespace UrlStore {
 
 	void handle_put_request(UrlStore &store, const std::string &write_data, std::stringstream &response_stream) {
 
-		Profiler::instance prof1("parse and put in batch");
-
 		const char *cstr = write_data.c_str();
 		const size_t len = write_data.size();
 		if (len < 2*sizeof(size_t)) return;
@@ -234,8 +232,10 @@ namespace UrlStore {
 
 		if (deferr_bitmask) {
 			// Only save put data to disk. Then a background job will consume the files.
+			Profiler::instance prof1("store_write_data");
 			store_write_data(store, write_data);
 		} else {
+			Profiler::instance prof1("handle non deferred put data");
 			const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
 			size_t iter = sizeof(size_t) * 2;
@@ -404,12 +404,11 @@ namespace UrlStore {
 		store.add_pending_insert(filename);
 	}
 
-	void consume_write_data(UrlStore &store, const string &write_data) {
-		Profiler::instance prof1("parse and put in batch");
+	UrlStoreBatch get_write_data(UrlStore &store, const string &write_data) {
+		Profiler::instance prof1("parse and write to batches");
 
 		const char *cstr = write_data.c_str();
 		const size_t len = write_data.size();
-		if (len < 2*sizeof(size_t)) return;
 		//const size_t deferr_bitmask = *((size_t *)&cstr[0]);
 		const size_t update_bitmask = *((size_t *)&cstr[sizeof(size_t)]);
 
@@ -432,51 +431,50 @@ namespace UrlStore {
 
 			iter += data_len;
 		}
-		prof1.stop();
 
-		Profiler::instance prof2("leveldb Write");
-		store.write_batch(batch);
+		return batch;
 	}
 
-	void run_one_inserter(UrlStore &url_store, mutex &_mutex) {
-		_mutex.lock();
-		if (url_store.has_pending_insert()) {
-			const string filename = url_store.next_pending_insert();
-			_mutex.unlock();
+	UrlStoreBatch read_insert_data(UrlStore &url_store, const string &filename) {
 
-			ifstream infile(filename, ios::binary);
-			stringstream buffer;
-			buffer << infile.rdbuf();
-			const string write_data = buffer.str();
+		ifstream infile(filename, ios::binary);
+		stringstream buffer;
+		buffer << infile.rdbuf();
+		const string write_data = buffer.str();
 
-			consume_write_data(url_store, write_data);
+		UrlStoreBatch batch = get_write_data(url_store, write_data);
 
-			File::delete_file(filename);
+		File::delete_file(filename);
 
-			return;
-		}
-		_mutex.unlock();
+		return batch;
+	}
 
+	void write_insert_data(UrlStore &url_store, UrlStoreBatch &batch) {
+		Profiler::instance prof2("leveldb Write");
+		url_store.write_batch(batch);
 	}
 
 	void run_inserter(UrlStore &url_store) {
 
-		url_store.compact_all_if_full();
+		const size_t num_files_between_compactions = 20;
 
-		if (url_store.has_pending_insert()) {
+		vector<string> filenames;
 
-			const size_t num_threads = 16;
-			vector<thread> threads;
-			mutex _mutex;
-			for (size_t i = 0; i < num_threads; i++) {
-				threads.emplace_back(thread(run_one_inserter, ref(url_store), ref(_mutex)));
-			}
-
-			for (thread &th : threads) {
-				th.join();
-			}
+		while (url_store.has_pending_insert() && filenames.size() < num_files_between_compactions) {
+			const string filename = url_store.next_pending_insert();
+			filenames.push_back(filename);
 		}
 
+		vector<future<UrlStoreBatch>> futures;
+		for (const string &filename : filenames) {
+			future<UrlStoreBatch> fut = async(read_insert_data, ref(url_store), filename);
+			futures.emplace_back(move(fut));
+		}
+
+		for (auto &fut : futures) {
+			UrlStoreBatch batch = fut.get();
+			write_insert_data(url_store, batch);
+		}
 	}
 
 	void testing() {

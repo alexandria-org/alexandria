@@ -69,6 +69,11 @@ string URL::str() const {
 }
 
 string URL::key() const {
+	/*
+	 * We should probably change this to:
+	 * return m_host + path_with_query();
+	 * but we need to do it later..
+	 */
 	return m_host + m_path + m_query;
 }
 
