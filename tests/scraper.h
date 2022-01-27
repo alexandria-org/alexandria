@@ -25,19 +25,25 @@
  */
 
 #include "scraper/Scraper.h"
+#include <queue>
+#include <vector>
 
 BOOST_AUTO_TEST_SUITE(scraper)
 
 BOOST_AUTO_TEST_CASE(scraper) {
 
-	const vector<string> urls = {
-		"https://omnible.se/",
-		"https://www.omnible.se/kategori/b%C3%B6cker"
-	};
+	Scraper::store store;
 
-	Scraper::Scraper scraper;
-	scraper.push_urls(urls);
-	scraper.start_thread();
+	Scraper::scraper scraper("example.com", &store);
+	scraper.push_url(URL("http://omnible.se/"));
+
+	scraper.run();
+
+	/*string last = store.tail();
+	vector<string> cols;
+	boost::algorithm::split(last, cols, boost::is_any_of("\t"));
+	BOOST_CHECK_EQUAL(cols[0], "https://example.com/");
+	BOOST_CHECK_EQUAL(cols[1], "Example Domain");*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()

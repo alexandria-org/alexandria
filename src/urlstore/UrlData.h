@@ -24,51 +24,42 @@
  * SOFTWARE.
  */
 
-#include <queue>
-#include <curl/curl.h>
+#pragma once
+
+#include <iostream>
 #include "parser/URL.h"
+#include "json.hpp"
 
-namespace Scraper {
+namespace UrlStore {
 
-	std::string user_agent_token();
-	std::string user_agent();
+	const size_t update_redirect     = 0B00000001;
+	const size_t update_link_count   = 0B00000010;
+	const size_t update_http_code    = 0B00000100;
+	const size_t update_last_visited = 0B00001000;
 
-	/*
-	 * Responsible for storing scraper data on a file and upload it to our fileserver when the file reaches a number of urls.
-	 * */
-	class store {
+	class UrlData {
 		public:
+			UrlData();
+			explicit UrlData(const std::string &str);
+			UrlData(const char *cstr, size_t len);
+			~UrlData();
 
+			URL m_url;
+			URL m_redirect;
+			size_t m_link_count = 0;
+			size_t m_http_code = 0;
+			size_t m_last_visited = 0;
+
+			void apply_update(const UrlData &data, size_t update_bitmask);
+
+			std::string to_str() const;
+			std::string private_key() const;
+			std::string public_key() const;
+			nlohmann::ordered_json to_json() const;
+
+			static std::string public_key_to_private_key(const std::string &public_key) {
+				return URL(public_key).key();
+			}
 	};
-
-	/*
-	 * The scraper!
-	 * */
-	class scraper {
-		public:
-
-			scraper(const std::string &domain, store *store);
-			~scraper();
-
-			void push_url(const URL &url);
-			void run();
-
-		private:
-			std::string m_domain;
-			std::string m_buffer;
-			size_t m_buffer_len = 1024*1024*10;
-			CURL *m_curl;
-			store *m_store;
-			std::queue<URL> m_queue;
-
-			void handle_url(const URL &url);
-			void handle_response(const std::string &data, size_t response_code, const URL &url);
-
-		public:
-
-			friend size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
-	};
-
-	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
 
 }

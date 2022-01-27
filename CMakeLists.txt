@@ -72,6 +72,7 @@ set(SRC_CLASSES
 	"src/parser/cc_parser.cpp"
 
 	"src/urlstore/UrlStore.cpp"
+	"src/urlstore/UrlData.cpp"
 	
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"
@@ -95,6 +96,7 @@ set(SRC_CLASSES
 	"src/tools/CalculateHarmonic.cpp"
 
 	"src/cluster/Document.cpp"
+	"src/scraper/Scraper.cpp"
 
 	"deps/robots.cc"
 )

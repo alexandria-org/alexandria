@@ -189,18 +189,14 @@ namespace Link {
 			//const string url = kv_store.get(to_string(count.link_hash));
 
 			file_lines.push_back(count.url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
-			url_data.emplace_back(UrlStore::UrlData{
-				.url = URL(count.url),
-				.redirect = URL(),
-				.link_count = count.count,
-				.http_code = 0,
-				.last_visited = 0
-			});
+			url_data.emplace_back(UrlStore::UrlData());
+			url_data.back().m_url = URL(count.url);
+			url_data.back().m_link_count = count.count;
 
 			if (file_lines.size() >= 1000000) {
 				file_num++;
 				thread th1(upload_link_counts_file, file_lines, batch, sub_batch, file_num);
-				thread th2([&url_data] (){ UrlStore::set_deferred(url_data); });
+				thread th2([&url_data] (){ UrlStore::set_many(url_data); });
 				th1.join();
 				th2.join();
 				file_lines.clear();
@@ -209,7 +205,7 @@ namespace Link {
 
 		}
 		upload_link_counts_file(file_lines, batch, sub_batch, ++file_num);
-		UrlStore::set(url_data);
+		UrlStore::set_many(url_data);
 	}
 
 }

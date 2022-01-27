@@ -216,20 +216,7 @@ namespace Worker {
 		close(socket_id);
 	}
 
-	void urlstore_inserter(UrlStore::UrlStore &url_store) {
-		while (true) {
-			UrlStore::run_inserter(url_store);
-			this_thread::sleep_for(100ms);
-		}
-	}
-
-	thread urlstore_inserter_thread;
-	void start_urlstore_inserter(UrlStore::UrlStore &url_store) {
-		boost::filesystem::create_directories(Config::url_store_cache_path);
-		urlstore_inserter_thread = std::move(thread(urlstore_inserter, std::ref(url_store)));
-	}
-
-	void urlstore_worker(UrlStore::UrlStore &url_store, int socket_id, mutex &accept_mutex) {
+	void urlstore_worker(UrlStore::UrlStore<UrlStore::UrlData> &url_store, int socket_id, mutex &accept_mutex) {
 
 		FCGX_Request request;
 		FCGX_InitRequest(&request, socket_id, 0);
@@ -301,10 +288,10 @@ namespace Worker {
 					string uri(uri_ptr);
 					uri.replace(0, 10, "");
 					if (accept == "application/octet-stream") {
-						UrlStore::handle_binary_get_request(url_store, URL(uri), response_stream);
+						UrlStore::handle_binary_get_request(url_store, uri, response_stream);
 						output_binary_response(request, response_stream);
 					} else {
-						UrlStore::handle_get_request(url_store, URL(uri), response_stream);
+						UrlStore::handle_get_request(url_store, uri, response_stream);
 						output_response(request, response_stream);
 					}
 				}
@@ -370,9 +357,10 @@ namespace Worker {
 
 	void start_urlstore_workers() {
 
+		boost::filesystem::create_directories(Config::url_store_cache_path);
 
-		UrlStore::UrlStore url_store;
-		start_urlstore_inserter(url_store);
+		UrlStore::UrlStore<UrlStore::UrlData> store1;
+		thread urlstore_inserter_thread(UrlStore::urlstore_inserter<UrlStore::UrlData>, std::ref(store1));
 
 		FCGX_Init();
 		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
@@ -386,12 +374,14 @@ namespace Worker {
 		mutex accept_mutex;
 
 		for (size_t i = 0; i < Config::worker_count; i++) {
-			threads.emplace_back(thread(urlstore_worker, ref(url_store), socket_id, ref(accept_mutex)));
+			threads.emplace_back(thread(urlstore_worker, ref(store1), socket_id, ref(accept_mutex)));
 		}
 
 		for (auto &thread : threads) {
 			thread.join();
 		}
+
+		urlstore_inserter_thread.join();
 
 		close(socket_id);
 	}

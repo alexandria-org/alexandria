@@ -24,11 +24,11 @@
  * SOFTWARE.
  */
 
-#include "robotstxt/robots.h"
+#include "robots.h"
 
-BOOST_AUTO_TEST_SUITE(robo)
+BOOST_AUTO_TEST_SUITE(robot_parser)
 
-BOOST_AUTO_TEST_CASE(roboparse) {
+BOOST_AUTO_TEST_CASE(parse) {
 	std::string robots_content = "Sitemap: https://www.omnible.se/sitemap.xml\n"
 		"User-agent: AlexandriaBot\n"
 		"Disallow: *\n"
@@ -36,12 +36,11 @@ BOOST_AUTO_TEST_CASE(roboparse) {
 		"Disallow: /*crawl=no*\n"
 		"Disallow: /basket/add*\n"
 	;
-	std::cout << robots_content << std::endl;
 	std::string user_agent = "AlexandriaBot";
 	googlebot::RobotsMatcher matcher;
 	std::string url = "/visit";
 	bool allowed = matcher.OneAgentAllowedByRobots(robots_content, user_agent, url);
-	BOOST_CHECK(allowed);
+	BOOST_CHECK(!allowed);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
