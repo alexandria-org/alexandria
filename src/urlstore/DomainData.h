@@ -32,25 +32,21 @@
 
 namespace UrlStore {
 
-	const size_t update_redirect     = 0B00000001;
-	const size_t update_link_count   = 0B00000010;
-	const size_t update_http_code    = 0B00000100;
-	const size_t update_last_visited = 0B00001000;
+	const size_t update_has_https     = 0B00000001;
+	const size_t update_has_www       = 0B00000010;
 
-	class UrlData {
+	class DomainData {
 		public:
-			UrlData();
-			explicit UrlData(const std::string &str);
-			UrlData(const char *cstr, size_t len);
-			~UrlData();
+			DomainData();
+			explicit DomainData(const std::string &str);
+			DomainData(const char *cstr, size_t len);
+			~DomainData();
 
-			URL m_url;
-			URL m_redirect;
-			size_t m_link_count = 0;
-			size_t m_http_code = 0;
-			size_t m_last_visited = 0;
+			std::string m_domain;
+			size_t m_has_https;
+			size_t m_has_www;
 
-			void apply_update(const UrlData &data, size_t update_bitmask);
+			void apply_update(const DomainData &data, size_t update_bitmask);
 
 			std::string to_str() const;
 			std::string private_key() const;
@@ -58,7 +54,7 @@ namespace UrlStore {
 			nlohmann::ordered_json to_json() const;
 
 			static std::string public_key_to_private_key(const std::string &public_key) {
-				return URL(public_key).key();
+				return public_key;
 			}
 
 			static const std::string uri;

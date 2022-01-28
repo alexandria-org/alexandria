@@ -52,21 +52,32 @@ BOOST_AUTO_TEST_CASE(url_data) {
 	BOOST_CHECK_EQUAL(url_data2.m_last_visited, 20220101);
 }
 
-BOOST_AUTO_TEST_CASE(local) {
-	URL url("https://www.example.com");
-	UrlStore::UrlData url_data;
-	url_data.m_url = url;
-	url_data.m_http_code = 200;
-	url_data.m_last_visited = 20220101;
+BOOST_AUTO_TEST_CASE(domain_data) {
+	UrlStore::DomainData data;
+	data.m_domain = "test.com";
+	data.m_has_www = 1;
+	data.m_has_https = 1;
 
-	UrlStore::UrlStore<UrlStore::UrlData> url_db("/tmp/testdb");
-	url_db.set(url_data);
-	url_data = url_db.get(url.str());
+	string string_data = data.to_str();
 
-	BOOST_CHECK_EQUAL(url_data.m_url.str(), url.str());
-	BOOST_CHECK_EQUAL(url_data.m_link_count, 0);
-	BOOST_CHECK_EQUAL(url_data.m_http_code, 200);
-	BOOST_CHECK_EQUAL(url_data.m_last_visited, 20220101);
+	UrlStore::DomainData data2(string_data);
+
+	BOOST_CHECK_EQUAL(data2.m_domain, "test.com");
+	BOOST_CHECK_EQUAL(data2.m_has_www, 1);
+	BOOST_CHECK_EQUAL(data2.m_has_https, 1);
+}
+
+BOOST_AUTO_TEST_CASE(robots_data) {
+	UrlStore::RobotsData data;
+	data.m_domain = "test.com";
+	data.m_robots = "test 123";
+
+	string string_data = data.to_str();
+
+	UrlStore::RobotsData data2(string_data);
+
+	BOOST_CHECK_EQUAL(data2.m_domain, "test.com");
+	BOOST_CHECK_EQUAL(data2.m_robots, "test 123");
 }
 
 BOOST_AUTO_TEST_CASE(server) {
@@ -88,7 +99,6 @@ BOOST_AUTO_TEST_CASE(server) {
 	BOOST_CHECK_EQUAL(ret_data.m_link_count, 0);
 	BOOST_CHECK_EQUAL(ret_data.m_http_code, 200);
 	BOOST_CHECK_EQUAL(ret_data.m_last_visited, 20220101);
-
 }
 
 BOOST_AUTO_TEST_CASE(update) {
@@ -212,6 +222,25 @@ BOOST_AUTO_TEST_CASE(get_json) {
 			i++;
 		}
 	}
+
+}
+
+BOOST_AUTO_TEST_CASE(domain) {
+
+	UrlStore::DomainData data;
+	data.m_domain = "example.com";
+	data.m_has_https = 1;
+	data.m_has_www = 1;
+
+	UrlStore::set(data);
+
+	UrlStore::DomainData ret_data;
+	int error = UrlStore::get("example.com", ret_data);
+
+	BOOST_CHECK_EQUAL(error, UrlStore::OK);
+	BOOST_CHECK_EQUAL(ret_data.m_domain, "example.com");
+	BOOST_CHECK_EQUAL(ret_data.m_has_https, 1);
+	BOOST_CHECK_EQUAL(ret_data.m_has_www, 1);
 
 }
 

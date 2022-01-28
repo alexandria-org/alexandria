@@ -216,7 +216,7 @@ namespace Worker {
 		close(socket_id);
 	}
 
-	void urlstore_worker(UrlStore::UrlStore<UrlStore::UrlData> &url_store, int socket_id, mutex &accept_mutex) {
+	void urlstore_worker(UrlStore::all_stores &stores, int socket_id, mutex &accept_mutex) {
 
 		FCGX_Request request;
 		FCGX_InitRequest(&request, socket_id, 0);
@@ -250,6 +250,12 @@ namespace Worker {
 			string uri(uri_ptr);
 			string request_method(req_ptr);
 
+			// /store/[realm]/
+			uri.replace(0, 7, "");
+			const size_t slash_pos = uri.find("/");
+			const string type = uri.substr(0, slash_pos);
+			const string public_key = uri.substr(slash_pos + 1);
+
 			stringstream response_stream;
 
 			if (request_method == "PUT") {
@@ -268,7 +274,15 @@ namespace Worker {
 				}
 
 				if (error == 0) {
-					UrlStore::handle_put_request(url_store, post_data, response_stream);
+					if (type == "url") {
+						UrlStore::handle_put_request(stores.url, post_data, response_stream);
+					}
+					if (type == "domain") {
+						UrlStore::handle_put_request(stores.domain, post_data, response_stream);
+					}
+					if (type == "robots") {
+						UrlStore::handle_put_request(stores.robots, post_data, response_stream);
+					}
 					FCGX_FPrintF(request.out, "Content-type: text/html\r\n\r\n");
 					FCGX_FPrintF(request.out, "%s", "Data Uploaded");
 				}
@@ -283,21 +297,28 @@ namespace Worker {
 					accept = string(accept_ptr);
 				}
 				
-				const char *uri_ptr = FCGX_GetParam("REQUEST_URI", request.envp);
-				if (uri_ptr != nullptr) {
-					string uri(uri_ptr);
-					// /store/[realm]/
-					uri.replace(0, 7, "");
-					const size_t slash_pos = uri.find("/");
-					const string type = uri.substr(0, slash_pos);
-					const string public_key = uri.substr(slash_pos + 1);
-					if (accept == "application/octet-stream") {
-						UrlStore::handle_binary_get_request(url_store, public_key, response_stream);
-						output_binary_response(request, response_stream);
-					} else {
-						UrlStore::handle_get_request(url_store, public_key, response_stream);
-						output_response(request, response_stream);
+				if (accept == "application/octet-stream") {
+					if (type == "url") {
+						UrlStore::handle_binary_get_request(stores.url, public_key, response_stream);
 					}
+					if (type == "domain") {
+						UrlStore::handle_binary_get_request(stores.domain, public_key, response_stream);
+					}
+					if (type == "robots") {
+						UrlStore::handle_binary_get_request(stores.robots, public_key, response_stream);
+					}
+					output_binary_response(request, response_stream);
+				} else {
+					if (type == "url") {
+						UrlStore::handle_get_request(stores.url, public_key, response_stream);
+					}
+					if (type == "domain") {
+						UrlStore::handle_get_request(stores.domain, public_key, response_stream);
+					}
+					if (type == "robots") {
+						UrlStore::handle_get_request(stores.robots, public_key, response_stream);
+					}
+					output_response(request, response_stream);
 				}
 			} else if (request_method == "POST") {
 
@@ -325,10 +346,26 @@ namespace Worker {
 
 				if (error == 0) {
 					if (accept == "application/octet-stream") {
-						UrlStore::handle_binary_post_request(url_store, post_data, response_stream);
+						if (type == "url") {
+							UrlStore::handle_binary_post_request(stores.url, post_data, response_stream);
+						}
+						if (type == "domain") {
+							UrlStore::handle_binary_post_request(stores.domain, post_data, response_stream);
+						}
+						if (type == "robots") {
+							UrlStore::handle_binary_post_request(stores.robots, post_data, response_stream);
+						}
 						output_binary_response(request, response_stream);
 					} else {
-						UrlStore::handle_post_request(url_store, post_data, response_stream);
+						if (type == "url") {
+							UrlStore::handle_post_request(stores.url, post_data, response_stream);
+						}
+						if (type == "domain") {
+							UrlStore::handle_post_request(stores.domain, post_data, response_stream);
+						}
+						if (type == "robots") {
+							UrlStore::handle_post_request(stores.robots, post_data, response_stream);
+						}
 						output_response(request, response_stream);
 					}
 				}
@@ -363,8 +400,11 @@ namespace Worker {
 
 		boost::filesystem::create_directories(Config::url_store_cache_path);
 
-		UrlStore::UrlStore<UrlStore::UrlData> store1;
-		thread urlstore_inserter_thread(UrlStore::urlstore_inserter<UrlStore::UrlData>, std::ref(store1));
+		UrlStore::all_stores stores;
+
+		thread url_inserter_thread(UrlStore::urlstore_inserter<UrlStore::UrlData>, std::ref(stores.url));
+		thread domain_inserter_thread(UrlStore::urlstore_inserter<UrlStore::DomainData>, std::ref(stores.domain));
+		thread robots_inserter_thread(UrlStore::urlstore_inserter<UrlStore::RobotsData>, std::ref(stores.robots));
 
 		FCGX_Init();
 		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
@@ -378,14 +418,16 @@ namespace Worker {
 		mutex accept_mutex;
 
 		for (size_t i = 0; i < Config::worker_count; i++) {
-			threads.emplace_back(thread(urlstore_worker, ref(store1), socket_id, ref(accept_mutex)));
+			threads.emplace_back(thread(urlstore_worker, ref(stores), socket_id, ref(accept_mutex)));
 		}
 
 		for (auto &thread : threads) {
 			thread.join();
 		}
 
-		urlstore_inserter_thread.join();
+		url_inserter_thread.join();
+		domain_inserter_thread.join();
+		robots_inserter_thread.join();
 
 		close(socket_id);
 	}
@@ -394,7 +436,7 @@ namespace Worker {
 	void start_urlstore_server() {
 
 		urlstore_server_thread = std::move(thread(start_urlstore_workers));
-		this_thread::sleep_for(100ms);
+		this_thread::sleep_for(300ms); // Wait for the threads to start...
 	}
 
 	void wait_for_urlstore_server() {

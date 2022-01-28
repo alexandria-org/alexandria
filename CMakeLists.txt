@@ -73,6 +73,8 @@ set(SRC_CLASSES
 
 	"src/urlstore/UrlStore.cpp"
 	"src/urlstore/UrlData.cpp"
+	"src/urlstore/DomainData.cpp"
+	"src/urlstore/RobotsData.cpp"
 	
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"

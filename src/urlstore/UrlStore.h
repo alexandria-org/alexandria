@@ -45,6 +45,8 @@
 #include "leveldb/write_batch.h"
 
 #include "UrlData.h"
+#include "DomainData.h"
+#include "RobotsData.h"
 
 namespace UrlStore {
 
@@ -53,22 +55,6 @@ namespace UrlStore {
 
 	const int OK = 0;
 	const int ERROR = 1;
-
-	/*class DomainData {
-		public:
-			UrlData();
-			UrlData(const UrlData &other);
-			explicit UrlData(const std::string &str);
-			UrlData(const char *cstr, size_t len);
-			~UrlData();
-
-			string domain;
-			bool use_https;
-			bool use_www;
-			float harmonic_centrality;
-
-			std::string to_str();
-	};*/
 
 	template <typename StoreData>
 	class UrlStoreBatch {
@@ -85,7 +71,6 @@ namespace UrlStore {
 	class UrlStore {
 		public:
 			UrlStore();
-			explicit UrlStore(const std::string &path_prefix);
 			~UrlStore();
 
 			// Key value interface
@@ -104,6 +89,12 @@ namespace UrlStore {
 			std::vector<KeyValueStore *> m_shards;
 			std::deque<std::string> m_pending_inserts;
 
+	};
+
+	struct all_stores {
+		UrlStore<UrlData> url;
+		UrlStore<DomainData> domain;
+		UrlStore<RobotsData> robots;
 	};
 
 	template <typename StoreData>
@@ -125,14 +116,11 @@ namespace UrlStore {
 	}
 
 	template <typename StoreData>
-	UrlStore<StoreData>::UrlStore() : UrlStore<StoreData>("/mnt") {
-	}
-
-	template <typename StoreData>
-	UrlStore<StoreData>::UrlStore(const string &path_prefix)  {
+	UrlStore<StoreData>::UrlStore()  {
+		const string &db_prefix = StoreData::uri;
 		for (size_t i = 0; i < Config::url_store_shards; i++) {
-			boost::filesystem::create_directories(path_prefix + "/" + std::to_string(i % 8) + "/url_store_" + std::to_string(i));
-			m_shards.push_back(new KeyValueStore(path_prefix + "/" + std::to_string(i % 8) + "/url_store_" + std::to_string(i)));
+			boost::filesystem::create_directories("/mnt/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i));
+			m_shards.push_back(new KeyValueStore("/mnt/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i)));
 		}
 	}
 
@@ -299,7 +287,7 @@ namespace UrlStore {
 		append_bitmask<StoreData>(0x0, put_data);
 		append_bitmask<StoreData>(update_bitmask, put_data);
 		append_data_str(data, put_data);
-		Transfer::put(Config::url_store_host + "/store/url", put_data);
+		Transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
 	}
 
 	template <typename StoreData>
@@ -310,12 +298,12 @@ namespace UrlStore {
 		for (const StoreData &data : datas) {
 			append_data_str(data, put_data);
 		}
-		Transfer::put(Config::url_store_host + "/store/url", put_data);
+		Transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
 	}
 
 	template <typename StoreData>
 	int get(const string &url, StoreData &data) {
-		Transfer::Response res = Transfer::get(Config::url_store_host + "/store/url/" + url, {"Accept: application/octet-stream"});
+		Transfer::Response res = Transfer::get(Config::url_store_host + "/store/" + StoreData::uri + "/" + url, {"Accept: application/octet-stream"});
 		if (res.code == 200) {
 			data = StoreData(res.body);
 			return OK;
@@ -326,7 +314,7 @@ namespace UrlStore {
 	template <typename StoreData>
 	int get_many(const std::vector<std::string> &public_keys, std::vector<StoreData> &datas) {
 		const string post_data = boost::algorithm::join(public_keys, "\n");
-		Transfer::Response res = Transfer::post(Config::url_store_host + "/store/url", post_data, {"Accept: application/octet-stream"});
+		Transfer::Response res = Transfer::post(Config::url_store_host + "/store/" + StoreData::uri, post_data, {"Accept: application/octet-stream"});
 		if (res.code == 200) {
 
 			const size_t len = res.body.size();

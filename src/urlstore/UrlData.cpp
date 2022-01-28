@@ -31,6 +31,8 @@ using json = nlohmann::ordered_json;
 
 namespace UrlStore {
 
+	const std::string UrlData::uri = "url";
+
 	// Internal data structure, this is what is stored in byte array together with URLs.
 	struct UrlDataStore {
 		size_t link_count;
