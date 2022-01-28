@@ -20,7 +20,7 @@ echo "server {
     		dav_access group:rw  all:r;
     		client_max_body_size 10000m;
 	}
-	location /urlstore {
+	location /store {
 		fastcgi_pass   127.0.0.1:8001;
 		fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
 		fastcgi_param  SERVER_SOFTWARE    nginx;

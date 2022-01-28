@@ -286,12 +286,16 @@ namespace Worker {
 				const char *uri_ptr = FCGX_GetParam("REQUEST_URI", request.envp);
 				if (uri_ptr != nullptr) {
 					string uri(uri_ptr);
-					uri.replace(0, 10, "");
+					// /store/[realm]/
+					uri.replace(0, 7, "");
+					const size_t slash_pos = uri.find("/");
+					const string type = uri.substr(0, slash_pos);
+					const string public_key = uri.substr(slash_pos + 1);
 					if (accept == "application/octet-stream") {
-						UrlStore::handle_binary_get_request(url_store, uri, response_stream);
+						UrlStore::handle_binary_get_request(url_store, public_key, response_stream);
 						output_binary_response(request, response_stream);
 					} else {
-						UrlStore::handle_get_request(url_store, uri, response_stream);
+						UrlStore::handle_get_request(url_store, public_key, response_stream);
 						output_response(request, response_stream);
 					}
 				}

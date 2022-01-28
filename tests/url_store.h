@@ -79,7 +79,6 @@ BOOST_AUTO_TEST_CASE(server) {
 	url_data.m_last_visited = 20220101;
 
 	UrlStore::set(url_data);
-	std::this_thread::sleep_for(200ms);
 
 	UrlStore::UrlData ret_data;
 	int error = UrlStore::get(url.str(), ret_data);
@@ -188,7 +187,7 @@ BOOST_AUTO_TEST_CASE(get_json) {
 	std::this_thread::sleep_for(200ms);
 
 	{
-		Transfer::Response res = Transfer::get(Config::url_store_host + "/urlstore/https://www.example1.com");
+		Transfer::Response res = Transfer::get(Config::url_store_host + "/store/url/https://www.example1.com");
 		json json_obj = json::parse(res.body);
 
 		BOOST_CHECK_EQUAL(json_obj["url"], "https://www.example1.com");
@@ -200,7 +199,7 @@ BOOST_AUTO_TEST_CASE(get_json) {
 		for (const auto &url : urls) {
 			lines.push_back(url.str());
 		}
-		Transfer::Response res = Transfer::post(Config::url_store_host + "/urlstore/", boost::algorithm::join(lines, "\n"));
+		Transfer::Response res = Transfer::post(Config::url_store_host + "/store/url", boost::algorithm::join(lines, "\n"));
 
 		json ret_data = json::parse(res.body);
 
