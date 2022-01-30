@@ -24,45 +24,35 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "urlstore/UrlStore.h"
+#include "urlstore/UrlData.h"
 
-#include <iostream>
-#include "parser/URL.h"
-#include "json.hpp"
+namespace Scraper {
 
-namespace UrlStore {
-
-	const size_t update_url          = 0B00000001;
-	const size_t update_redirect     = 0B00000010;
-	const size_t update_link_count   = 0B00000100;
-	const size_t update_http_code    = 0B00001000;
-	const size_t update_last_visited = 0B00010000;
-
-	class UrlData {
+	/*
+	 * Responsible for storing scraper data on a file and upload it to our fileserver when the file reaches a number of urls.
+	 * */
+	class store {
 		public:
-			UrlData();
-			explicit UrlData(const std::string &str);
-			UrlData(const char *cstr, size_t len);
-			~UrlData();
+			store();
+			~store();
 
-			URL m_url;
-			URL m_redirect;
-			size_t m_link_count = 0;
-			size_t m_http_code = 0;
-			size_t m_last_visited = 0;
+			void add_url_data(const UrlStore::UrlData &data);
+			void add_scraper_data(const std::string &line);
+			void add_link_data(const std::string &links);
+			void upload_url_datas();
+			void upload_results();
 
-			void apply_update(const UrlData &data, size_t update_bitmask);
+		private:
+			std::mutex m_lock;
+			std::vector<UrlStore::UrlData> m_url_datas;
+			std::vector<std::string> m_results;
+			std::vector<std::string> m_link_results;
+			size_t m_file_index = 0;
+			size_t m_results_limit = 150000;
 
-			std::string to_str() const;
-			std::string private_key() const;
-			std::string public_key() const;
-			nlohmann::ordered_json to_json() const;
+			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
 
-			static std::string public_key_to_private_key(const std::string &public_key) {
-				return URL(public_key).key();
-			}
-
-			static const std::string uri;
 	};
 
 }

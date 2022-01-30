@@ -79,6 +79,7 @@ namespace UrlStore {
 	}
 
 	void UrlData::apply_update(const UrlData &src, size_t update_bitmask) {
+		if (update_bitmask & update_url) m_url = src.m_url;
 		if (update_bitmask & update_redirect) m_redirect = src.m_redirect;
 		if (update_bitmask & update_link_count) m_link_count = src.m_link_count;
 		if (update_bitmask & update_http_code) m_http_code = src.m_http_code;

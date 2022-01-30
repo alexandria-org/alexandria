@@ -23,46 +23,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "datetime.h"
+#include <ctime>
 
-#pragma once
+namespace System {
 
-#include <iostream>
-#include "parser/URL.h"
-#include "json.hpp"
+	size_t cur_date() {
+		time_t tt = time(NULL);
+		struct tm tm = *localtime(&tt);
+		size_t year_since_00 = tm.tm_year - 100;
+		size_t year = 2000 + year_since_00;
+		return (year * 100 * 100) + ((tm.tm_mon + 1) * 100) + tm.tm_mday;
+	}
 
-namespace UrlStore {
+	size_t cur_time() {
+		time_t tt = time(NULL);
+		struct tm tm = *localtime(&tt);
+		return (tm.tm_hour * 100 * 100) + (tm.tm_min * 100) + tm.tm_sec;
+	}
 
-	const size_t update_url          = 0B00000001;
-	const size_t update_redirect     = 0B00000010;
-	const size_t update_link_count   = 0B00000100;
-	const size_t update_http_code    = 0B00001000;
-	const size_t update_last_visited = 0B00010000;
-
-	class UrlData {
-		public:
-			UrlData();
-			explicit UrlData(const std::string &str);
-			UrlData(const char *cstr, size_t len);
-			~UrlData();
-
-			URL m_url;
-			URL m_redirect;
-			size_t m_link_count = 0;
-			size_t m_http_code = 0;
-			size_t m_last_visited = 0;
-
-			void apply_update(const UrlData &data, size_t update_bitmask);
-
-			std::string to_str() const;
-			std::string private_key() const;
-			std::string public_key() const;
-			nlohmann::ordered_json to_json() const;
-
-			static std::string public_key_to_private_key(const std::string &public_key) {
-				return URL(public_key).key();
-			}
-
-			static const std::string uri;
-	};
+	size_t cur_datetime() {
+		size_t date = cur_date();
+		return (date * 100 * 100 * 100) + cur_time();
+	}
 
 }

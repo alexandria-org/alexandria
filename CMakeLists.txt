@@ -80,6 +80,7 @@ set(SRC_CLASSES
 	"src/system/System.cpp"
 	"src/system/SubSystem.cpp"
 	"src/system/Logger.cpp"
+	"src/system/datetime.cpp"
 
 	"src/sort/Sort.cpp"
 
@@ -98,7 +99,8 @@ set(SRC_CLASSES
 	"src/tools/CalculateHarmonic.cpp"
 
 	"src/cluster/Document.cpp"
-	"src/scraper/Scraper.cpp"
+	"src/scraper/scraper.cpp"
+	"src/scraper/store.cpp"
 
 	"deps/robots.cc"
 )

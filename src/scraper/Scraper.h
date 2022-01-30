@@ -24,22 +24,18 @@
  * SOFTWARE.
  */
 
+#include <iostream>
 #include <queue>
 #include <curl/curl.h>
+#include "robots.h"
+#include "store.h"
 #include "parser/URL.h"
+#include "urlstore/DomainData.h"
 
 namespace Scraper {
 
 	std::string user_agent_token();
 	std::string user_agent();
-
-	/*
-	 * Responsible for storing scraper data on a file and upload it to our fileserver when the file reaches a number of urls.
-	 * */
-	class store {
-		public:
-
-	};
 
 	/*
 	 * The scraper!
@@ -60,9 +56,18 @@ namespace Scraper {
 			CURL *m_curl;
 			store *m_store;
 			std::queue<URL> m_queue;
+			googlebot::RobotsMatcher m_robots;
+			UrlStore::DomainData m_domain_data;
+			std::string m_robots_content;
 
+			void handle_error(const std::string &error);
 			void handle_url(const URL &url);
+			void update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect);
 			void handle_response(const std::string &data, size_t response_code, const URL &url);
+			void download_domain_data();
+			void download_robots();
+			bool robots_allow_url(const URL &url) const;
+			std::string simple_get(const URL &url);
 
 		public:
 

@@ -79,6 +79,7 @@ using std::pair;
 #include "key_value_store.h"
 #include "robot_parser.h"
 #include "scraper.h"
+#include "datetime.h"
 
 void run_before() {
 	Logger::start_logger_thread();

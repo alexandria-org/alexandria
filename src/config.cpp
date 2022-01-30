@@ -35,7 +35,8 @@ namespace Config {
 	string master = "localhost";
 	string upload = "localhost";
 	string data_node;
-	string url_store_host = "http://localhost";
+	//string url_store_host = "http://localhost";
+	string url_store_host = "http://node0009.alexandria.org";
 	string url_store_path = "/alexandria/urlstore";
 	string url_store_cache_path = "/mnt/4/urlstore_cache";
 
