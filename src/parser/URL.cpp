@@ -93,6 +93,18 @@ uint64_t URL::domain_link_hash(const URL &target_url, const string &link_text) c
 	return m_hasher(host_top_domain() + target_url.host() + link_text);
 }
 
+bool URL::canonically_different(const URL &url) const {
+	return key() != url.key();
+}
+
+bool URL::has_https() const {
+	return m_scheme == "https";
+}
+
+bool URL::has_www() const {
+	return m_has_www;
+}
+
 string URL::host() const {
 	return m_host;
 }
@@ -200,6 +212,16 @@ uint32_t URL::size() const {
 	return str().size();
 }
 
+void URL::set_scheme(const string &scheme) {
+	m_scheme = scheme;
+	rebuild_url_str();
+}
+
+void URL::set_www(bool has_www) {
+	m_has_www = has_www;
+	rebuild_url_str();
+}
+
 istream &operator >>(istream &ss, URL &url) {
 	ss >> (url.m_url_string);
 	url.m_status = url.parse();
@@ -258,8 +280,17 @@ int URL::parse() {
 	return ::Parser::OK;
 }
 
+void URL::rebuild_url_str() {
+	m_url_string = m_scheme + "://" + (m_has_www ? "www." : "") + m_host + path_with_query();
+}
+
 inline void URL::remove_www(string &path) {
 	size_t pos = path.find("www.");
-	if (pos == 0) path.erase(0, 4);
+	if (pos == 0) {
+		m_has_www = true;
+		path.erase(0, 4);
+	} else {
+		m_has_www = false;
+	}
 	Text::trim(path);
 }

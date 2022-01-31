@@ -53,6 +53,9 @@ namespace UrlStore {
 			std::string public_key() const;
 			nlohmann::ordered_json to_json() const;
 
+			// Operators.
+			friend std::ostream &operator<<(std::ostream &os, DomainData const &data);
+
 			static std::string public_key_to_private_key(const std::string &public_key) {
 				return public_key;
 			}

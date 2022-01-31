@@ -26,6 +26,8 @@
 #include "datetime.h"
 #include <ctime>
 
+using namespace std;
+
 namespace System {
 
 	size_t cur_date() {
@@ -45,6 +47,14 @@ namespace System {
 	size_t cur_datetime() {
 		size_t date = cur_date();
 		return (date * 100 * 100 * 100) + cur_time();
+	}
+
+	const string iso8601_datetime() {
+		time_t now;
+		time(&now);
+		char buf[21];
+		strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&now));
+		return string(buf);
 	}
 
 }

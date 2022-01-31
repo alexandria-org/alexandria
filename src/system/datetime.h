@@ -31,4 +31,5 @@ namespace System {
 	size_t cur_date();
 	size_t cur_time();
 	size_t cur_datetime();
+	const std::string iso8601_datetime();
 }

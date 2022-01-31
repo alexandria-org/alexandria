@@ -51,6 +51,9 @@ public:
 	uint64_t host_hash() const;
 	uint64_t link_hash(const URL &target_url, const std::string &link_text) const;
 	uint64_t domain_link_hash(const URL &target_url, const std::string &link_text) const;
+	bool canonically_different(const URL &url) const;
+	bool has_https() const;
+	bool has_www() const;
 
 	std::string host() const;
 	std::string host_top_domain() const;
@@ -61,6 +64,9 @@ public:
 	std::string host_reverse() const;
 	std::string domain_without_tld() const;
 	uint32_t size() const;
+
+	void set_scheme(const std::string &scheme);
+	void set_www(bool has_www);
 
 	float harmonic(const SubSystem *sub_system) const;
 
@@ -77,8 +83,10 @@ private:
 	std::string m_path;
 	std::string m_query;
 	int m_status;
+	bool m_has_www;
 
 	int parse();
+	void rebuild_url_str();
 	inline void remove_www(std::string &path);
 
 

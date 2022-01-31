@@ -48,8 +48,12 @@ namespace Scraper {
 
 			void push_url(const URL &url);
 			void run();
+			void start_thread();
+			bool finished();
 
 		private:
+			std::thread m_thread;
+			bool m_finished = false;
 			std::string m_domain;
 			std::string m_buffer;
 			size_t m_buffer_len = 1024*1024*10;
@@ -59,15 +63,20 @@ namespace Scraper {
 			googlebot::RobotsMatcher m_robots;
 			UrlStore::DomainData m_domain_data;
 			std::string m_robots_content;
+			size_t m_num_total = 0;
+			size_t m_num_www = 0;
+			size_t m_num_https = 0;
 
 			void handle_error(const std::string &error);
 			void handle_url(const URL &url);
 			void update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect);
-			void handle_response(const std::string &data, size_t response_code, const URL &url);
+			void handle_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
 			void download_domain_data();
 			void download_robots();
 			bool robots_allow_url(const URL &url) const;
 			std::string simple_get(const URL &url);
+			void upload_domain_info();
+			URL filter_url(const URL &url);
 
 		public:
 
@@ -75,5 +84,8 @@ namespace Scraper {
 	};
 
 	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
+
+	void url_downloader();
+	void run_scraper_on_urls(const std::vector<std::string> &input_urls);
 
 }

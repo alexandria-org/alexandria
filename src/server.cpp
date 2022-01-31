@@ -75,6 +75,7 @@ int main(int argc, const char **argv) {
 
 		cout << "starting download server" << endl;
 		Worker::start_download_server();
+		Worker::start_scraper_server();
 		Worker::start_server();
 
 	} else if (argc == 1 && !FullText::is_indexed()) {

@@ -106,4 +106,9 @@ namespace UrlStore {
 		return message;
 	}
 
+	std::ostream &operator<<(std::ostream &os, DomainData const &data) {
+		os << data.to_json().dump(4);
+		return os;
+	}
+
 }

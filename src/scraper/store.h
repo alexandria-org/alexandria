@@ -49,7 +49,7 @@ namespace Scraper {
 			std::vector<std::string> m_results;
 			std::vector<std::string> m_link_results;
 			size_t m_file_index = 0;
-			size_t m_results_limit = 150000;
+			size_t m_upload_limit = 150000;
 
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
 

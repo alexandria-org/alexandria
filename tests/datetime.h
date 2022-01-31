@@ -31,6 +31,7 @@ BOOST_AUTO_TEST_SUITE(datetime)
 BOOST_AUTO_TEST_CASE(cur_date) {
 	std::cout << System::cur_date() << std::endl;
 	std::cout << System::cur_datetime() << std::endl;
+	std::cout << System::iso8601_datetime() << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

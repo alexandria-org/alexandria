@@ -32,10 +32,19 @@ BOOST_AUTO_TEST_SUITE(scraper)
 
 BOOST_AUTO_TEST_CASE(scraper) {
 
+	std::cout << Scraper::user_agent() << std::endl;
+
+	return;
+
 	Scraper::store store;
 
-	Scraper::scraper scraper("example.com", &store);
+	Scraper::scraper scraper("omnible.se", &store);
 	scraper.push_url(URL("http://omnible.se/"));
+	scraper.push_url(URL("http://omnible.se/10126597891759986715"));
+	scraper.push_url(URL("http://omnible.se/10123997891267016458"));
+	scraper.push_url(URL("http://omnible.se/gtin/9789180230865"));
+	scraper.push_url(URL("http://omnible.se/10123697814011564169"));
+	scraper.push_url(URL("https://www.omnible.se/notfound"));
 
 	scraper.run();
 
@@ -44,6 +53,22 @@ BOOST_AUTO_TEST_CASE(scraper) {
 	boost::algorithm::split(last, cols, boost::is_any_of("\t"));
 	BOOST_CHECK_EQUAL(cols[0], "https://example.com/");
 	BOOST_CHECK_EQUAL(cols[1], "Example Domain");*/
+}
+
+BOOST_AUTO_TEST_CASE(scraper_multithreaded) {
+
+	vector<string> urls = {
+		"http://omnible.se/",
+		"http://omnible.se/10126597891759986715",
+		"http://omnible.se/10123997891267016458",
+		"https://spelagratis.nu/",
+		"https://spelagratis.nu/super_mario_world.html",
+		"http://omnible.se/gtin/9789180230865",
+		"http://omnible.se/10123697814011564169",
+		"https://spelagratis.nu/dirt_bike.html"
+	};
+
+	Scraper::run_scraper_on_urls(urls);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

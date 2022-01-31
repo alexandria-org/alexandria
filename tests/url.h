@@ -28,21 +28,47 @@
 
 BOOST_AUTO_TEST_SUITE(url)
 
+BOOST_AUTO_TEST_CASE(basic) {
+	BOOST_CHECK_EQUAL(URL("https://www.facebook.com/test.html?key=value").str(), "https://www.facebook.com/test.html?key=value");
+
+	{
+		URL url("https://www.facebook.com/test.html?key=value");
+		url.set_scheme("http");
+		url.set_www(false);
+		
+		BOOST_CHECK_EQUAL(url.str(), "http://facebook.com/test.html?key=value");
+
+		url.set_scheme("https");
+		url.set_www(true);
+
+		BOOST_CHECK_EQUAL(url.str(), "https://www.facebook.com/test.html?key=value");
+	}
+}
+
 BOOST_AUTO_TEST_CASE(url_parsing) {
 
-	URL url("https://www.facebook.com/test.html?key=value");
-	BOOST_CHECK_EQUAL(url.str(), "https://www.facebook.com/test.html?key=value");
-	BOOST_CHECK_EQUAL(url.domain_without_tld(), "facebook");
-	BOOST_CHECK_EQUAL(url.host(), "facebook.com");
-	BOOST_CHECK_EQUAL(url.host_reverse(), "com.facebook");
-	BOOST_CHECK_EQUAL(url.scheme(), "https");
-	BOOST_CHECK_EQUAL(url.path(), "/test.html");
-	BOOST_CHECK_EQUAL(url.path_with_query(), "/test.html?key=value");
-	BOOST_CHECK_EQUAL(url.size(), strlen("https://www.facebook.com/test.html?key=value"));
+	{
+		URL url("https://www.facebook.com/test.html?key=value");
+		BOOST_CHECK_EQUAL(url.str(), "https://www.facebook.com/test.html?key=value");
+		BOOST_CHECK_EQUAL(url.domain_without_tld(), "facebook");
+		BOOST_CHECK_EQUAL(url.host(), "facebook.com");
+		BOOST_CHECK_EQUAL(url.host_reverse(), "com.facebook");
+		BOOST_CHECK_EQUAL(url.scheme(), "https");
+		BOOST_CHECK_EQUAL(url.path(), "/test.html");
+		BOOST_CHECK_EQUAL(url.path_with_query(), "/test.html?key=value");
+		BOOST_CHECK_EQUAL(url.size(), strlen("https://www.facebook.com/test.html?key=value"));
+		BOOST_CHECK_EQUAL(url.has_https(), true);
+		BOOST_CHECK_EQUAL(url.has_www(), true);
 
-	auto query = url.query();
-	BOOST_CHECK_EQUAL(query.size(), 1);
-	BOOST_CHECK_EQUAL(query["key"], "value");
+		auto query = url.query();
+		BOOST_CHECK_EQUAL(query.size(), 1);
+		BOOST_CHECK_EQUAL(query["key"], "value");
+	}
+	{
+		URL url("http://example.com/");
+		BOOST_CHECK_EQUAL(url.has_https(), false);
+		BOOST_CHECK_EQUAL(url.has_www(), false);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(url_parsing2) {

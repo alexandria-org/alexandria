@@ -43,4 +43,28 @@ BOOST_AUTO_TEST_CASE(parse) {
 	BOOST_CHECK(!allowed);
 }
 
+BOOST_AUTO_TEST_CASE(parse2) {
+	std::string robots_content = string("Sitemap: https://www.omnible.se/sitemap.xml\n"
+		"User-agent: *\n"
+		"Disallow: /visit\n"
+		"User-agent: AlexandriaBot\n"
+		"Disallow: /10126597891759986715\n");
+
+	std::string user_agent = "AlexandriaBot";
+	googlebot::RobotsMatcher matcher;
+	{
+		std::string url = "https://www.omnible.se/10126597891759986715";
+		bool allowed = matcher.OneAgentAllowedByRobots(robots_content, user_agent, url);
+		BOOST_CHECK(!allowed);
+	}
+	{
+		std::string url = "https://www.omnible.se/1012659789175998671";
+		bool allowed = matcher.OneAgentAllowedByRobots(robots_content, user_agent, url);
+		BOOST_CHECK(allowed);
+	}
+
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END()

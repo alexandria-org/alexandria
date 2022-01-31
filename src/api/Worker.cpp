@@ -22,6 +22,7 @@
 #include "system/Logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
+#include "scraper/scraper.h"
 
 using namespace std;
 using namespace std::literals::chrono_literals;
@@ -444,4 +445,16 @@ namespace Worker {
 		urlstore_server_thread.join();
 
 	}
+
+	void scraper_server() {
+		Scraper::url_downloader();
+	}
+
+	thread scraper_server_thread;
+	void start_scraper_server() {
+		
+		scraper_server_thread = std::move(thread(scraper_server));
+
+	}
+
 }

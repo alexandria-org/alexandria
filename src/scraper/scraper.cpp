@@ -27,6 +27,8 @@
 #include "scraper.h"
 #include "parser/HtmlParser.h"
 #include "system/datetime.h"
+#include "text/Text.h"
+#include <memory>
 
 using namespace std;
 
@@ -38,7 +40,7 @@ namespace Scraper {
 
 	string user_agent() {
 		string ua_version = "1.0";
-		string ua = "Mozilla/5.0 (Linux) curl (compatible; "+user_agent_token()+"/"+ua_version+"; +https://www.alexandria.org/info.html)";
+		string ua = "Mozilla/5.0 (Linux) (compatible; "+user_agent_token()+"/"+ua_version+"; +https://www.alexandria.org/info.html)";
 		return ua;
 	}
 
@@ -50,6 +52,8 @@ namespace Scraper {
 	}
 
 	scraper::~scraper() {
+		m_thread.join();
+		upload_domain_info();
 		if (m_curl) curl_easy_cleanup(m_curl);
 	}
 
@@ -63,13 +67,14 @@ namespace Scraper {
 		download_robots();
 
 		while (m_queue.size()) {
-			URL url = m_queue.front();
+			URL url = filter_url(m_queue.front());
 			m_queue.pop();
-			cout << "url: " << url.str() << endl;
 			if (robots_allow_url(url)) {
 				handle_url(url);
 			}
 		}
+
+		m_finished = true;
 	}
 
 	void scraper::handle_error(const std::string &error) {
@@ -77,7 +82,9 @@ namespace Scraper {
 	}
 
 	void scraper::handle_url(const URL &url) {
+		m_buffer.resize(0);
 		m_curl = curl_easy_init();
+		cout << "fetching url: " << url.str() << endl;
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
 		curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 5l);
@@ -93,17 +100,22 @@ namespace Scraper {
 			curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &response_code);
 			curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &new_url_str);
 
-			cout << "url: " << new_url_str << endl;
+			// Fetch IP address.
+			char *ip_cstr;
+			string ip;
+			if (!curl_easy_getinfo(m_curl, CURLINFO_PRIMARY_IP, &ip_cstr) && ip_cstr != nullptr) ip = string(ip_cstr);
 
 			if (new_url_str != nullptr) {
 				string new_u_str(new_url_str);
 				URL new_url(new_u_str);
 				update_url(new_url, response_code, System::cur_datetime(), URL());
-				update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
-				handle_response(m_buffer, response_code, new_url);
+				if (url.canonically_different(new_url)) {
+					update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
+				}
+				handle_response(m_buffer, response_code, ip, new_url);
 			} else {
 				update_url(url, response_code, System::cur_datetime(), URL());
-				handle_response(m_buffer, response_code, url);
+				handle_response(m_buffer, response_code, ip, url);
 			}
 		} else {
 			/*
@@ -158,16 +170,21 @@ namespace Scraper {
 		url_data.m_http_code = http_code;
 		url_data.m_last_visited = last_visited;
 
-		cout << "updating url: " << url_data.m_url.str() << endl;
-		UrlStore::update(url_data, UrlStore::update_url | UrlStore::update_redirect | UrlStore::update_http_code | UrlStore::update_last_visited);
+		m_store->add_url_data(url_data);
 	}
 
-	void scraper::handle_response(const string &data, size_t response_code, const URL &url) {
+	void scraper::handle_response(const string &data, size_t response_code, const string &ip, const URL &url) {
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
 
-		const string ip = "";
-		const string date = "";
+		if (response_code == 200) {
+			m_num_total++;
+			if (url.has_www()) m_num_www++; 
+			if (url.has_https()) m_num_https++; 
+			if (m_num_total == 3) upload_domain_info();
+		}
+
+		const string date = System::iso8601_datetime();
 
 		if (html_parser.should_insert()) {
 			const string line = (url.str()
@@ -202,13 +219,18 @@ namespace Scraper {
 	}
 
 	void scraper::download_robots() {
-		const string robots_path = "http://" + m_domain + "/robots.txt";//path_to_url("/robots.txt");
-		m_robots_content = simple_get(URL(robots_path));
+		const URL robots_path = filter_url(URL("http://" + m_domain + "/robots.txt"));
+		m_robots_content = simple_get(robots_path);
 	}
 
 	bool scraper::robots_allow_url(const URL &url) const {
 		googlebot::RobotsMatcher matcher;
-		return matcher.OneAgentAllowedByRobots(m_robots_content, user_agent(), url.str());
+		cout << "m_robots_content: " << m_robots_content << endl;
+		cout << "user_agent: " << user_agent_token() << endl;
+		cout << "url: " << url.str() << endl;
+		bool allowed = matcher.OneAgentAllowedByRobots(m_robots_content, user_agent_token(), url.str());
+		cout << (allowed ? "allowed" : "not_allowed") << endl;
+		return allowed;
 	}
 
 	string scraper::simple_get(const URL &url) {
@@ -229,12 +251,115 @@ namespace Scraper {
 		return m_buffer;
 	}
 
+	void scraper::upload_domain_info() {
+		if (m_num_total > 0) {
+			UrlStore::DomainData data;
+			data.m_domain = m_domain;
+			data.m_has_https = m_num_https > 0;
+			data.m_has_www = m_num_www > 0;
+
+			UrlStore::set(data);
+		}
+	}
+
+	URL scraper::filter_url(const URL &url) {
+		URL ret(url);
+		if (m_domain_data.m_has_https && !url.has_https()) ret.set_scheme("https");
+		if (m_domain_data.m_has_www && !url.has_www()) ret.set_www(true);
+
+		return ret;
+	}
+
+	void scraper::start_thread() {
+		m_thread = std::move(thread([this](){
+			this->run();
+		}));
+	}
+
+	bool scraper::finished() {
+		return m_finished;
+	}
+
 	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata) {
 		const size_t byte_size = size * nmemb;
 		scraper *s = static_cast<scraper *>(userdata);
 		if (s->m_buffer_len < s->m_buffer.size() + byte_size) return 0;
 		s->m_buffer.append(ptr, byte_size);
 		return byte_size;
+	}
+
+	vector<string> download_scraper_urls() {
+		int error;
+		string content = Transfer::file_to_string("nodes/" + Config::node + "/scraper.urls", error);
+		if (error == Transfer::ERROR) return {};
+
+		content = Text::trim(content);
+
+		vector<string> urls;
+		boost::algorithm::split(urls, content, boost::is_any_of("\n"));
+
+		return urls;
+	}
+
+	void run_scraper_on_urls(const vector<string> &input_urls) {
+		const size_t max_scrapers = 10;
+		Scraper::store store;
+		map<string, unique_ptr<scraper>> scrapers;
+
+		vector<string> urls = input_urls;
+		while (urls.size()) {
+
+			vector<string> unhandled_urls;
+
+			for (const string &url_str : urls) {
+				URL url(url_str);
+
+				if (!scrapers.count(url.host())) {
+					if (scrapers.size() >= max_scrapers) {
+						unhandled_urls.push_back(url_str);
+					} else {
+						scrapers[url.host()] = make_unique<scraper>(url.host(), &store);
+						scrapers[url.host()]->push_url(url);
+					}
+				} else {
+					scrapers[url.host()]->push_url(url);
+				}
+			}
+			// Start scrapers.
+			for (auto &iter : scrapers) {
+				iter.second->start_thread();
+			}
+			
+			// Wait for at least 50% of the scrapers to finish.
+			while (scrapers.size() > max_scrapers * 0.5) {
+				for (auto &iter : scrapers) {
+					if (iter.second->finished()) {
+						scrapers.erase(iter.first);
+					}
+				}
+				this_thread::sleep_for(1000ms);
+			}
+			urls = unhandled_urls;
+		}
+	}
+
+	void url_downloader() {
+
+		const size_t timeout = 300;
+		//const size_t limit = 500;
+
+		// main loop
+		while (true) {
+
+			// Check if there are any urls to digest every 'timeout' minutes.
+			vector<string> urls = download_scraper_urls();
+
+			if (urls.size() > 0) {
+				run_scraper_on_urls(urls);
+			}
+
+			sleep(timeout);
+		}
 	}
 
 }
