@@ -84,13 +84,14 @@ namespace Scraper {
 	void scraper::handle_url(const URL &url) {
 		m_buffer.resize(0);
 		m_curl = curl_easy_init();
-		cout << "fetching url: " << url.str() << endl;
+		LOG_INFO(m_domain + ": scraping url: " + url.str());
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
 		curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 5l);
 		curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, curl_string_reader);
 		curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, this);
 		curl_easy_setopt(m_curl, CURLOPT_URL, url.str().c_str());
+		curl_easy_setopt(m_curl, CURLOPT_TIMEOUT, 30);
 
 		CURLcode res = curl_easy_perform(m_curl);
 
@@ -108,6 +109,7 @@ namespace Scraper {
 			if (new_url_str != nullptr) {
 				string new_u_str(new_url_str);
 				URL new_url(new_u_str);
+				LOG_INFO(m_domain + ": redirected to: " + new_url.str());
 				update_url(new_url, response_code, System::cur_datetime(), URL());
 				if (url.canonically_different(new_url)) {
 					update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
@@ -118,49 +120,35 @@ namespace Scraper {
 				handle_response(m_buffer, response_code, ip, url);
 			}
 		} else {
+			LOG_INFO(m_domain + " got error code: " +to_string(res)+ " for url: " + url.str());
 			/*
 			 * Handle everything here: https://curl.se/libcurl/c/libcurl-errors.html
 			 * */
-			/*CURLE_UNSUPPORTED_PROTOCOL
-			CURLE_FAILED_INIT
-			CURLE_URL_MALFORMAT
-			CURLE_NOT_BUILT_IN
-			CURLE_COULDNT_RESOLVE_PROXY
-			CURLE_COULDNT_RESOLVE_HOST
-			CURLE_COULDNT_CONNECT
-			CURLE_WEIRD_SERVER_REPLY
-			CURLE_REMOTE_ACCESS_DENIED
-			CURLE_HTTP2
-			CURLE_PARTIAL_FILE
-			CURLE_WRITE_ERROR
-			CURLE_OPERATION_TIMEDOUT
-			CURLE_SSL_CONNECT_ERROR
-			CURLE_FUNCTION_NOT_FOUND
-			CURLE_ABORTED_BY_CALLBACK
-			CURLE_BAD_FUNCTION_ARGUMENT
-			CURLE_INTERFACE_FAILED
-			CURLE_TOO_MANY_REDIRECTS
-			CURLE_GOT_NOTHING
-			CURLE_SSL_ENGINE_NOTFOUND
-			CURLE_SSL_ENGINE_SETFAILED
-			CURLE_SEND_ERROR
-			CURLE_RECV_ERROR
-			CURLE_SSL_CERTPROBLEM
-			CURLE_SSL_CIPHER
-			CURLE_PEER_FAILED_VERIFICATION
-			CURLE_BAD_CONTENT_ENCODING
-			CURLE_SSL_ENGINE_INITFAILED
-			CURLE_SSL_CACERT_BADFILE
-			CURLE_SSL_CRL_BADFILE
-			CURLE_SSL_ISSUER_ERROR
-			CURLE_HTTP3
-			CURLE_SSL_CLIENTCERT*/
+			vector<CURLcode> domain_errors = {
+				CURLE_COULDNT_RESOLVE_HOST,
+				CURLE_COULDNT_CONNECT,
+			};
+
+			if (res == CURLE_COULDNT_RESOLVE_HOST || res == CURLE_COULDNT_CONNECT) {
+				update_url(url, 10000 + res, System::cur_datetime(), URL());
+				mark_all_urls_with_error(10000 + res);
+			} else {
+				update_url(url, 10000 + res, System::cur_datetime(), URL());
+			}
 		}
 
 		m_buffer.resize(0);
 		m_buffer.shrink_to_fit();
 		curl_easy_cleanup(m_curl);
 		m_curl = nullptr;
+	}
+
+	void scraper::mark_all_urls_with_error(size_t error_code) {
+		while (m_queue.size()) {
+			URL url = filter_url(m_queue.front());
+			m_queue.pop();
+			update_url(url, error_code, System::cur_datetime(), URL());
+		}
 	}
 
 	void scraper::update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect) {
@@ -174,6 +162,7 @@ namespace Scraper {
 	}
 
 	void scraper::handle_response(const string &data, size_t response_code, const string &ip, const URL &url) {
+		LOG_INFO(m_domain + ": storing response for " + url.str());
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
 
@@ -225,11 +214,7 @@ namespace Scraper {
 
 	bool scraper::robots_allow_url(const URL &url) const {
 		googlebot::RobotsMatcher matcher;
-		cout << "m_robots_content: " << m_robots_content << endl;
-		cout << "user_agent: " << user_agent_token() << endl;
-		cout << "url: " << url.str() << endl;
 		bool allowed = matcher.OneAgentAllowedByRobots(m_robots_content, user_agent_token(), url.str());
-		cout << (allowed ? "allowed" : "not_allowed") << endl;
 		return allowed;
 	}
 
@@ -241,6 +226,7 @@ namespace Scraper {
 		curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, curl_string_reader);
 		curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, this);
 		curl_easy_setopt(m_curl, CURLOPT_URL, url.str().c_str());
+		curl_easy_setopt(m_curl, CURLOPT_TIMEOUT, 30);
 
 		m_buffer.resize(0);
 		curl_easy_perform(m_curl);
@@ -288,10 +274,18 @@ namespace Scraper {
 		return byte_size;
 	}
 
+	bool reset_scraper_urls() {
+		string content = "";
+		int error = Transfer::upload_file("nodes/" + Config::node + "/scraper.urls", content);
+		return error == Transfer::OK;
+	}
+
 	vector<string> download_scraper_urls() {
 		int error;
 		string content = Transfer::file_to_string("nodes/" + Config::node + "/scraper.urls", error);
 		if (error == Transfer::ERROR) return {};
+
+		reset_scraper_urls();
 
 		content = Text::trim(content);
 

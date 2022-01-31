@@ -58,14 +58,20 @@ BOOST_AUTO_TEST_CASE(scraper) {
 BOOST_AUTO_TEST_CASE(scraper_multithreaded) {
 
 	vector<string> urls = {
-		"http://omnible.se/",
+		/*"http://omnible.se/",
 		"http://omnible.se/10126597891759986715",
 		"http://omnible.se/10123997891267016458",
 		"https://spelagratis.nu/",
 		"https://spelagratis.nu/super_mario_world.html",
 		"http://omnible.se/gtin/9789180230865",
 		"http://omnible.se/10123697814011564169",
-		"https://spelagratis.nu/dirt_bike.html"
+		"https://spelagratis.nu/dirt_bike.html"*/
+		"http://optout.aboutads.info/",
+		"http://tabernus.com/",
+		"http://tabernus.com/test",
+		"http://apnews.excite.com/article/20071031/D8SKBRKO0.html",
+		"http://thebetter.wiki/en/Jeb_Magruder",
+		"https://www.thebetter.wiki/en/testing"
 	};
 
 	Scraper::run_scraper_on_urls(urls);

@@ -69,6 +69,7 @@ namespace Scraper {
 
 			void handle_error(const std::string &error);
 			void handle_url(const URL &url);
+			void mark_all_urls_with_error(size_t error_code);
 			void update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect);
 			void handle_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
 			void download_domain_data();
