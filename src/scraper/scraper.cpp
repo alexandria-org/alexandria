@@ -71,6 +71,7 @@ namespace Scraper {
 			m_queue.pop();
 			if (robots_allow_url(url)) {
 				handle_url(url);
+				this_thread::sleep_for(300s);
 			}
 		}
 
