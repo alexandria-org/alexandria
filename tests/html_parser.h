@@ -81,6 +81,37 @@ BOOST_AUTO_TEST_CASE(html_parse4) {
 
 }
 
+BOOST_AUTO_TEST_CASE(html_parse5) {
+	HtmlParser parser;
+
+	parser.parse(File::read_test_file("test10.html"));
+
+	BOOST_CHECK_EQUAL(parser.meta(), "");
+	BOOST_CHECK_EQUAL(parser.title(), "Association for Progressive Communications | Internet for social justice and sustainable development");
+	BOOST_CHECK_EQUAL(parser.h1(), "");
+
+}
+
+BOOST_AUTO_TEST_CASE(html_parse6) {
+	HtmlParser parser;
+
+	parser.parse(File::read_test_file("test11.html"));
+
+	BOOST_CHECK_EQUAL(parser.meta(), "Svenska Dagbladet står för seriös och faktabaserad kvalitetsjournalistik som utmanar, ifrågasätter och inspirerar");
+	BOOST_CHECK_EQUAL(parser.title(), "SvD | Sveriges kvalitetssajt för nyheter");
+
+}
+
+BOOST_AUTO_TEST_CASE(html_parse7) {
+	HtmlParser parser;
+
+	parser.parse(File::read_test_file("test12.html"));
+
+	BOOST_CHECK_EQUAL(parser.meta(), "The systematic thinking in our industry is that settings are the result of design failure. As designers, our goal is to create product experiences that don’t require any adjustment by the user. So offering customization options is often seen as a failure to make firm product decisions. I think there is a misunderstanding about what settings really are");
+	BOOST_CHECK_EQUAL(parser.title(), "Settings are not a design failure");
+
+}
+
 BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	string html;

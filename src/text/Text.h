@@ -66,6 +66,33 @@ namespace Text {
 		return copy;
 	}
 
+	inline void ltrim_punct(std::string &s) {
+		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
+			return !ispunct(ch);
+		}));
+	}
+
+	// trim from end (in place)
+	inline void rtrim_punct(std::string &s) {
+		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
+			return !ispunct(ch);
+		}).base(), s.end());
+	}
+
+	// trim return
+	inline std::string trim_punct(std::string &s) {
+		ltrim_punct(s);
+		rtrim_punct(s);
+		return s;
+	}
+
+	inline std::string trim_punct(const std::string &s) {
+		std::string copy = s;
+		ltrim(copy);
+		rtrim(copy);
+		return copy;
+	}
+
 	inline std::string lower_case(const std::string &str) {
 		std::string ret = str;
 		transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c){ return tolower(c); });

@@ -32,10 +32,6 @@ BOOST_AUTO_TEST_SUITE(scraper)
 
 BOOST_AUTO_TEST_CASE(scraper) {
 
-	std::cout << Scraper::user_agent() << std::endl;
-
-	return;
-
 	Scraper::store store;
 
 	Scraper::scraper scraper("omnible.se", &store);

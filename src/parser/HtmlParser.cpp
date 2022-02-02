@@ -81,6 +81,8 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_meta = get_meta_tag(html);
 	m_text = get_text_content(html);
 
+	Text::trim_punct(m_meta);
+
 	if (m_encoding == ENC_ISO_8859_1) {
 		iso_to_utf8(m_title);
 		iso_to_utf8(m_h1);
@@ -355,19 +357,22 @@ string HtmlParser::get_tag_content(const string &html, const string &tag_start, 
 }
 
 string HtmlParser::get_meta_tag(const string &html) {
-	const size_t pos_start = html.find("<meta");
-	const size_t pos_description = html.find("description\"", pos_start);
-	const size_t pos_end_tag = html.find(">", pos_description);
-	const size_t pos_start_tag = html.rfind("<", pos_description);
-	if (pos_start == string::npos || pos_description == string::npos || pos_end_tag == string::npos ||
-		pos_start_tag == string::npos) return "";
-	
-	const string s = "content=";
-	const size_t content_start = html.find(s, pos_start_tag);
-	if (content_start == string::npos) return "";
-	if (content_start > pos_end_tag) return "";
+	size_t pos_start = 0;
+	while ((pos_start = html.find("<meta", pos_start + 1)) != string::npos)  {
+		const size_t pos_end = html.find(">", pos_start);
+		const size_t pos_description = html.find("description\"", pos_start);
+		if (pos_description < pos_end) {
+			const size_t pos_end_tag = html.find(">", pos_description);
+			const size_t pos_start_tag = html.rfind("<", pos_description);
 
-	return (string)html.substr(content_start + s.size(), pos_end_tag - content_start - s.size() - 1);
+			const string s = "content=";
+			const size_t content_start = html.find(s, pos_start_tag);
+			if (content_start != string::npos && content_start <= pos_end_tag) {
+				return (string)html.substr(content_start + s.size(), pos_end_tag - content_start - s.size() - 1);
+			}
+		}
+	}
+	return "";
 }
 
 void HtmlParser::clean_text(string &str) {
@@ -557,7 +562,7 @@ void HtmlParser::sort_invisible() {
 
 inline bool HtmlParser::is_invisible(size_t pos) {
 	for (const auto &interval : m_invisible_pos) {
-		if (interval.first <= pos && pos <= interval.second) return true;
+		if (interval.first <= pos && pos < interval.second) return true;
 	}
 	return false;
 }
