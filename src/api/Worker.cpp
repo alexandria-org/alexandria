@@ -393,10 +393,6 @@ namespace Worker {
 
 	}
 
-	void signal_handler(int signal) {
-		FCGX_ShutdownPending();
-	}
-
 	void start_urlstore_workers() {
 
 		boost::filesystem::create_directories(Config::url_store_cache_path);
@@ -452,7 +448,7 @@ namespace Worker {
 
 	thread scraper_server_thread;
 	void start_scraper_server() {
-		
+
 		scraper_server_thread = std::move(thread(scraper_server));
 
 	}

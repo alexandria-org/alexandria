@@ -70,9 +70,10 @@ namespace Scraper {
 			URL url = filter_url(m_queue.front());
 			m_queue.pop();
 			if (robots_allow_url(url)) {
+				this_thread::sleep_for(std::chrono::seconds(50 + (rand() % 100)));
 				handle_url(url);
-				this_thread::sleep_for(300s);
 			}
+			if (m_consecutive_error_count > 20) break;
 		}
 
 		m_finished = true;
@@ -97,6 +98,7 @@ namespace Scraper {
 		CURLcode res = curl_easy_perform(m_curl);
 
 		if (res == CURLE_OK) {
+			m_consecutive_error_count = 0;
 			long response_code;
 			char *new_url_str = nullptr;
 			curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &response_code);
@@ -110,17 +112,26 @@ namespace Scraper {
 			if (new_url_str != nullptr) {
 				string new_u_str(new_url_str);
 				URL new_url(new_u_str);
-				LOG_INFO(m_domain + ": redirected to: " + new_url.str());
 				update_url(new_url, response_code, System::cur_datetime(), URL());
 				if (url.canonically_different(new_url)) {
+					LOG_INFO(m_domain + ": redirected to: " + new_url.str());
 					update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
 				}
-				handle_response(m_buffer, response_code, ip, new_url);
+				if (response_code == 200) {
+					handle_200_response(m_buffer, response_code, ip, new_url);
+				} else {
+					handle_non_200_response(m_buffer, response_code, ip, new_url);
+				}
 			} else {
 				update_url(url, response_code, System::cur_datetime(), URL());
-				handle_response(m_buffer, response_code, ip, url);
+				if (response_code == 200) {
+					handle_200_response(m_buffer, response_code, ip, url);
+				} else {
+					handle_non_200_response(m_buffer, response_code, ip, url);
+				}
 			}
 		} else {
+			m_consecutive_error_count++;
 			LOG_INFO(m_domain + " got error code: " +to_string(res)+ " for url: " + url.str());
 			/*
 			 * Handle everything here: https://curl.se/libcurl/c/libcurl-errors.html
@@ -162,17 +173,15 @@ namespace Scraper {
 		m_store->add_url_data(url_data);
 	}
 
-	void scraper::handle_response(const string &data, size_t response_code, const string &ip, const URL &url) {
+	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
 		LOG_INFO(m_domain + ": storing response for " + url.str());
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
 
-		if (response_code == 200) {
-			m_num_total++;
-			if (url.has_www()) m_num_www++; 
-			if (url.has_https()) m_num_https++; 
-			if (m_num_total == 3) upload_domain_info();
-		}
+		m_num_total++;
+		if (url.has_www()) m_num_www++; 
+		if (url.has_https()) m_num_https++; 
+		if (m_num_total == 3) upload_domain_info();
 
 		const string date = System::iso8601_datetime();
 
@@ -198,6 +207,27 @@ namespace Scraper {
 			}
 			m_store->add_link_data(links);
 			m_store->upload_results();
+		}
+	}
+
+	void scraper::handle_non_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
+		LOG_INFO(m_domain + ": storing response for " + url.str());
+		HtmlParser html_parser;
+		html_parser.parse(data, url.str());
+
+		const string date = System::iso8601_datetime();
+
+		if (html_parser.should_insert()) {
+			const string line = (url.str()
+				+ '\t' + html_parser.title()
+				+ '\t' + html_parser.h1()
+				+ '\t' + html_parser.meta()
+				+ '\t' + html_parser.text()
+				+ '\t' + date
+				+ '\t' + ip
+				+ '\n');
+			m_store->add_non_200_scraper_data(line);
+			m_store->upload_non_200_results();
 		}
 	}
 
@@ -258,13 +288,10 @@ namespace Scraper {
 	}
 
 	void scraper::start_thread() {
+		m_started = true;
 		m_thread = std::move(thread([this](){
 			this->run();
 		}));
-	}
-
-	bool scraper::finished() {
-		return m_finished;
 	}
 
 	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata) {
@@ -288,21 +315,28 @@ namespace Scraper {
 
 		reset_scraper_urls();
 
-		content = Text::trim(content);
+		vector<string> raw_urls;
+		boost::algorithm::split(raw_urls, content, boost::is_any_of("\n"));
 
 		vector<string> urls;
-		boost::algorithm::split(urls, content, boost::is_any_of("\n"));
+		for (const string &url : raw_urls) {
+			if (Text::trim(url).size()) {
+				urls.push_back(url);
+			}
+		}
 
 		return urls;
 	}
 
 	void run_scraper_on_urls(const vector<string> &input_urls) {
-		const size_t max_scrapers = 10;
+		const size_t max_scrapers = 1000;
 		Scraper::store store;
 		map<string, unique_ptr<scraper>> scrapers;
 
 		vector<string> urls = input_urls;
 		while (urls.size()) {
+
+			LOG_INFO("Starting scrapers with: " + to_string(urls.size()) + " urls");
 
 			vector<string> unhandled_urls;
 
@@ -322,14 +356,19 @@ namespace Scraper {
 			}
 			// Start scrapers.
 			for (auto &iter : scrapers) {
-				iter.second->start_thread();
+				if (!iter.second->started()) {
+					iter.second->start_thread();
+				}
 			}
 			
 			// Wait for at least 50% of the scrapers to finish.
 			while (scrapers.size() > max_scrapers * 0.5) {
-				for (auto &iter : scrapers) {
-					if (iter.second->finished()) {
-						scrapers.erase(iter.first);
+				for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
+					if (iter->second->finished()) {
+						LOG_INFO("Scraper done: " + iter->second->domain());
+						iter = scrapers.erase(iter);
+					} else {
+						iter++;
 					}
 				}
 				this_thread::sleep_for(1000ms);

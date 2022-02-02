@@ -49,10 +49,13 @@ namespace Scraper {
 			void push_url(const URL &url);
 			void run();
 			void start_thread();
-			bool finished();
+			bool finished() { return m_finished; };
+			bool started() { return m_started; }
+			std::string domain() { return m_domain; }
 
 		private:
 			std::thread m_thread;
+			bool m_started = false;
 			bool m_finished = false;
 			std::string m_domain;
 			std::string m_buffer;
@@ -66,12 +69,14 @@ namespace Scraper {
 			size_t m_num_total = 0;
 			size_t m_num_www = 0;
 			size_t m_num_https = 0;
+			size_t m_consecutive_error_count = 0;
 
 			void handle_error(const std::string &error);
 			void handle_url(const URL &url);
 			void mark_all_urls_with_error(size_t error_code);
 			void update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect);
-			void handle_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
+			void handle_200_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
+			void handle_non_200_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
 			void download_domain_data();
 			void download_robots();
 			bool robots_allow_url(const URL &url) const;

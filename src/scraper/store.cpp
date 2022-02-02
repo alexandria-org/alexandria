@@ -39,6 +39,7 @@ namespace Scraper {
 	store::~store() {
 		m_upload_limit = 0;
 		upload_results();
+		upload_non_200_results();
 		UrlStore::update_many(m_url_datas, UrlStore::update_url | UrlStore::update_redirect | UrlStore::update_http_code |
 				UrlStore::update_last_visited);
 	}
@@ -54,14 +55,18 @@ namespace Scraper {
 		m_lock.lock();
 		m_results.push_back(line);
 		m_lock.unlock();
-		upload_results();
+	}
+
+	void store::add_non_200_scraper_data(const std::string &line) {
+		m_lock.lock();
+		m_non_200_results.push_back(line);
+		m_lock.unlock();
 	}
 
 	void store::add_link_data(const std::string &links) {
 		m_lock.lock();
 		m_link_results.push_back(links);
 		m_lock.unlock();
-		upload_results();
 	}
 
 	void store::upload_url_datas() {
@@ -95,11 +100,32 @@ namespace Scraper {
 		m_lock.unlock();
 	}
 
+	void store::upload_non_200_results() {
+		m_lock.lock();
+		if (m_non_200_results.size() >= m_upload_limit) {
+			const string all_results = boost::algorithm::join(m_non_200_results, "");
+
+			m_non_200_results.resize(0);
+
+			m_lock.unlock();
+
+			internal_upload_non_200_results(all_results);
+
+			return;
+		}
+		m_lock.unlock();
+	}
+
 	void store::internal_upload_results(const string &all_results, const string &all_link_results) {
 		const string thread_hash = to_string(System::thread_id());
 		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(m_file_index++) + ".warc.gz";
-		cout << "UPLOADING TO: " << warc_path << endl;
 		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
 		Transfer::upload_gz_file(Warc::get_link_result_path(warc_path), all_link_results);
+	}
+
+	void store::internal_upload_non_200_results(const string &all_results) {
+		const string thread_hash = to_string(System::thread_id());
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + thread_hash + "-" + to_string(m_file_index++) + ".warc.gz";
+		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
 	}
 }

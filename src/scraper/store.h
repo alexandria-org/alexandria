@@ -39,19 +39,23 @@ namespace Scraper {
 
 			void add_url_data(const UrlStore::UrlData &data);
 			void add_scraper_data(const std::string &line);
+			void add_non_200_scraper_data(const std::string &line);
 			void add_link_data(const std::string &links);
 			void upload_url_datas();
 			void upload_results();
+			void upload_non_200_results();
 
 		private:
 			std::mutex m_lock;
 			std::vector<UrlStore::UrlData> m_url_datas;
 			std::vector<std::string> m_results;
+			std::vector<std::string> m_non_200_results;
 			std::vector<std::string> m_link_results;
 			size_t m_file_index = 0;
 			size_t m_upload_limit = 150000;
 
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
+			void internal_upload_non_200_results(const std::string &all_results);
 
 	};
 

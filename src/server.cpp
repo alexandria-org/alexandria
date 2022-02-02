@@ -25,6 +25,7 @@
  */
 
 #include <iostream>
+#include <signal.h>
 #include "fcgio.h"
 #include "config.h"
 #include "system/Logger.h"
@@ -58,6 +59,9 @@ void runner(void) {
 }
 
 int main(int argc, const char **argv) {
+
+	struct sigaction act{SIG_IGN};
+	sigaction(SIGPIPE, &act, NULL);
 
 	Logger::start_logger_thread();
 
