@@ -90,3 +90,8 @@ On nodes with spinning disks we should turn off energy saving:
 ```
 hdparm -B 255 /dev/sda
 ```
+
+## Debugging notes
+### Debugging scraper with gdb:
+By default, gdb captures SIGPIPE of a process and pauses it. However, some program ignores SIGPIPE. So, the default behavour of gdb is not desired when debugging those program. To avoid gdb stopping in SIGPIPE, use the folloing command in gdb:
+```handle SIGPIPE nostop noprint pass```
