@@ -44,6 +44,7 @@ namespace Scraper {
 			void upload_url_datas();
 			void upload_results();
 			void upload_non_200_results();
+			std::string tail() const;
 
 		private:
 			std::mutex m_lock;

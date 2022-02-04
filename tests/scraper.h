@@ -35,23 +35,27 @@ BOOST_AUTO_TEST_CASE(scraper) {
 	Scraper::store store;
 
 	Scraper::scraper scraper("omnible.se", &store);
+	scraper.set_timeout(0);
 	scraper.push_url(URL("http://omnible.se/"));
 	scraper.push_url(URL("http://omnible.se/10126597891759986715"));
 	scraper.push_url(URL("http://omnible.se/10123997891267016458"));
 	scraper.push_url(URL("http://omnible.se/gtin/9789180230865"));
 	scraper.push_url(URL("http://omnible.se/10123697814011564169"));
 	scraper.push_url(URL("https://www.omnible.se/notfound"));
+	scraper.push_url(URL("https://www.omnible.se/gtin/9789177714958"));
 
 	scraper.run();
 
-	/*string last = store.tail();
+	string last = store.tail();
 	vector<string> cols;
-	boost::algorithm::split(last, cols, boost::is_any_of("\t"));
-	BOOST_CHECK_EQUAL(cols[0], "https://example.com/");
-	BOOST_CHECK_EQUAL(cols[1], "Example Domain");*/
+	boost::algorithm::split(cols, last, boost::is_any_of("\t"));
+	BOOST_CHECK_EQUAL(cols[0], "https://www.omnible.se/10123697814011564169");
+	BOOST_CHECK_EQUAL(cols[1], "Den sista gåvan av Abdulrazak Gurnah - recensioner & prisjämförelse - Omnible");
 }
 
 BOOST_AUTO_TEST_CASE(scraper_multithreaded) {
+
+	return;
 
 	vector<string> urls = {
 		/*"http://omnible.se/",

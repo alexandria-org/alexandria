@@ -52,7 +52,7 @@ namespace Scraper {
 	}
 
 	scraper::~scraper() {
-		m_thread.join();
+		if (m_thread.joinable()) m_thread.join();
 		upload_domain_info();
 		if (m_curl) curl_easy_cleanup(m_curl);
 	}
@@ -70,7 +70,9 @@ namespace Scraper {
 			URL url = filter_url(m_queue.front());
 			m_queue.pop();
 			if (robots_allow_url(url)) {
-				this_thread::sleep_for(std::chrono::seconds(50 + (rand() % 100)));
+				if (m_timeout) {
+					this_thread::sleep_for(std::chrono::seconds(m_timeout/2 + (rand() % m_timeout)));
+				}
 				handle_url(url);
 			}
 			if (m_consecutive_error_count > 20) break;
@@ -211,6 +213,12 @@ namespace Scraper {
 	}
 
 	void scraper::handle_non_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
+
+		if (data.find("Captcha") != string::npos || data.find("captcha") != string::npos) {
+			mark_all_urls_with_error(10000 + 999);
+		}
+
+
 		LOG_INFO(m_domain + ": storing response for " + url.str());
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());

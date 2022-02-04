@@ -116,6 +116,11 @@ namespace Scraper {
 		m_lock.unlock();
 	}
 
+	std::string store::tail() const {
+		if (m_results.size() == 0) return "";
+		return m_results.back();
+	}
+
 	void store::internal_upload_results(const string &all_results, const string &all_link_results) {
 		const string thread_hash = to_string(System::thread_id());
 		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(m_file_index++) + ".warc.gz";
