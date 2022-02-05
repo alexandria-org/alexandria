@@ -31,6 +31,7 @@
 #include "store.h"
 #include "parser/URL.h"
 #include "urlstore/DomainData.h"
+#include "system/Profiler.h"
 
 namespace Scraper {
 
@@ -53,6 +54,9 @@ namespace Scraper {
 			bool finished() { return m_finished; };
 			bool started() { return m_started; }
 			std::string domain() { return m_domain; }
+			size_t num_scraped() const { return m_num_200; }
+			size_t num_scraped_non200() const { return m_num_non200; }
+			bool blocked() const { return m_blocked; }
 
 		private:
 			std::thread m_thread;
@@ -61,6 +65,9 @@ namespace Scraper {
 			std::string m_domain;
 			std::string m_buffer;
 			size_t m_buffer_len = 1024*1024*10;
+			size_t m_num_200 = 0;
+			size_t m_num_non200 = 0;
+			bool m_blocked = false;
 			CURL *m_curl;
 			store *m_store;
 			std::queue<URL> m_queue;
@@ -89,6 +96,31 @@ namespace Scraper {
 		public:
 
 			friend size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
+	};
+
+	class stats {
+		public:
+			stats();
+			~stats();
+			void start_thread(size_t timeout);
+			void start_count();
+			void count_finished(const scraper &scraper);
+			void count_unfinished(const scraper &scraper);
+
+		private:
+			std::thread m_thread;
+			size_t m_timeout = 300;
+			size_t m_num_blocked = 0;
+			size_t m_finished_scrapers = 0;
+			size_t m_unfinished_scrapers = 0;
+			size_t m_scraped_urls = 0;
+			size_t m_unfinished_scraped_urls = 0;
+			size_t m_scraped_urls_non200 = 0;
+			size_t m_unfinished_scraped_urls_non200 = 0;
+			bool m_running = true;
+
+			void run();
+			void log_report(size_t dt);
 	};
 
 	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);

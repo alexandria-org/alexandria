@@ -44,6 +44,60 @@ namespace Scraper {
 		return ua;
 	}
 
+	stats::stats() {
+	}
+
+	stats::~stats() {
+		m_running = false;
+		if (m_thread.joinable()) m_thread.join();
+	}
+
+	void stats::start_thread(size_t timeout) {
+		m_timeout = timeout;
+		m_thread = std::move(thread([this]() {
+			this->run();
+		}));
+	}
+
+	void stats::start_count() {
+		m_unfinished_scrapers = 0;
+		m_unfinished_scraped_urls = 0;
+	}
+
+	void stats::count_finished(const scraper &scraper) {
+		m_scraped_urls += scraper.num_scraped();
+		m_scraped_urls_non200 += scraper.num_scraped_non200();
+		m_finished_scrapers += 1;
+		m_num_blocked += scraper.blocked() ? 1 : 0;
+	}
+
+	void stats::count_unfinished(const scraper &scraper) {
+		m_unfinished_scraped_urls += scraper.num_scraped();
+		m_scraped_urls_non200 += scraper.num_scraped_non200();
+		m_unfinished_scrapers += 1;
+	}
+
+	void stats::run() {
+		size_t time_start = Profiler::timestamp();
+		while (m_running) {
+			std::this_thread::sleep_for(std::chrono::seconds(m_timeout));
+			log_report(Profiler::timestamp() - time_start);
+		}
+	}
+
+	void stats::log_report(size_t dt) {
+		std::stringstream ss;
+		ss.precision(2);
+		ss << "Scraper statistics:" << endl;
+		ss << (m_scraped_urls + m_unfinished_scraped_urls) << " urls" << endl;
+		ss << (m_scraped_urls_non200 + m_unfinished_scraped_urls_non200) << " urls (non 200 response)" << endl;
+		ss << fixed << (double)(m_scraped_urls + m_unfinished_scraped_urls)/dt << "/s" << endl;
+		ss << m_finished_scrapers << " finished scrapers" << endl;
+		ss << m_unfinished_scrapers << " unfinished scrapers" << endl;
+		ss << m_num_blocked << " blocked scrapers" << endl;
+		LOG_INFO(ss.str());
+	}
+
 	scraper::scraper(const string &domain, store *store) :
 		m_domain(domain), m_store(store)
 	{
@@ -88,7 +142,6 @@ namespace Scraper {
 	void scraper::handle_url(const URL &url) {
 		m_buffer.resize(0);
 		m_curl = curl_easy_init();
-		LOG_INFO(m_domain + ": scraping url: " + url.str());
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
 		curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 5l);
@@ -116,7 +169,6 @@ namespace Scraper {
 				URL new_url(new_u_str);
 				update_url(new_url, response_code, System::cur_datetime(), URL());
 				if (url.canonically_different(new_url)) {
-					LOG_INFO(m_domain + ": redirected to: " + new_url.str());
 					update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
 				}
 				if (response_code == 200) {
@@ -133,8 +185,8 @@ namespace Scraper {
 				}
 			}
 		} else {
+			m_num_non200++;
 			m_consecutive_error_count++;
-			LOG_INFO(m_domain + " got error code: " +to_string(res)+ " for url: " + url.str());
 			/*
 			 * Handle everything here: https://curl.se/libcurl/c/libcurl-errors.html
 			 * */
@@ -176,7 +228,7 @@ namespace Scraper {
 	}
 
 	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
-		LOG_INFO(m_domain + ": storing response for " + url.str());
+		m_num_200++;
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
 
@@ -214,12 +266,14 @@ namespace Scraper {
 
 	void scraper::handle_non_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
 
+		m_num_non200++;
+
 		if (data.find("Captcha") != string::npos || data.find("captcha") != string::npos) {
+			m_blocked = true;
 			mark_all_urls_with_error(10000 + 999);
 		}
 
 
-		LOG_INFO(m_domain + ": storing response for " + url.str());
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
 
@@ -339,7 +393,10 @@ namespace Scraper {
 	void run_scraper_on_urls(const vector<string> &input_urls) {
 		const size_t max_scrapers = 1000;
 		Scraper::store store;
+		Scraper::stats stats;
 		map<string, unique_ptr<scraper>> scrapers;
+
+		stats.start_thread(300); // Report statistics every 5 minutes.
 
 		vector<string> urls = input_urls;
 		while (urls.size()) {
@@ -371,17 +428,32 @@ namespace Scraper {
 			
 			// Wait for at least 50% of the scrapers to finish.
 			while (scrapers.size() > max_scrapers * 0.5) {
+				stats.start_count();
 				for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
 					if (iter->second->finished()) {
-						LOG_INFO("Scraper done: " + iter->second->domain());
+						stats.count_finished(*(iter->second));
 						iter = scrapers.erase(iter);
 					} else {
+						stats.count_unfinished(*(iter->second));
 						iter++;
 					}
 				}
 				this_thread::sleep_for(1000ms);
 			}
 			urls = unhandled_urls;
+		}
+		while (scrapers.size()) {
+			stats.start_count();
+			for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
+				if (iter->second->finished()) {
+					stats.count_finished(*(iter->second));
+					iter = scrapers.erase(iter);
+				} else {
+					stats.count_unfinished(*(iter->second));
+					iter++;
+				}
+			}
+			this_thread::sleep_for(1000ms);
 		}
 	}
 
