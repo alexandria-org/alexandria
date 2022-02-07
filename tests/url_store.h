@@ -69,15 +69,24 @@ BOOST_AUTO_TEST_CASE(domain_data) {
 
 BOOST_AUTO_TEST_CASE(robots_data) {
 	UrlStore::RobotsData data;
+	const string robots_content = "Sitemap: https://newsroom.cisco.com/sitemap.xml\n"
+		"User-agent: NetShelter ContentScan\n"
+		"Disallow: /\n"
+		"User-agent: NetShelter\n"
+		"Disallow: /\n"
+		"User-agent: ^NetShelter\n"
+		"Disallow: /\n"
+		"User-agent: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0 (NetShelter ContentScan, ...)\n"
+		"Disallow: /\n";
 	data.m_domain = "test.com";
-	data.m_robots = "test 123";
+	data.m_robots = robots_content;
 
 	string string_data = data.to_str();
 
 	UrlStore::RobotsData data2(string_data);
 
 	BOOST_CHECK_EQUAL(data2.m_domain, "test.com");
-	BOOST_CHECK_EQUAL(data2.m_robots, "test 123");
+	BOOST_CHECK_EQUAL(data2.m_robots, robots_content);
 }
 
 BOOST_AUTO_TEST_CASE(server) {

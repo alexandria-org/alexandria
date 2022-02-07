@@ -76,7 +76,7 @@ namespace UrlStore {
 		str.append((char *)&domain_len, sizeof(domain_len));
 		str.append(m_domain);
 
-		const size_t robots_len = m_domain.size();
+		const size_t robots_len = m_robots.size();
 		str.append((char *)&robots_len, sizeof(robots_len));
 		str.append(m_robots);
 
