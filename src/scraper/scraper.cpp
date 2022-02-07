@@ -107,8 +107,6 @@ namespace Scraper {
 		m_domain(domain), m_store(store)
 	{
 		m_domain_data.m_domain = domain;
-		m_domain_data.m_has_https = 0;
-		m_domain_data.m_has_www = 0;
 		m_curl = curl_easy_init();
 	}
 
@@ -124,7 +122,7 @@ namespace Scraper {
 
 	void scraper::run() {
 
-		//download_domain_data();
+		download_domain_data();
 		download_robots();
 
 		while (m_queue.size()) {
@@ -316,6 +314,8 @@ namespace Scraper {
 	void scraper::download_robots() {
 		const URL robots_path = filter_url(URL("http://" + m_domain + "/robots.txt"));
 		m_robots_content = simple_get(robots_path);
+
+		scraper::upload_robots_txt(m_robots_content);
 	}
 
 	bool scraper::robots_allow_url(const URL &url) const {
@@ -372,6 +372,14 @@ namespace Scraper {
 
 			UrlStore::set(data);
 		}
+	}
+
+	void scraper::upload_robots_txt(const string &robots_content) {
+		UrlStore::RobotsData data;
+		data.m_domain = m_domain;
+		data.m_robots = robots_content;
+
+		UrlStore::set(data);
 	}
 
 	URL scraper::filter_url(const URL &url) {

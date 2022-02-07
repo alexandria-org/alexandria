@@ -31,6 +31,7 @@
 #include "store.h"
 #include "parser/URL.h"
 #include "urlstore/DomainData.h"
+#include "urlstore/RobotsData.h"
 #include "system/Profiler.h"
 
 namespace Scraper {
@@ -96,6 +97,7 @@ namespace Scraper {
 			bool robots_allow_url(const URL &url) const;
 			std::string simple_get(const URL &url);
 			void upload_domain_info();
+			void upload_robots_txt(const std::string &robots_content);
 			URL filter_url(const URL &url);
 
 		public:
