@@ -43,8 +43,8 @@ namespace UrlStore {
 			~DomainData();
 
 			std::string m_domain;
-			size_t m_has_https;
-			size_t m_has_www;
+			size_t m_has_https = 0;
+			size_t m_has_www = 0;
 
 			void apply_update(const DomainData &data, size_t update_bitmask);
 

@@ -41,9 +41,11 @@ namespace Scraper {
 			void add_scraper_data(const std::string &line);
 			void add_non_200_scraper_data(const std::string &line);
 			void add_link_data(const std::string &links);
+			void add_curl_error(const std::string &line);
 			void upload_url_datas();
 			void upload_results();
 			void upload_non_200_results();
+			void upload_curl_errors();
 			std::string tail() const;
 
 		private:
@@ -52,11 +54,15 @@ namespace Scraper {
 			std::vector<std::string> m_results;
 			std::vector<std::string> m_non_200_results;
 			std::vector<std::string> m_link_results;
+			std::vector<std::string> m_curl_errors;
 			size_t m_file_index = 0;
-			size_t m_upload_limit = 150000;
+			size_t m_upload_limit = 50000;
+			size_t m_non_200_upload_limit = 10000;
+			size_t m_curl_errors_upload_limit = 500;
 
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
 			void internal_upload_non_200_results(const std::string &all_results);
+			void internal_upload_curl_errors(const std::string &all_results);
 
 	};
 

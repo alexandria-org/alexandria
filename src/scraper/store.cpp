@@ -26,6 +26,7 @@
 
 #include "store.h"
 #include "system/System.h"
+#include "system/datetime.h"
 #include "parser/Warc.h"
 
 using namespace std;
@@ -69,6 +70,12 @@ namespace Scraper {
 		m_lock.unlock();
 	}
 
+	void store::add_curl_error(const string &line) {
+		m_lock.lock();
+		m_curl_errors.push_back(line);
+		m_lock.unlock();
+	}
+
 	void store::upload_url_datas() {
 		m_lock.lock();
 		if (m_url_datas.size() > 1000) {
@@ -102,7 +109,7 @@ namespace Scraper {
 
 	void store::upload_non_200_results() {
 		m_lock.lock();
-		if (m_non_200_results.size() >= m_upload_limit) {
+		if (m_non_200_results.size() >= m_non_200_upload_limit) {
 			const string all_results = boost::algorithm::join(m_non_200_results, "");
 
 			m_non_200_results.resize(0);
@@ -116,6 +123,22 @@ namespace Scraper {
 		m_lock.unlock();
 	}
 
+	void store::upload_curl_errors() {
+		m_lock.lock();
+		if (m_curl_errors.size() >= m_curl_errors_upload_limit) {
+			const string all_results = boost::algorithm::join(m_curl_errors, "");
+
+			m_curl_errors.resize(0);
+
+			m_lock.unlock();
+
+			internal_upload_curl_errors(all_results);
+
+			return;
+		}
+		m_lock.unlock();
+	}
+
 	std::string store::tail() const {
 		if (m_results.size() == 0) return "";
 		return m_results.back();
@@ -123,14 +146,24 @@ namespace Scraper {
 
 	void store::internal_upload_results(const string &all_results, const string &all_link_results) {
 		const string thread_hash = to_string(System::thread_id());
-		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(m_file_index++) + ".warc.gz";
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(System::cur_datetime()) + "-" +
+			to_string(m_file_index++) + ".warc.gz";
 		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
 		Transfer::upload_gz_file(Warc::get_link_result_path(warc_path), all_link_results);
 	}
 
 	void store::internal_upload_non_200_results(const string &all_results) {
 		const string thread_hash = to_string(System::thread_id());
-		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + thread_hash + "-" + to_string(m_file_index++) + ".warc.gz";
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + thread_hash + "-" + to_string(System::cur_datetime()) +
+			"-" + to_string(m_file_index++) + ".warc.gz";
 		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
 	}
+
+	void store::internal_upload_curl_errors(const string &all_results) {
+		const string thread_hash = to_string(System::thread_id());
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/curl-errors/" + thread_hash + "-" + to_string(System::cur_datetime()) +
+			"-" + to_string(m_file_index++) + ".warc.gz";
+		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
+	}
+
 }

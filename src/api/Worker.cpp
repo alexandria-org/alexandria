@@ -453,4 +453,8 @@ namespace Worker {
 
 	}
 
+	void wait_for_scraper_server() {
+		scraper_server_thread.join();
+	}
+
 }

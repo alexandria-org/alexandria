@@ -56,6 +56,8 @@ namespace Scraper {
 			std::string domain() { return m_domain; }
 			size_t num_scraped() const { return m_num_200; }
 			size_t num_scraped_non200() const { return m_num_non200; }
+			size_t num_errors() const { return m_num_errors; }
+			size_t size() const { return m_queue.size(); }
 			bool blocked() const { return m_blocked; }
 
 		private:
@@ -64,9 +66,11 @@ namespace Scraper {
 			bool m_finished = false;
 			std::string m_domain;
 			std::string m_buffer;
+			char m_curl_error_buffer[CURL_ERROR_SIZE];
 			size_t m_buffer_len = 1024*1024*10;
 			size_t m_num_200 = 0;
 			size_t m_num_non200 = 0;
+			size_t m_num_errors = 0;
 			bool m_blocked = false;
 			CURL *m_curl;
 			store *m_store;
@@ -78,14 +82,15 @@ namespace Scraper {
 			size_t m_num_www = 0;
 			size_t m_num_https = 0;
 			size_t m_consecutive_error_count = 0;
-			size_t m_timeout = 100;
+			size_t m_timeout = 30;
 
-			void handle_error(const std::string &error);
+			void handle_curl_error(const URL &url, size_t curl_error, const std::string &error_msg);
 			void handle_url(const URL &url);
 			void mark_all_urls_with_error(size_t error_code);
 			void update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect);
 			void handle_200_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
 			void handle_non_200_response(const std::string &data, size_t response_code, const std::string &ip, const URL &url);
+			void check_for_captcha_block(const std::string &data, size_t response_code);
 			void download_domain_data();
 			void download_robots();
 			bool robots_allow_url(const URL &url) const;
@@ -117,6 +122,8 @@ namespace Scraper {
 			size_t m_unfinished_scraped_urls = 0;
 			size_t m_scraped_urls_non200 = 0;
 			size_t m_unfinished_scraped_urls_non200 = 0;
+			size_t m_scraped_errors = 0;
+			size_t m_unfinished_scraped_errors = 0;
 			bool m_running = true;
 
 			void run();

@@ -62,18 +62,22 @@ namespace Scraper {
 	void stats::start_count() {
 		m_unfinished_scrapers = 0;
 		m_unfinished_scraped_urls = 0;
+		m_unfinished_scraped_urls_non200 = 0;
+		m_unfinished_scraped_errors = 0;
 	}
 
 	void stats::count_finished(const scraper &scraper) {
 		m_scraped_urls += scraper.num_scraped();
 		m_scraped_urls_non200 += scraper.num_scraped_non200();
+		m_scraped_errors += scraper.num_errors();
 		m_finished_scrapers += 1;
 		m_num_blocked += scraper.blocked() ? 1 : 0;
 	}
 
 	void stats::count_unfinished(const scraper &scraper) {
 		m_unfinished_scraped_urls += scraper.num_scraped();
-		m_scraped_urls_non200 += scraper.num_scraped_non200();
+		m_unfinished_scraped_urls_non200 += scraper.num_scraped_non200();
+		m_unfinished_scraped_errors += scraper.num_errors();
 		m_unfinished_scrapers += 1;
 	}
 
@@ -89,8 +93,9 @@ namespace Scraper {
 		std::stringstream ss;
 		ss.precision(2);
 		ss << "Scraper statistics:" << endl;
-		ss << (m_scraped_urls + m_unfinished_scraped_urls) << " urls" << endl;
+		ss << (m_scraped_urls + m_unfinished_scraped_urls) << " urls (200 response)" << endl;
 		ss << (m_scraped_urls_non200 + m_unfinished_scraped_urls_non200) << " urls (non 200 response)" << endl;
+		ss << (m_scraped_errors + m_unfinished_scraped_errors) << " urls (errors)" << endl;
 		ss << fixed << (double)(m_scraped_urls + m_unfinished_scraped_urls)/dt << "/s" << endl;
 		ss << m_finished_scrapers << " finished scrapers" << endl;
 		ss << m_unfinished_scrapers << " unfinished scrapers" << endl;
@@ -102,13 +107,15 @@ namespace Scraper {
 		m_domain(domain), m_store(store)
 	{
 		m_domain_data.m_domain = domain;
-		m_curl = nullptr;
+		m_domain_data.m_has_https = 0;
+		m_domain_data.m_has_www = 0;
+		m_curl = curl_easy_init();
 	}
 
 	scraper::~scraper() {
 		if (m_thread.joinable()) m_thread.join();
 		upload_domain_info();
-		if (m_curl) curl_easy_cleanup(m_curl);
+		curl_easy_cleanup(m_curl);
 	}
 
 	void scraper::push_url(const URL &url) {
@@ -117,7 +124,7 @@ namespace Scraper {
 
 	void scraper::run() {
 
-		download_domain_data();
+		//download_domain_data();
 		download_robots();
 
 		while (m_queue.size()) {
@@ -128,6 +135,8 @@ namespace Scraper {
 					this_thread::sleep_for(std::chrono::seconds(m_timeout/2 + (rand() % m_timeout)));
 				}
 				handle_url(url);
+			} else {
+				cout << "robots not allowed: " << url.str() << endl;
 			}
 			if (m_consecutive_error_count > 20) break;
 		}
@@ -135,13 +144,8 @@ namespace Scraper {
 		m_finished = true;
 	}
 
-	void scraper::handle_error(const std::string &error) {
-		
-	}
-
 	void scraper::handle_url(const URL &url) {
 		m_buffer.resize(0);
-		m_curl = curl_easy_init();
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
 		curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 5l);
@@ -149,6 +153,7 @@ namespace Scraper {
 		curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, this);
 		curl_easy_setopt(m_curl, CURLOPT_URL, url.str().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_TIMEOUT, 30);
+		curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, m_curl_error_buffer);
 
 		CURLcode res = curl_easy_perform(m_curl);
 
@@ -185,8 +190,6 @@ namespace Scraper {
 				}
 			}
 		} else {
-			m_num_non200++;
-			m_consecutive_error_count++;
 			/*
 			 * Handle everything here: https://curl.se/libcurl/c/libcurl-errors.html
 			 * */
@@ -194,6 +197,8 @@ namespace Scraper {
 				CURLE_COULDNT_RESOLVE_HOST,
 				CURLE_COULDNT_CONNECT,
 			};
+
+			handle_curl_error(url, res, string(m_curl_error_buffer));
 
 			if (res == CURLE_COULDNT_RESOLVE_HOST || res == CURLE_COULDNT_CONNECT) {
 				update_url(url, 10000 + res, System::cur_datetime(), URL());
@@ -205,8 +210,6 @@ namespace Scraper {
 
 		m_buffer.resize(0);
 		m_buffer.shrink_to_fit();
-		curl_easy_cleanup(m_curl);
-		m_curl = nullptr;
 	}
 
 	void scraper::mark_all_urls_with_error(size_t error_code) {
@@ -225,6 +228,13 @@ namespace Scraper {
 		url_data.m_last_visited = last_visited;
 
 		m_store->add_url_data(url_data);
+	}
+
+	void scraper::handle_curl_error(const URL &url, size_t curl_error, const std::string &error_msg) {
+		m_num_errors++;
+		m_consecutive_error_count++;
+		m_store->add_curl_error(url.str() + "\t" + to_string(curl_error) + "\t" + error_msg + "\n");
+		m_store->upload_curl_errors();
 	}
 
 	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
@@ -268,11 +278,7 @@ namespace Scraper {
 
 		m_num_non200++;
 
-		if (data.find("Captcha") != string::npos || data.find("captcha") != string::npos) {
-			m_blocked = true;
-			mark_all_urls_with_error(10000 + 999);
-		}
-
+		check_for_captcha_block(data, response_code);
 
 		HtmlParser html_parser;
 		html_parser.parse(data, url.str());
@@ -293,10 +299,17 @@ namespace Scraper {
 		}
 	}
 
+	void scraper::check_for_captcha_block(const std::string &data, size_t response_code) {
+		if (response_code != 200 && (data.find("Captcha") != string::npos || data.find("captcha") != string::npos)) {
+			m_blocked = true;
+			mark_all_urls_with_error(10000 + 999);
+		}
+	}
+
 	void scraper::download_domain_data() {
 		int error = UrlStore::get(m_domain, m_domain_data);
 		if (error == UrlStore::ERROR) {
-			handle_error("could not download domain data");
+			LOG_INFO("Could not download domain data");
 		}
 	}
 
@@ -312,7 +325,6 @@ namespace Scraper {
 	}
 
 	string scraper::simple_get(const URL &url) {
-		m_curl = curl_easy_init();
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
 		curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 5l);
@@ -320,12 +332,33 @@ namespace Scraper {
 		curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, this);
 		curl_easy_setopt(m_curl, CURLOPT_URL, url.str().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_TIMEOUT, 30);
+		curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, m_curl_error_buffer);
 
 		m_buffer.resize(0);
-		curl_easy_perform(m_curl);
+		CURLcode res = curl_easy_perform(m_curl);
+		if (res == CURLE_OK) {
+			long response_code;
+			char *new_url_str = nullptr;
+			curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &response_code);
+			curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &new_url_str);
 
-		curl_easy_cleanup(m_curl);
-		m_curl = nullptr;
+			check_for_captcha_block(m_buffer, response_code);
+		} else {
+			/*
+			 * Handle everything here: https://curl.se/libcurl/c/libcurl-errors.html
+			 * */
+			vector<CURLcode> domain_errors = {
+				CURLE_COULDNT_RESOLVE_HOST,
+				CURLE_COULDNT_CONNECT,
+			};
+
+			handle_curl_error(url, res, string(m_curl_error_buffer));
+
+			if (res == CURLE_COULDNT_RESOLVE_HOST || res == CURLE_COULDNT_CONNECT) {
+				mark_all_urls_with_error(10000 + res);
+			} else {
+			}
+		}
 
 		return m_buffer;
 	}
@@ -396,7 +429,7 @@ namespace Scraper {
 		Scraper::stats stats;
 		map<string, unique_ptr<scraper>> scrapers;
 
-		stats.start_thread(300); // Report statistics every 5 minutes.
+		stats.start_thread(60); // Report statistics every minute.
 
 		vector<string> urls = input_urls;
 		while (urls.size()) {
@@ -408,7 +441,7 @@ namespace Scraper {
 			for (const string &url_str : urls) {
 				URL url(url_str);
 
-				if (!scrapers.count(url.host())) {
+				if (scrapers.count(url.host()) == 0) {
 					if (scrapers.size() >= max_scrapers) {
 						unhandled_urls.push_back(url_str);
 					} else {
@@ -416,7 +449,9 @@ namespace Scraper {
 						scrapers[url.host()]->push_url(url);
 					}
 				} else {
-					scrapers[url.host()]->push_url(url);
+					//if (scrapers[url.host()]->size() < 10) {
+						scrapers[url.host()]->push_url(url);
+					//}
 				}
 			}
 			// Start scrapers.
@@ -427,7 +462,7 @@ namespace Scraper {
 			}
 			
 			// Wait for at least 50% of the scrapers to finish.
-			while (scrapers.size() > max_scrapers * 0.5) {
+			while (scrapers.size() > max_scrapers * 0.8) {
 				stats.start_count();
 				for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
 					if (iter->second->finished()) {

@@ -28,6 +28,7 @@ namespace Worker {
 	void join_urlstore_server();
 	void wait_for_urlstore_server();
 	void start_scraper_server();
+	void wait_for_scraper_server();
 
 }
 
