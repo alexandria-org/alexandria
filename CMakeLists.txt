@@ -35,6 +35,7 @@ set(SRC_CLASSES
 
 	"src/file/File.cpp"
 	"src/file/TsvFile.cpp"
+	"src/file/GzTsvFile.cpp"
 	"src/file/TsvFileRemote.cpp"
 	"src/file/TsvRow.cpp"
 
@@ -97,6 +98,7 @@ set(SRC_CLASSES
 	"src/tools/Counter.cpp"
 	"src/tools/Download.cpp"
 	"src/tools/CalculateHarmonic.cpp"
+	"src/tools/generate_url_lists.cpp"
 
 	"src/cluster/Document.cpp"
 	"src/scraper/scraper.cpp"

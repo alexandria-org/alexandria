@@ -30,6 +30,7 @@
 #include "tools/Counter.h"
 #include "tools/Download.h"
 #include "tools/CalculateHarmonic.h"
+#include "tools/generate_url_lists.h"
 #include "parser/URL.h"
 #include "api/Worker.h"
 #include <iostream>
@@ -74,6 +75,8 @@ int main(int argc, const char **argv) {
 		Tools::run_counter();
 	} else if (arg == "--count-links") {
 		Tools::count_all_links();
+	} else if (arg == "--make-urls" && argc > 2) {
+		Tools::generate_url_lists(argv[2]);
 	} else if (arg == "--urlstore") {
 		Worker::start_urlstore_server();
 		Worker::wait_for_urlstore_server();
