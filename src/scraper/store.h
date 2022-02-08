@@ -58,7 +58,7 @@ namespace Scraper {
 			size_t m_file_index = 0;
 			size_t m_upload_limit = 50000;
 			size_t m_non_200_upload_limit = 10000;
-			size_t m_curl_errors_upload_limit = 500;
+			size_t m_curl_errors_upload_limit = 10000;
 
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
 			void internal_upload_non_200_results(const std::string &all_results);

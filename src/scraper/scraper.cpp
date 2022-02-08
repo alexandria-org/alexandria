@@ -35,12 +35,12 @@ using namespace std;
 namespace Scraper {
 
 	string user_agent_token() {
-		return "AlexandriaBot";
+		return "AlexandriaOrgBot";
 	}
 
 	string user_agent() {
 		string ua_version = "1.0";
-		string ua = "Mozilla/5.0 (Linux) (compatible; "+user_agent_token()+"/"+ua_version+"; +https://www.alexandria.org/info.html)";
+		string ua = "Mozilla/5.0 (Linux) (compatible; "+user_agent_token()+"/"+ua_version+"; +https://www.alexandria.org/bot.html)";
 		return ua;
 	}
 
@@ -59,11 +59,13 @@ namespace Scraper {
 		}));
 	}
 
-	void stats::start_count() {
+	void stats::start_count(size_t urls_in_queue) {
 		m_unfinished_scrapers = 0;
 		m_unfinished_scraped_urls = 0;
 		m_unfinished_scraped_urls_non200 = 0;
 		m_unfinished_scraped_errors = 0;
+		m_urls_in_queue = urls_in_queue;
+		m_urls_assigned = 0;
 	}
 
 	void stats::count_finished(const scraper &scraper) {
@@ -79,6 +81,7 @@ namespace Scraper {
 		m_unfinished_scraped_urls_non200 += scraper.num_scraped_non200();
 		m_unfinished_scraped_errors += scraper.num_errors();
 		m_unfinished_scrapers += 1;
+		m_urls_assigned += scraper.size();
 	}
 
 	void stats::run() {
@@ -92,8 +95,11 @@ namespace Scraper {
 	void stats::log_report(size_t dt) {
 		std::stringstream ss;
 		ss.precision(2);
-		ss << "Scraper statistics:" << endl;
-		ss << (m_scraped_urls + m_unfinished_scraped_urls) << " urls (200 response)" << endl;
+		ss << endl;
+		ss << "Scraper stats:" << endl;
+		ss << m_urls_in_queue << " urls in queue (not assigned to any scraper)" << endl;
+		ss << m_urls_assigned << " urls assigned to running scrapers" << endl;
+		ss << (m_scraped_urls + m_unfinished_scraped_urls) << " urls done (200 response)" << endl;
 		ss << (m_scraped_urls_non200 + m_unfinished_scraped_urls_non200) << " urls (non 200 response)" << endl;
 		ss << (m_scraped_errors + m_unfinished_scraped_errors) << " urls (errors)" << endl;
 		ss << fixed << (double)(m_scraped_urls + m_unfinished_scraped_urls)/dt << "/s" << endl;
@@ -133,8 +139,6 @@ namespace Scraper {
 					this_thread::sleep_for(std::chrono::seconds(m_timeout/2 + (rand() % m_timeout)));
 				}
 				handle_url(url);
-			} else {
-				cout << "robots not allowed: " << url.str() << endl;
 			}
 			if (m_consecutive_error_count > 20) break;
 		}
@@ -405,6 +409,14 @@ namespace Scraper {
 		return byte_size;
 	}
 
+	size_t read_max_scrapers() {
+		ifstream infile("/tmp/num_scrapers");
+		if (!infile.is_open()) return 0;
+		size_t max_scrapers;
+		infile >> max_scrapers;
+		return max_scrapers;
+	}
+
 	bool reset_scraper_urls() {
 		string content = "";
 		int error = Transfer::upload_file("nodes/" + Config::node + "/scraper.urls", content);
@@ -432,7 +444,7 @@ namespace Scraper {
 	}
 
 	void run_scraper_on_urls(const vector<string> &input_urls) {
-		const size_t max_scrapers = 1000;
+		size_t max_scrapers = 1000;
 		Scraper::store store;
 		Scraper::stats stats;
 		map<string, unique_ptr<scraper>> scrapers;
@@ -440,9 +452,14 @@ namespace Scraper {
 		stats.start_thread(60); // Report statistics every minute.
 
 		vector<string> urls = input_urls;
-		while (urls.size()) {
+		while (urls.size() || scrapers.size()) {
 
 			LOG_INFO("Starting scrapers with: " + to_string(urls.size()) + " urls");
+
+			size_t new_max_scrapers = read_max_scrapers();
+			if (new_max_scrapers) {
+				max_scrapers = new_max_scrapers;
+			}
 
 			vector<string> unhandled_urls;
 
@@ -457,9 +474,7 @@ namespace Scraper {
 						scrapers[url.host()]->push_url(url);
 					}
 				} else {
-					//if (scrapers[url.host()]->size() < 10) {
-						scrapers[url.host()]->push_url(url);
-					//}
+					scrapers[url.host()]->push_url(url);
 				}
 			}
 			// Start scrapers.
@@ -471,7 +486,7 @@ namespace Scraper {
 			
 			// Wait for at least 50% of the scrapers to finish.
 			while (scrapers.size() > max_scrapers * 0.8) {
-				stats.start_count();
+				stats.start_count(urls.size());
 				for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
 					if (iter->second->finished()) {
 						stats.count_finished(*(iter->second));
@@ -484,20 +499,17 @@ namespace Scraper {
 				this_thread::sleep_for(1000ms);
 			}
 			urls = unhandled_urls;
-		}
-		while (scrapers.size()) {
-			stats.start_count();
-			for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
-				if (iter->second->finished()) {
-					stats.count_finished(*(iter->second));
-					iter = scrapers.erase(iter);
-				} else {
-					stats.count_unfinished(*(iter->second));
-					iter++;
-				}
+
+			// Check for new urls and append them.
+			vector<string> new_urls = download_scraper_urls();
+			urls.insert(urls.end(), new_urls.begin(), new_urls.end());
+
+			if (urls.size() == 0) {
+				// We don't have any new urls. Just sleep a bit before checking again.
+				std::this_thread::sleep_for(std::chrono::seconds(60));
 			}
-			this_thread::sleep_for(1000ms);
 		}
+		
 	}
 
 	void url_downloader() {
@@ -518,5 +530,4 @@ namespace Scraper {
 			sleep(timeout);
 		}
 	}
-
 }

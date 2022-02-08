@@ -110,7 +110,7 @@ namespace Scraper {
 			stats();
 			~stats();
 			void start_thread(size_t timeout);
-			void start_count();
+			void start_count(size_t urls_in_queue);
 			void count_finished(const scraper &scraper);
 			void count_unfinished(const scraper &scraper);
 
@@ -126,6 +126,8 @@ namespace Scraper {
 			size_t m_unfinished_scraped_urls_non200 = 0;
 			size_t m_scraped_errors = 0;
 			size_t m_unfinished_scraped_errors = 0;
+			size_t m_urls_in_queue = 0;
+			size_t m_urls_assigned = 0;
 			bool m_running = true;
 
 			void run();
@@ -134,6 +136,7 @@ namespace Scraper {
 
 	size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
 
+	size_t read_max_scrapers();
 	void url_downloader();
 	void run_scraper_on_urls(const std::vector<std::string> &input_urls);
 
