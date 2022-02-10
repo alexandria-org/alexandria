@@ -129,6 +129,11 @@ add_executable(server
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
+add_executable(scraper
+	"src/scraper.cpp"
+	${SRC_CLASSES}
+	${SRC_COMMON}
+)
 
 target_compile_definitions(run_tests PUBLIC CC_TESTING)
 target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
@@ -139,6 +144,7 @@ target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 target_compile_options(tools PUBLIC -Wall -Werror)
 target_compile_options(run_tests PUBLIC -Wall -Werror)
 target_compile_options(server PUBLIC -Wall -Werror)
+target_compile_options(scraper PUBLIC -Wall -Werror)
 
 target_link_libraries(tools PUBLIC
 	${FCGI_LIBRARY}
@@ -151,6 +157,11 @@ target_link_libraries(run_tests PUBLIC
 	${CURL_LIBRARIES}
 	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
 target_link_libraries(server PUBLIC
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+target_link_libraries(scraper PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}

@@ -151,11 +151,21 @@ fi
 bootstrap_script_server=$(cat <<EOF
 #!/bin/bash
 set -euo pipefail
+ulimit -n 104857
 ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf nice -n -20 ./lib/$PKG_LD --library-path ./lib ./bin/server
 EOF
 )
 
+bootstrap_script_scraper=$(cat <<EOF
+#!/bin/bash
+set -euo pipefail
+ulimit -n 104857
+ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf nice -n -20 ./lib/$PKG_LD --library-path ./lib ./bin/scraper
+EOF
+)
+
 cp "$PKG_BIN_PATH/server" "$PKG_DIR/bin"
+cp "$PKG_BIN_PATH/scraper" "$PKG_DIR/bin"
 cp "$PKG_BIN_PATH/../scripts/bootstrap_node_2drives.sh" "$PKG_DIR/"
 cp "$PKG_BIN_PATH/../scripts/truncate.sh" "$PKG_DIR/"
 cp "$PKG_BIN_PATH/../scripts/update.sh" "$PKG_DIR/"
@@ -163,7 +173,9 @@ chmod +x "$PKG_DIR/bootstrap_node_2drives.sh"
 chmod +x "$PKG_DIR/truncate.sh"
 chmod +x "$PKG_DIR/update.sh"
 echo -e "$bootstrap_script_server" > "$PKG_DIR/server"
+echo -e "$bootstrap_script_scraper" > "$PKG_DIR/scraper"
 chmod +x "$PKG_DIR/server"
+chmod +x "$PKG_DIR/scraper"
 # some shenanigans to create the right layout in the zip file without extraneous directories
 pushd "$PKG_DIR" > /dev/null
 zip --symlinks --recurse-paths "$PKG_BIN_FILENAME".zip -- *

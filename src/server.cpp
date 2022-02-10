@@ -77,11 +77,9 @@ int main(int argc, const char **argv) {
 
 		//Worker::start_urlstore_server();
 
-		//cout << "starting download server" << endl;
-		//Worker::start_download_server();
-		Worker::start_scraper_server();
-		Worker::wait_for_scraper_server();
-		//Worker::start_server();
+		cout << "starting download server" << endl;
+		Worker::start_download_server();
+		Worker::start_server();
 
 	} else if (argc == 1 && !FullText::is_indexed()) {
 

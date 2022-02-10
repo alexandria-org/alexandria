@@ -60,12 +60,17 @@ namespace Scraper {
 	}
 
 	void stats::start_count(size_t urls_in_queue) {
+		m_lock.lock();
 		m_unfinished_scrapers = 0;
 		m_unfinished_scraped_urls = 0;
 		m_unfinished_scraped_urls_non200 = 0;
 		m_unfinished_scraped_errors = 0;
 		m_urls_in_queue = urls_in_queue;
 		m_urls_assigned = 0;
+	}
+
+	void stats::end_count() {
+		m_lock.unlock();
 	}
 
 	void stats::count_finished(const scraper &scraper) {
@@ -93,6 +98,7 @@ namespace Scraper {
 	}
 
 	void stats::log_report(size_t dt) {
+		m_lock.lock();
 		std::stringstream ss;
 		ss.precision(2);
 		ss << endl;
@@ -106,6 +112,7 @@ namespace Scraper {
 		ss << m_finished_scrapers << " finished scrapers" << endl;
 		ss << m_unfinished_scrapers << " unfinished scrapers" << endl;
 		ss << m_num_blocked << " blocked scrapers" << endl;
+		m_lock.unlock();
 		LOG_INFO(ss.str());
 	}
 
@@ -374,7 +381,7 @@ namespace Scraper {
 			data.m_has_https = m_num_https > 0;
 			data.m_has_www = m_num_www > 0;
 
-			UrlStore::set(data);
+			m_store->add_domain_data(data);
 		}
 	}
 
@@ -383,7 +390,7 @@ namespace Scraper {
 		data.m_domain = m_domain;
 		data.m_robots = robots_content;
 
-		UrlStore::set(data);
+		m_store->add_robots_data(data);
 	}
 
 	URL scraper::filter_url(const URL &url) {
@@ -496,6 +503,7 @@ namespace Scraper {
 						iter++;
 					}
 				}
+				stats.end_count();
 				this_thread::sleep_for(1000ms);
 			}
 			urls = unhandled_urls;

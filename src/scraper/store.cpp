@@ -52,6 +52,20 @@ namespace Scraper {
 		upload_url_datas();
 	}
 
+	void store::add_domain_data(const UrlStore::DomainData &data) {
+		m_lock.lock();
+		m_domain_datas.push_back(data);
+		m_lock.unlock();
+		upload_domain_datas();
+	}
+
+	void store::add_robots_data(const UrlStore::RobotsData &data) {
+		m_lock.lock();
+		m_robots_datas.push_back(data);
+		m_lock.unlock();
+		upload_robots_datas();
+	}
+
 	void store::add_scraper_data(const std::string &line) {
 		m_lock.lock();
 		m_results.push_back(line);
@@ -84,6 +98,30 @@ namespace Scraper {
 			m_lock.unlock();
 			UrlStore::update_many(tmp_datas, UrlStore::update_url | UrlStore::update_redirect | UrlStore::update_http_code |
 					UrlStore::update_last_visited);
+			return;
+		}
+		m_lock.unlock();
+	}
+
+	void store::upload_domain_datas() {
+		m_lock.lock();
+		if (m_domain_datas.size() > 1000) {
+			vector<UrlStore::DomainData> tmp_datas;
+			tmp_datas.swap(m_domain_datas);
+			m_lock.unlock();
+			UrlStore::update_many(tmp_datas, UrlStore::update_has_https | UrlStore::update_has_www);
+			return;
+		}
+		m_lock.unlock();
+	}
+
+	void store::upload_robots_datas() {
+		m_lock.lock();
+		if (m_robots_datas.size() > 1000) {
+			vector<UrlStore::RobotsData> tmp_datas;
+			tmp_datas.swap(m_robots_datas);
+			m_lock.unlock();
+			UrlStore::update_many(tmp_datas, UrlStore::update_robots);
 			return;
 		}
 		m_lock.unlock();
@@ -144,26 +182,35 @@ namespace Scraper {
 		return m_results.back();
 	}
 
+	void store::try_upload_until_complete(const string &path, const string &data) {
+
+		size_t retry_num = 1;
+		while (Transfer::upload_gz_file(path, data) == Transfer::ERROR) {
+			LOG_INFO("Error uploading file " + path + " retry no " + to_string(retry_num++));
+			std::this_thread::sleep_for(std::chrono::seconds(30));
+		}
+	}
+
 	void store::internal_upload_results(const string &all_results, const string &all_link_results) {
 		const string thread_hash = to_string(System::thread_id());
 		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(System::cur_datetime()) + "-" +
 			to_string(m_file_index++) + ".warc.gz";
-		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
-		Transfer::upload_gz_file(Warc::get_link_result_path(warc_path), all_link_results);
+		try_upload_until_complete(Warc::get_result_path(warc_path), all_results);
+		try_upload_until_complete(Warc::get_link_result_path(warc_path), all_link_results);
 	}
 
 	void store::internal_upload_non_200_results(const string &all_results) {
 		const string thread_hash = to_string(System::thread_id());
 		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + thread_hash + "-" + to_string(System::cur_datetime()) +
 			"-" + to_string(m_file_index++) + ".warc.gz";
-		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
+		try_upload_until_complete(Warc::get_result_path(warc_path), all_results);
 	}
 
 	void store::internal_upload_curl_errors(const string &all_results) {
 		const string thread_hash = to_string(System::thread_id());
 		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/curl-errors/" + thread_hash + "-" + to_string(System::cur_datetime()) +
 			"-" + to_string(m_file_index++) + ".warc.gz";
-		Transfer::upload_gz_file(Warc::get_result_path(warc_path), all_results);
+		try_upload_until_complete(Warc::get_result_path(warc_path), all_results);
 	}
 
 }

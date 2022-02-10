@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "scraper/Scraper.h"
+#include "scraper/scraper.h"
 #include <queue>
 #include <vector>
 

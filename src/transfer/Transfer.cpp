@@ -372,6 +372,8 @@ namespace Transfer {
 			const string url = "http://" + Config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 30L);
 
 			struct curl_string_read_struct arg;
 			arg.buffer = data.c_str();
@@ -404,6 +406,8 @@ namespace Transfer {
 			const string url = "http://" + Config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 30L);
 
 			stringstream ss(data);
 			boost::iostreams::filtering_istream compress_stream;
@@ -530,6 +534,8 @@ namespace Transfer {
 		Response response = {.body = "", .code = 0};
 		if (curl) {
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 30L);
 
 			struct curl_string_read_struct arg;
 			arg.buffer = data.c_str();

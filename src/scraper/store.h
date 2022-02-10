@@ -26,6 +26,8 @@
 
 #include "urlstore/UrlStore.h"
 #include "urlstore/UrlData.h"
+#include "urlstore/DomainData.h"
+#include "urlstore/RobotsData.h"
 
 namespace Scraper {
 
@@ -38,11 +40,15 @@ namespace Scraper {
 			~store();
 
 			void add_url_data(const UrlStore::UrlData &data);
+			void add_domain_data(const UrlStore::DomainData &data);
+			void add_robots_data(const UrlStore::RobotsData &data);
 			void add_scraper_data(const std::string &line);
 			void add_non_200_scraper_data(const std::string &line);
 			void add_link_data(const std::string &links);
 			void add_curl_error(const std::string &line);
 			void upload_url_datas();
+			void upload_domain_datas();
+			void upload_robots_datas();
 			void upload_results();
 			void upload_non_200_results();
 			void upload_curl_errors();
@@ -51,6 +57,8 @@ namespace Scraper {
 		private:
 			std::mutex m_lock;
 			std::vector<UrlStore::UrlData> m_url_datas;
+			std::vector<UrlStore::DomainData> m_domain_datas;
+			std::vector<UrlStore::RobotsData> m_robots_datas;
 			std::vector<std::string> m_results;
 			std::vector<std::string> m_non_200_results;
 			std::vector<std::string> m_link_results;
@@ -60,6 +68,7 @@ namespace Scraper {
 			size_t m_non_200_upload_limit = 10000;
 			size_t m_curl_errors_upload_limit = 10000;
 
+			void try_upload_until_complete(const std::string &path, const std::string &data);
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);
 			void internal_upload_non_200_results(const std::string &all_results);
 			void internal_upload_curl_errors(const std::string &all_results);

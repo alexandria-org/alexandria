@@ -111,6 +111,7 @@ namespace Scraper {
 			~stats();
 			void start_thread(size_t timeout);
 			void start_count(size_t urls_in_queue);
+			void end_count();
 			void count_finished(const scraper &scraper);
 			void count_unfinished(const scraper &scraper);
 
@@ -129,6 +130,7 @@ namespace Scraper {
 			size_t m_urls_in_queue = 0;
 			size_t m_urls_assigned = 0;
 			bool m_running = true;
+			std::mutex m_lock;
 
 			void run();
 			void log_report(size_t dt);
