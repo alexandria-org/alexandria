@@ -52,7 +52,7 @@ namespace Scraper {
 			void push_url(const URL &url);
 			void run();
 			void start_thread();
-			bool finished() { return m_finished; };
+			bool finished() const { return m_finished; };
 			bool started() { return m_started; }
 			std::string domain() { return m_domain; }
 			size_t num_scraped() const { return m_num_200; }
@@ -109,6 +109,7 @@ namespace Scraper {
 		public:
 			stats();
 			~stats();
+			void gather_statistics(const std::map<std::string, std::unique_ptr<scraper>> &scrapers, size_t urls_in_queue);
 			void start_thread(size_t timeout);
 			void start_count(size_t urls_in_queue);
 			void end_count();

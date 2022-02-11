@@ -52,6 +52,18 @@ namespace Scraper {
 		if (m_thread.joinable()) m_thread.join();
 	}
 
+	void stats::gather_statistics(const map<string, unique_ptr<scraper>> &scrapers, size_t urls_in_queue) {
+		start_count(urls_in_queue);
+		for (const auto &iter : scrapers) {
+			if (iter.second->finished()) {
+				count_finished(*(iter.second));
+			} else {
+				count_unfinished(*(iter.second));
+			}
+		}
+		end_count();
+	}
+
 	void stats::start_thread(size_t timeout) {
 		m_timeout = timeout;
 		m_thread = std::move(thread([this]() {
@@ -491,21 +503,19 @@ namespace Scraper {
 				}
 			}
 			
-			// Wait for at least 50% of the scrapers to finish.
+			// Wait for some scrapers to finish before we assign new scrapers again.
 			while (scrapers.size() > max_scrapers * 0.8) {
-				stats.start_count(urls.size());
+				stats.gather_statistics(scrapers, urls.size());
 				for (auto iter = scrapers.begin(); iter != scrapers.end(); ) {
 					if (iter->second->finished()) {
-						stats.count_finished(*(iter->second));
 						iter = scrapers.erase(iter);
 					} else {
-						stats.count_unfinished(*(iter->second));
 						iter++;
 					}
 				}
-				stats.end_count();
 				this_thread::sleep_for(1000ms);
 			}
+			stats.gather_statistics(scrapers, urls.size());
 			urls = unhandled_urls;
 
 			// Check for new urls and append them.
