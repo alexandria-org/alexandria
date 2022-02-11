@@ -55,6 +55,7 @@ BOOST_AUTO_TEST_CASE(scraper) {
 
 BOOST_AUTO_TEST_CASE(scraper_multithreaded) {
 
+	return;
 
 	vector<string> urls = {
 		/*"http://omnible.se/",
