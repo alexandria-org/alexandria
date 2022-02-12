@@ -164,8 +164,17 @@ ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf nice -n -20 ./lib/$PKG_
 EOF
 )
 
+bootstrap_script_indexer=$(cat <<EOF
+#!/bin/bash
+set -euo pipefail
+ulimit -n 104857
+ALEXANDRIA_LIVE=1 ALEXANDRIA_CONFIG=/etc/alexandria.conf ./lib/$PKG_LD --library-path ./lib ./bin/indexer \$@
+EOF
+)
+
 cp "$PKG_BIN_PATH/server" "$PKG_DIR/bin"
 cp "$PKG_BIN_PATH/scraper" "$PKG_DIR/bin"
+cp "$PKG_BIN_PATH/indexer" "$PKG_DIR/bin"
 cp "$PKG_BIN_PATH/../scripts/bootstrap_node_2drives.sh" "$PKG_DIR/"
 cp "$PKG_BIN_PATH/../scripts/truncate.sh" "$PKG_DIR/"
 cp "$PKG_BIN_PATH/../scripts/update.sh" "$PKG_DIR/"
@@ -174,8 +183,10 @@ chmod +x "$PKG_DIR/truncate.sh"
 chmod +x "$PKG_DIR/update.sh"
 echo -e "$bootstrap_script_server" > "$PKG_DIR/server"
 echo -e "$bootstrap_script_scraper" > "$PKG_DIR/scraper"
+echo -e "$bootstrap_script_indexer" > "$PKG_DIR/indexer"
 chmod +x "$PKG_DIR/server"
 chmod +x "$PKG_DIR/scraper"
+chmod +x "$PKG_DIR/indexer"
 # some shenanigans to create the right layout in the zip file without extraneous directories
 pushd "$PKG_DIR" > /dev/null
 zip --symlinks --recurse-paths "$PKG_BIN_FILENAME".zip -- *

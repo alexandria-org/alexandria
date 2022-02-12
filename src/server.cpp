@@ -96,8 +96,6 @@ int main(int argc, const char **argv) {
 		HashTableHelper::optimize(shards);
 		HashTableHelper::delete_shard_builders(shards);
 
-	} else if (arg == "index") {
-		FullText::index_all_batches("main_index", "main_index", status);
 	} else if (arg == "link") {
 
 		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
