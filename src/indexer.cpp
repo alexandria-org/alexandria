@@ -28,12 +28,31 @@
 #include "config.h"
 #include "full_text/FullText.h"
 #include "system/Logger.h"
+#include "tools/Splitter.h"
+#include "tools/Counter.h"
+#include "tools/Download.h"
+#include "tools/CalculateHarmonic.h"
+#include "tools/generate_url_lists.h"
+#include "parser/URL.h"
+#include "api/Worker.h"
+#include <iostream>
+#include <set>
+#include "urlstore/UrlStore.h"
 
 using namespace std;
+
+void help() {
+	cout << "Usage: ./tools [OPTION]..." << endl;
+	cout << "--split run splitter" << endl;
+	cout << "--harmonic-hosts create file /tmp/hosts.txt with hosts for harmonic centrality" << endl;
+	cout << "--harmonic-links create file /tmp/edges.txt for edges for harmonic centrality" << endl;
+	cout << "--harmonic calculates harmonic centrality" << endl;
+}
 
 int main(int argc, const char **argv) {
 
 	Logger::start_logger_thread();
+	Logger::verbose(true);
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
@@ -41,10 +60,46 @@ int main(int argc, const char **argv) {
 		Config::read_config("/etc/alexandria.conf");
 	}
 
+	if (argc < 2) {
+		help();
+		return 0;
+	}
+
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "index") {
+	if (arg == "--index") {
 		FullText::index_all_batches("main_index", "main_index");
+	} else if (arg == "--split") {
+		Tools::run_splitter();
+	} else if (arg == "--count") {
+		Tools::run_counter();
+	} else if (arg == "--count-links") {
+		Tools::count_all_links();
+	} else if (arg == "--make-urls" && argc > 2) {
+		Tools::generate_url_lists(argv[2]);
+	} else if (arg == "--urlstore") {
+		Worker::start_urlstore_server();
+		Worker::wait_for_urlstore_server();
+	} else if (arg == "--split-with-links") {
+		Tools::run_splitter_with_links();
+	} else if (arg == "--download-batch") {
+		Tools::download_batch(string(argv[2]));
+	} else if (arg == "--prepare-batch") {
+		Tools::prepare_batch(stoull(string(argv[2])));
+	} else if (arg == "--harmonic-hosts") {
+		Tools::calculate_harmonic_hosts();
+	} else if (arg == "--harmonic-links") {
+		Tools::calculate_harmonic_links();
+	} else if (arg == "--harmonic") {
+		Tools::calculate_harmonic();
+	} else if (arg == "--host-hash") {
+		URL url(argv[2]);
+		cout << url.host_hash() << endl;
+	} else if (arg == "--host-hash-mod") {
+		URL url(argv[2]);
+		cout << url.host_hash() % stoull(argv[3]) << endl;
+	} else {
+		help();
 	}
 
 	Logger::join_logger_thread();

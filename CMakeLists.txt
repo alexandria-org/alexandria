@@ -114,11 +114,6 @@ set(SRC_COMMON
 	"src/text/Text.cpp"
 )
 
-add_executable(tools
-	"src/tools.cpp"
-	${SRC_CLASSES}
-	${SRC_COMMON}
-)
 add_executable(run_tests
 	"tests/main.cpp"
 	${SRC_CLASSES}
@@ -146,17 +141,11 @@ target_compile_definitions(run_tests PUBLIC HT_NUM_SHARDS=16)
 target_compile_definitions(run_tests PUBLIC FILE_SERVER="http://127.0.0.1")
 target_compile_definitions(run_tests PUBLIC COMPILE_WITH_LINK_INDEX)
 
-target_compile_options(tools PUBLIC -Wall -Werror)
 target_compile_options(run_tests PUBLIC -Wall -Werror)
 target_compile_options(server PUBLIC -Wall -Werror)
 target_compile_options(scraper PUBLIC -Wall -Werror)
 target_compile_options(indexer PUBLIC -Wall -Werror)
 
-target_link_libraries(tools PUBLIC
-	${FCGI_LIBRARY}
-	${FCGI_LIBRARYCPP}
-	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
 target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
