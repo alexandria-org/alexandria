@@ -80,6 +80,7 @@ using std::pair;
 #include "robot_parser.h"
 #include "scraper.h"
 #include "datetime.h"
+#include "index_array.h"
 
 void run_before() {
 	Logger::start_logger_thread();
