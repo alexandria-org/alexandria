@@ -104,6 +104,9 @@ set(SRC_CLASSES
 	"src/scraper/scraper.cpp"
 	"src/scraper/store.cpp"
 
+	"src/indexer/level.cpp"
+	"src/indexer/snippet.cpp"
+
 	"deps/robots.cc"
 )
 

@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(snippet) {
 
 	};
 
-	indexer::snippet<record> snippet("mukandengineers.com", "http://mukandengineers.com/", "Employing more than 200");
+	indexer::snippet snippet("mukandengineers.com", "http://mukandengineers.com/", 0, "Employing more than 200");
 	auto tokens = snippet.tokens();
 
 	BOOST_REQUIRE_EQUAL(tokens.size(), 4);
@@ -83,8 +83,8 @@ BOOST_AUTO_TEST_CASE(snippet) {
 	BOOST_CHECK_EQUAL(tokens[2], Hash::str("than"));
 	BOOST_CHECK_EQUAL(tokens[3], Hash::str("200"));
 
-	BOOST_CHECK_EQUAL(snippet.key(indexer::level::domain), Hash::str("mukandengineers.com"));
-	BOOST_CHECK_EQUAL(snippet.key(indexer::level::url), URL("http://mukandengineers.com/").hash());
+	BOOST_CHECK_EQUAL(snippet.domain_hash(), Hash::str("mukandengineers.com"));
+	BOOST_CHECK_EQUAL(snippet.url_hash(), URL("http://mukandengineers.com/").hash());
 }
 
 BOOST_AUTO_TEST_CASE(index_tree) {
@@ -99,11 +99,17 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 	{
 		indexer::index_tree<record> idx_tree;
 
-		idx_tree.add_level(indexer::level::domain);
-		idx_tree.add_level(indexer::level::url);
-		idx_tree.add_level(indexer::level::snippet);
+		indexer::domain_level domain_level;
+		indexer::url_level url_level;
+		indexer::snippet_level snippet_level;
 
-		indexer::snippet<record> snippet("mukandengineers.com", "http://mukandengineers.com/", "Employing more than 200 engineers, the company has undertaken several challenging and prestigious projects across many industries in India and is today known for its skill and reliability in delivering quality services. The company is equipped with a whole range of construction machinery  including mobile cranes, gantry cranes, welding machines, concrete batching plants, transit mixers , electrical test and measuring instruments.");
+		idx_tree.add_level(&domain_level);
+		idx_tree.add_level(&url_level);
+		idx_tree.add_level(&snippet_level);
+
+		idx_tree.truncate();
+
+		indexer::snippet snippet("mukandengineers.com", "http://mukandengineers.com/", 0, "Employing more than 200 engineers, the company has undertaken several challenging and prestigious projects across many industries in India and is today known for its skill and reliability in delivering quality services. The company is equipped with a whole range of construction machinery  including mobile cranes, gantry cranes, welding machines, concrete batching plants, transit mixers , electrical test and measuring instruments.");
 
 		idx_tree.add_snippet(snippet);
 		idx_tree.merge();
@@ -111,7 +117,42 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 		std::vector<record> res = idx_tree.find("Employing more than");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
-		BOOST_CHECK_EQUAL(res[0].m_value, snippet.key(indexer::level::snippet));
+		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(index_files) {
+
+	struct record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
+	{
+		indexer::index_tree<record> idx_tree;
+
+		indexer::domain_level domain_level;
+		indexer::url_level url_level;
+		indexer::snippet_level snippet_level;
+
+		idx_tree.add_level(&domain_level);
+		idx_tree.add_level(&url_level);
+		idx_tree.add_level(&snippet_level);
+
+		idx_tree.truncate();
+
+		indexer::snippet snippet("mukandengineers.com", "http://mukandengineers.com/", 0, "Employing more than 200 engineers, the company has undertaken several challenging and prestigious projects across many industries in India and is today known for its skill and reliability in delivering quality services. The company is equipped with a whole range of construction machinery  including mobile cranes, gantry cranes, welding machines, concrete batching plants, transit mixers , electrical test and measuring instruments.");
+
+		idx_tree.add_snippet(snippet);
+		idx_tree.merge();
+
+		std::vector<record> res = idx_tree.find("Employing more than");
+
+		BOOST_REQUIRE_EQUAL(res.size(), 1);
+		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
 	}
 
 }

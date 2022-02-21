@@ -41,20 +41,23 @@ namespace indexer {
 		index_tree();
 		~index_tree();
 
-		void add_level(level_type lvl);
-		void add_snippet(const snippet<data_record> &s);
+		void add_level(level *lvl);
+		void add_snippet(const snippet &s);
 		void merge();
+		void truncate();
 
 		std::vector<data_record> find(const string &query);
 
 	private:
 
-		std::vector<level_type> m_levels;
-		std::map<level_type, std::map<size_t, std::shared_ptr<index_builder<data_record>>>> m_indexes;
+		std::vector<level *> m_levels;
 
 		std::shared_ptr<index_builder<data_record>> get_builder_at_level(level_type lvl, size_t key);
 		std::vector<data_record> find_recursive(const string &query, size_t level_num, const std::vector<size_t> &keys);
 		std::vector<data_record> intersection(const vector<vector<data_record>> &input);
+
+		void create_directories(level_type lvl);
+		void delete_directories(level_type lvl);
 
 	};
 
@@ -67,31 +70,30 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_tree<data_record>::add_level(level_type lvl) {
+	void index_tree<data_record>::add_level(level *lvl) {
+		create_directories(lvl->get_type());
 		m_levels.push_back(lvl);
 	}
 
 	template<typename data_record>
-	void index_tree<data_record>::add_snippet(const snippet<data_record> &s) {
-		size_t last_key = 0;
-		for (level_type &lvl : m_levels) {
-			auto builder = get_builder_at_level(lvl, last_key);
-			
-			size_t key = s.key(lvl);
-			last_key = key;
-			for (size_t &token : s.tokens()) {
-				builder->add(token, data_record{.m_value = key, .m_score = 0.0f});
-			}
+	void index_tree<data_record>::add_snippet(const snippet &s) {
+		for (level *lvl : m_levels) {
+			lvl->add_snippet(s);
 		}
 	}
 
 	template<typename data_record>
 	void index_tree<data_record>::merge() {
-		for (auto &iter : m_indexes) {
-			for (auto &iter : iter.second) {
-				iter.second->append();
-				iter.second->merge();
-			}
+		for (level *lvl : m_levels) {
+			lvl->merge();
+		}
+	}
+
+	template<typename data_record>
+	void index_tree<data_record>::truncate() {
+		for (level *lvl : m_levels) {
+			delete_directories(lvl->get_type());
+			create_directories(lvl->get_type());
 		}
 	}
 
@@ -101,28 +103,21 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::shared_ptr<index_builder<data_record>> index_tree<data_record>::get_builder_at_level(level_type lvl, size_t key) {
-		if (m_indexes[lvl].count(key) == 0) {
-			// Allocate builder
-			m_indexes[lvl][key] = std::make_shared<index_builder<data_record>>(std::to_string(lvl), key);
-		}
-		return m_indexes[lvl][key];
-	}
-
-	template<typename data_record>
 	std::vector<data_record> index_tree<data_record>::find_recursive(const string &query, size_t level_num, const std::vector<size_t> &keys) {
 		
 		std::vector<std::string> words = Text::get_full_text_words(query);
 
 		std::vector<data_record> all_results;
 		for (size_t key : keys) {
-			index<data_record> idx(std::to_string(m_levels[level_num]), key);
+			index<data_record> idx(level_to_str(m_levels[level_num]->get_type()), key);
 
 			std::vector<std::vector<data_record>> results;
 			for (const string &word : words) {
-				results.push_back(idx.find(Hash::str(word)));
+				size_t token = Hash::str(word);
+				results.push_back(idx.find(token));
 			}
 			std::vector<data_record> intersected = intersection(results);
+			std::cout << "level: " << level_num << " found: " << intersected.size() << " keys" << std::endl;
 			all_results.insert(all_results.end(), intersected.begin(), intersected.end());
 		}
 		
@@ -184,6 +179,20 @@ namespace indexer {
 		}
 
 		return intersection;
+	}
+
+	template<typename data_record>
+	void index_tree<data_record>::create_directories(level_type lvl) {
+		for (size_t i = 0; i < 8; i++) {
+			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+		}
+	}
+
+	template<typename data_record>
+	void index_tree<data_record>::delete_directories(level_type lvl) {
+		for (size_t i = 0; i < 8; i++) {
+			boost::filesystem::remove_all("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+		}
 	}
 
 }

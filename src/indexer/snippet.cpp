@@ -24,35 +24,39 @@
  * SOFTWARE.
  */
 
-#pragma once
-
-#include "level.h"
-#include "text/Text.h"
-#include "parser/URL.h"
+#include "snippet.h"
 
 namespace indexer {
 
-	class snippet {
-
-	public:
-
-		snippet(const std::string &domain, const std::string &url, size_t snippet_index, const std::string &text);
-		~snippet();
-
-        std::vector<size_t> tokens() const;
-        size_t key(level_type lvl) const;
-		size_t domain_hash() const;
-		size_t url_hash() const;
-		size_t snippet_hash() const;
-
-	private:
-
-		std::string m_text;
-		std::string m_domain;
-		URL m_url;
-		size_t m_snippet_index;
+	snippet::snippet(const std::string &domain, const std::string &url, size_t snippet_index, const std::string &text)
+	: m_text(text), m_domain(domain), m_url(url), m_snippet_index(snippet_index) {
 		
-		
-	};
+	}
+
+	snippet::~snippet() {
+	}
+
+	std::vector<size_t> snippet::tokens() const {
+		std::vector<std::string> words = Text::get_full_text_words(m_text);
+		std::vector<size_t> tokens;
+		for (const std::string &word : words) {
+			tokens.push_back(Hash::str(word));
+		}
+		return tokens;
+	}
+
+	size_t snippet::domain_hash() const {
+		return Hash::str(m_domain);
+	}
+
+	size_t snippet::url_hash() const {
+		return m_url.hash();
+	}
+
+	size_t snippet::snippet_hash() const {
+		size_t url_hash = this->url_hash();
+		size_t snippet_hash = (url_hash << 10) + m_snippet_index;
+		return snippet_hash;
+	}
 
 }

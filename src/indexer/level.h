@@ -26,11 +26,73 @@
 
 #pragma once
 
+#include <iostream>
+#include <memory>
+#include <map>
+#include <vector>
+#include "snippet.h"
+#include "index_builder.h"
+
 namespace indexer {
-	typedef size_t level_type;
-	namespace level {
-		const level_type domain = 101;
-		const level_type url = 102;
-		const level_type snippet = 103;
-	}
+
+	class snippet;
+	enum class level_type { domain = 101, url = 102, snippet = 103};
+
+	std::string level_to_str(level_type lvl);
+
+	class level {
+		public:
+		virtual level_type get_type() const = 0;
+		virtual void add_snippet(const snippet &s) = 0;
+		virtual void merge() = 0;
+	};
+
+	struct domain_record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
+	class domain_level: public level {
+		private:
+		std::shared_ptr<index_builder<domain_record>> m_builder;
+		public:
+		domain_level();
+		level_type get_type() const;
+		void add_snippet(const snippet &s);
+		void merge();
+	};
+
+	struct url_record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
+	class url_level: public level {
+		private:
+		std::map<size_t, std::shared_ptr<index_builder<url_record>>> m_builders;
+		public:
+		level_type get_type() const;
+		void add_snippet(const snippet &s);
+		void merge();
+	};
+
+	struct snippet_record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
+	class snippet_level: public level {
+		private:
+		std::map<size_t, std::shared_ptr<index_builder<snippet_record>>> m_builders;
+		public:
+		level_type get_type() const;
+		void add_snippet(const snippet &s);
+		void merge();
+	};
 }

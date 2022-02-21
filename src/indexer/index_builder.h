@@ -26,6 +26,15 @@
 
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <map>
+#include <cstring>
+#include <cassert>
+#include <boost/filesystem.hpp>
+#include "config.h"
+#include "system/Logger.h"
+
 namespace indexer {
 
 	template<typename data_record>
@@ -75,6 +84,7 @@ namespace indexer {
 		std::string key_cache_filename() const;
 		std::string key_filename() const;
 		std::string target_filename() const;
+		void create_directories();
 
 	};
 
@@ -134,7 +144,7 @@ namespace indexer {
 	*/
 	template<typename data_record>
 	void index_builder<data_record>::truncate() {
-
+		create_directories();
 		truncate_cache_files();
 
 		std::ofstream target_writer(target_filename(), std::ios::trunc);
@@ -353,7 +363,7 @@ namespace indexer {
 
 		reset_key_file(key_writer);
 
-		std::unordered_map<uint64_t, std::vector<uint64_t>> pages;
+		std::map<uint64_t, std::vector<uint64_t>> pages;
 		for (auto &iter : m_cache) {
 			pages[iter.first % Config::shard_hash_table_size].push_back(iter.first);
 		}
@@ -479,22 +489,29 @@ namespace indexer {
 
 	template<typename data_record>
 	std::string index_builder<data_record>::cache_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) + ".cache";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".cache";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::key_cache_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) +".cache.keys";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +".cache.keys";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) + ".keys";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".keys";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::target_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) + ".data";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::create_directories() {
+		for (size_t i = 0; i < 8; i++) {
+			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
+		}
 	}
 
 }

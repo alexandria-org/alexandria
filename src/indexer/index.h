@@ -139,12 +139,12 @@ namespace indexer {
 
 	template<typename data_record>
 	std::string index<data_record>::filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) + ".data";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
 	}
 
 	template<typename data_record>
 	std::string index<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "_" + std::to_string(m_id) + ".keys";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".keys";
 	}
 
 }
