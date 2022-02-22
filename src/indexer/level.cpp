@@ -61,6 +61,7 @@ namespace indexer {
 			bool all_equal = true;
 			data_record value = input[shortest_vector_position][positions[shortest_vector_position]];
 
+			float score_sum = 0.0f;
 			size_t iter_index = 0;
 			for (const vector<data_record> &vec : input) {
 				const size_t len = vec.size();
@@ -68,6 +69,9 @@ namespace indexer {
 				size_t *pos = &(positions[iter_index]);
 				while (*pos < len && value.m_value > vec[*pos].m_value) {
 					(*pos)++;
+				}
+				if (*pos < len && value.m_value == vec[*pos].m_value) {
+					score_sum += vec[*pos].m_score;
 				}
 				if (((*pos < len) && (value.m_value < vec[*pos].m_value)) || *pos >= len) {
 					all_equal = false;
@@ -78,7 +82,7 @@ namespace indexer {
 			if (all_equal) {
 				intersection.emplace_back(generic_record{
 					.m_value = input[shortest_vector_position][positions[shortest_vector_position]].m_value,
-					.m_score = input[shortest_vector_position][positions[shortest_vector_position]].m_score
+					.m_score = score_sum / input.size()
 				});
 			}
 

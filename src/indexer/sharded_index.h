@@ -26,48 +26,48 @@
 
 #pragma once
 
-#include <memory>
-#include "index_builder.h"
 #include "index.h"
-#include "sharded_index_builder.h"
-#include "sharded_index.h"
-#include "level.h"
-#include "snippet.h"
 
 namespace indexer {
 
-	struct link_record {
-		uint64_t m_value;
-		float m_score;
-		uint64_t m_source_domain;
-		uint64_t m_target_hash;
-	};
-
-	class index_tree {
+	template<typename data_record>
+	class sharded_index {
 
 	public:
 
-		index_tree();
-		~index_tree();
+		sharded_index(const std::string &db_name, size_t num_shards);
+		sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size);
+		~sharded_index();
 
-		void add_level(level *lvl);
-		void add_snippet(const snippet &s);
-		void merge();
-		void truncate();
-
-		std::vector<generic_record> find(const std::string &query);
+		std::vector<data_record> find(uint64_t key) const;
 
 	private:
 
-		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
-		std::unique_ptr<sharded_index<link_record>> m_link_index;
-		std::vector<level *> m_levels;
-
-		std::vector<generic_record> find_recursive(const std::string &query, size_t level_num, const std::vector<size_t> &keys);
-
-		void create_directories(level_type lvl);
-		void delete_directories(level_type lvl);
-
+		std::vector<std::shared_ptr<index<data_record>>> m_shards;
+		
 	};
+
+	template<typename data_record>
+	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards) {
+		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
+			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id));
+		}
+	}
+
+	template<typename data_record>
+	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size) {
+		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
+			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id, hash_table_size));
+		}
+	}
+
+	template<typename data_record>
+	sharded_index<data_record>::~sharded_index() {
+	}
+
+	template<typename data_record>
+	std::vector<data_record> sharded_index<data_record>::find(uint64_t key) const {
+		return m_shards[key % m_shards.size()]->find(key);
+	}
 
 }

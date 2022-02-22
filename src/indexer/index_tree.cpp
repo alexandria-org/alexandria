@@ -31,6 +31,8 @@ using namespace std;
 namespace indexer {
 
 	index_tree::index_tree() {
+		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 1024);
+		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 1024);
 	}
 
 	index_tree::~index_tree() {

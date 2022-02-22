@@ -26,6 +26,8 @@
 
 #include "indexer/index_builder.h"
 #include "indexer/index.h"
+#include "indexer/sharded_index_builder.h"
+#include "indexer/sharded_index.h"
 #include "indexer/snippet.h"
 #include "indexer/index_tree.h"
 #include "parser/URL.h"
@@ -61,6 +63,40 @@ BOOST_AUTO_TEST_CASE(index) {
 		// Results are sorted by value.
 		BOOST_CHECK_EQUAL(res[0].m_value, 1);
 		BOOST_CHECK_EQUAL(res[1].m_value, 2);
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(sharded_index) {
+
+	struct record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
+	/*
+	 * This is the simplest form. We can create an index and add records to it. Then search for the keys.
+	 * */
+	{
+		indexer::sharded_index_builder<record> idx("sharded_index", 10);
+		idx.truncate();
+
+		for (size_t i = 0; i < 1000; i++) {
+			idx.add(i, record{.m_value = i, .m_score = 0.2f});
+		}
+
+		idx.append();
+		idx.merge();
+	}
+
+	{
+		indexer::sharded_index<record> idx("sharded_index", 10);
+		std::vector<record> res = idx.find(123);
+		// Results are sorted by value.
+		BOOST_REQUIRE_EQUAL(res.size(), 1);
+		BOOST_CHECK_EQUAL(res[0].m_value, 123);
 	}
 
 }

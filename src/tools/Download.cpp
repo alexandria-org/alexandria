@@ -42,6 +42,8 @@ using namespace std;
 
 namespace Tools {
 
+	const size_t max_num_batches = 24;
+
 	vector<string> download_batch(const string &batch) {
 
 		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -113,8 +115,7 @@ namespace Tools {
 
 		LOG_INFO("url_set.size() == " + to_string(url_set.size()));
 
-		vector<vector<string>> file_names(Config::nodes_in_cluster);
-		vector<vector<string>> cache(Config::nodes_in_cluster);
+		vector<vector<string>> cache(max_num_batches);
 		for (const string &warc_path : warc_paths) {
 			ifstream infile(warc_path);
 
@@ -123,12 +124,12 @@ namespace Tools {
 				const URL url(line.substr(0, line.find("\t")));
 
 				if (url_set.count(url.hash())) {
-					const size_t node_id = FullText::url_to_node(url);
+					const size_t node_id = url.host_hash() % max_num_batches;
 					cache[node_id].push_back(line);
 				}
 			}
 
-			for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
+			for (size_t node_id = 0; node_id < max_num_batches; node_id++) {
 				if (cache[node_id].size() > max_cache_size) {
 					const string cache_data = boost::algorithm::join(cache[node_id], "\n");
 					cache[node_id].clear();
@@ -136,7 +137,7 @@ namespace Tools {
 				}
 			}
 		}
-		for (size_t node_id = 0; node_id < Config::nodes_in_cluster; node_id++) {
+		for (size_t node_id = 0; node_id < max_num_batches; node_id++) {
 			if (cache[node_id].size() > 0) {
 				const string cache_data = boost::algorithm::join(cache[node_id], "\n");
 				cache[node_id].clear();
