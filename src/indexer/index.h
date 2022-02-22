@@ -34,6 +34,7 @@ namespace indexer {
 	public:
 
 		index(const std::string &db_name, size_t id);
+		index(const std::string &db_name, size_t id, size_t hash_table_size);
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
@@ -42,6 +43,7 @@ namespace indexer {
 
 		std::string m_db_name;
 		size_t m_id;
+		const size_t m_hash_table_size;
 
 		size_t read_key_pos(std::ifstream &reader, uint64_t key) const;
 		std::string mountpoint() const;
@@ -52,7 +54,12 @@ namespace indexer {
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size) {
+	}
+
+	template<typename data_record>
+	index<data_record>::index(const std::string &db_name, size_t id, size_t hash_table_size)
+	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
 	}
 
 	template<typename data_record>
@@ -120,7 +127,9 @@ namespace indexer {
 	template<typename data_record>
 	size_t index<data_record>::read_key_pos(std::ifstream &reader, uint64_t key) const {
 
-		const size_t hash_pos = key % Config::shard_hash_table_size;
+		if (m_hash_table_size == 0) return 0;
+
+		const size_t hash_pos = key % m_hash_table_size;
 
 		std::ifstream key_reader(key_filename(), std::ios::binary);
 

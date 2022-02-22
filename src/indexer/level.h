@@ -32,6 +32,7 @@
 #include <vector>
 #include "snippet.h"
 #include "index_builder.h"
+#include "index.h"
 
 namespace indexer {
 
@@ -40,11 +41,26 @@ namespace indexer {
 
 	std::string level_to_str(level_type lvl);
 
+	struct generic_record {
+
+		uint64_t m_value;
+		float m_score;
+
+	};
+
 	class level {
 		public:
 		virtual level_type get_type() const = 0;
 		virtual void add_snippet(const snippet &s) = 0;
 		virtual void merge() = 0;
+		virtual std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys) = 0;
+
+		protected:
+		template<typename data_record>
+		std::vector<generic_record> intersection(const std::vector<std::vector<data_record>> &input) const;
+
+		template<typename data_record>
+		void sort_and_get_top_results(std::vector<data_record> &input, size_t num_results) const;
 	};
 
 	struct domain_record {
@@ -62,6 +78,7 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void merge();
+		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 
 	struct url_record {
@@ -78,6 +95,7 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void merge();
+		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 
 	struct snippet_record {
@@ -94,5 +112,6 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void merge();
+		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 }

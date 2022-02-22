@@ -32,6 +32,8 @@
 
 namespace indexer {
 
+	enum class level_type;
+
 	class snippet {
 
 	public:

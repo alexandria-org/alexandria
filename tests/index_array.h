@@ -89,15 +89,8 @@ BOOST_AUTO_TEST_CASE(snippet) {
 
 BOOST_AUTO_TEST_CASE(index_tree) {
 
-	struct record {
-
-		uint64_t m_value;
-		float m_score;
-
-	};
-
 	{
-		indexer::index_tree<record> idx_tree;
+		indexer::index_tree idx_tree;
 
 		indexer::domain_level domain_level;
 		indexer::url_level url_level;
@@ -114,7 +107,7 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 		idx_tree.add_snippet(snippet);
 		idx_tree.merge();
 
-		std::vector<record> res = idx_tree.find("Employing more than");
+		std::vector<indexer::generic_record> res = idx_tree.find("Employing more than");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
 		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
@@ -122,17 +115,10 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 
 }
 
-BOOST_AUTO_TEST_CASE(index_files) {
-
-	struct record {
-
-		uint64_t m_value;
-		float m_score;
-
-	};
+BOOST_AUTO_TEST_CASE(index_tree2) {
 
 	{
-		indexer::index_tree<record> idx_tree;
+		indexer::index_tree idx_tree;
 
 		indexer::domain_level domain_level;
 		indexer::url_level url_level;
@@ -144,17 +130,52 @@ BOOST_AUTO_TEST_CASE(index_files) {
 
 		idx_tree.truncate();
 
-		indexer::snippet snippet("mukandengineers.com", "http://mukandengineers.com/", 0, "Employing more than 200 engineers, the company has undertaken several challenging and prestigious projects across many industries in India and is today known for its skill and reliability in delivering quality services. The company is equipped with a whole range of construction machinery  including mobile cranes, gantry cranes, welding machines, concrete batching plants, transit mixers , electrical test and measuring instruments.");
+		indexer::snippet snippet1("example.com", "http://example.com/url1", 0, "This is an example page");
+		indexer::snippet snippet2("example.com", "http://example.com/url2", 0, "This is an example page 2");
+		indexer::snippet snippet3("example.com", "http://example.com/url3", 0, "This is an example page 3");
+		indexer::snippet snippet4("example.com", "http://example.com/url3", 1, "example page");
 
-		idx_tree.add_snippet(snippet);
+		idx_tree.add_snippet(snippet1);
+		idx_tree.add_snippet(snippet2);
+		idx_tree.add_snippet(snippet3);
+		idx_tree.add_snippet(snippet4);
 		idx_tree.merge();
 
-		std::vector<record> res = idx_tree.find("Employing more than");
+		std::vector<indexer::generic_record> res = idx_tree.find("example page 2");
+
+		BOOST_REQUIRE_EQUAL(res.size(), 1);
+		BOOST_CHECK_EQUAL(res[0].m_value, snippet2.snippet_hash());
+
+		std::vector<indexer::generic_record> res2 = idx_tree.find("example page");
+
+		BOOST_REQUIRE_EQUAL(res2.size(), 4);
+	}
+
+}
+
+/*BOOST_AUTO_TEST_CASE(index_files) {
+
+	{
+		indexer::index_tree idx_tree;
+
+		indexer::domain_level domain_level;
+		indexer::url_level url_level;
+		indexer::snippet_level snippet_level;
+
+		idx_tree.add_level(&domain_level);
+		idx_tree.add_level(&url_level);
+		idx_tree.add_level(&snippet_level);
+
+		idx_tree.truncate();
+
+		//idx_tree.index_file("crawl-data/CC-MAIN-2021-49-BIG/segments/1637964358469.34/warc/CC-MAIN-20211128043743-20211128073743-00000.gz");
+
+		std::vector<indexer::generic_record> res = idx_tree.find("Employing more than");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
 		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
 	}
 
-}
+}*/
 
 BOOST_AUTO_TEST_SUITE_END()

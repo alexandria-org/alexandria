@@ -39,10 +39,14 @@ namespace indexer {
 
 	template<typename data_record>
 	class index_builder {
-
+	private:
+		// Non copyable
+		index_builder(const index_builder &);
+		index_builder& operator=(const index_builder &);
 	public:
 
 		index_builder(const std::string &db_name, size_t id);
+		index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
@@ -52,6 +56,7 @@ namespace indexer {
 
 		void truncate();
 		void truncate_cache_files();
+		void create_directories();
 
 	private:
 
@@ -61,6 +66,7 @@ namespace indexer {
 		const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 		const size_t m_max_num_keys = 10000;
 		const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
+		const size_t m_hash_table_size;
 		char *m_buffer;
 
 		// Caches
@@ -75,6 +81,7 @@ namespace indexer {
 		void save_file();
 		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
 		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
+		bool use_key_file() const;
 		void reset_key_file(std::ofstream &key_writer);
 		void order_sections_by_value(std::vector<data_record> &results) const;
 		void sort_cache();
@@ -84,13 +91,17 @@ namespace indexer {
 		std::string key_cache_filename() const;
 		std::string key_filename() const;
 		std::string target_filename() const;
-		void create_directories();
 
 	};
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size) {
+	}
+
+	template<typename data_record>
+	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
+	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
 	}
 
 	template<typename data_record>
@@ -164,6 +175,13 @@ namespace indexer {
 
 		std::ofstream key_writer(key_cache_filename(), std::ios::trunc);
 		key_writer.close();
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::create_directories() {
+		for (size_t i = 0; i < 8; i++) {
+			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
+		}
 	}
 
 	template<typename data_record>
@@ -356,30 +374,43 @@ namespace indexer {
 			throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
 		}
 
-		std::ofstream key_writer(key_filename(), std::ios::binary | std::ios::trunc);
-		if (!key_writer.is_open()) {
-			throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
-		}
+		const bool open_keyfile = use_key_file();
 
-		reset_key_file(key_writer);
+		std::ofstream key_writer;
+		if (open_keyfile) {
+			key_writer.open(key_filename(), std::ios::binary | std::ios::trunc);
+			if (!key_writer.is_open()) {
+				throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
+			}
+
+			reset_key_file(key_writer);
+		}
 
 		std::map<uint64_t, std::vector<uint64_t>> pages;
 		for (auto &iter : m_cache) {
-			pages[iter.first % Config::shard_hash_table_size].push_back(iter.first);
+			if (m_hash_table_size) {
+				pages[iter.first % m_hash_table_size].push_back(iter.first);
+			} else {
+				pages[0].push_back(iter.first);
+			}
 		}
 
 		for (const auto &iter : pages) {
 			const size_t page_pos = write_page(writer, iter.second);
 			writer.flush();
-			write_key(key_writer, iter.first, page_pos);
+			if (open_keyfile) {
+				write_key(key_writer, iter.first, page_pos);
+			}
 		}
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
-		assert(key < Config::shard_hash_table_size);
-		key_writer.seekp(key * sizeof(uint64_t));
-		key_writer.write((char *)&page_pos, sizeof(size_t));
+		if (m_hash_table_size > 0) {
+			assert(key < m_hash_table_size);
+			key_writer.seekp(key * sizeof(uint64_t));
+			key_writer.write((char *)&page_pos, sizeof(size_t));
+		}
 	}
 
 	/*
@@ -425,10 +456,15 @@ namespace indexer {
 	}
 
 	template<typename data_record>
+	bool index_builder<data_record>::use_key_file() const {
+		return m_hash_table_size > 0;
+	}
+
+	template<typename data_record>
 	void index_builder<data_record>::reset_key_file(std::ofstream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
-		for (size_t i = 0; i < Config::shard_hash_table_size; i++) {
+		for (size_t i = 0; i < m_hash_table_size; i++) {
 			key_writer.write((char *)&data, sizeof(uint64_t));
 		}
 	}
@@ -505,13 +541,6 @@ namespace indexer {
 	template<typename data_record>
 	std::string index_builder<data_record>::target_filename() const {
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::create_directories() {
-		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
-		}
 	}
 
 }

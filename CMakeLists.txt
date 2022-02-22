@@ -106,6 +106,7 @@ set(SRC_CLASSES
 
 	"src/indexer/level.cpp"
 	"src/indexer/snippet.cpp"
+	"src/indexer/index_tree.cpp"
 
 	"deps/robots.cc"
 )
