@@ -433,7 +433,7 @@ namespace Worker {
 	void start_urlstore_server() {
 
 		urlstore_server_thread = std::move(thread(start_urlstore_workers));
-		this_thread::sleep_for(300ms); // Wait for the threads to start...
+		this_thread::sleep_for(500ms); // Wait for the threads to start...
 	}
 
 	void wait_for_urlstore_server() {
