@@ -81,6 +81,7 @@ using std::pair;
 #include "scraper.h"
 #include "datetime.h"
 #include "index_array.h"
+#include "local_system.h"
 
 void run_before() {
 	Logger::start_logger_thread();

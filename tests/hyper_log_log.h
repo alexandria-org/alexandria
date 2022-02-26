@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(hyper_inserts) {
 		for (size_t i = 0; i < interval; i++) {
 			hl.insert(i);
 		}
-		BOOST_CHECK(std::abs((int)hl.size() - (int)interval) < interval * 3 * hl.error_bound());
+		BOOST_CHECK(std::abs((int)hl.size() - (int)interval) < interval * hl.error_bound());
 	}
 
 }
@@ -88,7 +88,31 @@ BOOST_AUTO_TEST_CASE(hyper_union) {
 	}
 
 	Algorithm::HyperLogLog<uint32_t> hl3 = hl1 + hl2;
-	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * 3 * hl3.error_bound());
+	BOOST_CHECK(std::abs((int)hl3.size() - 500000) < 500000 * hl3.error_bound());
+}
+
+BOOST_AUTO_TEST_CASE(hyper_log_log_data_copy) {
+	Algorithm::HyperLogLog<uint32_t> hl1;
+
+	for (size_t i = 0; i < 250000; i++) {
+		hl1.insert(i);
+	}
+
+	Algorithm::HyperLogLog<uint32_t> hl2(hl1.data());
+
+	BOOST_CHECK(std::abs((int)hl2.size() - 250000) < 250000 * hl1.error_bound());
+
+	std::vector<size_t> sizes = {25000, 50000, 75000, 100000, 200000, 300000, 400000};
+
+	srand(100);
+	for (size_t size : sizes) {
+		Algorithm::HyperLogLog<size_t> hll;
+		for (size_t i = 0; i < size; i++) {
+			size_t rnd = (((size_t)rand()) << 32) | ((size_t)rand());
+			hll.insert(rnd);
+		}
+		BOOST_CHECK(std::abs((int)hll.size() - (int)size) < size * hl1.error_bound());
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

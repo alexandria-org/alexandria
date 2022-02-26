@@ -8,6 +8,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(alexandria LANGUAGES CXX)
 
+add_definitions(-Wfatal-errors)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 add_subdirectory("deps/leveldb")
@@ -82,6 +84,8 @@ set(SRC_CLASSES
 	"src/system/SubSystem.cpp"
 	"src/system/Logger.cpp"
 	"src/system/datetime.cpp"
+
+	"src/local_system/memory.cpp"
 
 	"src/sort/Sort.cpp"
 

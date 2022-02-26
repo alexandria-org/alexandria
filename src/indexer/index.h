@@ -38,28 +38,40 @@ namespace indexer {
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
+		std::vector<data_record> find(uint64_t key, size_t &total_found) const;
+
+		/*
+		 * Returns inverse document frequency (idf) for the last search.
+		 * */
+		float get_idf(size_t documents_with_term) const;
+		size_t get_document_count() const { return m_unique_count; }
 
 	private:
 
 		std::string m_db_name;
 		size_t m_id;
 		const size_t m_hash_table_size;
+		size_t m_unique_count = 0;
 
-		size_t read_key_pos(std::ifstream &reader, uint64_t key) const;
+		size_t read_key_pos(uint64_t key) const;
+		void read_meta();
 		std::string mountpoint() const;
 		std::string filename() const;
 		std::string key_filename() const;
+		std::string meta_filename() const;
 		
 	};
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size) {
+		read_meta();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
+		read_meta();
 	}
 
 	template<typename data_record>
@@ -68,16 +80,21 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find(uint64_t key) const {
+		size_t total;
+		return find(key, total);
+	}
 
-		std::ifstream reader(filename(), std::ios::binary);
+	template<typename data_record>
+	std::vector<data_record> index<data_record>::find(uint64_t key, size_t &total_found) const {
 
-		size_t key_pos = read_key_pos(reader, key);
+		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {
 			return {};
 		}
 
 		// Read page.
+		std::ifstream reader(filename(), std::ios::binary);
 		reader.seekg(key_pos);
 		size_t num_keys;
 		reader.read((char *)&num_keys, sizeof(size_t));
@@ -109,7 +126,7 @@ namespace indexer {
 
 		reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, std::ios::beg);
 		reader.read(buffer, 8);
-		//size_t total_num_results = *((size_t *)(&buffer[0]));
+		total_found = *((size_t *)(&buffer[0]));
 
 		reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, std::ios::beg);
 
@@ -121,11 +138,22 @@ namespace indexer {
 		return ret;
 	}
 
+	template<typename data_record>
+	float index<data_record>::get_idf(size_t documents_with_term) const {
+		if (documents_with_term) {
+			const size_t documents_in_corpus = m_unique_count;
+			float idf = log((float)documents_in_corpus / documents_with_term);
+			return idf;
+		}
+
+		return 0.0f;
+	}
+
 	/*
 	 * Reads the exact position of the key, returns SIZE_MAX if the key was not found.
 	 * */
 	template<typename data_record>
-	size_t index<data_record>::read_key_pos(std::ifstream &reader, uint64_t key) const {
+	size_t index<data_record>::read_key_pos(uint64_t key) const {
 
 		if (m_hash_table_size == 0) return 0;
 
@@ -141,6 +169,26 @@ namespace indexer {
 		return pos;
 	}
 
+	/*
+	 * Reads the count of unique recprds from the count file and puts it in the m_unique_count member.
+	 * */
+	template<typename data_record>
+	void index<data_record>::read_meta() {
+		struct meta {
+			size_t unique_count;
+		};
+
+		meta m;
+
+		std::ifstream meta_reader(meta_filename(), std::ios::binary);
+
+		if (meta_reader.is_open()) {
+			meta_reader.read((char *)(&m), sizeof(meta));
+		}
+
+		m_unique_count = m.unique_count;
+	}
+
 	template<typename data_record>
 	std::string index<data_record>::mountpoint() const {
 		return std::to_string(m_id % 8);
@@ -154,6 +202,11 @@ namespace indexer {
 	template<typename data_record>
 	std::string index<data_record>::key_filename() const {
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".keys";
+	}
+
+	template<typename data_record>
+	std::string index<data_record>::meta_filename() const {
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
 	}
 
 }
