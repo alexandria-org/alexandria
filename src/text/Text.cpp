@@ -208,4 +208,31 @@ namespace Text {
 		return get_words_without_stopwords(str, 0);
 	}
 
+	std::map<std::string, size_t> get_word_counts(const string &text) {
+		vector<string> words = get_full_text_words(text);
+		map<string, size_t> counts;
+		for (const string &word : words) {
+			counts[word]++;
+		}
+
+		return counts;
+	}
+
+	std::map<std::string, float> get_word_frequency(const string &text) {
+		vector<string> words = get_full_text_words(text);
+		map<string, size_t> counts;
+		size_t total = 0;
+		for (const string &word : words) {
+			counts[word]++;
+			total++;
+		}
+
+		map<string, float> freq;
+		for (const auto &iter : counts) {
+			freq[iter.first] = (float)iter.second / total;
+		}
+
+		return freq;
+	}
+
 }

@@ -80,10 +80,10 @@ namespace indexer {
 				iter_index++;
 			}
 			if (all_equal) {
-				intersection.emplace_back(generic_record{
-					.m_value = input[shortest_vector_position][positions[shortest_vector_position]].m_value,
-					.m_score = score_sum / input.size()
-				});
+				intersection.emplace_back(generic_record(
+					input[shortest_vector_position][positions[shortest_vector_position]].m_value,
+					score_sum / input.size()
+					));
 			}
 
 			positions[shortest_vector_position]++;
@@ -112,7 +112,46 @@ namespace indexer {
 
 	void domain_level::add_snippet(const snippet &s) {
 		for (size_t token : s.tokens()) {
-			m_builder->add(token, domain_record{.m_value = s.domain_hash()});
+			m_builder->add(token, domain_record(s.domain_hash()));
+		}
+	}
+
+	void domain_level::add_document(size_t id, const string &doc) {
+		std::vector<std::string> words = Text::get_full_text_words(doc);
+		for (std::string &word : words) {
+			m_builder->add(Hash::str(word), domain_record(id));
+		}
+	}
+
+	void domain_level::add_index_file(const std::string &local_path) {
+
+		const vector<size_t> cols = {1, 2, 3, 4};
+		const vector<float> scores = {10.0, 3.0, 2.0, 1};
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			if (col_values[0] == "http://abookaholicread.blogspot.com/2012/11/book-review-lucid-by-adrienne-stolz-and.html") {
+				URL url(col_values[0]);
+
+				//uint64_t domain_hash = url.host_hash();
+
+				const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+				cout << site_colon << endl;
+
+				map<string, float> word_freq = Text::get_word_frequency(col_values[4]);
+
+				for (const auto &iter : word_freq) {
+					cout << iter.first << " => " << iter.second << endl;
+				}
+				//vector<string> words = Text::get_full_text_words(col_values[4]);
+
+			}
+
+			
 		}
 	}
 
@@ -147,8 +186,16 @@ namespace indexer {
 			m_builders[dom_hash] = std::make_shared<index_builder<url_record>>("url", dom_hash);
 		}
 		for (size_t token : s.tokens()) {
-			m_builders[dom_hash]->add(token, url_record{.m_value = s.url_hash()});
+			m_builders[dom_hash]->add(token, url_record(s.url_hash()));
 		}
+	}
+
+	void url_level::add_document(size_t id, const string &doc) {
+		
+	}
+
+	void url_level::add_index_file(const std::string &local_path) {
+
 	}
 
 	void url_level::merge() {
@@ -187,8 +234,15 @@ namespace indexer {
 			m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
 		}
 		for (size_t token : s.tokens()) {
-			m_builders[url_hash]->add(token, snippet_record{.m_value = s.snippet_hash()});
+			m_builders[url_hash]->add(token, snippet_record(s.snippet_hash()));
 		}
+	}
+
+	void snippet_level::add_document(size_t id, const string &doc) {
+	}
+
+	void snippet_level::add_index_file(const std::string &local_path) {
+
 	}
 
 	void snippet_level::merge() {

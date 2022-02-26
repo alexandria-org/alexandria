@@ -41,7 +41,7 @@ echo "server {
 		fastcgi_param  SERVER_NAME        \$server_name;
 	}
 }
-" > /etc/nginx/sites-available/default
+" > /etc/nginx/sites-enabled/default
 
 echo "Downloading test data";
 ./download-test-data.sh /var/www/html

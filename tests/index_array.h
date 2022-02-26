@@ -30,36 +30,30 @@
 #include "indexer/sharded_index.h"
 #include "indexer/snippet.h"
 #include "indexer/index_tree.h"
+#include "algorithm/HyperLogLog.h"
 #include "parser/URL.h"
 
 BOOST_AUTO_TEST_SUITE(index_array)
 
 BOOST_AUTO_TEST_CASE(index) {
 
-	struct record {
-
-		uint64_t m_value;
-		float m_score;
-
-	};
-
 	/*
 	 * This is the simplest form. We can create an index and add records to it. Then search for the keys.
 	 * */
 	{
-		indexer::index_builder<record> idx("test", 0);
+		indexer::index_builder<indexer::generic_record> idx("test", 0);
 		idx.truncate();
 
-		idx.add(123, record{.m_value = 1, .m_score = 0.2f});
-		idx.add(123, record{.m_value = 2, .m_score = 0.3f});
+		idx.add(123, indexer::generic_record(1, 0.2f));
+		idx.add(123, indexer::generic_record(2, 0.3f));
 
 		idx.append();
 		idx.merge();
 	}
 
 	{
-		indexer::index<record> idx("test", 0);
-		std::vector<record> res = idx.find(123);
+		indexer::index<indexer::generic_record> idx("test", 0);
+		std::vector<indexer::generic_record> res = idx.find(123);
 		// Results are sorted by value.
 		BOOST_CHECK_EQUAL(res[0].m_value, 1);
 		BOOST_CHECK_EQUAL(res[1].m_value, 2);
@@ -80,11 +74,11 @@ BOOST_AUTO_TEST_CASE(sharded_index) {
 	 * This is the simplest form. We can create an index and add records to it. Then search for the keys.
 	 * */
 	{
-		indexer::sharded_index_builder<record> idx("sharded_index", 10);
+		indexer::sharded_index_builder<indexer::generic_record> idx("sharded_index", 10);
 		idx.truncate();
 
 		for (size_t i = 0; i < 1000; i++) {
-			idx.add(i, record{.m_value = i, .m_score = 0.2f});
+			idx.add(i, indexer::generic_record(i, 0.2f));
 		}
 
 		idx.append();
@@ -92,8 +86,8 @@ BOOST_AUTO_TEST_CASE(sharded_index) {
 	}
 
 	{
-		indexer::sharded_index<record> idx("sharded_index", 10);
-		std::vector<record> res = idx.find(123);
+		indexer::sharded_index<indexer::generic_record> idx("sharded_index", 10);
+		std::vector<indexer::generic_record> res = idx.find(123);
 		// Results are sorted by value.
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
 		BOOST_CHECK_EQUAL(res[0].m_value, 123);
@@ -101,7 +95,7 @@ BOOST_AUTO_TEST_CASE(sharded_index) {
 
 }
 
-BOOST_AUTO_TEST_CASE(snippet) {
+BOOST_AUTO_TEST_CASE(index_frequency) {
 
 	struct record {
 
@@ -109,6 +103,63 @@ BOOST_AUTO_TEST_CASE(snippet) {
 		float m_score;
 
 	};
+
+	/*
+	 * This is the simplest form. We can create an index and add records to it. Then search for the keys.
+	 * */
+	{
+		indexer::index_builder<indexer::generic_record> idx("test", 0);
+		idx.truncate();
+
+		idx.add(123, indexer::generic_record(1, 0.2f));
+		idx.add(123, indexer::generic_record(2, 0.3f));
+		idx.add(111, indexer::generic_record(2, 0.3f));
+		idx.add(112, indexer::generic_record(2, 0.3f));
+		idx.add(113, indexer::generic_record(3, 0.3f));
+
+		idx.append();
+		idx.merge();
+	}
+
+	{
+		indexer::index<indexer::generic_record> idx("test", 0);
+		size_t total = 0;
+		idx.find(113, total);
+		//float idf = idx.get_idf(total);
+
+		// Results are sorted by value.
+		BOOST_CHECK(idx.get_document_count() == 3);
+		BOOST_CHECK(total == 1);
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(index_frequency_2) {
+
+	indexer::index_tree idx_tree;
+
+	indexer::domain_level domain_level;
+
+	idx_tree.add_level(&domain_level);
+
+	idx_tree.truncate();
+
+	// Testing example from here: https://remykarem.github.io/tfidf-demo/
+	idx_tree.add_document(1, "Air quality in the sunny island improved gradually throughout Wednesday.");
+	idx_tree.add_document(2, "Air quality in Singapore on Wednesday continued to get worse as haze hit the island.");
+	idx_tree.add_document(3, "The air quality in Singapore is monitored through a network of air monitoring stations located in different parts of the island");
+	idx_tree.add_document(4, "The air quality in Singapore got worse on Wednesday.");
+
+	idx_tree.merge();
+
+	std::vector<indexer::generic_record> res = idx_tree.find("Air quality in the sunny island");
+
+	BOOST_REQUIRE(res.size() == 1);
+	BOOST_CHECK(res[0].m_value == 1);
+
+}
+
+BOOST_AUTO_TEST_CASE(snippet) {
 
 	indexer::snippet snippet("mukandengineers.com", "http://mukandengineers.com/", 0, "Employing more than 200");
 	auto tokens = snippet.tokens();
@@ -189,7 +240,7 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 
 }
 
-/*BOOST_AUTO_TEST_CASE(index_files) {
+BOOST_AUTO_TEST_CASE(index_files) {
 
 	{
 		indexer::index_tree idx_tree;
@@ -204,14 +255,18 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 
 		idx_tree.truncate();
 
-		//idx_tree.index_file("crawl-data/CC-MAIN-2021-49-BIG/segments/1637964358469.34/warc/CC-MAIN-20211128043743-20211128073743-00000.gz");
+		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(
+			{string("crawl-data/ALEXANDRIA-TEST-10/test00.gz")}
+		);
+		idx_tree.add_index_file(local_files[0]);
+		Transfer::delete_downloaded_files(local_files);
 
-		std::vector<indexer::generic_record> res = idx_tree.find("Employing more than");
+		std::vector<indexer::generic_record> res = idx_tree.find("main characters are Sloane Margaret Jameson");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
-		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
+		//BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
 	}
 
-}*/
+}
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <random>
+
 #include <iostream>
 #include <signal.h>
 #include "fcgio.h"

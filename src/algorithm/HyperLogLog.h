@@ -46,6 +46,8 @@ namespace Algorithm {
 		public:
 			HyperLogLog();
 			HyperLogLog(const HyperLogLog &other);
+			HyperLogLog(const char *b);
+			HyperLogLog(size_t b);
 			~HyperLogLog();
 			void insert(T v);
 			void insert_hash(size_t x);
@@ -54,6 +56,10 @@ namespace Algorithm {
 			size_t num_zero_registers() const;
 			double error_bound() const;
 
+			const char *data() const { return m_M; };
+			char *data() { return m_M; };
+			size_t data_size() const { return m_len; };
+
 			HyperLogLog operator +(const HyperLogLog &hl) const;
 			HyperLogLog &operator +=(const HyperLogLog &hl);
 			HyperLogLog &operator =(const HyperLogLog &other);
@@ -61,7 +67,7 @@ namespace Algorithm {
 		private:
 			
 			char *m_M; // Points to registers.
-			const int m_b = 10;
+			const int m_b = 15;
 			const size_t m_len = 1ull << m_b; // 2^m_b
 			const double m_alpha = 0.7213/(1.0 + 1.079/m_len);
 			std::hash<std::string> m_hasher;
@@ -78,6 +84,17 @@ namespace Algorithm {
 	HyperLogLog<T>::HyperLogLog(const HyperLogLog<T> &other) {
 		m_M = new char[m_len];
 		memcpy(m_M, other.m_M, m_len);
+	}
+
+	template<typename T>
+	HyperLogLog<T>::HyperLogLog(const char *m) {
+		m_M = new char[m_len];
+		memcpy(m_M, m, m_len);
+	}
+
+	template<typename T>
+	HyperLogLog<T>::HyperLogLog(size_t b)
+	: m_b(20) {
 	}
 
 	template<typename T>
@@ -138,7 +155,8 @@ namespace Algorithm {
 
 	template<typename T>
 	double HyperLogLog<T>::error_bound() const {
-		return 1.04 / sqrt((double)m_len);
+		double stdd = 1.04 / sqrt((double)m_len);
+		return stdd * 3; // Gives 99% confidence
 	}
 
 	template<typename T>

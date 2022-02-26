@@ -24,52 +24,38 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "memory.h"
+#include <iostream>
+#include <fstream>
 
-#include <memory>
-#include "index_builder.h"
-#include "index.h"
-#include "sharded_index_builder.h"
-#include "sharded_index.h"
-#include "level.h"
-#include "snippet.h"
+namespace local_system {
 
-namespace indexer {
+	memory::memory() {
+		update();
+	}
 
-	struct link_record {
-		uint64_t m_value;
-		float m_score;
-		uint64_t m_source_domain;
-		uint64_t m_target_hash;
-	};
+	memory::~memory() {
 
-	class index_tree {
+	}
 
-	public:
-
-		index_tree();
-		~index_tree();
-
-		void add_level(level *lvl);
-		void add_snippet(const snippet &s);
-		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path);
-		void merge();
-		void truncate();
-
-		std::vector<generic_record> find(const std::string &query);
-
-	private:
-
-		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
-		std::unique_ptr<sharded_index<link_record>> m_link_index;
-		std::vector<level *> m_levels;
-
-		std::vector<generic_record> find_recursive(const std::string &query, size_t level_num, const std::vector<size_t> &keys);
-
-		void create_directories(level_type lvl);
-		void delete_directories(level_type lvl);
-
-	};
+	/*
+	 * inspired by https://stackoverflow.com/questions/349889/how-do-you-determine-the-amount-of-linux-system-ram-in-c
+	 * */
+	void memory::update() {
+		std::string token;
+		std::ifstream infile("/proc/meminfo", std::ios::in);
+		if (infile.is_open()) {
+			while (infile >> token) {
+				if (token == "MemAvailable:") {
+					size_t mem;
+					if (infile >> mem) {
+						m_available_memory = mem * 1000;
+					} else {
+						m_available_memory = 0;
+					}
+				}
+			}
+		}
+	}
 
 }

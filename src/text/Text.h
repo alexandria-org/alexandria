@@ -29,6 +29,7 @@
 #define CC_MAX_WORD_LEN 100
 
 #include <vector>
+#include <map>
 #include <iostream>
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -143,5 +144,8 @@ namespace Text {
 			}
 		}
 	}
+
+	std::map<std::string, size_t> get_word_counts(const std::string &text);
+	std::map<std::string, float> get_word_frequency(const std::string &text);
 
 }

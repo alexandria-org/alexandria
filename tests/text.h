@@ -107,4 +107,10 @@ BOOST_AUTO_TEST_CASE(clean_word) {
 
 }
 
+BOOST_AUTO_TEST_CASE(word_freq, * boost::unit_test::tolerance(0.00001)) {
+	auto freq = Text::get_word_frequency("hello my name is josef and it is good");
+	BOOST_TEST(freq["hello"] == 1.0/9.0);
+	BOOST_TEST(freq["is"] == 2.0/9.0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

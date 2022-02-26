@@ -49,6 +49,18 @@ namespace indexer {
 		}
 	}
 
+	void index_tree::add_document(size_t id, const string &doc) {
+		for (level *lvl : m_levels) {
+			lvl->add_document(id, doc);
+		}
+	}
+
+	void index_tree::add_index_file(const string &local_path) {
+		for (level *lvl : m_levels) {
+			lvl->add_index_file(local_path);
+		}
+	}
+
 	void index_tree::merge() {
 		for (level *lvl : m_levels) {
 			lvl->merge();

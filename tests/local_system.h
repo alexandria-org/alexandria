@@ -24,52 +24,14 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "local_system/memory.h"
 
-#include <memory>
-#include "index_builder.h"
-#include "index.h"
-#include "sharded_index_builder.h"
-#include "sharded_index.h"
-#include "level.h"
-#include "snippet.h"
+BOOST_AUTO_TEST_SUITE(local_system)
 
-namespace indexer {
-
-	struct link_record {
-		uint64_t m_value;
-		float m_score;
-		uint64_t m_source_domain;
-		uint64_t m_target_hash;
-	};
-
-	class index_tree {
-
-	public:
-
-		index_tree();
-		~index_tree();
-
-		void add_level(level *lvl);
-		void add_snippet(const snippet &s);
-		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path);
-		void merge();
-		void truncate();
-
-		std::vector<generic_record> find(const std::string &query);
-
-	private:
-
-		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
-		std::unique_ptr<sharded_index<link_record>> m_link_index;
-		std::vector<level *> m_levels;
-
-		std::vector<generic_record> find_recursive(const std::string &query, size_t level_num, const std::vector<size_t> &keys);
-
-		void create_directories(level_type lvl);
-		void delete_directories(level_type lvl);
-
-	};
-
+BOOST_AUTO_TEST_CASE(mem) {
+	local_system::memory mem;
+	size_t available_memory = mem.get_available_memory();
+	std::cout << "available_memory:" << available_memory << std::endl;
 }
+
+BOOST_AUTO_TEST_SUITE_END()

@@ -32,6 +32,7 @@
 #include <cstring>
 #include <cassert>
 #include <boost/filesystem.hpp>
+#include "algorithm/HyperLogLog.h"
 #include "config.h"
 #include "system/Logger.h"
 
@@ -85,12 +86,17 @@ namespace indexer {
 		void reset_key_file(std::ofstream &key_writer);
 		void order_sections_by_value(std::vector<data_record> &results) const;
 		void sort_cache();
+		void sort_record_list(uint64_t key, std::vector<data_record> &records);
+		void count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
+		void read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
+		void save_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
 		std::string key_cache_filename() const;
 		std::string key_filename() const;
 		std::string target_filename() const;
+		std::string meta_filename() const;
 
 	};
 
@@ -143,9 +149,14 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
 
+		std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+
 		read_append_cache();
+		read_meta(hll);
+		count_unique(hll);
 		sort_cache();
 		save_file();
+		save_meta(hll);
 		truncate_cache_files();
 
 	}
@@ -479,42 +490,97 @@ namespace indexer {
 				end = results.size();
 				stop = true;
 			}
-			std::sort(results.begin() + start, results.begin() + end, [](const data_record &a, const data_record &b) {
-				return a.m_value < b.m_value;
-			});
+			std::sort(results.begin() + start, results.begin() + end);
 			if (stop) break;
 		}
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::sort_cache() {
-		const size_t max_results = Config::ft_max_results_per_section * Config::ft_max_sections;
 		for (auto &iter : m_cache) {
-			// Make elements unique.
-			std::sort(iter.second.begin(), iter.second.end(), [](const data_record &a, const data_record &b) {
-				return a.m_value < b.m_value;
-			});
-			auto last = std::unique(iter.second.begin(), iter.second.end(),
-				[](const data_record &a, const data_record &b) {
-				return a.m_value == b.m_value;
-			});
-			iter.second.erase(last, iter.second.end());
+			sort_record_list(iter.first, iter.second);
+		}
+	}
 
-			m_total_results[iter.first] = iter.second.size();
+	template<typename data_record>
+	void index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
+		// Sort records.
+		std::sort(records.begin(), records.end());
 
-			if (iter.second.size() > Config::ft_max_results_per_section) {
-				std::sort(iter.second.begin(), iter.second.end(), [](const data_record &a, const data_record &b) {
-					return a.m_score > b.m_score;
-				});
-
-				// Cap results at the maximum number of results.
-				if (iter.second.size() > max_results) {
-					iter.second.resize(max_results);
-				}
-
-				// Order each section by value.
-				order_sections_by_value(iter.second);
+		// Sum equal elements.
+		for (size_t i = 0, j = 1; i < records.size() && j < records.size(); j++) {
+			if (records[i] != records[j]) {
+				i = j;
+			} else {
+				records[i] += records[j];
 			}
+		}
+
+		// Delete consecutive elements. Only keeping the first.
+		auto last = std::unique(records.begin(), records.end());
+		records.erase(last, records.end());
+
+		m_total_results[key] = records.size();
+
+		const size_t max_results = Config::ft_max_results_per_section * Config::ft_max_sections;
+		if (records.size() > Config::ft_max_results_per_section) {
+			std::sort(records.begin(), records.end(), [](const data_record &a, const data_record &b) {
+				return a.m_score > b.m_score;
+			});
+
+			// Cap results at the maximum number of results.
+			if (records.size() > max_results) {
+				records.resize(max_results);
+			}
+
+			// Order each section by value.
+			order_sections_by_value(records);
+		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+		for (auto &iter : m_cache) {
+
+			// Add to hyper_log_log counter
+			for (const data_record &r : iter.second) {
+				hll->insert(r.m_value);
+			}
+
+		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+
+		struct meta {
+			size_t unique_count;
+		};
+
+		std::ifstream infile(meta_filename(), std::ios::binary);
+
+		if (infile.is_open()) {
+			infile.seekg(sizeof(meta));
+			infile.read(hll->data(), hll->data_size());
+		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::save_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+
+		struct meta {
+			size_t unique_count;
+		};
+
+		meta m;
+
+		m.unique_count = hll->size();
+
+		std::ofstream outfile(meta_filename(), std::ios::binary | std::ios::trunc);
+
+		if (outfile.is_open()) {
+			outfile.write((char *)(&m), sizeof(m));
+			outfile.write(hll->data(), hll->data_size());
 		}
 	}
 
@@ -541,6 +607,11 @@ namespace indexer {
 	template<typename data_record>
 	std::string index_builder<data_record>::target_filename() const {
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+	}
+
+	template<typename data_record>
+	std::string index_builder<data_record>::meta_filename() const {
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
 	}
 
 }
