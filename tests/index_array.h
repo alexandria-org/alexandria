@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "indexer/index_builder.h"
 #include "indexer/index.h"
 #include "indexer/sharded_index_builder.h"
@@ -34,6 +35,48 @@
 #include "parser/URL.h"
 
 BOOST_AUTO_TEST_SUITE(index_array)
+
+BOOST_AUTO_TEST_CASE(index_builder) {
+
+	{
+		// Max 10 results in this index.
+		indexer::index_builder<indexer::generic_record> idx("test", 0, 1000, 10);
+		idx.truncate();
+
+		Algorithm::HyperLogLog<size_t> ss;
+		for (size_t i = 1; i <= 100; i++) {
+			ss.insert(i);
+		}
+
+		BOOST_CHECK(ss.size() == 100);
+
+		for (size_t i = 1; i <= 100; i++) {
+			idx.add(123, indexer::generic_record(i, 0.1f * i));
+			if (i == 50) {
+				idx.append();
+				idx.merge();
+			}
+		}
+
+		idx.append();
+		idx.merge();
+	}
+
+	{
+		indexer::index<indexer::generic_record> idx("test", 0, 1000);
+		size_t total;
+		std::vector<indexer::generic_record> res = idx.find(123, total);
+		// Results are sorted by value.
+		BOOST_REQUIRE_EQUAL(res.size(), 10);
+		BOOST_CHECK_EQUAL(total, 100);
+
+		std::sort(res.begin(), res.end(), [](const indexer::generic_record &a, const indexer::generic_record &b) {
+			return a.m_score > b.m_score;
+		});
+		BOOST_CHECK_EQUAL(res[0].m_value, 100);
+	}
+
+}
 
 BOOST_AUTO_TEST_CASE(index) {
 
@@ -111,25 +154,43 @@ BOOST_AUTO_TEST_CASE(index_frequency) {
 		indexer::index_builder<indexer::generic_record> idx("test", 0);
 		idx.truncate();
 
+		// Document 1
 		idx.add(123, indexer::generic_record(1, 0.2f));
+
+		// Document 2
+		idx.add(123, indexer::generic_record(2, 0.3f));
 		idx.add(123, indexer::generic_record(2, 0.3f));
 		idx.add(111, indexer::generic_record(2, 0.3f));
 		idx.add(112, indexer::generic_record(2, 0.3f));
+
+		// Document 3
 		idx.add(113, indexer::generic_record(3, 0.3f));
 
 		idx.append();
 		idx.merge();
+
+		BOOST_CHECK_EQUAL(idx.document_size(1), 1);
+		BOOST_CHECK_EQUAL(idx.document_size(2), 4);
+		BOOST_CHECK_EQUAL(idx.document_size(3), 1);
+
+		idx.calculate_scores(indexer::algorithm::bm25);
 	}
 
 	{
 		indexer::index<indexer::generic_record> idx("test", 0);
 		size_t total = 0;
 		idx.find(113, total);
-		//float idf = idx.get_idf(total);
 
-		// Results are sorted by value.
 		BOOST_CHECK(idx.get_document_count() == 3);
 		BOOST_CHECK(total == 1);
+
+		std::vector<indexer::generic_record> res = idx.find(123, total);
+		BOOST_CHECK(total == 2);
+		BOOST_REQUIRE(res.size() == 2);
+		BOOST_CHECK(res[0].m_value == 1);
+		BOOST_CHECK(res[0].m_score == 0.2f);
+		BOOST_CHECK(res[1].m_value == 2);
+		BOOST_CHECK(res[1].m_score == 0.6f);
 	}
 
 }
@@ -241,6 +302,8 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 }
 
 BOOST_AUTO_TEST_CASE(index_files) {
+
+	return;
 
 	{
 		indexer::index_tree idx_tree;

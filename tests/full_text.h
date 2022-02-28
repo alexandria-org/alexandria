@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "full_text/FullText.h"
 #include "api/Api.h"
 #include "parser/URL.h"

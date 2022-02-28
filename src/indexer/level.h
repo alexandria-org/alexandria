@@ -51,6 +51,8 @@ namespace indexer {
 		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
 		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
 
+		size_t count() const { return 0; }
+
 		bool operator==(const generic_record &b) const {
 			return m_value == b.m_value;
 		}
@@ -94,7 +96,7 @@ namespace indexer {
 	class domain_record : public generic_record {
 
 		public:
-		float m_count = 1;
+		size_t m_count = 1;
 
 		domain_record operator+(const domain_record &b) const {
 			domain_record sum;
@@ -102,6 +104,12 @@ namespace indexer {
 			sum.m_score = m_score + b.m_score;
 			sum.m_count = m_count + b.m_count;
 			return sum;
+		}
+
+		domain_record &operator+=(const domain_record &b) {
+			m_score += b.m_score;
+			m_count += b.m_count;
+			return *this;
 		}
 
 	};

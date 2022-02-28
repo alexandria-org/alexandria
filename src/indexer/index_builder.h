@@ -38,6 +38,8 @@
 
 namespace indexer {
 
+	enum class algorithm { bm25 = 101 };
+
 	template<typename data_record>
 	class index_builder {
 	private:
@@ -48,6 +50,7 @@ namespace indexer {
 
 		index_builder(const std::string &db_name, size_t id);
 		index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
+		index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
@@ -59,22 +62,38 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
+		size_t document_size(uint64_t document_id) { return m_document_sizes[document_id]; }
+
+		void calculate_scores(algorithm algo);
+
+		void calculate_scores_for_token(algorithm algo, uint64_t token, std::vector<data_record> &records);
+		float calculate_score_for_record(algorithm algo, uint64_t token, const data_record &record);
+		float idf(uint64_t token);
+
 	private:
 
 		std::string m_db_name;
 		const size_t m_id;
+		const size_t m_hash_table_size;
+		const size_t m_max_results;
 
 		const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 		const size_t m_max_num_keys = 10000;
 		const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
-		const size_t m_hash_table_size;
 		char *m_buffer;
 
 		// Caches
 		std::vector<uint64_t> m_keys;
 		std::vector<data_record> m_records;
 		std::map<uint64_t, std::vector<data_record>> m_cache;
-		std::map<uint64_t, size_t> m_total_results;
+		std::map<uint64_t, size_t> m_result_sizes;
+
+
+		// Counters
+		std::map<uint64_t, size_t> m_document_sizes;
+		std::map<uint64_t, std::shared_ptr<Algorithm::HyperLogLog<size_t>>> m_result_counters;
+		float m_avg_document_size = 0.0f;
+		size_t m_unique_document_count = 0;
 
 		void read_append_cache();
 		void read_data_to_cache();
@@ -84,12 +103,14 @@ namespace indexer {
 		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
 		bool use_key_file() const;
 		void reset_key_file(std::ofstream &key_writer);
-		void order_sections_by_value(std::vector<data_record> &results) const;
 		void sort_cache();
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
-		void count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
-		void read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
+		std::shared_ptr<Algorithm::HyperLogLog<size_t>> get_total_counter_for_key(uint64_t key);
+		size_t total_results_for_key(uint64_t key);
+		void count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll);
+		void read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll);
 		void save_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
+		void calculate_avg_document_size();
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
@@ -102,12 +123,17 @@ namespace indexer {
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size), m_max_results(Config::ft_max_results_per_section) {
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(Config::ft_max_results_per_section) {
+	}
+
+	template<typename data_record>
+	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
+	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
 	}
 
 	template<typename data_record>
@@ -151,8 +177,8 @@ namespace indexer {
 
 		std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
 
-		read_append_cache();
 		read_meta(hll);
+		read_append_cache();
 		count_unique(hll);
 		sort_cache();
 		save_file();
@@ -171,6 +197,9 @@ namespace indexer {
 
 		std::ofstream target_writer(target_filename(), std::ios::trunc);
 		target_writer.close();
+
+		std::ofstream meta_writer(meta_filename(), std::ios::trunc);
+		meta_writer.close();
 	}
 
 	/*
@@ -196,10 +225,45 @@ namespace indexer {
 	}
 
 	template<typename data_record>
+	void index_builder<data_record>::calculate_scores(algorithm algo) {
+		read_append_cache();
+
+		for (auto &iter : m_cache) {
+			calculate_scores_for_token(algo, iter.first, iter.second);
+		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::calculate_scores_for_token(algorithm algo, uint64_t token, std::vector<data_record> &records) {
+		for (data_record &record : records) {
+			record.m_score = calculate_score_for_record(algo, token, record);
+		}
+	}
+
+	template<typename data_record>
+	float index_builder<data_record>::calculate_score_for_record(algorithm algo, uint64_t token, const data_record &record) {
+		if (algo == algorithm::bm25) {
+			// reference: https://en.wikipedia.org/wiki/Okapi_BM25
+			const float k1 = 1.2f;
+			const float b = 0.75f;
+			float tf = 0.0f;
+			if (m_document_sizes.count(record.m_value)) tf = record.count() / m_document_sizes[record.m_value];
+			return idf(token) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * (m_document_sizes[record.m_value] / m_avg_document_size)));
+		}
+
+		return record.m_score;
+	}
+
+	template<typename data_record>
+	float index_builder<data_record>::idf(uint64_t token) {
+		// reference: https://en.wikipedia.org/wiki/Okapi_BM25
+		return log(m_unique_document_count - total_results_for_key(token) + 0.5f);
+	}
+
+	template<typename data_record>
 	void index_builder<data_record>::read_append_cache() {
 
 		m_cache.clear();
-		m_total_results.clear();
 
 		// Read the current file.
 		read_data_to_cache();
@@ -248,6 +312,7 @@ namespace indexer {
 			for (size_t i = 0; i < num_records; i++) {
 				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
 				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
+				m_document_sizes[record->m_value]++;
 				m_cache[key].push_back(*record);
 			}
 		}
@@ -263,7 +328,6 @@ namespace indexer {
 	void index_builder<data_record>::read_data_to_cache() {
 
 		m_cache.clear();
-		m_total_results.clear();
 
 		std::ifstream reader(target_filename(), std::ios::binary);
 		if (!reader.is_open()) return;
@@ -325,17 +389,13 @@ namespace indexer {
 		size_t data_size = 0;
 		for (size_t i = 0; i < num_keys; i++) {
 			size_t len = *((size_t *)(&vector_buffer[i*8]));
+			m_result_sizes[keys[i]] = len;
 			lens.push_back(len);
 			data_size += len;
 		}
 
 		// Read the totals.
 		reader.read(vector_buffer, num_keys * 8);
-		for (size_t i = 0; i < num_keys; i++) {
-			size_t total = *((size_t *)(&vector_buffer[i*8]));
-			m_total_results[keys[i]] = total;
-		}
-		delete vector_buffer;
 
 		if (data_size == 0) return true;
 
@@ -449,7 +509,7 @@ namespace indexer {
 			
 			v_pos.push_back(pos);
 			v_len.push_back(len);
-			v_tot.push_back(m_total_results[key]);
+			v_tot.push_back(total_results_for_key(key));
 
 			pos += len;
 		}
@@ -481,21 +541,6 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::order_sections_by_value(std::vector<data_record> &results) const {
-		bool stop = false;
-		for (size_t section = 0; section < Config::ft_max_sections; section++) {
-			const size_t start = section * Config::ft_max_results_per_section;
-			size_t end = start + Config::ft_max_results_per_section;
-			if (end > results.size()) {
-				end = results.size();
-				stop = true;
-			}
-			std::sort(results.begin() + start, results.begin() + end);
-			if (stop) break;
-		}
-	}
-
-	template<typename data_record>
 	void index_builder<data_record>::sort_cache() {
 		for (auto &iter : m_cache) {
 			sort_record_list(iter.first, iter.second);
@@ -520,26 +565,56 @@ namespace indexer {
 		auto last = std::unique(records.begin(), records.end());
 		records.erase(last, records.end());
 
-		m_total_results[key] = records.size();
+		m_result_sizes[key] = records.size();
 
-		const size_t max_results = Config::ft_max_results_per_section * Config::ft_max_sections;
-		if (records.size() > Config::ft_max_results_per_section) {
+		if (records.size() > m_max_results) {
+
+			/*
+				These results should be truncated.
+				Then we need to create a hyper log log object that can keep track of total number of results.
+				This should be OK since the table already takes up a lot of memory, so adding 15K hyper log log
+				registers should not blow up.
+				For example m_max_results should be around 2M long
+			*/
+			auto total_counter = get_total_counter_for_key(key);
+
+			for (const data_record &record : records) {
+				total_counter->insert(record.m_value);
+			}
+
+			// Sort all the records by score, so that we truncate away everything with lowest score.
 			std::sort(records.begin(), records.end(), [](const data_record &a, const data_record &b) {
 				return a.m_score > b.m_score;
 			});
 
-			// Cap results at the maximum number of results.
-			if (records.size() > max_results) {
-				records.resize(max_results);
+			// Truncate everything with low score.
+			if (records.size() > m_max_results) {
+				records.resize(m_max_results);
 			}
 
-			// Order each section by value.
-			order_sections_by_value(records);
+			// Order by value.
+			std::sort(records.begin(), records.end());
 		}
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+	std::shared_ptr<Algorithm::HyperLogLog<size_t>> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
+		if (m_result_counters.count(key) == 0) {
+			m_result_counters[key] = std::make_shared<Algorithm::HyperLogLog<size_t>>();
+		}
+		return m_result_counters[key];
+	}
+
+	template<typename data_record>
+	size_t index_builder<data_record>::total_results_for_key(uint64_t key) {
+		if (m_result_counters.count(key)) {
+			return m_result_counters[key]->size();
+		}
+		return m_result_sizes[key];
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) {
 		for (auto &iter : m_cache) {
 
 			// Add to hyper_log_log counter
@@ -548,10 +623,12 @@ namespace indexer {
 			}
 
 		}
+
+		m_unique_document_count = hll->size();
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+	void index_builder<data_record>::read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) {
 
 		struct meta {
 			size_t unique_count;
@@ -559,9 +636,37 @@ namespace indexer {
 
 		std::ifstream infile(meta_filename(), std::ios::binary);
 
+		infile.seekg(0, std::ios::end);
+		//size_t meta_file_size = infile.tellg();
+
+		m_document_sizes.clear();
+		m_result_counters.clear();
+
 		if (infile.is_open()) {
 			infile.seekg(sizeof(meta));
 			infile.read(hll->data(), hll->data_size());
+
+			size_t num_docs = 0;
+			infile.read((char *)(&num_docs), sizeof(size_t));
+			for (size_t i = 0; i < num_docs; i++) {
+				uint64_t doc_id = 0;
+				size_t count = 0;
+				infile.read((char *)(&doc_id), sizeof(uint64_t));
+				infile.read((char *)(&count), sizeof(size_t));
+				m_document_sizes[doc_id] = count;
+			}
+
+			// Read total counters.
+			size_t num_total_counters = 0;
+			infile.read((char *)(&num_total_counters), sizeof(size_t));
+			for (size_t i = 0; i < num_total_counters; i++) {
+				uint64_t key = 0;
+				std::shared_ptr<Algorithm::HyperLogLog<size_t>> ptr =
+					std::make_shared<Algorithm::HyperLogLog<size_t>>();
+				infile.read((char *)(&key), sizeof(uint64_t));
+				infile.read(ptr->data(), ptr->data_size());
+				m_result_counters[key] = ptr;
+			}
 		}
 	}
 
@@ -581,7 +686,32 @@ namespace indexer {
 		if (outfile.is_open()) {
 			outfile.write((char *)(&m), sizeof(m));
 			outfile.write(hll->data(), hll->data_size());
+
+			// Write document sizes.
+			const size_t num_docs = m_document_sizes.size();
+			outfile.write((char *)(&num_docs), sizeof(size_t));
+			for (const auto &iter : m_document_sizes) {
+				outfile.write((char *)(&iter.first), sizeof(uint64_t));
+				outfile.write((char *)(&iter.second), sizeof(size_t));
+			}
+
+			// Write total counters.
+			const size_t num_total_counters = m_result_counters.size();
+			outfile.write((char *)(&num_total_counters), sizeof(size_t));
+			for (const auto &iter : m_result_counters) {
+				outfile.write((char *)(&iter.first), sizeof(uint64_t));
+				outfile.write(iter.second->data(), iter.second->data_size());
+			}
 		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::calculate_avg_document_size() {
+		size_t total_count = 0;
+		for (const auto &iter : m_document_sizes) {
+			total_count += iter.second;
+		}
+		m_avg_document_size = (float)total_count / m_document_sizes.size();
 	}
 
 	template<typename data_record>
