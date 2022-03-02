@@ -158,6 +158,8 @@ namespace indexer {
 	void domain_level::merge() {
 		m_builder->append();
 		m_builder->merge();
+
+		m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
 	std::vector<generic_record> domain_level::find(const string &query, const std::vector<size_t> &keys) {

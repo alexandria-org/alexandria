@@ -151,20 +151,20 @@ BOOST_AUTO_TEST_CASE(index_frequency) {
 	 * This is the simplest form. We can create an index and add records to it. Then search for the keys.
 	 * */
 	{
-		indexer::index_builder<indexer::generic_record> idx("test", 0);
+		indexer::index_builder<indexer::domain_record> idx("test", 0);
 		idx.truncate();
 
 		// Document 1
-		idx.add(123, indexer::generic_record(1, 0.2f));
+		idx.add(123, indexer::domain_record(1, 0.2f));
 
 		// Document 2
-		idx.add(123, indexer::generic_record(2, 0.3f));
-		idx.add(123, indexer::generic_record(2, 0.3f));
-		idx.add(111, indexer::generic_record(2, 0.3f));
-		idx.add(112, indexer::generic_record(2, 0.3f));
+		idx.add(123, indexer::domain_record(2, 0.3f));
+		idx.add(123, indexer::domain_record(2, 0.3f));
+		idx.add(111, indexer::domain_record(2, 0.3f));
+		idx.add(112, indexer::domain_record(2, 0.3f));
 
 		// Document 3
-		idx.add(113, indexer::generic_record(3, 0.3f));
+		idx.add(113, indexer::domain_record(3, 0.3f));
 
 		idx.append();
 		idx.merge();
@@ -173,24 +173,22 @@ BOOST_AUTO_TEST_CASE(index_frequency) {
 		BOOST_CHECK_EQUAL(idx.document_size(2), 4);
 		BOOST_CHECK_EQUAL(idx.document_size(3), 1);
 
-		idx.calculate_scores(indexer::algorithm::bm25);
+		idx.calculate_scores(indexer::algorithm::tf_idf);
 	}
 
 	{
-		indexer::index<indexer::generic_record> idx("test", 0);
+		indexer::index<indexer::domain_record> idx("test", 0);
 		size_t total = 0;
 		idx.find(113, total);
 
 		BOOST_CHECK(idx.get_document_count() == 3);
 		BOOST_CHECK(total == 1);
 
-		std::vector<indexer::generic_record> res = idx.find(123, total);
+		std::vector<indexer::domain_record> res = idx.find(123, total);
 		BOOST_CHECK(total == 2);
 		BOOST_REQUIRE(res.size() == 2);
 		BOOST_CHECK(res[0].m_value == 1);
-		BOOST_CHECK(res[0].m_score == 0.2f);
-		BOOST_CHECK(res[1].m_value == 2);
-		BOOST_CHECK(res[1].m_score == 0.6f);
+		BOOST_CHECK_EQUAL(res[0].m_score, res[1].m_score * 2);
 	}
 
 }
@@ -213,11 +211,13 @@ BOOST_AUTO_TEST_CASE(index_frequency_2) {
 
 	idx_tree.merge();
 
-	std::vector<indexer::generic_record> res = idx_tree.find("Air quality in the sunny island");
+	std::vector<indexer::generic_record> res = idx_tree.find("Air");
 
-	BOOST_REQUIRE(res.size() == 1);
-	BOOST_CHECK(res[0].m_value == 1);
-
+	BOOST_REQUIRE(res.size() == 4);
+	BOOST_CHECK(res[0].m_value == 4);
+	BOOST_CHECK(res[1].m_value == 1);
+	BOOST_CHECK(res[2].m_value == 3);
+	BOOST_CHECK(res[3].m_value == 2);
 }
 
 BOOST_AUTO_TEST_CASE(snippet) {

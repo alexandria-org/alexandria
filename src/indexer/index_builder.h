@@ -38,7 +38,7 @@
 
 namespace indexer {
 
-	enum class algorithm { bm25 = 101 };
+	enum class algorithm { bm25 = 101, tf_idf = 102};
 
 	template<typename data_record>
 	class index_builder {
@@ -226,11 +226,20 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::calculate_scores(algorithm algo) {
-		read_append_cache();
+
+		m_cache.clear();
+
+		// Read the current file.
+		read_data_to_cache();
+
+		calculate_avg_document_size();
 
 		for (auto &iter : m_cache) {
 			calculate_scores_for_token(algo, iter.first, iter.second);
 		}
+
+		sort_cache();
+		save_file();
 	}
 
 	template<typename data_record>
@@ -247,8 +256,14 @@ namespace indexer {
 			const float k1 = 1.2f;
 			const float b = 0.75f;
 			float tf = 0.0f;
-			if (m_document_sizes.count(record.m_value)) tf = record.count() / m_document_sizes[record.m_value];
-			return idf(token) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * (m_document_sizes[record.m_value] / m_avg_document_size)));
+			if (m_document_sizes.count(record.m_value)) tf = (float)record.count() / m_document_sizes[record.m_value];
+			return idf(token) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * ((float)m_document_sizes[record.m_value] / m_avg_document_size)));
+		}
+		if (algo == algorithm::tf_idf) {
+			// reference: https://en.wikipedia.org/wiki/Tf-idf
+			float tf = 0.0f;
+			if (m_document_sizes.count(record.m_value)) tf = (float)record.count() / m_document_sizes[record.m_value];
+			return tf * log((float)m_unique_document_count / total_results_for_key(token));
 		}
 
 		return record.m_score;
@@ -257,7 +272,9 @@ namespace indexer {
 	template<typename data_record>
 	float index_builder<data_record>::idf(uint64_t token) {
 		// reference: https://en.wikipedia.org/wiki/Okapi_BM25
-		return log(m_unique_document_count - total_results_for_key(token) + 0.5f);
+		float val1 = (m_unique_document_count - total_results_for_key(token) + 0.5f);
+		float val2 = (total_results_for_key(token) + 0.5f);
+		return log((val1 / val2) + 1.0f);
 	}
 
 	template<typename data_record>
@@ -389,7 +406,7 @@ namespace indexer {
 		size_t data_size = 0;
 		for (size_t i = 0; i < num_keys; i++) {
 			size_t len = *((size_t *)(&vector_buffer[i*8]));
-			m_result_sizes[keys[i]] = len;
+			m_result_sizes[keys[i]] = len / sizeof(data_record);
 			lens.push_back(len);
 			data_size += len;
 		}

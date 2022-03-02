@@ -93,10 +93,26 @@ namespace indexer {
 	};
 
 	#pragma pack(4)
-	class domain_record : public generic_record {
+	class domain_record {
 
 		public:
+		uint64_t m_value;
+		float m_score;
 		size_t m_count = 1;
+
+		domain_record() : m_value(0), m_score(0.0f) {};
+		domain_record(uint64_t value) : m_value(value), m_score(0.0f) {};
+		domain_record(uint64_t value, float score) : m_value(value), m_score(score) {};
+
+		bool operator==(const domain_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const domain_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		size_t count() const { return m_count; }
 
 		domain_record operator+(const domain_record &b) const {
 			domain_record sum;
