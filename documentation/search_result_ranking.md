@@ -16,7 +16,12 @@ Input to our indexer is a sequence of deduplicated urls with the following data.
 ```
 
 ## 1. Domain level
-Each url is added with the url hash as key. The tokens are deduplicated
+Each url is added with the url hash as key. The tokens are not deduplicated throughout the domain.
+
+```
+domain_score:
+idf * sum(tf_ + )
+```
 
 ```
 domain_score = expm1(5 * link.m_score) + 0.1;

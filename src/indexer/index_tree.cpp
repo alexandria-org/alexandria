@@ -33,6 +33,7 @@ namespace indexer {
 	index_tree::index_tree() {
 		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 1024);
 		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 1024);
+		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
 	}
 
 	index_tree::~index_tree() {
@@ -57,7 +58,9 @@ namespace indexer {
 
 	void index_tree::add_index_file(const string &local_path) {
 		for (level *lvl : m_levels) {
-			lvl->add_index_file(local_path);
+			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
+				m_hash_table->add(key, value);
+			});
 		}
 	}
 
@@ -65,6 +68,7 @@ namespace indexer {
 		for (level *lvl : m_levels) {
 			lvl->merge();
 		}
+		m_hash_table->merge();
 	}
 
 	void index_tree::truncate() {
@@ -74,13 +78,21 @@ namespace indexer {
 		}
 	}
 
-	std::vector<generic_record> index_tree::find(const string &query) {
-		return find_recursive(query, 0, {0});
+	std::vector<return_record> index_tree::find(const string &query) {
+		std::vector<return_record> res = find_recursive(query, 0, {0});
+
+		// Sort by score.
+		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {
+			return a.m_score > b.m_score;
+		});
+
+		return res;
 	}
 
-	std::vector<generic_record> index_tree::find_recursive(const string &query, size_t level_num, const std::vector<size_t> &keys) {
+	std::vector<return_record> index_tree::find_recursive(const string &query, size_t level_num,
+		const std::vector<size_t> &keys) {
 
-		std::vector<generic_record> all_results = m_levels[level_num]->find(query, keys);
+		std::vector<return_record> all_results = m_levels[level_num]->find(query, keys);
 		
 		if (level_num == m_levels.size() - 1) {
 			// This is the last level, return the results instead of going deeper.
@@ -88,7 +100,7 @@ namespace indexer {
 		}
 		// Go deeper. The m_value of results are keys for the next level...
 		std::vector<size_t> next_level_keys;
-		for (const generic_record &rec : all_results) {
+		for (const return_record &rec : all_results) {
 			next_level_keys.push_back(rec.m_value);
 		}
 		return find_recursive(query, level_num + 1, next_level_keys);

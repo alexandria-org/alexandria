@@ -41,17 +41,22 @@ namespace indexer {
 
 	std::string level_to_str(level_type lvl);
 
+	/*
+	This is the base class for the record stored on disk. Needs to be small!
+	*/
+	#pragma pack(4)
 	class generic_record {
 
 		public:
 		uint64_t m_value;
 		float m_score;
+		uint32_t m_count = 1;
 
 		generic_record() : m_value(0), m_score(0.0f) {};
 		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
 		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
 
-		size_t count() const { return 0; }
+		size_t count() const { return (size_t)m_count; }
 
 		bool operator==(const generic_record &b) const {
 			return m_value == b.m_value;
@@ -65,13 +70,25 @@ namespace indexer {
 			generic_record sum;
 			sum.m_value = m_value;
 			sum.m_score = m_score + b.m_score;
+			sum.m_count = m_count + b.m_count;
 			return sum;
 		}
 
 		generic_record &operator+=(const generic_record &b) {
 			m_score += b.m_score;
+			m_count += b.m_count;
 			return *this;
 		}
+
+	};
+
+	/*
+	This is the returned record from the index_tree. It contains more data than the stored record.
+	*/
+	class return_record : public generic_record {
+
+		public:
+		uint64_t m_url_hash;
 
 	};
 
@@ -80,53 +97,28 @@ namespace indexer {
 		virtual level_type get_type() const = 0;
 		virtual void add_snippet(const snippet &s) = 0;
 		virtual void add_document(size_t id, const std::string &doc) = 0;
-		virtual void add_index_file(const std::string &local_path) = 0;
+		virtual void add_index_file(const std::string &local_path,
+			std::function<void(uint64_t, const std::string &)> callback) = 0;
 		virtual void merge() = 0;
-		virtual std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys) = 0;
+		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys) = 0;
 
 		protected:
 		template<typename data_record>
-		std::vector<generic_record> intersection(const std::vector<std::vector<data_record>> &input) const;
+		std::vector<return_record> intersection(const std::vector<std::vector<data_record>> &input) const;
+
+		template<typename data_record>
+		std::vector<return_record> summed_union(const std::vector<std::vector<data_record>> &input) const;
 
 		template<typename data_record>
 		void sort_and_get_top_results(std::vector<data_record> &input, size_t num_results) const;
 	};
 
-	#pragma pack(4)
-	class domain_record {
+	class domain_record: public generic_record {
 
 		public:
-		uint64_t m_value;
-		float m_score;
-		size_t m_count = 1;
-
-		domain_record() : m_value(0), m_score(0.0f) {};
-		domain_record(uint64_t value) : m_value(value), m_score(0.0f) {};
-		domain_record(uint64_t value, float score) : m_value(value), m_score(score) {};
-
-		bool operator==(const domain_record &b) const {
-			return m_value == b.m_value;
-		}
-
-		bool operator<(const domain_record &b) const {
-			return m_value < b.m_value;
-		}
-
-		size_t count() const { return m_count; }
-
-		domain_record operator+(const domain_record &b) const {
-			domain_record sum;
-			sum.m_value = m_value;
-			sum.m_score = m_score + b.m_score;
-			sum.m_count = m_count + b.m_count;
-			return sum;
-		}
-
-		domain_record &operator+=(const domain_record &b) {
-			m_score += b.m_score;
-			m_count += b.m_count;
-			return *this;
-		}
+		domain_record() : generic_record() {};
+		domain_record(uint64_t value) : generic_record(value) {};
+		domain_record(uint64_t value, float score) : generic_record(value, score) {};
 
 	};
 
@@ -138,9 +130,9 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path);
+		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
 		void merge();
-		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 
 	class url_record : public generic_record {
@@ -154,9 +146,9 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path);
+		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
 		void merge();
-		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 
 	struct snippet_record : public generic_record {
@@ -170,8 +162,8 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path);
+		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
 		void merge();
-		std::vector<generic_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
 	};
 }

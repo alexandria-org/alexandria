@@ -131,6 +131,79 @@ namespace Text {
 		return words;
 	}
 
+	/*
+		This should be the fast way of getting tokens out of a string. It should just read the whole string and
+		store tokens using the str2token hash function.
+	*/
+	vector<uint64_t> get_tokens(const string &str, std::function<uint64_t(std::string)> str2token) {
+		const char *word_boundary = " \t,|!";
+		string cur_token;
+		std::vector<uint64_t> tokens;
+		for (const char &ch : str) {
+			// If is word boundary.
+			if (strchr(word_boundary, ch)) {
+				if (cur_token.size() && Unicode::is_valid(cur_token)) {
+					tokens.push_back(str2token(cur_token));
+				}
+				cur_token.clear();
+			} else {
+				// This if statement trims the token.
+				if (!isspace(ch) && !ispunct(ch)) {
+					cur_token.insert(cur_token.end(), tolower(ch));
+				}
+			}
+		}
+
+		// Remember the last token.
+		if (cur_token.size() && Unicode::is_valid(cur_token)) {
+			tokens.push_back(str2token(cur_token));
+		}
+
+		return tokens;
+	}
+
+	vector<uint64_t> get_tokens(const string &str) {
+		return get_tokens(str, Hash::str);
+	}
+
+	vector<string> get_snippets(const string &str) {
+		const size_t snippet_len = 300;
+		const char *word_boundary = " \t,|!";
+		string cur_snippet;
+		string cur_token;
+		vector<string> snippets;
+		for (const char &ch : str) {
+			// If is word boundary.
+			if (strchr(word_boundary, ch)) {
+				if (cur_token.size() && Unicode::is_valid(cur_token)) {
+					if (cur_snippet.size() + cur_token.size() <= snippet_len) {
+						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
+						cur_snippet.insert(cur_snippet.end(), ' ');
+					} else {
+						trim(cur_snippet);
+						snippets.push_back(cur_snippet);
+						cur_snippet.clear();
+						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
+						cur_snippet.insert(cur_snippet.end(), ' ');
+					}
+				}
+				cur_token.clear();
+			} else {
+				// This if statement trims the token.
+				cur_token.insert(cur_token.end(), ch);
+			}
+		}
+
+		if (cur_token.size() && Unicode::is_valid(cur_token)) {
+			cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
+		}
+
+		trim(cur_snippet);
+		snippets.push_back(cur_snippet);
+
+		return snippets;
+	}
+
 	vector<string> get_full_text_words(const string &str) {
 
 		return get_full_text_words(str, 0);

@@ -35,6 +35,7 @@
 #include "tools/generate_url_lists.h"
 #include "parser/URL.h"
 #include "api/Worker.h"
+#include "indexer/console.h"
 #include <iostream>
 #include <set>
 #include "urlstore/UrlStore.h"
@@ -98,6 +99,8 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--host-hash-mod") {
 		URL url(argv[2]);
 		cout << url.host_hash() % stoull(argv[3]) << endl;
+	} else if (arg == "--console") {
+		indexer::console();
 	} else {
 		help();
 	}
@@ -106,4 +109,3 @@ int main(int argc, const char **argv) {
 
 	return 0;
 }
-

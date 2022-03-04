@@ -24,60 +24,27 @@
  * SOFTWARE.
  */
 
-#include "Dictionary.h"
-#include "system/Logger.h"
-#include "file/TsvFile.h"
-#include "DictionaryRow.h"
+#pragma once
 
-using namespace std;
+#include <iostream>
+#include "HashTableShardBuilder.h"
 
-Dictionary::Dictionary() {
+namespace hash_table {
 
-}
+	class builder {
 
-Dictionary::Dictionary(File::TsvFile &tsv_file) {
-	load_tsv(tsv_file);
-}
+	public:
 
-Dictionary::~Dictionary() {
+		explicit builder(const std::string &db_name);
+		~builder();
 
-}
+		void add(uint64_t key, const std::string &value);
+		void merge();
 
-void Dictionary::load_tsv(File::TsvFile &tsv_file) {
-	while (!tsv_file.eof()) {
-		string line = tsv_file.get_line();
-		stringstream ss(line);
-		string col;
-		getline(ss, col, '\t');
+	private:
 
-		if (col.size()) {
-			size_t key = hash<string>{}(col);
+		std::vector<HashTableShardBuilder *> m_shards;
+		const std::string m_db_name;
 
-			if (m_rows.find(key) != m_rows.end()) {
-				handle_collision(key, col);
-			}
-
-			m_rows[key] = DictionaryRow(ss);
-		}
-	}
-}
-
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::find(const string &key) const {
-	return m_rows.find(hash<string>{}(key));
-}
-
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::begin() const {
-	return m_rows.begin();
-}
-
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::end() const {
-	return m_rows.end();
-}
-
-bool Dictionary::has_key(const string &key) const {
-	return find(key) != end();
-}
-
-void Dictionary::handle_collision(size_t key, const string &col) {
-	LOG_ERROR("Collision: " + to_string(key) + " " + col);
+	};
 }

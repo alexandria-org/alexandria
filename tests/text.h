@@ -35,6 +35,48 @@ BOOST_AUTO_TEST_CASE(get_full_text_words) {
 	}*/
 }
 
+BOOST_AUTO_TEST_CASE(get_tokens) {
+	vector<uint64_t> tokens = Text::get_tokens("My name is Josef Cullhed");
+
+	vector<uint64_t> targets = {
+		Hash::str("my"),
+		Hash::str("name"),
+		Hash::str("is"),
+		Hash::str("josef"),
+		Hash::str("cullhed"),
+	};
+
+	BOOST_CHECK(tokens == targets);
+}
+
+BOOST_AUTO_TEST_CASE(get_tokens2) {
+	vector<uint64_t> tokens = Text::get_tokens("Test. Ing! the    test   +function+");
+
+	vector<uint64_t> targets = {
+		Hash::str("test"),
+		Hash::str("ing"),
+		Hash::str("the"),
+		Hash::str("test"),
+		Hash::str("function"),
+	};
+
+	BOOST_CHECK(tokens == targets);
+}
+
+BOOST_AUTO_TEST_CASE(get_snippets) {
+	{
+		vector<string> snippets = Text::get_snippets("A small text that should fit in one snippet");
+
+		BOOST_REQUIRE(snippets.size() == 1);
+		BOOST_CHECK(snippets[0] == "A small text that should fit in one snippet");
+	}
+	{
+		vector<string> snippets = Text::get_snippets(" The zlib compression library provides in-memory compression and decompression functions, including integrity checks of the uncompressed data. This version of the library supports only one compression method (deflation) but other algorithms will be added later and will have the same stream interface.  Compression can be done in a single step if the buffers are large enough (for example if an input file is mmap'ed), or can be done by repeated calls of the compression function. In the latter case, the application must provide more input and/or consume the output (providing more output space) before each call. ");
+
+		BOOST_REQUIRE(snippets.size() == 3);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
 	vector<string> words = Text::get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\
 		jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih");

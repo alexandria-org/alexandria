@@ -42,6 +42,8 @@ public:
 	explicit Dictionary(File::TsvFile &tsv_file);
 	~Dictionary();
 
+	void load_tsv(File::TsvFile &tsv_file);
+
 	std::unordered_map<size_t, DictionaryRow>::const_iterator find(const std::string &key) const;
 
 	std::unordered_map<size_t, DictionaryRow>::const_iterator begin() const;

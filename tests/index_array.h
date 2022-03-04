@@ -33,6 +33,7 @@
 #include "indexer/index_tree.h"
 #include "algorithm/HyperLogLog.h"
 #include "parser/URL.h"
+#include "transfer/Transfer.h"
 
 BOOST_AUTO_TEST_SUITE(index_array)
 
@@ -211,13 +212,43 @@ BOOST_AUTO_TEST_CASE(index_frequency_2) {
 
 	idx_tree.merge();
 
-	std::vector<indexer::generic_record> res = idx_tree.find("Air");
+	{
+		std::vector<indexer::return_record> res = idx_tree.find("Air");
 
-	BOOST_REQUIRE(res.size() == 4);
-	BOOST_CHECK(res[0].m_value == 4);
-	BOOST_CHECK(res[1].m_value == 1);
-	BOOST_CHECK(res[2].m_value == 3);
-	BOOST_CHECK(res[3].m_value == 2);
+		BOOST_REQUIRE(res.size() == 4);
+		BOOST_CHECK(res[0].m_value == 4);
+		BOOST_CHECK(res[1].m_value == 1);
+		BOOST_CHECK(res[2].m_value == 3);
+		BOOST_CHECK(res[3].m_value == 2);
+	}
+
+	{
+		std::vector<indexer::return_record> res = idx_tree.find("quality");
+
+		BOOST_REQUIRE(res.size() == 4);
+		BOOST_CHECK(res[0].m_value == 4);
+		BOOST_CHECK(res[1].m_value == 1);
+		BOOST_CHECK(res[2].m_value == 2);
+		BOOST_CHECK(res[3].m_value == 3);	
+	}
+
+	{
+		std::vector<indexer::return_record> res = idx_tree.find("wednesday");
+
+		BOOST_REQUIRE(res.size() == 3);
+		BOOST_CHECK(res[0].m_value == 4);
+		BOOST_CHECK(res[1].m_value == 1);
+		BOOST_CHECK(res[2].m_value == 2);	
+	}
+
+	{
+		std::vector<indexer::return_record> res = idx_tree.find("wednesday");
+
+		BOOST_REQUIRE(res.size() == 3);
+		BOOST_CHECK(res[0].m_value == 4);
+		BOOST_CHECK(res[1].m_value == 1);
+		BOOST_CHECK(res[2].m_value == 2);	
+	}
 }
 
 BOOST_AUTO_TEST_CASE(snippet) {
@@ -255,7 +286,7 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 		idx_tree.add_snippet(snippet);
 		idx_tree.merge();
 
-		std::vector<indexer::generic_record> res = idx_tree.find("Employing more than");
+		std::vector<indexer::return_record> res = idx_tree.find("Employing more than");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
 		BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
@@ -289,12 +320,12 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 		idx_tree.add_snippet(snippet4);
 		idx_tree.merge();
 
-		std::vector<indexer::generic_record> res = idx_tree.find("example page 2");
+		std::vector<indexer::return_record> res = idx_tree.find("example page 2");
 
 		BOOST_REQUIRE_EQUAL(res.size(), 1);
 		BOOST_CHECK_EQUAL(res[0].m_value, snippet2.snippet_hash());
 
-		std::vector<indexer::generic_record> res2 = idx_tree.find("example page");
+		std::vector<indexer::return_record> res2 = idx_tree.find("example page");
 
 		BOOST_REQUIRE_EQUAL(res2.size(), 4);
 	}
@@ -302,8 +333,6 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 }
 
 BOOST_AUTO_TEST_CASE(index_files) {
-
-	return;
 
 	{
 		indexer::index_tree idx_tree;
@@ -319,14 +348,23 @@ BOOST_AUTO_TEST_CASE(index_files) {
 		idx_tree.truncate();
 
 		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(
-			{string("crawl-data/ALEXANDRIA-TEST-10/test00.gz")}
+			{std::string("crawl-data/ALEXANDRIA-TEST-10/test00.gz")}
 		);
 		idx_tree.add_index_file(local_files[0]);
 		Transfer::delete_downloaded_files(local_files);
 
-		std::vector<indexer::generic_record> res = idx_tree.find("main characters are Sloane Margaret Jameson");
+		idx_tree.merge();
 
-		BOOST_REQUIRE_EQUAL(res.size(), 1);
+		std::vector<indexer::return_record> res = idx_tree.find("main characters are Sloane Margaret Jameson");
+
+		BOOST_REQUIRE_EQUAL(res.size(), 2);
+
+		HashTable ht("index_tree");
+		const std::string snippet1 = ht.find(res[0].m_value);
+		std::cout << "snippet1: " << snippet1 << std::endl;
+
+		const std::string snippet2 = ht.find(res[1].m_value);
+		std::cout << "snippet2: " << snippet2 << std::endl;
 		//BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
 	}
 

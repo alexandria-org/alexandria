@@ -24,60 +24,33 @@
  * SOFTWARE.
  */
 
-#include "Dictionary.h"
-#include "system/Logger.h"
-#include "file/TsvFile.h"
-#include "DictionaryRow.h"
+#include "builder.h"
+#include "config.h"
 
 using namespace std;
 
-Dictionary::Dictionary() {
+namespace hash_table {
 
-}
-
-Dictionary::Dictionary(File::TsvFile &tsv_file) {
-	load_tsv(tsv_file);
-}
-
-Dictionary::~Dictionary() {
-
-}
-
-void Dictionary::load_tsv(File::TsvFile &tsv_file) {
-	while (!tsv_file.eof()) {
-		string line = tsv_file.get_line();
-		stringstream ss(line);
-		string col;
-		getline(ss, col, '\t');
-
-		if (col.size()) {
-			size_t key = hash<string>{}(col);
-
-			if (m_rows.find(key) != m_rows.end()) {
-				handle_collision(key, col);
-			}
-
-			m_rows[key] = DictionaryRow(ss);
+	builder::builder(const string &db_name)
+	: m_db_name(db_name) {
+		for (size_t i = 0; i < Config::ht_num_shards; i++) {
+			m_shards.push_back(new HashTableShardBuilder(db_name, i));
 		}
 	}
-}
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::find(const string &key) const {
-	return m_rows.find(hash<string>{}(key));
-}
+	builder::~builder() {
+		for (HashTableShardBuilder *shard : m_shards) {
+			delete shard;
+		}
+	}
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::begin() const {
-	return m_rows.begin();
-}
+	void builder::add(uint64_t key, const std::string &value) {
+		m_shards[key % Config::ht_num_shards]->add(key, value);
+	}
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::end() const {
-	return m_rows.end();
-}
-
-bool Dictionary::has_key(const string &key) const {
-	return find(key) != end();
-}
-
-void Dictionary::handle_collision(size_t key, const string &col) {
-	LOG_ERROR("Collision: " + to_string(key) + " " + col);
+	void builder::merge() {
+		for (HashTableShardBuilder *shard : m_shards) {
+			shard->write();
+		}
+	}
 }

@@ -33,6 +33,7 @@
 #include "sharded_index.h"
 #include "level.h"
 #include "snippet.h"
+#include "hash_table/builder.h"
 
 namespace indexer {
 
@@ -57,15 +58,17 @@ namespace indexer {
 		void merge();
 		void truncate();
 
-		std::vector<generic_record> find(const std::string &query);
+		std::vector<return_record> find(const std::string &query);
 
 	private:
 
 		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
 		std::unique_ptr<sharded_index<link_record>> m_link_index;
 		std::vector<level *> m_levels;
+		std::unique_ptr<hash_table::builder> m_hash_table;
 
-		std::vector<generic_record> find_recursive(const std::string &query, size_t level_num, const std::vector<size_t> &keys);
+		std::vector<return_record> find_recursive(const std::string &query, size_t level_num,
+			const std::vector<size_t> &keys);
 
 		void create_directories(level_type lvl);
 		void delete_directories(level_type lvl);

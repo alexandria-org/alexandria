@@ -116,6 +116,11 @@ namespace Text {
 	std::vector<std::string> get_full_text_words(const std::string &str, size_t limit);
 	std::vector<std::string> get_full_text_words(const std::string &str);
 
+	std::vector<uint64_t> get_tokens(const std::string &str, std::function<uint64_t(std::string)> str2token);
+	std::vector<uint64_t> get_tokens(const std::string &str);
+
+	std::vector<std::string> get_snippets(const std::string &str);
+
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 		These functions also expand on blend chars.

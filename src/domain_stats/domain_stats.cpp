@@ -24,60 +24,40 @@
  * SOFTWARE.
  */
 
-#include "Dictionary.h"
+#include "domain_stats.h"
+#include <iostream>
+#include "common/Dictionary.h"
+#include "file/TsvFileRemote.h"
 #include "system/Logger.h"
-#include "file/TsvFile.h"
-#include "DictionaryRow.h"
+#include "system/System.h"
 
 using namespace std;
 
-Dictionary::Dictionary() {
+namespace domain_stats {
 
-}
+	Dictionary domain_data;
 
-Dictionary::Dictionary(File::TsvFile &tsv_file) {
-	load_tsv(tsv_file);
-}
-
-Dictionary::~Dictionary() {
-
-}
-
-void Dictionary::load_tsv(File::TsvFile &tsv_file) {
-	while (!tsv_file.eof()) {
-		string line = tsv_file.get_line();
-		stringstream ss(line);
-		string col;
-		getline(ss, col, '\t');
-
-		if (col.size()) {
-			size_t key = hash<string>{}(col);
-
-			if (m_rows.find(key) != m_rows.end()) {
-				handle_collision(key, col);
-			}
-
-			m_rows[key] = DictionaryRow(ss);
-		}
+	void download_domain_stats() {
+		LOG_INFO("download domain_info.tsv");
+		File::TsvFileRemote domain_info_tsv(System::domain_index_filename());
+		LOG_INFO("parsing.....");
+		domain_data.load_tsv(domain_info_tsv);
 	}
-}
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::find(const string &key) const {
-	return m_rows.find(hash<string>{}(key));
-}
+	float harmonic_centrality(const URL &url) {
+		return harmonic_centrality(url.host_reverse());
+	}
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::begin() const {
-	return m_rows.begin();
-}
+	float harmonic_centrality(const std::string &reverse_host) {
 
-unordered_map<size_t, DictionaryRow>::const_iterator Dictionary::end() const {
-	return m_rows.end();
-}
+		const auto iter = domain_data.find(reverse_host);
 
-bool Dictionary::has_key(const string &key) const {
-	return find(key) != end();
-}
+		float harmonic = 0.0f;
+		if (iter != domain_data.end()) {
+			const DictionaryRow row = iter->second;
+			harmonic = row.get_float(1);
+		}
 
-void Dictionary::handle_collision(size_t key, const string &col) {
-	LOG_ERROR("Collision: " + to_string(key) + " " + col);
+		return harmonic;
+	}
 }

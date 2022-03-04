@@ -38,7 +38,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<generic_record> level::intersection(const vector<vector<data_record>> &input) const {
+	std::vector<return_record> level::intersection(const vector<vector<data_record>> &input) const {
 
 		if (input.size() == 0) return {};
 
@@ -54,7 +54,7 @@ namespace indexer {
 		}
 
 		vector<size_t> positions(input.size(), 0);
-		vector<generic_record> intersection;
+		vector<return_record> intersection;
 
 		while (positions[shortest_vector_position] < shortest_len) {
 
@@ -93,6 +93,29 @@ namespace indexer {
 	}
 
 	template<typename data_record>
+	std::vector<return_record> level::summed_union(const vector<vector<data_record>> &input) const {
+		vector<return_record> records;
+		for (const vector<data_record> &vec : input) {
+			for (const data_record &rec : vec) {
+				records.push_back(return_record(rec.m_value, rec.m_score));
+			}
+		}
+		sort(records.begin(), records.end());
+		// Sum equal elements.
+		for (size_t i = 0, j = 1; i < records.size() && j < records.size(); j++) {
+			if (records[i] != records[j]) {
+				i = j;
+			} else {
+				records[i] += records[j];
+			}
+		}
+		// Delete consecutive elements. Only keeping the first.
+		auto last = std::unique(records.begin(), records.end());
+		records.erase(last, records.end());
+		return records;		
+	}
+
+	template<typename data_record>
 	void level::sort_and_get_top_results(std::vector<data_record> &input, size_t num_results) const {
 		sort(input.begin(), input.end(), [](const data_record &a, const data_record &b) {
 			return a.m_score > b.m_score;
@@ -123,7 +146,8 @@ namespace indexer {
 		}
 	}
 
-	void domain_level::add_index_file(const std::string &local_path) {
+	void domain_level::add_index_file(const std::string &local_path,
+		std::function<void(uint64_t, const std::string &)> callback) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 		const vector<float> scores = {10.0, 3.0, 2.0, 1};
@@ -134,24 +158,18 @@ namespace indexer {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
-			if (col_values[0] == "http://abookaholicread.blogspot.com/2012/11/book-review-lucid-by-adrienne-stolz-and.html") {
-				URL url(col_values[0]);
+			URL url(col_values[0]);
 
-				//uint64_t domain_hash = url.host_hash();
+			uint64_t domain_hash = url.host_hash();
 
-				const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
-				cout << site_colon << endl;
+			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
-				map<string, float> word_freq = Text::get_word_frequency(col_values[4]);
-
-				for (const auto &iter : word_freq) {
-					cout << iter.first << " => " << iter.second << endl;
+			for (size_t col : cols) {
+				vector<string> words = Text::get_full_text_words(col_values[col]);
+				for (const string &word : words) {
+					m_builder->add(Hash::str(word), domain_record(domain_hash));
 				}
-				//vector<string> words = Text::get_full_text_words(col_values[4]);
-
 			}
-
-			
 		}
 	}
 
@@ -162,7 +180,7 @@ namespace indexer {
 		m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
-	std::vector<generic_record> domain_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys) {
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		
 		index<domain_record> idx("domain", 0);
@@ -172,7 +190,7 @@ namespace indexer {
 			size_t token = Hash::str(word);
 			results.push_back(idx.find(token));
 		}
-		std::vector<generic_record> intersected = intersection(results);
+		std::vector<return_record> intersected = intersection(results);
 		sort_and_get_top_results(intersected, 100); // Pick top 100 domains.
 		std::cout << "level: " << "domain" << " found: " << intersected.size() << " keys" << std::endl;
 		return intersected;
@@ -196,20 +214,48 @@ namespace indexer {
 		
 	}
 
-	void url_level::add_index_file(const std::string &local_path) {
+	void url_level::add_index_file(const std::string &local_path,
+		std::function<void(uint64_t, const std::string &)> callback) {
+		const vector<size_t> cols = {1, 2, 3, 4};
 
+		ifstream infile(local_path, ios::in);
+		string line;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+
+			uint64_t domain_hash = url.host_hash();
+			uint64_t url_hash = url.hash();
+
+			callback(url_hash, col_values[0] + "\t" + col_values[1]);
+
+			if (m_builders.count(domain_hash) == 0) {
+				m_builders[domain_hash] = std::make_shared<index_builder<url_record>>("url", domain_hash);
+			}
+
+			for (size_t col : cols) {
+				vector<string> words = Text::get_full_text_words(col_values[col]);
+				for (const string &word : words) {
+					m_builders[domain_hash]->add(Hash::str(word), url_record(url_hash));
+				}
+			}
+		}
 	}
 
 	void url_level::merge() {
 		for (auto &iter : m_builders) {
 			iter.second->append();
 			iter.second->merge();
+
+			iter.second->calculate_scores(algorithm::bm25);
 		}
 	}
 
-	std::vector<generic_record> url_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys) {
 		std::vector<std::string> words = Text::get_full_text_words(query);
-		std::vector<generic_record> all_results;
+		std::vector<return_record> all_results;
 		for (size_t key : keys) {
 			index<url_record> idx("url", key);
 
@@ -218,7 +264,7 @@ namespace indexer {
 				size_t token = Hash::str(word);
 				results.push_back(idx.find(token));
 			}
-			std::vector<generic_record> intersected = intersection(results);
+			std::vector<return_record> intersected = intersection(results);
 			sort_and_get_top_results(intersected, 5); // Pick top 5 urls on each domain.
 			std::cout << "level: " << "url" << " found: " << intersected.size() << " keys" << std::endl;
 			all_results.insert(all_results.end(), intersected.begin(), intersected.end());
@@ -243,20 +289,51 @@ namespace indexer {
 	void snippet_level::add_document(size_t id, const string &doc) {
 	}
 
-	void snippet_level::add_index_file(const std::string &local_path) {
+	void snippet_level::add_index_file(const std::string &local_path,
+		std::function<void(uint64_t, const std::string &)> callback) {
 
+		ifstream infile(local_path, ios::in);
+		string line;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+
+			uint64_t url_hash = url.hash();
+
+			if (m_builders.count(url_hash) == 0) {
+				m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
+			}
+
+			std::vector<std::string> snippets = Text::get_snippets(col_values[4]);
+
+			size_t snippet_idx = 0;
+			for (const std::string &snippet : snippets) {
+				const size_t snippet_hash = (url_hash << 10) | snippet_idx;
+				callback(snippet_hash, snippet);
+				vector<uint64_t> tokens = Text::get_tokens(snippet);
+				for (const uint64_t &token : tokens) {
+					const size_t snippet_hash = (url_hash << 10) | snippet_idx;
+					m_builders[url_hash]->add(token, snippet_record(snippet_hash));
+				}
+				snippet_idx++;
+			}
+		}
 	}
 
 	void snippet_level::merge() {
 		for (auto &iter : m_builders) {
 			iter.second->append();
 			iter.second->merge();
+
+			iter.second->calculate_scores(algorithm::bm25);
 		}
 	}
 
-	std::vector<generic_record> snippet_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys) {
 		std::vector<std::string> words = Text::get_full_text_words(query);
-		std::vector<generic_record> all_results;
+		std::vector<return_record> all_results;
 		for (size_t key : keys) {
 			index<snippet_record> idx("snippet", key, 0);
 
@@ -265,10 +342,15 @@ namespace indexer {
 				size_t token = Hash::str(word);
 				results.push_back(idx.find(token));
 			}
-			std::vector<generic_record> intersected = intersection(results);
-			sort_and_get_top_results(intersected, 2); // Pick top 2 snippets.
-			std::cout << "level: " << "snippet" << " found: " << intersected.size() << " keys" << std::endl;
-			all_results.insert(all_results.end(), intersected.begin(), intersected.end());
+			std::vector<return_record> summed_results = summed_union(results);
+			sort_and_get_top_results(summed_results, 2); // Pick top 2 snippets.
+
+			for (return_record &rec : summed_results) {
+				rec.m_url_hash = key;
+			}
+
+			std::cout << "level: " << "snippet" << " found: " << summed_results.size() << " keys" << std::endl;
+			all_results.insert(all_results.end(), summed_results.begin(), summed_results.end());
 		}
 		return all_results;
 	}

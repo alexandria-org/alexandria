@@ -62,6 +62,7 @@ set(SRC_CLASSES
 	"src/hash_table/HashTableShard.cpp"
 	"src/hash_table/HashTableShardBuilder.cpp"
 	"src/hash_table/HashTableHelper.cpp"
+	"src/hash_table/builder.cpp"
 
 	"src/post_processor/PostProcessor.cpp"
 	
@@ -111,6 +112,9 @@ set(SRC_CLASSES
 	"src/indexer/level.cpp"
 	"src/indexer/snippet.cpp"
 	"src/indexer/index_tree.cpp"
+	"src/indexer/console.cpp"
+
+	"src/domain_stats/domain_stats.cpp"
 
 	"deps/robots.cc"
 )

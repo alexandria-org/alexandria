@@ -26,6 +26,7 @@
 
 #include "config.h"
 #include "text/Text.h"
+#include "system/Logger.h"
 
 using namespace std;
 
@@ -82,7 +83,8 @@ namespace Config {
 		ifstream in(config_file);
 
 		if (!in.is_open()) {
-			throw runtime_error("Could not find config file " + config_file);
+			LOG_ERROR("Could not read config file: " + config_file);
+			return;
 		}
 
 		string line;
