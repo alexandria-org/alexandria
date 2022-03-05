@@ -25,6 +25,7 @@
  */
 
 #include "snippet.h"
+#include "domain_stats/domain_stats.h"
 
 using namespace std;
 
@@ -161,13 +162,14 @@ namespace indexer {
 			URL url(col_values[0]);
 
 			uint64_t domain_hash = url.host_hash();
+			float harmonic = domain_stats::harmonic_centrality(url);
 
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
 			for (size_t col : cols) {
 				vector<string> words = Text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builder->add(Hash::str(word), domain_record(domain_hash));
+					m_builder->add(Hash::str(word), domain_record(domain_hash, harmonic));
 				}
 			}
 		}
@@ -177,7 +179,7 @@ namespace indexer {
 		m_builder->append();
 		m_builder->merge();
 
-		m_builder->calculate_scores(indexer::algorithm::bm25);
+		//m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys) {

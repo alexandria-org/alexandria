@@ -56,25 +56,8 @@ namespace indexer {
 			}
 		}
 		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
-		map<string, float> harmonics;
-		size_t num = 0;
 		for (const string &file : local_files) {
-			ifstream infile(file, ios::in);
-			string line;
-			cout << "parsing file " << num++ << endl;
-			while (getline(infile, line)) {
-				vector<string> col_values;
-				boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-				URL url(col_values[0]);
-
-				float harmonic = domain_stats::harmonic_centrality(url);
-				harmonics[url.host_reverse()] = harmonic;
-			}
-			//idx_tree.add_index_file(file);
-		}
-		for (const auto &iter : harmonics) {
-			cout << iter.first << "\t" << iter.second << endl;
+			idx_tree.add_index_file(file);
 		}
 		Transfer::delete_downloaded_files(local_files);
 

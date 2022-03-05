@@ -69,13 +69,11 @@ namespace indexer {
 		generic_record operator+(const generic_record &b) const {
 			generic_record sum;
 			sum.m_value = m_value;
-			sum.m_score = m_score + b.m_score;
 			sum.m_count = m_count + b.m_count;
 			return sum;
 		}
 
 		generic_record &operator+=(const generic_record &b) {
-			m_score += b.m_score;
 			m_count += b.m_count;
 			return *this;
 		}
