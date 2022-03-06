@@ -148,7 +148,8 @@ namespace indexer {
 	}
 
 	void domain_level::add_index_file(const std::string &local_path,
-		std::function<void(uint64_t, const std::string &)> callback) {
+		std::function<void(uint64_t, const std::string &)> add_data,
+		std::function<void(uint64_t, uint64_t)> add_url) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 		const vector<float> scores = {10.0, 3.0, 2.0, 1};
@@ -163,6 +164,8 @@ namespace indexer {
 
 			uint64_t domain_hash = url.host_hash();
 			float harmonic = domain_stats::harmonic_centrality(url);
+
+			add_url(url.hash(), domain_hash);
 
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
@@ -182,7 +185,9 @@ namespace indexer {
 		//m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
-	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		
 		index<domain_record> idx("domain", 0);
@@ -193,9 +198,42 @@ namespace indexer {
 			results.push_back(idx.find(token));
 		}
 		std::vector<return_record> intersected = intersection(results);
+		apply_domain_links(domain_links, intersected);
 		sort_and_get_top_results(intersected, 100); // Pick top 100 domains.
-		std::cout << "level: " << "domain" << " found: " << intersected.size() << " keys" << std::endl;
 		return intersected;
+	}
+
+	size_t domain_level::apply_domain_links(const vector<domain_link_record> &links, vector<return_record> &results) {
+		if (links.size() == 0) return 0;
+
+		size_t applied_links = 0;
+
+		size_t i = 0;
+		size_t j = 0;
+		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
+		while (i < links.size() && j < results.size()) {
+
+			const uint64_t hash1 = links[i].m_target_domain;
+			const uint64_t hash2 = results[j].m_value;
+
+			if (hash1 < hash2) {
+				i++;
+			} else if (hash1 == hash2) {
+				auto p = std::make_pair(links[i].m_source_domain, links[i].m_target_domain);
+				if (domain_unique.count(p) == 0) {
+					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
+					results[j].m_score += url_score;
+					applied_links++;
+					domain_unique[p] = links[i].m_source_domain;
+				}
+
+				i++;
+			} else {
+				j++;
+			}
+		}
+
+		return applied_links;
 	}
 
 	level_type url_level::get_type() const {
@@ -217,7 +255,8 @@ namespace indexer {
 	}
 
 	void url_level::add_index_file(const std::string &local_path,
-		std::function<void(uint64_t, const std::string &)> callback) {
+		std::function<void(uint64_t, const std::string &)> add_data,
+		std::function<void(uint64_t, uint64_t)> add_url) {
 		const vector<size_t> cols = {1, 2, 3, 4};
 
 		ifstream infile(local_path, ios::in);
@@ -231,7 +270,7 @@ namespace indexer {
 			uint64_t domain_hash = url.host_hash();
 			uint64_t url_hash = url.hash();
 
-			callback(url_hash, col_values[0] + "\t" + col_values[1]);
+			add_data(url_hash, col_values[0] + "\t" + col_values[1]);
 
 			if (m_builders.count(domain_hash) == 0) {
 				m_builders[domain_hash] = std::make_shared<index_builder<url_record>>("url", domain_hash);
@@ -255,7 +294,9 @@ namespace indexer {
 		}
 	}
 
-	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
@@ -267,11 +308,44 @@ namespace indexer {
 				results.push_back(idx.find(token));
 			}
 			std::vector<return_record> intersected = intersection(results);
+			apply_url_links(links, intersected);
 			sort_and_get_top_results(intersected, 5); // Pick top 5 urls on each domain.
-			std::cout << "level: " << "url" << " found: " << intersected.size() << " keys" << std::endl;
 			all_results.insert(all_results.end(), intersected.begin(), intersected.end());
 		}
 		return all_results;
+	}
+
+	size_t url_level::apply_url_links(const vector<link_record> &links, vector<return_record> &results) {
+		if (links.size() == 0) return 0;
+
+		size_t applied_links = 0;
+
+		size_t i = 0;
+		size_t j = 0;
+		map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
+		while (i < links.size() && j < results.size()) {
+
+			const uint64_t hash1 = links[i].m_target_hash;
+			const uint64_t hash2 = results[j].m_value;
+
+			if (hash1 < hash2) {
+				i++;
+			} else if (hash1 == hash2) {
+				auto p = std::make_pair(links[i].m_source_domain, links[i].m_target_hash);
+				if (domain_unique.count(p) == 0) {
+					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
+					results[j].m_score += url_score;
+					applied_links++;
+					domain_unique[p] = links[i].m_source_domain;
+				}
+
+				i++;
+			} else {
+				j++;
+			}
+		}
+
+		return applied_links;
 	}
 
 	level_type snippet_level::get_type() const {
@@ -292,7 +366,8 @@ namespace indexer {
 	}
 
 	void snippet_level::add_index_file(const std::string &local_path,
-		std::function<void(uint64_t, const std::string &)> callback) {
+		std::function<void(uint64_t, const std::string &)> add_data,
+		std::function<void(uint64_t, uint64_t)> add_url) {
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -313,7 +388,7 @@ namespace indexer {
 			size_t snippet_idx = 0;
 			for (const std::string &snippet : snippets) {
 				const size_t snippet_hash = (url_hash << 10) | snippet_idx;
-				callback(snippet_hash, snippet);
+				add_data(snippet_hash, snippet);
 				vector<uint64_t> tokens = Text::get_tokens(snippet);
 				for (const uint64_t &token : tokens) {
 					const size_t snippet_hash = (url_hash << 10) | snippet_idx;
@@ -333,7 +408,9 @@ namespace indexer {
 		}
 	}
 
-	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys) {
+	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
@@ -351,7 +428,6 @@ namespace indexer {
 				rec.m_url_hash = key;
 			}
 
-			std::cout << "level: " << "snippet" << " found: " << summed_results.size() << " keys" << std::endl;
 			all_results.insert(all_results.end(), summed_results.begin(), summed_results.end());
 		}
 		return all_results;

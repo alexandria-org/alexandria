@@ -25,14 +25,15 @@
  */
 
 #include "algorithm/Algorithm.h"
+#include "algorithm/intersection.h"
 #include "algorithm/HyperBall.h"
 
 BOOST_AUTO_TEST_SUITE(algorithm)
 
-BOOST_AUTO_TEST_CASE(intersection) {
+BOOST_AUTO_TEST_CASE(intersection_test) {
 
 	{
-		const vector<int> result = Algorithm::intersection({
+		const vector<int> result = algorithm::intersection<int>({
 			{1, 2, 3},
 			{2, 3},
 			{2, 3, 4}
@@ -44,7 +45,7 @@ BOOST_AUTO_TEST_CASE(intersection) {
 	}
 
 	{
-		const vector<int> result = Algorithm::intersection({
+		const vector<int> result = algorithm::intersection<int>({
 			{1, 2, 3, 5},
 			{2, 3, 5, 7},
 			{2, 3, 4, 5}
@@ -57,19 +58,50 @@ BOOST_AUTO_TEST_CASE(intersection) {
 	}
 
 	{
-		const vector<int> result = Algorithm::intersection({});
+		const vector<int> result = algorithm::intersection<int>({});
 
 		BOOST_CHECK_EQUAL(0, result.size());
 	}
 
 	{
-		const vector<int> result = Algorithm::intersection({
+		const vector<int> result = algorithm::intersection<int>({
 			{1, 2, 3, 5, 6, 7, 8},
 			{9, 10},
 			{1, 2, 3, 4, 5}
 		});
 
 		BOOST_CHECK_EQUAL(0, result.size());
+	}
+
+	{
+
+		class T {
+			public:
+			size_t m_v;
+			float m_s;
+
+			T(size_t v, float s) : m_v(v), m_s(s) {}
+
+			bool operator<(const T &other) const {
+				return m_v < other.m_v;
+			}
+
+			bool operator==(const T &other) const {
+				return m_v == other.m_v;
+			}
+
+		};
+		const vector<T> result = algorithm::intersection<T>({
+			{T(1, 1.0f), T(2, 1.0f), T(3, 1.0f), T(4, 1.0f)},
+			{T(3, 2.0f), T(4, 2.0f), T(5, 2.0f)},
+			{T(4, 3.0f), T(5, 3.0f), T(6, 3.0f), T(7, 3.0f), T(8, 3.0f)}
+		}, [](T &a, const T &b) {
+			return a.m_s += b.m_s;
+		});
+
+		BOOST_CHECK_EQUAL(1, result.size());
+		BOOST_CHECK_EQUAL(result[0].m_v, 4);
+		BOOST_CHECK_EQUAL(result[0].m_s, 6.0f);
 	}
 }
 

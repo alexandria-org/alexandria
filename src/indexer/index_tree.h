@@ -34,15 +34,9 @@
 #include "level.h"
 #include "snippet.h"
 #include "hash_table/builder.h"
+#include "full_text/UrlToDomain.h"
 
 namespace indexer {
-
-	struct link_record {
-		uint64_t m_value;
-		float m_score;
-		uint64_t m_source_domain;
-		uint64_t m_target_hash;
-	};
 
 	class index_tree {
 
@@ -55,6 +49,7 @@ namespace indexer {
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
 		void add_index_file(const std::string &local_path);
+		void add_link_file(const std::string &local_path);
 		void merge();
 		void truncate();
 
@@ -64,11 +59,16 @@ namespace indexer {
 
 		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
 		std::unique_ptr<sharded_index<link_record>> m_link_index;
+		std::unique_ptr<sharded_index_builder<domain_link_record>> m_domain_link_index_builder;
+		std::unique_ptr<sharded_index<domain_link_record>> m_domain_link_index;
+
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;
+		std::unique_ptr<UrlToDomain> m_url_to_domain;
 
 		std::vector<return_record> find_recursive(const std::string &query, size_t level_num,
-			const std::vector<size_t> &keys);
+			const std::vector<size_t> &keys, const std::vector<link_record> &links,
+			const std::vector<domain_link_record> &domain_links);
 
 		void create_directories(level_type lvl);
 		void delete_directories(level_type lvl);

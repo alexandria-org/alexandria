@@ -90,15 +90,29 @@ namespace indexer {
 
 	};
 
+	class link_record : public generic_record {
+		public:
+		uint64_t m_source_domain;
+		uint64_t m_target_hash;
+	};
+
+	class domain_link_record : public generic_record {
+		public:
+		uint64_t m_source_domain;
+		uint64_t m_target_domain;
+	};
+
 	class level {
 		public:
 		virtual level_type get_type() const = 0;
 		virtual void add_snippet(const snippet &s) = 0;
 		virtual void add_document(size_t id, const std::string &doc) = 0;
 		virtual void add_index_file(const std::string &local_path,
-			std::function<void(uint64_t, const std::string &)> callback) = 0;
+			std::function<void(uint64_t, const std::string &)> add_data,
+			std::function<void(uint64_t, uint64_t)> add_url) = 0;
 		virtual void merge() = 0;
-		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys) = 0;
+		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links) = 0;
 
 		protected:
 		template<typename data_record>
@@ -128,9 +142,13 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
+		void add_index_file(const std::string &local_path,
+			std::function<void(uint64_t, const std::string &)> add_data,
+			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
-		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
+		size_t apply_domain_links(const std::vector<domain_link_record> &links, std::vector<return_record> &results);
 	};
 
 	class url_record : public generic_record {
@@ -144,9 +162,13 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
+		void add_index_file(const std::string &local_path,
+			std::function<void(uint64_t, const std::string &)> add_data,
+			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
-		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
+		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
 	};
 
 	struct snippet_record : public generic_record {
@@ -160,8 +182,11 @@ namespace indexer {
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path, std::function<void(uint64_t, const std::string &)> callback);
+		void add_index_file(const std::string &local_path,
+			std::function<void(uint64_t, const std::string &)> add_data,
+			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
-		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys);
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
 	};
 }

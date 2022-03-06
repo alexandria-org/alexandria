@@ -27,6 +27,7 @@
 #pragma once
 
 #include "index.h"
+#include "algorithm/intersection.h"
 
 namespace indexer {
 
@@ -40,6 +41,7 @@ namespace indexer {
 		~sharded_index();
 
 		std::vector<data_record> find(uint64_t key) const;
+		std::vector<data_record> find(const std::vector<uint64_t> &keys) const;
 
 	private:
 
@@ -68,6 +70,17 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find(uint64_t key) const {
 		return m_shards[key % m_shards.size()]->find(key);
+	}
+
+	template<typename data_record>
+	std::vector<data_record> sharded_index<data_record>::find(const std::vector<uint64_t> &keys) const {
+
+		std::vector<std::vector<data_record>> results;
+		for (uint64_t key : keys) {
+			results.emplace_back(find(key));
+		}
+
+		return ::algorithm::intersection(results);
 	}
 
 }

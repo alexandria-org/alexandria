@@ -33,8 +33,6 @@
 
 namespace Algorithm {
 
-	std::vector<int> intersection(const std::vector<std::vector<int>> &input);
-
 	template<class T>
 	void vector_chunk(const std::vector<T> &vec, size_t chunk_size, std::vector<std::vector<T>> &dest) {
 		std::vector<T> chunk;

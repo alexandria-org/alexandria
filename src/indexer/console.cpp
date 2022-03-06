@@ -64,6 +64,34 @@ namespace indexer {
 		idx_tree.merge();
 	}
 
+	void cmd_index_link(index_tree &idx_tree, const vector<string> &args) {
+		if (args.size() < 2) return;
+
+		const string batch = args[1];
+		size_t limit = 0;
+		if (args.size() > 2) limit = stoull(args[2]);
+
+		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		vector<string> warc_paths;
+		warc_paths_file.read_column_into(0, warc_paths);
+
+		if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
+
+		for (string &path : warc_paths) {
+			const size_t pos = path.find(".warc.gz");
+			if (pos != string::npos) {
+				path.replace(pos, 8, ".gz");
+			}
+		}
+		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+		for (const string &file : local_files) {
+			idx_tree.add_link_file(file);
+		}
+		Transfer::delete_downloaded_files(local_files);
+
+		idx_tree.merge();
+	}
+
 	void cmd_search(index_tree &idx_tree, const string &query) {
 		std::vector<indexer::return_record> res = idx_tree.find(query);
 
@@ -74,8 +102,13 @@ namespace indexer {
 			const string url_data = ht.find(rec.m_url_hash);
 			const string snippet_data = ht.find(rec.m_value);
 
-			cout << "found url: " << url_data << endl;
-			cout << "snippet: " << snippet_data << endl << endl;
+			vector<string> parts;
+			boost::algorithm::split(parts, url_data, boost::is_any_of("\t"));
+			const string title = parts[1];
+			const string url = parts[0];
+			cout << title << endl;
+			cout << url << endl;
+			cout << snippet_data << endl << endl;
 		}
 	}
 
@@ -129,6 +162,8 @@ namespace indexer {
 			const string cmd = args[0];
 			if (cmd == "index") {
 				cmd_index(idx_tree, args);
+			} else if (cmd == "index_link") {
+				cmd_index_link(idx_tree, args);
 			} else if (cmd == "harmonic") {
 				cmd_harmonic(args);
 			} else if (cmd == "search") {
