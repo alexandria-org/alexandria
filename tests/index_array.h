@@ -34,11 +34,13 @@
 #include "algorithm/HyperLogLog.h"
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
+#include "memory/debugger.h"
 
 BOOST_AUTO_TEST_SUITE(index_array)
 
 BOOST_AUTO_TEST_CASE(index_builder) {
 
+	memory::enable_debugger();
 	{
 		// Max 10 results in this index.
 		indexer::index_builder<indexer::generic_record> idx("test", 0, 1000, 10);
@@ -62,7 +64,9 @@ BOOST_AUTO_TEST_CASE(index_builder) {
 		idx.append();
 		idx.merge();
 	}
+	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
 
+	memory::enable_debugger();
 	{
 		indexer::index<indexer::generic_record> idx("test", 0, 1000);
 		size_t total;
@@ -76,6 +80,7 @@ BOOST_AUTO_TEST_CASE(index_builder) {
 		});
 		BOOST_CHECK_EQUAL(res[0].m_value, 100);
 	}
+	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
 
 }
 
@@ -211,6 +216,7 @@ BOOST_AUTO_TEST_CASE(index_frequency_2) {
 	idx_tree.add_document(4, "The air quality in Singapore got worse on Wednesday.");
 
 	idx_tree.merge();
+	idx_tree.calculate_scores_for_level(0);
 
 	{
 		std::vector<indexer::return_record> res = idx_tree.find("Air");
@@ -296,6 +302,7 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 
 BOOST_AUTO_TEST_CASE(index_tree2) {
 
+	memory::enable_debugger();
 	{
 		indexer::index_tree idx_tree;
 
@@ -329,11 +336,12 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 
 		BOOST_REQUIRE_EQUAL(res2.size(), 4);
 	}
+	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
 
 }
 
 BOOST_AUTO_TEST_CASE(index_files) {
-
+/*
 	{
 		indexer::index_tree idx_tree;
 
@@ -366,7 +374,7 @@ BOOST_AUTO_TEST_CASE(index_files) {
 		const std::string snippet2 = ht.find(res[1].m_value);
 		std::cout << "snippet2: " << snippet2 << std::endl;
 		//BOOST_CHECK_EQUAL(res[0].m_value, snippet.snippet_hash());
-	}
+	}*/
 
 }
 

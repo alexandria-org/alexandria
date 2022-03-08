@@ -86,7 +86,7 @@ set(SRC_CLASSES
 	"src/system/Logger.cpp"
 	"src/system/datetime.cpp"
 
-	"src/local_system/memory.cpp"
+	"src/memory/memory.cpp"
 
 	"src/sort/Sort.cpp"
 
@@ -128,6 +128,7 @@ set(SRC_COMMON
 
 add_executable(run_tests
 	"tests/main.cpp"
+	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )

@@ -24,14 +24,7 @@
  * SOFTWARE.
  */
 
-#include "local_system/memory.h"
-
-BOOST_AUTO_TEST_SUITE(local_system)
-
-BOOST_AUTO_TEST_CASE(mem) {
-	local_system::memory mem;
-	size_t available_memory = mem.get_available_memory();
-	std::cout << "available_memory:" << available_memory << std::endl;
+namespace memory {
+	void enable_debugger();
+	size_t disable_debugger(); // Returns number of unfreed pointers.
 }
-
-BOOST_AUTO_TEST_SUITE_END()

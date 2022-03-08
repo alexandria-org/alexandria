@@ -99,7 +99,8 @@ namespace indexer {
 		size_t num_keys;
 		reader.read((char *)&num_keys, sizeof(size_t));
 
-		uint64_t *keys = new uint64_t[num_keys];
+		std::unique_ptr<uint64_t[]> keys_allocator = std::make_unique<uint64_t[]>(num_keys);
+		uint64_t *keys = keys_allocator.get();
 		reader.read((char *)keys, num_keys * sizeof(uint64_t));
 
 		size_t key_data_pos = SIZE_MAX;

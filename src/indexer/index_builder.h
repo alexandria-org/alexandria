@@ -299,22 +299,27 @@ namespace indexer {
 		const size_t buffer_len = 100000;
 		const size_t buffer_size = sizeof(data_record) * buffer_len;
 		const size_t key_buffer_size = sizeof(uint64_t) * buffer_len;
-		char *buffer;
-		char *key_buffer;
+
+		std::unique_ptr<char[]> buffer_allocator;
 		try {
-			buffer = new char[buffer_size];
+			buffer_allocator = std::make_unique<char[]>(buffer_size);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << buffer_size << " bytes" << std::endl;
 			return;
 		}
+
+		std::unique_ptr<char[]> key_buffer_allocator;
 		try {
-			key_buffer = new char[key_buffer_size];
+			key_buffer_allocator = std::make_unique<char[]>(key_buffer_size);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << key_buffer_size << " bytes" << std::endl;
 			return;
 		}
+
+		char *buffer = buffer_allocator.get();
+		char *key_buffer = key_buffer_allocator.get();
 
 		reader.seekg(0, std::ios::beg);
 
@@ -333,9 +338,6 @@ namespace indexer {
 				m_cache[key].push_back(*record);
 			}
 		}
-
-		delete [] key_buffer;
-		delete [] buffer;
 	}
 
 	/*
@@ -354,16 +356,17 @@ namespace indexer {
 		if (file_size == 0) return;
 		reader.seekg(0, std::ios::beg);
 
+		std::unique_ptr<char[]> buffer_allocator;
 		try {
-			m_buffer = new char[m_buffer_len];
+			buffer_allocator = std::make_unique<char[]>(m_buffer_len);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << m_buffer_len << " bytes" << std::endl;
 			return;
 		}
+		m_buffer = buffer_allocator.get();
 		while (read_page(reader)) {
 		}
-		delete m_buffer;
 	}
 
 	template<typename data_record>
@@ -377,14 +380,16 @@ namespace indexer {
 
 		uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
-		char *vector_buffer;
+		std::unique_ptr<char[]> vector_buffer_allocator;
 		try {
-			vector_buffer = new char[num_keys * 8];
+			vector_buffer_allocator = std::make_unique<char[]>(num_keys * 8);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << num_keys << " keys" << std::endl;
 			return false;
 		}
+
+		char *vector_buffer = vector_buffer_allocator.get();
 
 		// Read the keys.
 		reader.read(vector_buffer, num_keys * 8);

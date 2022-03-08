@@ -24,24 +24,36 @@
  * SOFTWARE.
  */
 
-#pragma once
-
+#include "memory.h"
 #include <iostream>
+#include <fstream>
 
-namespace local_system {
+namespace memory {
 
-	class memory {
+	size_t available_memory = 0;
 
-		public:
-			memory();
-			~memory();
+	size_t get_available_memory() {
+		return available_memory;
+	}
 
-			size_t get_available_memory() const { return m_available_memory; };
-			void update();
-
-		private:
-			size_t m_available_memory = 0;
-
-	};
+	/*
+	 * inspired by https://stackoverflow.com/questions/349889/how-do-you-determine-the-amount-of-linux-system-ram-in-c
+	 * */
+	void update() {
+		std::string token;
+		std::ifstream infile("/proc/meminfo", std::ios::in);
+		if (infile.is_open()) {
+			while (infile >> token) {
+				if (token == "MemAvailable:") {
+					size_t mem;
+					if (infile >> mem) {
+						available_memory = mem * 1000;
+					} else {
+						available_memory = 0;
+					}
+				}
+			}
+		}
+	}
 
 }

@@ -52,6 +52,16 @@ void help() {
 
 int main(int argc, const char **argv) {
 
+	cout << "started" << endl;
+	sleep(100);
+	{
+		vector<int> ints(100000);
+		cout << "allocated ints" << endl;
+		sleep(100);
+	}
+	cout << "deleted ints" << endl;
+	sleep(100);
+	return 0;
 	Logger::start_logger_thread();
 	Logger::verbose(true);
 

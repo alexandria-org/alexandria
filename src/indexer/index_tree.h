@@ -52,6 +52,7 @@ namespace indexer {
 		void add_link_file(const std::string &local_path);
 		void merge();
 		void truncate();
+		void calculate_scores_for_level(size_t level_num);
 
 		std::vector<return_record> find(const std::string &query);
 

@@ -96,7 +96,6 @@ namespace indexer {
 
 				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-				cout << "added link text: " << link_text << endl;
 				vector<string> words = Text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
@@ -154,6 +153,10 @@ namespace indexer {
 
 		m_link_index_builder->truncate();
 		m_domain_link_index_builder->truncate();
+	}
+
+	void index_tree::calculate_scores_for_level(size_t level_num) {
+		m_levels[level_num]->calculate_scores();
 	}
 
 	std::vector<return_record> index_tree::find(const string &query) {

@@ -24,38 +24,13 @@
  * SOFTWARE.
  */
 
-#include "memory.h"
-#include <iostream>
-#include <fstream>
+#include "memory/memory.h"
 
-namespace local_system {
+BOOST_AUTO_TEST_SUITE(memory)
 
-	memory::memory() {
-		update();
-	}
-
-	memory::~memory() {
-
-	}
-
-	/*
-	 * inspired by https://stackoverflow.com/questions/349889/how-do-you-determine-the-amount-of-linux-system-ram-in-c
-	 * */
-	void memory::update() {
-		std::string token;
-		std::ifstream infile("/proc/meminfo", std::ios::in);
-		if (infile.is_open()) {
-			while (infile >> token) {
-				if (token == "MemAvailable:") {
-					size_t mem;
-					if (infile >> mem) {
-						m_available_memory = mem * 1000;
-					} else {
-						m_available_memory = 0;
-					}
-				}
-			}
-		}
-	}
-
+BOOST_AUTO_TEST_CASE(mem) {
+	size_t available_memory = memory::get_available_memory();
+	std::cout << "available_memory:" << available_memory << std::endl;
 }
+
+BOOST_AUTO_TEST_SUITE_END()
