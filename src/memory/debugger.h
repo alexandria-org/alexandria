@@ -24,7 +24,11 @@
  * SOFTWARE.
  */
 
+#include <iostream>
+
 namespace memory {
+	bool debugger_enabled();
 	void enable_debugger();
 	size_t disable_debugger(); // Returns number of unfreed pointers.
+	size_t allocated_memory();
 }

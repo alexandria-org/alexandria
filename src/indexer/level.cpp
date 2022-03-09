@@ -275,7 +275,11 @@ namespace indexer {
 			add_data(url_hash, col_values[0] + "\t" + col_values[1]);
 
 			if (m_builders.count(domain_hash) == 0) {
-				m_builders[domain_hash] = std::make_shared<index_builder<url_record>>("url", domain_hash);
+				m_lock.lock();
+				if (m_builders.count(domain_hash) == 0) {
+					m_builders[domain_hash] = std::make_shared<index_builder<url_record>>("url", domain_hash);
+				}
+				m_lock.unlock();
 			}
 
 			for (size_t col : cols) {
@@ -382,7 +386,11 @@ namespace indexer {
 			uint64_t url_hash = url.hash();
 
 			if (m_builders.count(url_hash) == 0) {
-				m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
+				m_lock.lock();
+				if (m_builders.count(url_hash) == 0) {
+					m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
+				}
+				m_lock.unlock();
 			}
 
 			std::vector<std::string> snippets = Text::get_snippets(col_values[4]);

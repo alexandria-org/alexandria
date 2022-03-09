@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <map>
+#include <mutex>
 
 #include "HashTable.h"
 
@@ -58,6 +59,7 @@ private:
 	size_t m_shard_id;
 	const size_t m_cache_limit;
 	std::map<uint64_t, size_t> m_sort_pos;
+	std::mutex m_lock;
 
 	void read_keys();
 

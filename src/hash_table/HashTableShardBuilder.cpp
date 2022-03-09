@@ -154,7 +154,9 @@ void HashTableShardBuilder::optimize() {
 }
 
 void HashTableShardBuilder::add(uint64_t key, const string &value) {
+	m_lock.lock();
 	m_cache[key] = value;
+	m_lock.unlock();
 }
 
 string HashTableShardBuilder::filename_data() const {

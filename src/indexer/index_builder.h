@@ -32,6 +32,7 @@
 #include <cstring>
 #include <cassert>
 #include <boost/filesystem.hpp>
+#include "merger.h"
 #include "algorithm/HyperLogLog.h"
 #include "config.h"
 #include "system/Logger.h"
@@ -57,6 +58,7 @@ namespace indexer {
 		
 		void append();
 		void merge();
+		void append_and_merge() { append(); merge(); };
 
 		void truncate();
 		void truncate_cache_files();
@@ -81,6 +83,7 @@ namespace indexer {
 		const size_t m_max_num_keys = 10000;
 		const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
 		char *m_buffer;
+		std::mutex m_lock;
 
 		// Caches
 		std::vector<uint64_t> m_keys;
@@ -124,28 +127,38 @@ namespace indexer {
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size), m_max_results(Config::ft_max_results_per_section) {
+		merger::register_merger((size_t)this, [this]() {append_and_merge();});
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(Config::ft_max_results_per_section) {
+		merger::register_merger((size_t)this, [this]() {append_and_merge();});
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
+		merger::register_merger((size_t)this, [this]() {append_and_merge();});
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::~index_builder() {
+		merger::deregister_merger((size_t)this);
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::add(uint64_t key, const data_record &record) {
 
+		indexer::merger::lock();
+
+		m_lock.lock();
+
 		// Amortized constant
 		m_keys.push_back(key);
 		m_records.push_back(record);
+
+		m_lock.unlock();
 
 	}
 

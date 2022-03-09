@@ -25,8 +25,10 @@
  */
 
 #include "index_tree.h"
+#include "merger.h"
 #include "domain_stats/domain_stats.h"
 #include "link/Link.h"
+#include "algorithm/Algorithm.h"
 
 using namespace std;
 
@@ -71,6 +73,39 @@ namespace indexer {
 		}
 
 		m_url_to_domain->write(0);
+	}
+
+	void index_tree::add_index_files(const vector<string> &local_paths) {
+		for (const string &local_path : local_paths) {
+			for (level *lvl : m_levels) {
+				lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
+					m_hash_table->add(key, value);
+				}, [this](uint64_t url_hash, uint64_t domain_hash) {
+					m_url_to_domain->add_url(url_hash, domain_hash);
+				});
+			}
+		}
+
+		m_url_to_domain->write(0);
+	}
+
+	void index_tree::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		vector<vector<string>> chunks;
+		Algorithm::vector_chunk(local_paths, ceil((float)local_paths.size() / num_threads), chunks);
+
+		vector<thread> threads;
+
+		for (auto &chunk : chunks) {
+			threads.emplace_back(std::move(thread([this, chunk]() {
+				add_index_files(chunk);
+			})));
+		}
+
+		for (auto &thread : threads) {
+			thread.join();
+		}
+		
 	}
 
 	void index_tree::add_link_file(const string &local_path) {

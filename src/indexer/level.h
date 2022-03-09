@@ -124,6 +124,8 @@ namespace indexer {
 
 		template<typename data_record>
 		void sort_and_get_top_results(std::vector<data_record> &input, size_t num_results) const;
+
+		mutex m_lock;
 	};
 
 	class domain_record: public generic_record {

@@ -31,5 +31,7 @@
 namespace memory {
 
 	size_t get_available_memory();
+	size_t get_total_memory();
+	void update();
 
 }

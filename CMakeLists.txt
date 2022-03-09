@@ -113,6 +113,7 @@ set(SRC_CLASSES
 	"src/indexer/snippet.cpp"
 	"src/indexer/index_tree.cpp"
 	"src/indexer/console.cpp"
+	"src/indexer/merger.cpp"
 
 	"src/domain_stats/domain_stats.cpp"
 
@@ -144,6 +145,7 @@ add_executable(scraper
 )
 add_executable(indexer
 	"src/indexer.cpp"
+	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )

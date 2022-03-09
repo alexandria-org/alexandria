@@ -24,49 +24,22 @@
  * SOFTWARE.
  */
 
-#include "memory.h"
+#pragma once
+
 #include <iostream>
-#include <fstream>
+#include <functional>
 
-namespace memory {
+using namespace std;
 
-	size_t available_memory = 0;
-	size_t total_memory = 0;
+namespace indexer {
 
-	size_t get_available_memory() {
-		return available_memory;
-	}
+	namespace merger {
+		void lock();
+		void register_merger(size_t id, std::function<void()> merge);
+		void deregister_merger(size_t id);
 
-	size_t get_total_memory() {
-		return total_memory;
-	}
-
-	/*
-	 * inspired by https://stackoverflow.com/questions/349889/how-do-you-determine-the-amount-of-linux-system-ram-in-c
-	 * */
-	void update() {
-		std::string token;
-		std::ifstream infile("/proc/meminfo", std::ios::in);
-		if (infile.is_open()) {
-			while (infile >> token) {
-				if (token == "MemAvailable:") {
-					size_t mem;
-					if (infile >> mem) {
-						available_memory = mem * 1000;
-					} else {
-						available_memory = 0;
-					}
-				}
-				if (token == "MemTotal:") {
-					size_t mem;
-					if (infile >> mem) {
-						total_memory = mem * 1000;
-					} else {
-						total_memory = 0;
-					}
-				}
-			}
-		}
-	}
+		void start_merge_thread();
+		void stop_merge_thread();
+	};
 
 }

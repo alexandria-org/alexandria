@@ -31,6 +31,7 @@
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
 #include "domain_stats/domain_stats.h"
+#include "merger.h"
 
 using namespace std;
 
@@ -38,6 +39,8 @@ namespace indexer {
 
 	void cmd_index(index_tree &idx_tree, const vector<string> &args) {
 		if (args.size() < 2) return;
+
+		merger::start_merge_thread();
 
 		const string batch = args[1];
 		size_t limit = 0;
@@ -56,16 +59,16 @@ namespace indexer {
 			}
 		}
 		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
-		for (const string &file : local_files) {
-			idx_tree.add_index_file(file);
-		}
+		idx_tree.add_index_files_threaded(local_files, 12);
 		Transfer::delete_downloaded_files(local_files);
 
-		idx_tree.merge();
+		merger::stop_merge_thread();
 	}
 
 	void cmd_index_link(index_tree &idx_tree, const vector<string> &args) {
 		if (args.size() < 2) return;
+
+		merger::start_merge_thread();
 
 		const string batch = args[1];
 		size_t limit = 0;
@@ -89,7 +92,7 @@ namespace indexer {
 		}
 		Transfer::delete_downloaded_files(local_files);
 
-		idx_tree.merge();
+		merger::stop_merge_thread();
 	}
 
 	void cmd_search(index_tree &idx_tree, const string &query) {

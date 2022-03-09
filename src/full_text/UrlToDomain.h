@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <mutex>
 
 class UrlToDomain {
 
@@ -61,5 +62,6 @@ private:
 	const std::string m_db_name;
 	std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
 	std::unordered_map<uint64_t, size_t> m_domains;
+	std::mutex m_lock;
 
 };

@@ -40,8 +40,10 @@ UrlToDomain::~UrlToDomain() {
 }
 
 void UrlToDomain::add_url(uint64_t url_hash, uint64_t domain_hash) {
+	m_lock.lock();
 	m_url_to_domain[url_hash] = domain_hash;
 	m_domains[domain_hash]++;
+	m_lock.unlock();
 }
 
 void UrlToDomain::read() {

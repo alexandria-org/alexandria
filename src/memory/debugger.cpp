@@ -69,6 +69,17 @@ namespace memory {
 
 		return num_unfreed;
 	}
+
+	size_t allocated_memory() {
+		size_t allocated = 0;
+		for (size_t i = 0; i < alloc_ptrs.size(); i++){
+			if (alloc_ptrs[i] != nullptr) {
+				allocated += alloc_size[i];
+			}
+		}
+
+		return allocated;
+	}
 }
 
 void * operator new(size_t n) {
@@ -77,6 +88,7 @@ void * operator new(size_t n) {
 	if (memory::debugger_enabled()) {
 		total_allocated += n;
 		if (alloc_counter < MAX_ALLOC_SIZE) {
+			cout << "alloc_counter: " << alloc_counter << endl;
 			alloc_ptrs[alloc_counter] = m;
 			alloc_size[alloc_counter] = n;
 			if (debugger_verbose) {
