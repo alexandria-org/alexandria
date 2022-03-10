@@ -71,7 +71,6 @@ namespace indexer {
 			size_t available_memory = memory::get_total_memory();
 
 			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 0.1) << std::endl;
-			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 			
 			ThreadPool pool(16);
 			std::vector<std::future<void>> results;
