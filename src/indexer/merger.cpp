@@ -70,13 +70,13 @@ namespace indexer {
 			for (auto &iter : mergers) {
 				iter.second();
 			}
+			is_merging = false;
 		}
 
 		void merge_thread() {
 			memory::update();
 			size_t available_memory = memory::get_total_memory();
 			while (merge_thread_is_running) {
-				cout << "memory::allocated_memory(): " << memory::allocated_memory() << endl;
 				if (memory::allocated_memory() > available_memory * 0.1) {
 					merge_all();
 				}
