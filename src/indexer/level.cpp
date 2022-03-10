@@ -239,17 +239,18 @@ namespace indexer {
 		return applied_links;
 	}
 
+	url_level::url_level() {
+		m_builder = make_shared<composite_index_builder<url_record>>("url", 10007);
+	}
+
 	level_type url_level::get_type() const {
 		return level_type::url;
 	}
 
 	void url_level::add_snippet(const snippet &s) {
 		size_t dom_hash = s.domain_hash();
-		if (m_builders.count(dom_hash) == 0) {
-			m_builders[dom_hash] = std::make_shared<index_builder<url_record>>("url", dom_hash);
-		}
 		for (size_t token : s.tokens()) {
-			m_builders[dom_hash]->add(token, url_record(s.url_hash()));
+			m_builder->add(dom_hash, token, url_record(s.url_hash()));
 		}
 	}
 
@@ -275,30 +276,19 @@ namespace indexer {
 
 			add_data(url_hash, col_values[0] + "\t" + col_values[1]);
 
-			if (m_builders.count(domain_hash) == 0) {
-				m_lock.lock();
-				if (m_builders.count(domain_hash) == 0) {
-					m_builders[domain_hash] = std::make_shared<index_builder<url_record>>("url", domain_hash);
-				}
-				m_lock.unlock();
-			}
-
 			for (size_t col : cols) {
 				vector<string> words = Text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builders[domain_hash]->add(Hash::str(word), url_record(url_hash));
+					m_builder->add(domain_hash, Hash::str(word), url_record(url_hash));
 				}
 			}
 		}
 	}
 
 	void url_level::merge() {
-		for (auto &iter : m_builders) {
-			iter.second->append();
-			iter.second->merge();
-
-			iter.second->calculate_scores(algorithm::bm25);
-		}
+		m_builder->append();
+		m_builder->merge();
+		//m_builder->calculate_scores(algorithm::bm25);
 	}
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
@@ -307,12 +297,12 @@ namespace indexer {
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
-			index<url_record> idx("url", key);
+			composite_index<url_record> idx("url", 10007);
 
 			std::vector<std::vector<url_record>> results;
 			for (const string &word : words) {
 				size_t token = Hash::str(word);
-				results.push_back(idx.find(token));
+				results.push_back(idx.find(key, token));
 			}
 			std::vector<return_record> intersected = intersection(results);
 			apply_url_links(links, intersected);
@@ -356,7 +346,7 @@ namespace indexer {
 	}
 
 	snippet_level::snippet_level() {
-		m_builder = make_shared<composite_index_builder<snippet_record>>("snippet", 1024);
+		m_builder = make_shared<composite_index_builder<snippet_record>>("snippet", 10007);
 	}
 
 	level_type snippet_level::get_type() const {
@@ -414,7 +404,7 @@ namespace indexer {
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
-			composite_index<snippet_record> idx("snippet", 1024);
+			composite_index<snippet_record> idx("snippet", 10007);
 
 			std::vector<std::vector<snippet_record>> results;
 			for (const string &word : words) {

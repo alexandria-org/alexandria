@@ -162,8 +162,9 @@ namespace indexer {
 
 	class url_level: public level {
 		private:
-		std::map<size_t, std::shared_ptr<index_builder<url_record>>> m_builders;
+		std::shared_ptr<composite_index_builder<url_record>> m_builder;
 		public:
+		url_level();
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
