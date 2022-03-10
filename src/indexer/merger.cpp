@@ -27,6 +27,7 @@
 #include "merger.h"
 #include "memory/memory.h"
 #include "memory/debugger.h"
+#include "system/ThreadPool.h"
 #include <map>
 #include <chrono>
 #include <thread>
@@ -66,10 +67,22 @@ namespace indexer {
 		void merge_all() {
 			is_merging = true;
 			this_thread::sleep_for(100ms);
+
 			std::cout << "MERGING ALL: " << mergers.size() << " mergers" << std::endl;
+			
+			ThreadPool pool(16);
+			std::vector<std::future<void>> results;
+
 			for (auto &iter : mergers) {
-				iter.second();
+				results.emplace_back(
+					pool.enqueue(iter.second)
+				);
 			}
+
+			for (auto && result: results) {
+				result.get();
+			}
+
 			is_merging = false;
 		}
 

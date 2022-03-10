@@ -31,19 +31,19 @@
 namespace indexer {
 
 	template<typename data_record>
-	class sharded_index_builder {
+	class composite_index_builder {
 	private:
 		// Non copyable
-		sharded_index_builder(const sharded_index_builder &);
-		sharded_index_builder& operator=(const sharded_index_builder &);
+		composite_index_builder(const composite_index_builder &);
+		composite_index_builder& operator=(const composite_index_builder &);
 
 	public:
 
-		sharded_index_builder(const std::string &db_name, size_t num_shards);
-		sharded_index_builder(const std::string &db_name, size_t num_shards, size_t hash_table_size);
-		~sharded_index_builder();
+		composite_index_builder(const std::string &db_name, size_t num_shards);
+		composite_index_builder(const std::string &db_name, size_t num_shards, size_t hash_table_size);
+		~composite_index_builder();
 
-		void add(uint64_t key, const data_record &record);
+		void add(uint64_t realm_key, uint64_t key, const data_record &record);
 		
 		void append();
 		void merge();
@@ -59,58 +59,59 @@ namespace indexer {
 	};
 
 	template<typename data_record>
-	sharded_index_builder<data_record>::sharded_index_builder(const std::string &db_name, size_t num_shards) {
+	composite_index_builder<data_record>::composite_index_builder(const std::string &db_name, size_t num_shards) {
 		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
 			m_shards.push_back(std::make_shared<index_builder<data_record>>(db_name, shard_id));
 		}
 	}
 
 	template<typename data_record>
-	sharded_index_builder<data_record>::sharded_index_builder(const std::string &db_name, size_t num_shards, size_t hash_table_size) {
+	composite_index_builder<data_record>::composite_index_builder(const std::string &db_name, size_t num_shards, size_t hash_table_size) {
 		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
 			m_shards.push_back(std::make_shared<index_builder<data_record>>(db_name, shard_id, hash_table_size));
 		}
 	}
 
 	template<typename data_record>
-	sharded_index_builder<data_record>::~sharded_index_builder() {
+	composite_index_builder<data_record>::~composite_index_builder() {
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::add(uint64_t key, const data_record &record) {
-		m_shards[key % m_shards.size()]->add(key, record);
+	void composite_index_builder<data_record>::add(uint64_t realm_key, uint64_t key, const data_record &record) {
+		const uint64_t composite_key = (realm_key << 32) | (key >> 32);
+		m_shards[composite_key % m_shards.size()]->add(composite_key, record);
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::append() {
+	void composite_index_builder<data_record>::append() {
 		for (auto &shard : m_shards) {
 			shard->append();
 		}
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::merge() {
+	void composite_index_builder<data_record>::merge() {
 		for (auto &shard : m_shards) {
 			shard->merge();
 		}
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::truncate() {
+	void composite_index_builder<data_record>::truncate() {
 		for (auto &shard : m_shards) {
 			shard->truncate();
 		}
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::truncate_cache_files() {
+	void composite_index_builder<data_record>::truncate_cache_files() {
 		for (auto &shard : m_shards) {
 			shard->truncate_cache_files();
 		}
 	}
 
 	template<typename data_record>
-	void sharded_index_builder<data_record>::create_directories() {
+	void composite_index_builder<data_record>::create_directories() {
 		for (auto &shard : m_shards) {
 			shard->create_directories();
 		}

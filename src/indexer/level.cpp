@@ -26,6 +26,7 @@
 
 #include "snippet.h"
 #include "domain_stats/domain_stats.h"
+#include "composite_index.h"
 
 using namespace std;
 
@@ -354,17 +355,18 @@ namespace indexer {
 		return applied_links;
 	}
 
+	snippet_level::snippet_level() {
+		m_builder = make_shared<composite_index_builder<snippet_record>>("snippet", 1024);
+	}
+
 	level_type snippet_level::get_type() const {
 		return level_type::snippet;
 	}
 
 	void snippet_level::add_snippet(const snippet &s) {
 		size_t url_hash = s.url_hash();
-		if (m_builders.count(url_hash) == 0) {
-			m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
-		}
 		for (size_t token : s.tokens()) {
-			m_builders[url_hash]->add(token, snippet_record(s.snippet_hash()));
+			m_builder->add(url_hash, token, snippet_record(s.snippet_hash()));
 		}
 	}
 
@@ -385,14 +387,6 @@ namespace indexer {
 
 			uint64_t url_hash = url.hash();
 
-			if (m_builders.count(url_hash) == 0) {
-				m_lock.lock();
-				if (m_builders.count(url_hash) == 0) {
-					m_builders[url_hash] = std::make_shared<index_builder<snippet_record>>("snippet", url_hash, 0);
-				}
-				m_lock.unlock();
-			}
-
 			std::vector<std::string> snippets = Text::get_snippets(col_values[4]);
 
 			size_t snippet_idx = 0;
@@ -402,7 +396,7 @@ namespace indexer {
 				vector<uint64_t> tokens = Text::get_tokens(snippet);
 				for (const uint64_t &token : tokens) {
 					const size_t snippet_hash = (url_hash << 10) | snippet_idx;
-					m_builders[url_hash]->add(token, snippet_record(snippet_hash));
+					m_builder->add(url_hash, token, snippet_record(snippet_hash));
 				}
 				snippet_idx++;
 			}
@@ -410,12 +404,8 @@ namespace indexer {
 	}
 
 	void snippet_level::merge() {
-		for (auto &iter : m_builders) {
-			iter.second->append();
-			iter.second->merge();
-
-			iter.second->calculate_scores(algorithm::bm25);
-		}
+		m_builder->append();
+		m_builder->merge();
 	}
 
 	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,
@@ -424,12 +414,12 @@ namespace indexer {
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
-			index<snippet_record> idx("snippet", key, 0);
+			composite_index<snippet_record> idx("snippet", 1024);
 
 			std::vector<std::vector<snippet_record>> results;
 			for (const string &word : words) {
 				size_t token = Hash::str(word);
-				results.push_back(idx.find(token));
+				results.push_back(idx.find(key, token));
 			}
 			std::vector<return_record> summed_results = summed_union(results);
 			sort_and_get_top_results(summed_results, 2); // Pick top 2 snippets.

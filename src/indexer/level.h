@@ -32,6 +32,7 @@
 #include <vector>
 #include "snippet.h"
 #include "index_builder.h"
+#include "composite_index_builder.h"
 #include "index.h"
 
 namespace indexer {
@@ -182,8 +183,9 @@ namespace indexer {
 
 	class snippet_level: public level {
 		private:
-		std::map<size_t, std::shared_ptr<index_builder<snippet_record>>> m_builders;
+		std::shared_ptr<composite_index_builder<snippet_record>> m_builder;
 		public:
+		snippet_level();
 		level_type get_type() const;
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
