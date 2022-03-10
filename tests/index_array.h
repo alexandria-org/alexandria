@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_SUITE(index_array)
 
 BOOST_AUTO_TEST_CASE(index_builder) {
 
-	memory::enable_debugger();
+	const size_t num_allocated = memory::num_allocated();
 	{
 		// Max 10 results in this index.
 		indexer::index_builder<indexer::generic_record> idx("test", 0, 1000, 10);
@@ -64,9 +64,8 @@ BOOST_AUTO_TEST_CASE(index_builder) {
 		idx.append();
 		idx.merge();
 	}
-	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
+	BOOST_CHECK_EQUAL(memory::num_allocated(), num_allocated);
 
-	memory::enable_debugger();
 	{
 		indexer::index<indexer::generic_record> idx("test", 0, 1000);
 		size_t total;
@@ -80,7 +79,7 @@ BOOST_AUTO_TEST_CASE(index_builder) {
 		});
 		BOOST_CHECK_EQUAL(res[0].m_value, 100);
 	}
-	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
+	BOOST_CHECK_EQUAL(memory::num_allocated(), num_allocated);
 
 }
 
@@ -302,7 +301,7 @@ BOOST_AUTO_TEST_CASE(index_tree) {
 
 BOOST_AUTO_TEST_CASE(index_tree2) {
 
-	memory::enable_debugger();
+	const size_t num_allocated = memory::num_allocated();
 	{
 		indexer::index_tree idx_tree;
 
@@ -336,7 +335,7 @@ BOOST_AUTO_TEST_CASE(index_tree2) {
 
 		BOOST_REQUIRE_EQUAL(res2.size(), 4);
 	}
-	BOOST_CHECK_EQUAL(memory::disable_debugger(), 0);
+	BOOST_CHECK_EQUAL(memory::num_allocated(), num_allocated);
 
 }
 

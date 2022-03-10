@@ -87,14 +87,12 @@ namespace indexer {
 		void start_merge_thread() {
 			merge_thread_is_running = true;
 			merge_thread_obj = std::move(thread(merge_thread));
-			memory::enable_debugger();
 		}
 
 		void stop_merge_thread() {
 			merge_thread_is_running = false;
 			merge_thread_obj.join();
 			merge_all();
-			memory::disable_debugger();
 		}
 	}
 

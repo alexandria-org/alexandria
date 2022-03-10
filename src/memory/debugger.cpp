@@ -34,168 +34,90 @@ using namespace std;
 
 namespace memory {
 
-	namespace debugger {
-		const bool debugger_verbose = false;
-		const int MAX_ALLOC_SIZE = 1000000;
-		std::array<void *, MAX_ALLOC_SIZE> alloc_ptrs{nullptr};
-		std::array<size_t, MAX_ALLOC_SIZE> alloc_size{0};
-		mutex lock;
-		size_t alloc_counter = 0;
-
-		size_t total_allocated = 0;
-		size_t total_deleted = 0;
-	
-		bool debugger_is_enabled = false;
-
-		void pack_counters() {
-			const size_t len = alloc_ptrs.size();
-			size_t i = 0, j = 0;
-			while (i < len && j < len) {
-				if (alloc_ptrs[j] != nullptr) {
-					alloc_ptrs[i] = alloc_ptrs[j];
-					alloc_size[i] = alloc_size[j];
-					i++;
-					j++;
-				} else {
-					j++;
-				}
-			}
-			alloc_counter = i;
-		}
-	}
+	mutex lock;
+	size_t mem_counter;
+	size_t ptr_counter;
 
 	bool debugger_enabled() {
-		return debugger::debugger_is_enabled;
+		return false;
 	}
 
 	void enable_debugger() {
-		debugger::debugger_is_enabled = true;
+
+	}
+
+	void enable_mem_counter() {
+
 	}
 
 	size_t disable_debugger() {
-		size_t num_unfreed = 0;
-		if (debugger::debugger_verbose) {
-			cout << "Unfreed pointers: " << endl;
-		}
-		for (auto i: debugger::alloc_ptrs){
-			if (i != nullptr) {
-				if (debugger::debugger_verbose) {
-					cout << " " << (size_t)i << endl;
-				}
-				num_unfreed++;
-			}
-		}
-		debugger::debugger_is_enabled = false;
-
-		return num_unfreed;
+		return 0;
 	}
 
 	size_t allocated_memory() {
-		size_t allocated = 0;
-		for (size_t i = 0; i < debugger::alloc_ptrs.size(); i++){
-			if (debugger::alloc_ptrs[i] != nullptr) {
-				allocated += debugger::alloc_size[i];
-			}
-		}
+		return mem_counter;
+	}
 
-		return allocated;
+	size_t num_allocated() {
+		return ptr_counter;
 	}
 }
 
 //https://en.cppreference.com/w/cpp/memory/new/operator_new
 void *operator new(size_t n) {
 
-	using namespace memory::debugger;
+	void *m = malloc(n + sizeof(size_t));
 
-	if (n == 0) n++;
-
-	void *m = malloc(n);
-	if (memory::debugger_enabled()) {
-		::memory::debugger::lock.lock();
-		total_allocated += n;
-		if (alloc_counter >= MAX_ALLOC_SIZE) {
-			pack_counters();
-		}
-		if (alloc_counter < MAX_ALLOC_SIZE) {
-			cout << "alloc_counter: " << alloc_counter << endl;
-			alloc_ptrs[alloc_counter] = m;
-			alloc_size[alloc_counter] = n;
-			if (debugger_verbose) {
-				cout << "new: " << (size_t)m << " with size " << n << " num: " << alloc_counter << endl;
-			}
-			alloc_counter++;
-		} else {
-			cout << "too many simultanuous allocations: " << alloc_counter << endl;
-		}
-		::memory::debugger::lock.unlock();
+	if (m) {
+		memory::lock.lock();
+		memory::mem_counter += n;
+		memory::ptr_counter++;
+		memory::lock.unlock();
+		static_cast<size_t *>(m)[0] = n;
+		return &(static_cast<size_t *>(m)[1]);
 	}
-
-	if (m) return m;
 
 	throw bad_alloc();
 }
 
 void *operator new[](size_t n) {
 
-	using namespace memory::debugger;
+	void *m = malloc(n + sizeof(size_t));
 
-	if (n == 0) n++;
-
-	void *m = malloc(n);
-	if (memory::debugger_enabled()) {
-		::memory::debugger::lock.lock();
-		total_allocated += n;
-		if (alloc_counter >= MAX_ALLOC_SIZE) {
-			pack_counters();
-		}
-		if (alloc_counter < MAX_ALLOC_SIZE) {
-			alloc_ptrs[alloc_counter] = m;
-			alloc_size[alloc_counter] = n;
-			if (debugger_verbose) {
-				cout << "[new]: " << (size_t)m << " with size " << n << " num: " << alloc_counter << endl;
-			}
-			alloc_counter++;
-		} else {
-			cout << "too many simultanuous allocations: " << alloc_counter << endl;
-		}
-		::memory::debugger::lock.unlock();
+	if (m) {
+		memory::lock.lock();
+		memory::mem_counter += n;
+		memory::ptr_counter++;
+		memory::lock.unlock();
+		static_cast<size_t *>(m)[0] = n;
+		return &(static_cast<size_t *>(m)[1]);
 	}
-
-	if (m) return m;
 
 	throw bad_alloc();
 }
 
 void operator delete(void *p) noexcept {
 
-	using namespace memory::debugger;
+	void *realp = &(static_cast<size_t *>(p)[-1]);
+	const size_t n = static_cast<size_t *>(p)[-1];
 
-	if (memory::debugger_enabled()) {
-		::memory::debugger::lock.lock();
-		auto ind = std::distance(alloc_ptrs.begin(), std::find(alloc_ptrs.begin(), alloc_ptrs.end(), p));
-		total_deleted += alloc_size[ind];
-		alloc_ptrs[ind] = nullptr;
-		if (debugger_verbose) {
-			cout << "deleted: " << (size_t)p << " with size " << alloc_size[ind] << " mem allocated: " << (total_allocated - total_deleted) << endl;
-		}
-		::memory::debugger::lock.unlock();
-	}
-	free(p);
+	memory::lock.lock();
+	memory::mem_counter -= n;
+	memory::ptr_counter--;
+	memory::lock.unlock();
+
+	free(realp);
 }
 
 void operator delete[](void *p) noexcept {
 
-	using namespace memory::debugger;
+	void *realp = &(static_cast<size_t *>(p)[-1]);
+	const size_t n = static_cast<size_t *>(p)[-1];
 
-	if (memory::debugger_enabled()) {
-		::memory::debugger::lock.lock();
-		auto ind = std::distance(alloc_ptrs.begin(), std::find(alloc_ptrs.begin(), alloc_ptrs.end(), p));
-		total_deleted += alloc_size[ind];
-		alloc_ptrs[ind] = nullptr;
-		if (debugger_verbose) {
-			cout << "[deleted]: " << (size_t)p << " with size " << alloc_size[ind] << " mem allocated: " << (total_allocated - total_deleted) << endl;
-		}
-		::memory::debugger::lock.unlock();
-	}
-	free(p);
+	memory::lock.lock();
+	memory::mem_counter -= n;
+	memory::ptr_counter--;
+	memory::lock.unlock();
+
+	free(realp);
 }
