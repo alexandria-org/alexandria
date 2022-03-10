@@ -68,7 +68,10 @@ namespace indexer {
 			is_merging = true;
 			this_thread::sleep_for(100ms);
 
-			std::cout << "MERGING ALL: " << mergers.size() << " mergers" << std::endl;
+			size_t available_memory = memory::get_total_memory();
+
+			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 0.1) << std::endl;
+			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 			
 			ThreadPool pool(16);
 			std::vector<std::future<void>> results;
@@ -82,6 +85,8 @@ namespace indexer {
 			for (auto && result: results) {
 				result.get();
 			}
+
+			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 
 			is_merging = false;
 		}
