@@ -36,6 +36,7 @@ namespace indexer {
 	namespace merger {
 		void lock();
 		void register_merger(size_t id, std::function<void()> merge);
+		void register_appender(size_t id, std::function<void()> append);
 		void deregister_merger(size_t id);
 
 		void start_merge_thread();
