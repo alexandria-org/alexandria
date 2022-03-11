@@ -42,25 +42,23 @@ namespace indexer {
 		~composite_index();
 
 		std::vector<data_record> find(uint64_t realm_key, uint64_t key) const;
-
 	private:
 
-		std::vector<std::shared_ptr<index<data_record>>> m_shards;
+		std::string m_db_name;
+		size_t m_num_shards;
 		
 	};
 
 	template<typename data_record>
-	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards) {
-		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id));
-		}
+	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards)
+	: m_db_name(db_name), m_num_shards(num_shards)
+	{
 	}
 
 	template<typename data_record>
-	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards, size_t hash_table_size) {
-		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id, hash_table_size));
-		}
+	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards, size_t hash_table_size)
+	: m_db_name(db_name), m_num_shards(num_shards)
+	{
 	}
 
 	template<typename data_record>
@@ -70,7 +68,9 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> composite_index<data_record>::find(uint64_t realm_key, uint64_t key) const {
 		const uint64_t composite_key = (realm_key << 32) | (key >> 32);
-		return m_shards[composite_key % m_shards.size()]->find(composite_key);
+		const size_t shard_id = composite_key % m_num_shards;
+		index<data_record> shard(m_db_name, shard_id);
+		return shard.find(composite_key);
 	}
 
 }

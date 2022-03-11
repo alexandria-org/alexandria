@@ -49,9 +49,9 @@ namespace indexer {
 		void add_snippet(const snippet &s);
 		void add_document(size_t id, const std::string &doc);
 		void add_index_file(const std::string &local_path);
-		void add_index_files(const vector<string> &local_paths);
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
 		void add_link_file(const std::string &local_path);
+		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void merge();
 		void truncate();
 		void calculate_scores_for_level(size_t level_num);

@@ -60,7 +60,7 @@ namespace indexer {
 		}
 		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
-		idx_tree.add_index_files_threaded(local_files, 12);
+		idx_tree.add_index_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
 		Transfer::delete_downloaded_files(local_files);
 
@@ -89,9 +89,9 @@ namespace indexer {
 			}
 		}
 		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
-		for (const string &file : local_files) {
-			idx_tree.add_link_file(file);
-		}
+		cout << "starting indexer" << endl;
+		idx_tree.add_link_files_threaded(local_files, 24);
+		cout << "done with indexer" << endl;
 		Transfer::delete_downloaded_files(local_files);
 
 		merger::stop_merge_thread();
