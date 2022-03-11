@@ -113,6 +113,7 @@ namespace indexer {
 			std::function<void(uint64_t, uint64_t)> add_url) = 0;
 		virtual void merge() = 0;
 		virtual void calculate_scores() = 0;
+		virtual void clean_up() = 0;
 		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links) = 0;
 
@@ -151,6 +152,7 @@ namespace indexer {
 			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
 		void calculate_scores();
+		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
 		size_t apply_domain_links(const std::vector<domain_link_record> &links, std::vector<return_record> &results);
@@ -173,6 +175,7 @@ namespace indexer {
 			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
 		void calculate_scores() {};
+		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
 		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
@@ -195,6 +198,7 @@ namespace indexer {
 			std::function<void(uint64_t, uint64_t)> add_url);
 		void merge();
 		void calculate_scores() {};
+		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
 	};

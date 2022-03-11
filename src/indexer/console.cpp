@@ -155,7 +155,7 @@ namespace indexer {
 		idx_tree.add_level(&url_level);
 		idx_tree.add_level(&snippet_level);
 
-		idx_tree.truncate();
+		//idx_tree.truncate();
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -178,6 +178,107 @@ namespace indexer {
 			} else if (cmd == "quit") {
 				break;
 			}
+		}
+	}
+
+	
+	void index_new() {
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+		{
+			indexer::index_tree idx_tree;
+
+			indexer::domain_level domain_level;
+			indexer::url_level url_level;
+			indexer::snippet_level snippet_level;
+
+			idx_tree.add_level(&domain_level);
+			idx_tree.add_level(&url_level);
+			idx_tree.add_level(&snippet_level);
+
+			idx_tree.truncate();
+
+			merger::start_merge_thread();
+
+			const string batch = "ALEXANDRIA-H3";
+			size_t limit = 100;
+
+			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths);
+
+			if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
+
+			for (string &path : warc_paths) {
+				const size_t pos = path.find(".warc.gz");
+				if (pos != string::npos) {
+					path.replace(pos, 8, ".gz");
+				}
+			}
+			std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_tree.add_index_files_threaded(local_files, 24);
+			cout << "done with indexer" << endl;
+			Transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+		}
+
+		{
+			indexer::index_tree idx_tree;
+
+			merger::start_merge_thread();
+
+			const vector<string> batches = {
+				"LINK-0",
+				"LINK-1",
+				"LINK-2",
+				"LINK-3",
+				"LINK-4",
+				"LINK-5",
+				"LINK-6",
+				"LINK-7",
+				"LINK-8",
+				"LINK-9",
+				"LINK-10",
+				"LINK-11",
+				"LINK-12",
+				"LINK-13",
+				"LINK-14",
+				"LINK-15",
+				"LINK-16",
+				"LINK-17",
+				"LINK-18",
+				"LINK-19",
+				"LINK-20",
+				"LINK-21",
+				"LINK-22",
+				"LINK-23",
+			};
+			size_t limit = 1000;
+
+			for (const string &batch : batches) {
+
+				File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+				vector<string> warc_paths;
+				warc_paths_file.read_column_into(0, warc_paths);
+
+				if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
+
+				for (string &path : warc_paths) {
+					const size_t pos = path.find(".warc.gz");
+					if (pos != string::npos) {
+						path.replace(pos, 8, ".gz");
+					}
+				}
+				std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+				cout << "starting indexer" << endl;
+				idx_tree.add_link_files_threaded(local_files, 24);
+				cout << "done with indexer" << endl;
+				Transfer::delete_downloaded_files(local_files);
+			}
+
+			merger::stop_merge_thread();
 		}
 	}
 

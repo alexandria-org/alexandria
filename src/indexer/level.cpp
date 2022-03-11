@@ -128,7 +128,7 @@ namespace indexer {
 	}
 
 	domain_level::domain_level() {
-		m_builder = std::make_shared<index_builder<domain_record>>("domain", 0);
+		clean_up();
 	}
 
 	level_type domain_level::get_type() const {
@@ -188,6 +188,10 @@ namespace indexer {
 		m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
+	void domain_level::clean_up() {
+		m_builder = std::make_shared<index_builder<domain_record>>("domain", 0);
+	}
+
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
@@ -240,7 +244,7 @@ namespace indexer {
 	}
 
 	url_level::url_level() {
-		m_builder = make_shared<composite_index_builder<url_record>>("url", 10007);
+		clean_up();
 	}
 
 	level_type url_level::get_type() const {
@@ -289,6 +293,10 @@ namespace indexer {
 		m_builder->append();
 		m_builder->merge();
 		//m_builder->calculate_scores(algorithm::bm25);
+	}
+
+	void url_level::clean_up() {
+		m_builder = make_shared<composite_index_builder<url_record>>("url", 10007);
 	}
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
@@ -346,7 +354,7 @@ namespace indexer {
 	}
 
 	snippet_level::snippet_level() {
-		m_builder = make_shared<composite_index_builder<snippet_record>>("snippet", 10007);
+		clean_up();
 	}
 
 	level_type snippet_level::get_type() const {
@@ -396,6 +404,10 @@ namespace indexer {
 	void snippet_level::merge() {
 		m_builder->append();
 		m_builder->merge();
+	}
+
+	void snippet_level::clean_up() {
+		m_builder = make_shared<composite_index_builder<snippet_record>>("snippet", 10007);
 	}
 
 	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,

@@ -195,6 +195,12 @@ namespace indexer {
 		m_domain_link_index_builder->truncate();
 	}
 
+	void index_tree::clean_up() {
+		for (level *lvl : m_levels) {
+			lvl->clean_up();
+		}
+	}
+
 	void index_tree::calculate_scores_for_level(size_t level_num) {
 		m_levels[level_num]->calculate_scores();
 	}

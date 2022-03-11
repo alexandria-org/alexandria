@@ -101,6 +101,8 @@ int main(int argc, const char **argv) {
 		cout << url.host_hash() % stoull(argv[3]) << endl;
 	} else if (arg == "--console") {
 		indexer::console();
+	} else if (arg == "--index-new") {
+		indexer::index_new();
 	} else {
 		help();
 	}

@@ -54,6 +54,7 @@ namespace indexer {
 		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void merge();
 		void truncate();
+		void clean_up();
 		void calculate_scores_for_level(size_t level_num);
 
 		std::vector<return_record> find(const std::string &query);

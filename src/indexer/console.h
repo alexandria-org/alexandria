@@ -31,5 +31,6 @@
 namespace indexer {
 
 	void console();
+	void index_new();
 
 }
