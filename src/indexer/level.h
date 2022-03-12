@@ -33,6 +33,7 @@
 #include "snippet.h"
 #include "index_builder.h"
 #include "composite_index_builder.h"
+#include "sharded_index_builder.h"
 #include "index.h"
 
 namespace indexer {
@@ -141,7 +142,7 @@ namespace indexer {
 
 	class domain_level: public level {
 		private:
-		std::shared_ptr<index_builder<domain_record>> m_builder;
+		std::shared_ptr<sharded_index_builder<domain_record>> m_builder;
 		public:
 		domain_level();
 		level_type get_type() const;

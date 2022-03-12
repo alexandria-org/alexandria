@@ -80,14 +80,14 @@ namespace indexer {
 		std::vector<std::future<int>> results;
 
 		for (const string &local_path : local_paths) {
-			results.emplace_back(pool.enqueue([this, local_path]() -> int {
-				add_index_file(local_path);
+			results.emplace_back(pool.enqueue([](index_tree *tree, const string local_path) -> int {
+				tree->add_index_file(local_path);
 				return 0;
-			}));
+			}, this, local_path));
 		}
 
 		for (auto &&result: results) {
-			result.wait();
+			result.get();
 		}
 
 		m_url_to_domain->write(0);

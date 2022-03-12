@@ -26,6 +26,7 @@
 
 #include "builder.h"
 #include "config.h"
+#include "system/ThreadPool.h"
 
 using namespace std;
 
@@ -49,8 +50,19 @@ namespace hash_table {
 	}
 
 	void builder::merge() {
+		cout << "Merging hash table" << endl;
+		ThreadPool pool(24);
+		std::vector<std::future<int>> results;
 		for (HashTableShardBuilder *shard : m_shards) {
-			shard->write();
+			results.emplace_back(pool.enqueue([shard]() -> int {
+				shard->write();
+				return 0;
+			}));
 		}
+
+		for (auto &&result: results) {
+			result.wait();
+		}
+		cout << "...done" << endl;
 	}
 }

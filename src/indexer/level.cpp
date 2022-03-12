@@ -185,11 +185,11 @@ namespace indexer {
 	}
 
 	void domain_level::calculate_scores() {
-		m_builder->calculate_scores(indexer::algorithm::bm25);
+		//m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
 	void domain_level::clean_up() {
-		m_builder = std::make_shared<index_builder<domain_record>>("domain", 0);
+		m_builder = std::make_shared<sharded_index_builder<domain_record>>("domain", 1024);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,

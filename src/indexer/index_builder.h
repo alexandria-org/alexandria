@@ -36,6 +36,7 @@
 #include "algorithm/HyperLogLog.h"
 #include "config.h"
 #include "system/Logger.h"
+#include "memory/debugger.h"
 
 namespace indexer {
 
@@ -160,12 +161,17 @@ namespace indexer {
 		m_keys.push_back(key);
 		m_records.push_back(record);
 
+		assert(m_records.size() == m_keys.size());
+
 		m_lock.unlock();
 
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::append() {
+
+		assert(m_records.size() == m_keys.size());
+
 		std::ofstream record_writer(cache_filename(), std::ios::binary | std::ios::app);
 		if (!record_writer.is_open()) {
 			throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + cache_filename() + "). Error: " +
@@ -190,15 +196,28 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
 
-		std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+		const size_t mem_start = memory::allocated_memory();
 
-		read_meta(hll);
-		read_append_cache();
-		count_unique(hll);
-		sort_cache();
-		save_file();
-		save_meta(hll);
-		truncate_cache_files();
+		{
+			std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+
+			read_meta(hll);
+			read_append_cache();
+			count_unique(hll);
+			sort_cache();
+			save_file();
+			save_meta(hll);
+			truncate_cache_files();
+		}
+
+		const size_t mem_end = memory::allocated_memory();
+		if (mem_start != mem_end) {
+			if (mem_start <= mem_end) {
+				cout << "done merging, leeked: " << (mem_end - mem_start) << " bytes" << endl;
+			} else {
+				//cout << "done merging, leeked: -" << (mem_start - mem_end) << " bytes" << endl;
+			}
+		}
 
 	}
 
@@ -223,7 +242,11 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::truncate_cache_files() {
 
-		m_cache.clear();
+		// Reset caches and counters.
+		m_cache = std::map<uint64_t, std::vector<data_record>>{};
+		m_result_sizes = std::map<uint64_t, size_t>{};
+		m_document_sizes = std::map<uint64_t, size_t>{};
+		m_result_counters = std::map<uint64_t, std::shared_ptr<Algorithm::HyperLogLog<size_t>>>{};
 
 		std::ofstream writer(cache_filename(), std::ios::trunc);
 		writer.close();
@@ -242,7 +265,12 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::calculate_scores(algorithm algo) {
 
-		m_cache.clear();
+		m_cache = std::map<uint64_t, std::vector<data_record>>{};
+
+		// Read meta.
+		std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+		read_meta(hll);
+		count_unique(hll);
 
 		// Read the current file.
 		read_data_to_cache();
@@ -295,7 +323,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::read_append_cache() {
 
-		m_cache.clear();
+		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
 		// Read the current file.
 		read_data_to_cache();
@@ -361,7 +389,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::read_data_to_cache() {
 
-		m_cache.clear();
+		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
 		std::ifstream reader(target_filename(), std::ios::binary);
 		if (!reader.is_open()) return;
@@ -447,7 +475,7 @@ namespace indexer {
 
 			if (read_len == 0) {
 				LOG_INFO("Data stopped before end. Ignoring shard " + m_id);
-				m_cache.clear();
+				m_cache = std::map<uint64_t, std::vector<data_record>>{};
 				break;
 			}
 

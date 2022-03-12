@@ -95,6 +95,8 @@ namespace Algorithm {
 	template<typename T>
 	HyperLogLog<T>::HyperLogLog(size_t b)
 	: m_b(20) {
+		m_M = new char[m_len];
+		memset(m_M, 0, m_len);
 	}
 
 	template<typename T>

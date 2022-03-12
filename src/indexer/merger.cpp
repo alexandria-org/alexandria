@@ -72,7 +72,7 @@ namespace indexer {
 
 		void append_all() {
 			is_merging = true;
-			this_thread::sleep_for(100ms);
+			this_thread::sleep_for(1000ms);
 
 			size_t available_memory = memory::get_total_memory();
 
@@ -98,7 +98,7 @@ namespace indexer {
 
 		void merge_all() {
 			is_merging = true;
-			this_thread::sleep_for(100ms);
+			this_thread::sleep_for(1000ms);
 
 			size_t available_memory = memory::get_total_memory();
 

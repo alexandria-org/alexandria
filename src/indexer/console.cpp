@@ -230,30 +230,7 @@ namespace indexer {
 			merger::start_merge_thread();
 
 			const vector<string> batches = {
-				"LINK-0",
-				"LINK-1",
-				"LINK-2",
-				"LINK-3",
-				"LINK-4",
-				"LINK-5",
-				"LINK-6",
-				"LINK-7",
-				"LINK-8",
-				"LINK-9",
-				"LINK-10",
-				"LINK-11",
-				"LINK-12",
-				"LINK-13",
-				"LINK-14",
-				"LINK-15",
-				"LINK-16",
-				"LINK-17",
-				"LINK-18",
-				"LINK-19",
-				"LINK-20",
-				"LINK-21",
-				"LINK-22",
-				"LINK-23",
+				"LINK-MIX",
 			};
 			size_t limit = 1000;
 
