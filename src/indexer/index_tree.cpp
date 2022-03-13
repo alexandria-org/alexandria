@@ -29,7 +29,7 @@
 #include "domain_stats/domain_stats.h"
 #include "link/Link.h"
 #include "algorithm/Algorithm.h"
-#include "system/ThreadPool.h"
+#include "utils/thread_pool.hpp"
 
 using namespace std;
 
@@ -76,23 +76,19 @@ namespace indexer {
 
 	void index_tree::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
-		ThreadPool pool(num_threads);
-		std::vector<std::future<int>> results;
+		utils::thread_pool pool(num_threads);
 
 		for (const string &local_path : local_paths) {
-			results.emplace_back(pool.enqueue([](index_tree *tree, const string local_path) -> int {
-				tree->add_index_file(local_path);
-				return 0;
-			}, this, local_path));
+			pool.enqueue([this, local_path]() -> void {
+				add_index_file(local_path);
+			});
 		}
 
-		for (auto &&result: results) {
-			result.get();
-		}
+		pool.run_all();
 
 		m_url_to_domain->write(0);
 		m_hash_table->merge();
-		
+
 	}
 
 	void index_tree::add_link_file(const string &local_path) {
@@ -157,20 +153,15 @@ namespace indexer {
 
 	void index_tree::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
-		ThreadPool pool(num_threads);
-		std::vector<std::future<int>> results;
+		utils::thread_pool pool(num_threads);
 
 		for (auto &local_path : local_paths) {
-			results.emplace_back(pool.enqueue([this, local_path]() -> int {
+			pool.enqueue([this, local_path]() -> void {
 				add_link_file(local_path);
-				return 0;
-			}));
+			});
 		}
 
-		for (auto && result: results) {
-			result.get();
-		}
-		
+		pool.run_all();
 	}
 
 	void index_tree::merge() {

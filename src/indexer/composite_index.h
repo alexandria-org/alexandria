@@ -29,6 +29,7 @@
 #include <iostream>
 #include "index.h"
 #include "algorithm/intersection.h"
+#include "config.h"
 
 namespace indexer {
 
@@ -46,18 +47,19 @@ namespace indexer {
 
 		std::string m_db_name;
 		size_t m_num_shards;
+		size_t m_hash_table_size;
 		
 	};
 
 	template<typename data_record>
 	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards)
-	: m_db_name(db_name), m_num_shards(num_shards)
+	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(Config::shard_hash_table_size)
 	{
 	}
 
 	template<typename data_record>
 	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards, size_t hash_table_size)
-	: m_db_name(db_name), m_num_shards(num_shards)
+	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(hash_table_size)
 	{
 	}
 
@@ -69,7 +71,7 @@ namespace indexer {
 	std::vector<data_record> composite_index<data_record>::find(uint64_t realm_key, uint64_t key) const {
 		const uint64_t composite_key = (realm_key << 32) | (key >> 32);
 		const size_t shard_id = composite_key % m_num_shards;
-		index<data_record> shard(m_db_name, shard_id);
+		index<data_record> shard(m_db_name, shard_id, m_hash_table_size);
 		return shard.find(composite_key);
 	}
 

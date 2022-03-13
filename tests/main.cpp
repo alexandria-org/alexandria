@@ -82,6 +82,7 @@ using std::pair;
 #include "datetime.h"
 #include "index_array.h"
 #include "memory.h"
+#include "thread_pool.h"
 
 void run_before() {
 	Config::read_config("../tests/test_config.conf");

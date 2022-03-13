@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,42 +24,35 @@
  * SOFTWARE.
  */
 
-#include "builder.h"
-#include "config.h"
-#include "utils/thread_pool.hpp"
+#pragma once
 
-using namespace std;
+#include <iostream>
+#include <thread>
+#include <future>
+#include <queue>
 
-namespace hash_table {
+namespace system {
 
-	builder::builder(const string &db_name)
-	: m_db_name(db_name) {
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			m_shards.push_back(new HashTableShardBuilder(db_name, i));
-		}
-	}
+	class simple_thread_pool {
 
-	builder::~builder() {
-		for (HashTableShardBuilder *shard : m_shards) {
-			delete shard;
-		}
-	}
+		public:
 
-	void builder::add(uint64_t key, const std::string &value) {
-		m_shards[key % Config::ht_num_shards]->add(key, value);
-	}
+			explicit simple_thread_pool(size_t);
+			~simple_thread_pool();
 
-	void builder::merge() {
-		cout << "Merging hash table" << endl;
-		utils::thread_pool pool(24);
-		for (HashTableShardBuilder *shard : m_shards) {
-			pool.enqueue([shard]() -> void {
-				shard->write();
-			});
-		}
+			void enqueue(std::function<void()> &&fun);
 
-		pool.run_all();
+		private:
 
-		cout << "...done" << endl;
-	}
+			void handle_work();
+
+			std::vector<std::thread> m_workers;
+			std::queue<std::function<void()>> m_queue;
+
+			std::mutex m_queue_lock;
+			std::condition_variable m_condition;
+			bool m_stop = false;
+
+	};
+	
 }

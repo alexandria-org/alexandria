@@ -27,6 +27,7 @@
 #include "snippet.h"
 #include "domain_stats/domain_stats.h"
 #include "composite_index.h"
+#include "sharded_index.h"
 
 using namespace std;
 
@@ -197,7 +198,7 @@ namespace indexer {
 
 		std::vector<std::string> words = Text::get_full_text_words(query);
 		
-		index<domain_record> idx("domain", 0);
+		sharded_index<domain_record> idx("domain", 1024);
 
 		std::vector<std::vector<domain_record>> results;
 		for (const string &word : words) {

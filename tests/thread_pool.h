@@ -24,42 +24,51 @@
  * SOFTWARE.
  */
 
-#include "builder.h"
-#include "config.h"
 #include "utils/thread_pool.hpp"
 
-using namespace std;
+BOOST_AUTO_TEST_SUITE(thread_pool)
 
-namespace hash_table {
+BOOST_AUTO_TEST_CASE(thread_pool) {
+	utils::thread_pool pool(10);
 
-	builder::builder(const string &db_name)
-	: m_db_name(db_name) {
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			m_shards.push_back(new HashTableShardBuilder(db_name, i));
-		}
+	vector<int> vec(10);
+	for (int &i : vec) {
+		pool.enqueue([&i]() {
+			i++;
+		});
 	}
 
-	builder::~builder() {
-		for (HashTableShardBuilder *shard : m_shards) {
-			delete shard;
-		}
+	pool.run_all();
+
+	for (int i : vec) {
+		BOOST_CHECK(i == 1);
 	}
-
-	void builder::add(uint64_t key, const std::string &value) {
-		m_shards[key % Config::ht_num_shards]->add(key, value);
-	}
-
-	void builder::merge() {
-		cout << "Merging hash table" << endl;
-		utils::thread_pool pool(24);
-		for (HashTableShardBuilder *shard : m_shards) {
-			pool.enqueue([shard]() -> void {
-				shard->write();
-			});
-		}
-
-		pool.run_all();
-
-		cout << "...done" << endl;
-	}
+	
 }
+
+BOOST_AUTO_TEST_CASE(thread_pool2) {
+	utils::thread_pool pool(12);
+
+	vector<int> vec(24);
+	for (int &i : vec) {
+		pool.enqueue([&i]() {
+			this_thread::sleep_for(200ms);
+			i = 1;
+		});
+	}
+
+	double now = Profiler::now_micro();
+
+	pool.run_all();
+
+	double dt = Profiler::now_micro() - now;
+
+	BOOST_CHECK(dt < (200*2 + 10)*1000);
+
+	for (int i : vec) {
+		BOOST_CHECK(i == 1);
+	}
+	
+}
+
+BOOST_AUTO_TEST_SUITE_END()

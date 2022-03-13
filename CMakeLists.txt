@@ -86,6 +86,8 @@ set(SRC_CLASSES
 	"src/system/Logger.cpp"
 	"src/system/datetime.cpp"
 
+	"src/utils/thread_pool.cpp"
+
 	"src/memory/memory.cpp"
 
 	"src/sort/Sort.cpp"

@@ -27,7 +27,7 @@
 #include "merger.h"
 #include "memory/memory.h"
 #include "memory/debugger.h"
-#include "system/ThreadPool.h"
+#include "utils/thread_pool.hpp"
 #include <map>
 #include <chrono>
 #include <thread>
@@ -78,18 +78,15 @@ namespace indexer {
 
 			std::cout << "APPENDING ALL: " << appenders.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 5) << std::endl;
 			
-			ThreadPool pool(24);
-			std::vector<std::future<void>> results;
+			utils::thread_pool pool(24);
 
 			for (auto &iter : appenders) {
-				results.emplace_back(
-					pool.enqueue(iter.second)
-				);
+				pool.enqueue([iter]() {
+					iter.second();
+				});
 			}
 
-			for (auto && result: results) {
-				result.get();
-			}
+			pool.run_all();
 
 			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 
@@ -104,18 +101,15 @@ namespace indexer {
 
 			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 0.5) << std::endl;
 			
-			ThreadPool pool(24);
-			std::vector<std::future<void>> results;
+			utils::thread_pool pool(24);
 
 			for (auto &iter : mergers) {
-				results.emplace_back(
-					pool.enqueue(iter.second)
-				);
+				pool.enqueue([iter]() {
+					iter.second();
+				});
 			}
 
-			for (auto && result: results) {
-				result.get();
-			}
+			pool.run_all();
 
 			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 

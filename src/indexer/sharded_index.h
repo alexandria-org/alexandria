@@ -28,6 +28,7 @@
 
 #include "index.h"
 #include "algorithm/intersection.h"
+#include "config.h"
 
 namespace indexer {
 
@@ -45,22 +46,23 @@ namespace indexer {
 
 	private:
 
-		std::vector<std::shared_ptr<index<data_record>>> m_shards;
-		
+		std::string m_db_name;
+		size_t m_num_shards;
+		size_t m_hash_table_size;
+
 	};
 
 	template<typename data_record>
-	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards) {
-		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id));
-		}
+	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards)
+	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(Config::shard_hash_table_size)
+	{
 	}
 
 	template<typename data_record>
-	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size) {
-		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index<data_record>>(db_name, shard_id, hash_table_size));
-		}
+	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size)
+	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(hash_table_size)
+	{
+
 	}
 
 	template<typename data_record>
@@ -69,7 +71,9 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find(uint64_t key) const {
-		return m_shards[key % m_shards.size()]->find(key);
+		const size_t shard_id = key % m_num_shards;
+		index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+		return idx.find(key);
 	}
 
 	template<typename data_record>
