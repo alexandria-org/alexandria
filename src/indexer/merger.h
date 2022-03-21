@@ -41,6 +41,8 @@ namespace indexer {
 
 		void start_merge_thread();
 		void stop_merge_thread();
+		void terminate_merge_thread();
+		void force_append();
 	};
 
 }

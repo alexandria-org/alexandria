@@ -196,7 +196,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
 
-		const size_t mem_start = memory::allocated_memory();
+		//const size_t mem_start = memory::allocated_memory();
 
 		{
 			std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
@@ -210,14 +210,14 @@ namespace indexer {
 			truncate_cache_files();
 		}
 
-		const size_t mem_end = memory::allocated_memory();
+		/*const size_t mem_end = memory::allocated_memory();
 		if (mem_start != mem_end) {
 			if (mem_start <= mem_end) {
 				cout << "done merging, leeked: " << (mem_end - mem_start) << " bytes" << endl;
 			} else {
 				//cout << "done merging, leeked: -" << (mem_start - mem_end) << " bytes" << endl;
 			}
-		}
+		}*/
 
 	}
 

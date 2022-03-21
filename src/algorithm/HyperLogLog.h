@@ -101,7 +101,7 @@ namespace Algorithm {
 
 	template<typename T>
 	HyperLogLog<T>::~HyperLogLog() {
-		delete m_M;
+		delete [] m_M;
 	}
 
 	template<typename T>

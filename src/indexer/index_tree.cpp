@@ -153,6 +153,8 @@ namespace indexer {
 
 	void index_tree::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
+		m_url_to_domain->read();
+
 		utils::thread_pool pool(num_threads);
 
 		for (auto &local_path : local_paths) {
@@ -168,7 +170,7 @@ namespace indexer {
 		for (level *lvl : m_levels) {
 			lvl->merge();
 		}
-		m_hash_table->merge();
+		//m_hash_table->merge();
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
@@ -200,6 +202,9 @@ namespace indexer {
 
 		vector<link_record> links = m_link_index->find(Text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find(Text::get_tokens(query));
+
+		//for (auto &link : links) link.m_score = 0.2;
+		//for (auto &link : domain_links) link.m_score = 0.2;
 
 		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
 

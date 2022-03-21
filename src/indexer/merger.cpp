@@ -38,6 +38,8 @@ namespace indexer {
 
 	namespace merger {
 
+		const double mem_limit = 0.5;
+
 		bool is_merging = false;
 		map<size_t, std::function<void()>> mergers;
 		map<size_t, std::function<void()>> appenders;
@@ -76,7 +78,8 @@ namespace indexer {
 
 			size_t available_memory = memory::get_total_memory();
 
-			std::cout << "APPENDING ALL: " << appenders.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 5) << std::endl;
+			std::cout << "APPENDING ALL: " << appenders.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " <<
+				(available_memory * mem_limit) << std::endl;
 			
 			utils::thread_pool pool(24);
 
@@ -99,7 +102,8 @@ namespace indexer {
 
 			size_t available_memory = memory::get_total_memory();
 
-			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " << (available_memory * 0.5) << std::endl;
+			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " <<
+				(available_memory * mem_limit) << std::endl;
 			
 			utils::thread_pool pool(24);
 
@@ -120,7 +124,7 @@ namespace indexer {
 			memory::update();
 			size_t available_memory = memory::get_total_memory();
 			while (merge_thread_is_running) {
-				if (memory::allocated_memory() > available_memory * 0.5) {
+				if (memory::allocated_memory() > available_memory * mem_limit) {
 					append_all();
 				}
 				this_thread::sleep_for(100ms);
@@ -137,6 +141,15 @@ namespace indexer {
 			merge_thread_obj.join();
 			append_all();
 			merge_all();
+		}
+
+		void terminate_merge_thread() {
+			merge_thread_is_running = false;
+			merge_thread_obj.join();
+		}
+
+		void force_append() {
+			append_all();
 		}
 	}
 
