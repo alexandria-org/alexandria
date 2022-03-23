@@ -36,10 +36,10 @@ using namespace std;
 namespace indexer {
 
 	index_tree::index_tree() {
-		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 1024);
-		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 1024);
-		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 1024);
-		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 1024);
+		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 2001);
+		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 2001);
+		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
+		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
 		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
 		m_url_to_domain = std::make_unique<UrlToDomain>("index_tree"); 
 	}

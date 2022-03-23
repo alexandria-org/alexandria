@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include "debugger.h"
 #include <iostream>
 #include <new>
 #include <cstdlib>
@@ -60,6 +61,32 @@ namespace memory {
 
 	size_t num_allocated() {
 		return ptr_counter;
+	}
+
+	size_t record_usage_base = 0;
+	size_t record_usage_peak = 0;
+	size_t global_usage_peak = 0;
+
+	void reset_usage() {
+		record_usage_base = allocated_memory();
+		record_usage_peak = record_usage_base;
+	}
+
+	void record_usage() {
+		if (record_usage_peak < allocated_memory()) {
+			record_usage_peak = allocated_memory();
+		}
+		if (global_usage_peak < get_usage()) {
+			global_usage_peak = get_usage();
+		}
+	}
+
+	size_t get_usage() {
+		return record_usage_peak - record_usage_base;
+	}
+
+	size_t get_usage_peak() {
+		return global_usage_peak;
 	}
 }
 

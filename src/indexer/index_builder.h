@@ -196,19 +196,36 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
 
-		//const size_t mem_start = memory::allocated_memory();
+		const size_t mem_before = memory::allocated_memory();
+
+		memory::reset_usage();
 
 		{
 			std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
 
 			read_meta(hll);
+			memory::record_usage();
 			read_append_cache();
+			memory::record_usage();
 			count_unique(hll);
+			memory::record_usage();
 			sort_cache();
+			memory::record_usage();
 			save_file();
+			memory::record_usage();
 			save_meta(hll);
+			memory::record_usage();
 			truncate_cache_files();
+			memory::record_usage();
 		}
+
+		const size_t mem_usage = memory::get_usage();
+		const size_t mem_peak = memory::get_usage_peak();
+
+		const size_t mem_after = memory::allocated_memory();
+
+		std::cout << "did merge: " << target_filename() << " mem bef: " << mem_before << " mem_after: " << mem_after << " mem_usage: " << mem_usage
+			<< " mem_peak: " << mem_peak << std::endl;
 
 		/*const size_t mem_end = memory::allocated_memory();
 		if (mem_start != mem_end) {
