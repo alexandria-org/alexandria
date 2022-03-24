@@ -1,6 +1,6 @@
 # Alexandria.org
 
-[Coding Rules](/documentation/code_rules.md)
+[Coding Rules](/documentation/coding_rules.md)
 
 ## Documentation
 1. [Index file format (.fti)](/documentation/index_file_format.md)
