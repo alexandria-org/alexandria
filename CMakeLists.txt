@@ -15,6 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 add_subdirectory("deps/leveldb")
 add_subdirectory("deps/abseil-cpp")
 
+find_package(roaring REQUIRED)
 find_package(Threads REQUIRED)
 FIND_PACKAGE(CURL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
@@ -89,6 +90,7 @@ set(SRC_CLASSES
 	"src/utils/thread_pool.cpp"
 
 	"src/memory/memory.cpp"
+	"src/memory/debugger.cpp"
 
 	"src/sort/Sort.cpp"
 
@@ -131,7 +133,6 @@ set(SRC_COMMON
 
 add_executable(run_tests
 	"tests/main.cpp"
-	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -147,7 +148,6 @@ add_executable(scraper
 )
 add_executable(indexer
 	"src/indexer.cpp"
-	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -167,20 +167,20 @@ target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(scraper PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(indexer PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 
