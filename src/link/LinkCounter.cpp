@@ -31,7 +31,7 @@
 #include "KeyValueStore.h"
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
 #include "algorithm/algorithm.h"

@@ -28,7 +28,7 @@
 #include "config.h"
 #include "parser/Warc.h"
 #include "system/ThreadPool.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "text/text.h"
 #include "transfer/Transfer.h"
 #include <iostream>

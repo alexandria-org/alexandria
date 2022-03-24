@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "text/Text.h"
+#include "text/text.h"
 #include "hash/Hash.h"
 #include "full_text/FullText.h"
 

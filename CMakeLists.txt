@@ -84,8 +84,9 @@ set(SRC_CLASSES
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"
 	"src/system/SubSystem.cpp"
-	"src/system/Logger.cpp"
 	"src/system/datetime.cpp"
+
+	"src/logger/logger.cpp"
 
 	"src/utils/thread_pool.cpp"
 
@@ -127,8 +128,8 @@ set(SRC_CLASSES
 set(SRC_COMMON
 	"src/common/Dictionary.cpp"
 	"src/common/DictionaryRow.cpp"
-	"src/text/Stopwords.cpp"
-	"src/text/Text.cpp"
+	"src/text/stopwords.cpp"
+	"src/text/text.cpp"
 )
 
 add_executable(run_tests

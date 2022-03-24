@@ -28,7 +28,7 @@
 #include "Transfer.h"
 #include <fstream>
 #include "system/ThreadPool.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "file/File.h"
 #include "text/text.h"

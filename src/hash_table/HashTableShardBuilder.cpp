@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "HashTableShardBuilder.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "file/File.h"
 #include "indexer/merger.h"
 

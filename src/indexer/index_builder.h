@@ -35,7 +35,7 @@
 #include "merger.h"
 #include "algorithm/hyper_log_log.h"
 #include "config.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "memory/debugger.h"
 
 namespace indexer {

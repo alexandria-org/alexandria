@@ -26,7 +26,7 @@
 
 #include "FullTextIndexer.h"
 #include "FullText.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "text/text.h"
 #include <math.h>
 

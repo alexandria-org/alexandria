@@ -45,7 +45,7 @@
 #include "LinkResult.h"
 #include "DomainLinkResult.h"
 
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "json.hpp"
 

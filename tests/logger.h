@@ -24,17 +24,17 @@
  * SOFTWARE.
  */
 
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "config.h"
 
-BOOST_AUTO_TEST_SUITE(logger)
+BOOST_AUTO_TEST_SUITE(test_logger)
 
-BOOST_AUTO_TEST_CASE(logger) {
+BOOST_AUTO_TEST_CASE(test_logger1) {
 
-	Logger::log_string("test1");
-	Logger::log_string("test2");
+	logger::log_string("test1");
+	logger::log_string("test2");
 
-	Logger::sync();
+	logger::sync();
 
 	ifstream logfile(Config::log_file_path);
 	logfile.seekg(-12, std::ios::end);

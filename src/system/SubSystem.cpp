@@ -26,7 +26,7 @@
 
 #include "SubSystem.h"
 #include "System.h"
-#include "Logger.h"
+#include "logger/logger.h"
 
 using namespace boost::iostreams;
 using namespace std;

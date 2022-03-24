@@ -40,7 +40,7 @@ template<typename DataRecord> class FullTextIndex;
 #include "SearchMetric.h"
 #include "text/text.h"
 
-#include "system/Logger.h"
+#include "logger/logger.h"
 
 template<typename DataRecord>
 class FullTextIndex {

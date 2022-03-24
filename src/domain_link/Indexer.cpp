@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "Indexer.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "text/text.h"
 #include "full_text/FullText.h"
 #include "domain_link/FullTextRecord.h"

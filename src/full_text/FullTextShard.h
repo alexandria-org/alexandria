@@ -40,7 +40,7 @@ template<typename DataRecord> class FullTextShard;
 #include "FullTextIndex.h"
 #include "FullTextResultSet.h"
 
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 
 /*

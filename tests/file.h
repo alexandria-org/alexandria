@@ -25,7 +25,7 @@
  */
 
 #include "transfer/Transfer.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "file/TsvFileRemote.h"
 #include "hash/Hash.h"
 

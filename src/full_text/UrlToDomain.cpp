@@ -25,7 +25,7 @@
  */
 
 #include "UrlToDomain.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "indexer/merger.h"
 
 using namespace std;

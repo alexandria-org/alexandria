@@ -2,7 +2,7 @@
 #include "Warc.h"
 #include "tlds.h"
 #include "text/text.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "transfer/Transfer.h"
 
 using namespace std;

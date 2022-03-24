@@ -35,7 +35,7 @@
 #include "full_text/SearchMetric.h"
 #include "link/FullTextRecord.h"
 #include "domain_link/FullTextRecord.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "parser/Parser.h"
 #include "transfer/Transfer.h"

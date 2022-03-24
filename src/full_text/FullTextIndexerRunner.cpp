@@ -29,7 +29,7 @@
 #include "FullText.h"
 #include "FullTextIndexer.h"
 #include <math.h>
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "algorithm/algorithm.h"
 
 using namespace std;

@@ -28,7 +28,7 @@
 #include <iostream>
 #include "common/Dictionary.h"
 #include "file/TsvFileRemote.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/System.h"
 
 using namespace std;

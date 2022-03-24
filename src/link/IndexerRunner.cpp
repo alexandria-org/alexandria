@@ -30,7 +30,7 @@
 #include "link/Indexer.h"
 #include "domain_link/Indexer.h"
 #include <math.h>
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "full_text/FullText.h"
 #include "algorithm/algorithm.h"
 

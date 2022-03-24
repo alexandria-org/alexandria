@@ -86,12 +86,12 @@ using std::pair;
 
 void run_before() {
 	Config::read_config("../tests/test_config.conf");
-	Logger::start_logger_thread();
+	logger::start_logger_thread();
 	Worker::start_urlstore_server();
 }
 
 void run_after() {
-	Logger::join_logger_thread();
+	logger::join_logger_thread();
 }
 
 

@@ -30,7 +30,7 @@
 #include <signal.h>
 #include "fcgio.h"
 #include "config.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "api/Worker.h"
 #include "hash_table/HashTableHelper.h"
 #include "full_text/FullText.h"
@@ -65,7 +65,7 @@ int main(int argc, const char **argv) {
 	struct sigaction act{SIG_IGN};
 	sigaction(SIGPIPE, &act, NULL);
 
-	Logger::start_logger_thread();
+	logger::start_logger_thread();
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
@@ -135,7 +135,7 @@ int main(int argc, const char **argv) {
 		HashTableHelper::truncate("domain_link_index");
 	}
 
-	Logger::join_logger_thread();
+	logger::join_logger_thread();
 
 	return 0;
 }
