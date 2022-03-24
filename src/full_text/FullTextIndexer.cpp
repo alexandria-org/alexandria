@@ -27,7 +27,7 @@
 #include "FullTextIndexer.h"
 #include "FullText.h"
 #include "system/Logger.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include <math.h>
 
 using namespace std;
@@ -155,11 +155,11 @@ void FullTextIndexer::write_url_to_domain() {
 
 void FullTextIndexer::add_expanded_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
 
-	vector<string> words = Text::get_expanded_full_text_words(text);
+	vector<string> words = text::get_expanded_full_text_words(text);
 	map<uint64_t, uint64_t> uniq;
 
 	if (Config::n_grams > 1) {
-		Text::words_to_ngram_hash(words, Config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
+		text::words_to_ngram_hash(words, Config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
 			if (uniq.find(hash) == uniq.end()) {
 				word_map[hash] += score;
 				uniq[hash] = hash;
@@ -178,7 +178,7 @@ void FullTextIndexer::add_expanded_data_to_word_map(map<uint64_t, float> &word_m
 
 void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const string &text, float score) const {
 
-	vector<string> words = Text::get_full_text_words(text);
+	vector<string> words = text::get_full_text_words(text);
 	map<uint64_t, uint64_t> uniq;
 	for (const string &word : words) {
 		const uint64_t word_hash = m_hasher(word);
@@ -191,7 +191,7 @@ void FullTextIndexer::add_data_to_word_map(map<uint64_t, float> &word_map, const
 
 void FullTextIndexer::add_data_to_shards(const URL &url, const string &text, float score) {
 
-	vector<string> words = Text::get_full_text_words(text);
+	vector<string> words = text::get_full_text_words(text);
 	for (const string &word : words) {
 
 		const uint64_t word_hash = m_hasher(word);

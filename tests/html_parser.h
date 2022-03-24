@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 	string text = parser.text();
 	BOOST_CHECK_EQUAL(text.substr(text.size() - 15), "# endif #endif ");
 
-	vector<string> words = Text::get_expanded_full_text_words(text);
+	vector<string> words = text::get_expanded_full_text_words(text);
 
 	bool has_word = false;
 	for (const string &word : words) {

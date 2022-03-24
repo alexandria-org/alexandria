@@ -25,7 +25,7 @@
  */
 
 #include "ResultWithSnippet.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "full_text/FullTextRecord.h"
 
 using namespace std;
@@ -65,7 +65,7 @@ ResultWithSnippet::~ResultWithSnippet() {
 
 string ResultWithSnippet::make_snippet(const string &text) const {
 	string response = text.substr(0, 140);
-	Text::trim(response);
+	text::trim(response);
 	if (response.size() >= 140) response += "...";
 	return response;
 }

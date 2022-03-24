@@ -24,15 +24,15 @@
  * SOFTWARE.
  */
 
-#include "Stopwords.h"
+#include "stopwords.h"
 
 using namespace std;
 
-bool Stopwords::is_stop_word(const string &word) {
+bool stopwords::is_stop_word(const string &word) {
 	return (s_english.find(word) != s_english.end()) || (s_swedish.find(word) != s_swedish.end());
 }
 
-set<string> Stopwords::s_english{
+set<string> stopwords::s_english{
 	"the",
 	"of",
 	"and",
@@ -145,7 +145,7 @@ set<string> Stopwords::s_english{
 	"0"
 };
 
-set<string> Stopwords::s_swedish{
+set<string> stopwords::s_swedish{
 	"och",
 	"i",
 	"av",

@@ -499,7 +499,7 @@ namespace SearchEngine {
 
 		reset_search_metric(metric);
 
-		vector<string> words = Text::get_full_text_words(query, Config::query_max_words);
+		vector<string> words = text::get_full_text_words(query, Config::query_max_words);
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
 		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards<DataRecord>(storage->result_sets, shards, words);
@@ -537,7 +537,7 @@ namespace SearchEngine {
 
 		reset_search_metric(metric);
 
-		vector<string> words = Text::get_full_text_words(query, Config::query_max_words);
+		vector<string> words = text::get_full_text_words(query, Config::query_max_words);
 		if (words.size() == 0) return new FullTextResultSet<DataRecord>(0);
 
 		vector<FullTextResultSet<DataRecord> *> result_vector = search_shards_exact<DataRecord>(storage->result_sets, shards, words);
@@ -627,7 +627,7 @@ namespace SearchEngine {
 	vector<DataRecord> search_ids(SearchAllocation::Storage<DataRecord> *storage, const FullTextIndex<DataRecord> &index,
 		const string &query, size_t limit) {
 
-		vector<string> words = Text::get_expanded_full_text_words(query);
+		vector<string> words = text::get_expanded_full_text_words(query);
 
 		uint64_t key = Hash::str(boost::algorithm::join(words, " "));
 

@@ -24,19 +24,19 @@
  * SOFTWARE.
  */
 
-#include "text/Text.h"
+#include "text/text.h"
 
-BOOST_AUTO_TEST_SUITE(text)
+BOOST_AUTO_TEST_SUITE(test_text)
 
 BOOST_AUTO_TEST_CASE(get_full_text_words) {
-	vector<string> words = Text::get_full_text_words("C++ map");
+	vector<string> words = text::get_full_text_words("C++ map");
 	/*for (const string &word : words) {
 		std::cout << word << std::endl;
 	}*/
 }
 
 BOOST_AUTO_TEST_CASE(get_tokens) {
-	vector<uint64_t> tokens = Text::get_tokens("My name is Josef Cullhed");
+	vector<uint64_t> tokens = text::get_tokens("My name is Josef Cullhed");
 
 	vector<uint64_t> targets = {
 		Hash::str("my"),
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(get_tokens) {
 }
 
 BOOST_AUTO_TEST_CASE(get_tokens2) {
-	vector<uint64_t> tokens = Text::get_tokens("Test. Ing! the    test   +function+");
+	vector<uint64_t> tokens = text::get_tokens("Test. Ing! the    test   +function+");
 
 	vector<uint64_t> targets = {
 		Hash::str("test"),
@@ -65,20 +65,20 @@ BOOST_AUTO_TEST_CASE(get_tokens2) {
 
 BOOST_AUTO_TEST_CASE(get_snippets) {
 	{
-		vector<string> snippets = Text::get_snippets("A small text that should fit in one snippet");
+		vector<string> snippets = text::get_snippets("A small text that should fit in one snippet");
 
 		BOOST_REQUIRE(snippets.size() == 1);
 		BOOST_CHECK(snippets[0] == "A small text that should fit in one snippet");
 	}
 	{
-		vector<string> snippets = Text::get_snippets(" The zlib compression library provides in-memory compression and decompression functions, including integrity checks of the uncompressed data. This version of the library supports only one compression method (deflation) but other algorithms will be added later and will have the same stream interface.  Compression can be done in a single step if the buffers are large enough (for example if an input file is mmap'ed), or can be done by repeated calls of the compression function. In the latter case, the application must provide more input and/or consume the output (providing more output space) before each call. ");
+		vector<string> snippets = text::get_snippets(" The zlib compression library provides in-memory compression and decompression functions, including integrity checks of the uncompressed data. This version of the library supports only one compression method (deflation) but other algorithms will be added later and will have the same stream interface.  Compression can be done in a single step if the buffers are large enough (for example if an input file is mmap'ed), or can be done by repeated calls of the compression function. In the latter case, the application must provide more input and/or consume the output (providing more output space) before each call. ");
 
 		BOOST_REQUIRE(snippets.size() == 3);
 	}
 }
 
 BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
-	vector<string> words = Text::get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\
+	vector<string> words = text::get_words_without_stopwords("Hej asd!asd jag, heter! !josef. cullhed 	\
 		jfoidjfoai823hr9hfhwe9f8hshgohewogiqhoih");
 
 	BOOST_CHECK_EQUAL(words.size(), 8);
@@ -94,63 +94,63 @@ BOOST_AUTO_TEST_CASE(get_words_without_stopwords) {
 
 BOOST_AUTO_TEST_CASE(clean_word) {
 
-	BOOST_CHECK_EQUAL(Text::clean_word("hej"), "hej");
-	BOOST_CHECK_EQUAL(Text::clean_word("åäö"), "åäö");
-	BOOST_CHECK_EQUAL(Text::clean_word("123"), "123");
-	BOOST_CHECK_EQUAL(Text::clean_word("$Üç"), "");
-	BOOST_CHECK_EQUAL(Text::clean_word("hejç"), "hej");
-	BOOST_CHECK_EQUAL(Text::clean_word("açd"), "ad");
+	BOOST_CHECK_EQUAL(text::clean_word("hej"), "hej");
+	BOOST_CHECK_EQUAL(text::clean_word("åäö"), "åäö");
+	BOOST_CHECK_EQUAL(text::clean_word("123"), "123");
+	BOOST_CHECK_EQUAL(text::clean_word("$Üç"), "");
+	BOOST_CHECK_EQUAL(text::clean_word("hejç"), "hej");
+	BOOST_CHECK_EQUAL(text::clean_word("açd"), "ad");
 
-	BOOST_CHECK(Text::is_clean_word("hej"));
-	BOOST_CHECK(Text::is_clean_word("åäö"));
-	BOOST_CHECK(Text::is_clean_word("123"));
-	BOOST_CHECK(!Text::is_clean_word("$Üç"));
-	BOOST_CHECK(!Text::is_clean_word("hejç"));
-	BOOST_CHECK(!Text::is_clean_word("açd"));
+	BOOST_CHECK(text::is_clean_word("hej"));
+	BOOST_CHECK(text::is_clean_word("åäö"));
+	BOOST_CHECK(text::is_clean_word("123"));
+	BOOST_CHECK(!text::is_clean_word("$Üç"));
+	BOOST_CHECK(!text::is_clean_word("hejç"));
+	BOOST_CHECK(!text::is_clean_word("açd"));
 
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("hej")[0], "hej");
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("åäö")[0], "åäö");
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("123")[0], "123");
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("$Üç").size(), 0);
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("hejç").size(), 0);
-	BOOST_CHECK_EQUAL(Text::get_words_without_stopwords("açd").size(), 0);
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("hej")[0], "hej");
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("åäö")[0], "åäö");
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("123")[0], "123");
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("$Üç").size(), 0);
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("hejç").size(), 0);
+	BOOST_CHECK_EQUAL(text::get_words_without_stopwords("açd").size(), 0);
 
-	BOOST_CHECK(Text::get_words_without_stopwords("hej josef") == vector<string>({"hej", "josef"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("hej, josef!") == vector<string>({"hej", "josef"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("hej jÜsef cullhed du är bäst") ==
+	BOOST_CHECK(text::get_words_without_stopwords("hej josef") == vector<string>({"hej", "josef"}));
+	BOOST_CHECK(text::get_words_without_stopwords("hej, josef!") == vector<string>({"hej", "josef"}));
+	BOOST_CHECK(text::get_words_without_stopwords("hej jÜsef cullhed du är bäst") ==
 		vector<string>({"hej", "cullhed", "du", "bäst"}));
 
-	BOOST_CHECK(Text::get_words_without_stopwords("Låna! (Pengar till bilar)") ==
+	BOOST_CHECK(text::get_words_without_stopwords("Låna! (Pengar till bilar)") ==
 		vector<string>({"låna", "pengar", "bilar"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Dallas Swarner | Character | zKillboard", 3) ==
+	BOOST_CHECK(text::get_words_without_stopwords("Dallas Swarner | Character | zKillboard", 3) ==
 		vector<string>({"dallas", "swarner", "character"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Tapis Fleur des Champs Moutarde | Zen Dos", 3) ==
+	BOOST_CHECK(text::get_words_without_stopwords("Tapis Fleur des Champs Moutarde | Zen Dos", 3) ==
 		vector<string>({"tapis", "fleur", "des"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Gina Osorno & The Dreamers", 3) ==
+	BOOST_CHECK(text::get_words_without_stopwords("Gina Osorno & The Dreamers", 3) ==
 		vector<string>({"gina", "osorno", "dreamers"}));
 
-	BOOST_CHECK(Text::get_words_without_stopwords("IMG_2190 | Zhenyu (Tony) Tian") ==
+	BOOST_CHECK(text::get_words_without_stopwords("IMG_2190 | Zhenyu (Tony) Tian") ==
 		vector<string>({"zhenyu", "tony", "tian"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Tills alla dör - Diamant Salihu - Bok (9789189061842) | Bokus", 3)
+	BOOST_CHECK(text::get_words_without_stopwords("Tills alla dör - Diamant Salihu - Bok (9789189061842) | Bokus", 3)
 		== vector<string>({"tills", "dör", "diamant"}));
 
-	BOOST_CHECK(Text::get_words_without_stopwords("Messages postés par Prechan • Forum • Zeste de Savoir", 3) ==
+	BOOST_CHECK(text::get_words_without_stopwords("Messages postés par Prechan • Forum • Zeste de Savoir", 3) ==
 		vector<string>({"messages", "par", "prechan"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Science SARU – 紙本分格") == vector<string>({"science", "saru"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Realiteti i trishtë shqiptar përmes fotove të gazetarit gjerman që komunizmi nuk i lejoi \
+	BOOST_CHECK(text::get_words_without_stopwords("Science SARU – 紙本分格") == vector<string>({"science", "saru"}));
+	BOOST_CHECK(text::get_words_without_stopwords("Realiteti i trishtë shqiptar përmes fotove të gazetarit gjerman që komunizmi nuk i lejoi \
 		të bëheshin publike | Gazeta Malesia", 3) == vector<string>({"realiteti", "shqiptar", "fotove"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("York County, VA") == vector<string>({"york", "county", "va"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("HTML Sitemap 14 - zfreeti.com", 3) ==
+	BOOST_CHECK(text::get_words_without_stopwords("York County, VA") == vector<string>({"york", "county", "va"}));
+	BOOST_CHECK(text::get_words_without_stopwords("HTML Sitemap 14 - zfreeti.com", 3) ==
 		vector<string>({"html", "sitemap", "14"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("HTML Sitemap 14 - zfreeti.com") ==
+	BOOST_CHECK(text::get_words_without_stopwords("HTML Sitemap 14 - zfreeti.com") ==
 		vector<string>({"html", "sitemap", "14"}));
-	BOOST_CHECK(Text::get_words_without_stopwords("Archives.com zfreeti.com best. stream. in .the world") ==
+	BOOST_CHECK(text::get_words_without_stopwords("Archives.com zfreeti.com best. stream. in .the world") ==
 		vector<string>({"best", "stream", "world"}));
 
 }
 
 BOOST_AUTO_TEST_CASE(word_freq, * boost::unit_test::tolerance(0.00001)) {
-	auto freq = Text::get_word_frequency("hello my name is josef and it is good");
+	auto freq = text::get_word_frequency("hello my name is josef and it is good");
 	BOOST_TEST(freq["hello"] == 1.0/9.0);
 	BOOST_TEST(freq["is"] == 2.0/9.0);
 }

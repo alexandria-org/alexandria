@@ -29,7 +29,7 @@
 #include <iostream>
 #include <set>
 
-class Stopwords {
+class stopwords {
 
 public:
 

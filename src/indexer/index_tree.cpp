@@ -114,7 +114,7 @@ namespace indexer {
 
 				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-				vector<string> words = Text::get_expanded_full_text_words(link_text);
+				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
 					const uint64_t word_hash = Hash::str(word);
@@ -137,7 +137,7 @@ namespace indexer {
 
 				uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
-				vector<string> words = Text::get_expanded_full_text_words(link_text);
+				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
 					const uint64_t word_hash = Hash::str(word);
@@ -200,8 +200,8 @@ namespace indexer {
 
 	std::vector<return_record> index_tree::find(const string &query) {
 
-		vector<link_record> links = m_link_index->find(Text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find(Text::get_tokens(query));
+		vector<link_record> links = m_link_index->find(text::get_tokens(query));
+		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
 
 		//for (auto &link : links) link.m_score = 0.2;
 		//for (auto &link : domain_links) link.m_score = 0.2;

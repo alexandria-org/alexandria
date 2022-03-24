@@ -75,10 +75,10 @@ namespace FullText {
 		size_t score_index = 0;
 		map<uint64_t, float> word_map;
 
-		add_words_to_word_map(Text::get_full_text_words(site_colon), 20*harmonic, word_map);
+		add_words_to_word_map(text::get_full_text_words(site_colon), 20*harmonic, word_map);
 
 		for (size_t col_index : cols) {
-			add_words_to_word_map(Text::get_expanded_full_text_words(col_values[col_index]), scores[score_index]*harmonic, word_map);
+			add_words_to_word_map(text::get_expanded_full_text_words(col_values[col_index]), scores[score_index]*harmonic, word_map);
 			score_index++;
 		}
 

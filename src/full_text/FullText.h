@@ -31,7 +31,7 @@
 #include <cstdint>
 #include "parser/URL.h"
 #include "link/Link.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "UrlToDomain.h"
 #include "FullTextRecord.h"
 #include "FullTextIndex.h"

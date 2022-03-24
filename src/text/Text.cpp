@@ -24,11 +24,11 @@
  * SOFTWARE.
  */
 
-#include "Text.h"
+#include "text.h"
 
 using namespace std;
 
-namespace Text {
+namespace text {
 
 	bool is_clean_char(const char *ch, size_t multibyte_len) {
 		if (multibyte_len == 1) {
@@ -266,7 +266,7 @@ namespace Text {
 
 		for (string &word : raw_words) {
 			trim(word);
-			if (is_clean_word(word) && !Stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
+			if (is_clean_word(word) && !stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);
 			}

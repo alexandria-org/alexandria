@@ -25,7 +25,7 @@
  */
 
 #include "SearchEngine.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "sort/Sort.h"
 #include "system/Profiler.h"
 #include <cmath>

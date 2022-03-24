@@ -27,7 +27,7 @@
 #pragma once
 
 #include "config.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "full_text/FullTextIndex.h"
 #include "full_text/FullTextShard.h"
 
@@ -41,7 +41,7 @@ namespace Stats {
 	template<typename DataRecord>
 	std::map<std::string, double> get_word_counts(const std::vector<FullTextShard<DataRecord> *> &shards, const std::string &query) {
 
-		std::vector<std::string> words = Text::get_full_text_words(query);
+		std::vector<std::string> words = text::get_full_text_words(query);
 		if (words.size() == 0) return {};
 
 		std::map<std::string, double> result;

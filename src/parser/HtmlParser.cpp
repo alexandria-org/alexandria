@@ -28,7 +28,7 @@
 #include "HtmlParser.h"
 #include "Parser.h"
 #include "config.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include <curl/curl.h>
 
 using namespace std;
@@ -81,7 +81,7 @@ void HtmlParser::parse(const string &html, const string &url) {
 	m_meta = get_meta_tag(html);
 	m_text = get_text_content(html);
 
-	Text::trim_punct(m_meta);
+	text::trim_punct(m_meta);
 
 	if (m_encoding == ENC_ISO_8859_1) {
 		iso_to_utf8(m_title);
@@ -242,7 +242,7 @@ int HtmlParser::parse_url(const string &url, string &host, string &path, const s
 void HtmlParser::remove_www(string &path) {
 	size_t pos = path.find("www.");
 	if (pos == 0) path.erase(0, 4);
-	Text::trim(path);
+	text::trim(path);
 }
 
 void HtmlParser::parse_encoding(const string &html) {
@@ -251,7 +251,7 @@ void HtmlParser::parse_encoding(const string &html) {
 	if (pos_start == string::npos || pos_start > 1024) return;
 
 	string encoding = html.substr(pos_start, 40);
-	encoding = Text::lower_case(encoding);
+	encoding = text::lower_case(encoding);
 
 	const size_t utf8_start = encoding.find("utf-8");
 	const size_t iso88591_start = encoding.find("iso-8859-1");
@@ -381,7 +381,7 @@ void HtmlParser::clean_text(string &str) {
 	decode_html_entities_utf8(m_clean_buff, str.c_str());
 	str = m_clean_buff;
 	strip_whitespace(str);
-	Text::trim(str);
+	text::trim(str);
 }
 
 void HtmlParser::strip_tags(string &html) {

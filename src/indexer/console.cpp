@@ -26,7 +26,7 @@
 
 #include "console.h"
 #include <vector>
-#include "text/Text.h"
+#include "text/text.h"
 #include "indexer/index_tree.h"
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
@@ -129,7 +129,7 @@ namespace indexer {
 		boost::split(raw_words, input, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			Text::trim(word);
+			text::trim(word);
 			if (word.size()) {
 				words.push_back(word);
 			}

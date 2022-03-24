@@ -143,7 +143,7 @@ namespace indexer {
 	}
 
 	void domain_level::add_document(size_t id, const string &doc) {
-		std::vector<std::string> words = Text::get_full_text_words(doc);
+		std::vector<std::string> words = text::get_full_text_words(doc);
 		for (std::string &word : words) {
 			m_builder->add(Hash::str(word), domain_record(id));
 		}
@@ -172,7 +172,7 @@ namespace indexer {
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
 			for (size_t col : cols) {
-				vector<string> words = Text::get_full_text_words(col_values[col]);
+				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
 					m_builder->add(Hash::str(word), domain_record(domain_hash, harmonic));
 				}
@@ -196,7 +196,7 @@ namespace indexer {
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
-		std::vector<std::string> words = Text::get_full_text_words(query);
+		std::vector<std::string> words = text::get_full_text_words(query);
 		
 		sharded_index<domain_record> idx("domain", 1024);
 
@@ -282,7 +282,7 @@ namespace indexer {
 			add_data(url_hash, col_values[0] + "\t" + col_values[1]);
 
 			for (size_t col : cols) {
-				vector<string> words = Text::get_full_text_words(col_values[col]);
+				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
 					m_builder->add(domain_hash, Hash::str(word), url_record(url_hash));
 				}
@@ -303,7 +303,7 @@ namespace indexer {
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
-		std::vector<std::string> words = Text::get_full_text_words(query);
+		std::vector<std::string> words = text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
 			composite_index<url_record> idx("url", 10007);
@@ -386,13 +386,13 @@ namespace indexer {
 
 			uint64_t url_hash = url.hash();
 
-			std::vector<std::string> snippets = Text::get_snippets(col_values[4]);
+			std::vector<std::string> snippets = text::get_snippets(col_values[4]);
 
 			size_t snippet_idx = 0;
 			for (const std::string &snippet : snippets) {
 				const size_t snippet_hash = (url_hash << 10) | snippet_idx;
 				add_data(snippet_hash, snippet);
-				vector<uint64_t> tokens = Text::get_tokens(snippet);
+				vector<uint64_t> tokens = text::get_tokens(snippet);
 				for (const uint64_t &token : tokens) {
 					const size_t snippet_hash = (url_hash << 10) | snippet_idx;
 					m_builder->add(url_hash, token, snippet_record(snippet_hash));
@@ -414,7 +414,7 @@ namespace indexer {
 	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
-		std::vector<std::string> words = Text::get_full_text_words(query);
+		std::vector<std::string> words = text::get_full_text_words(query);
 		std::vector<return_record> all_results;
 		for (size_t key : keys) {
 			composite_index<snippet_record> idx("snippet", 10007);

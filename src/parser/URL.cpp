@@ -27,7 +27,7 @@
 #include "URL.h"
 #include "Parser.h"
 #include <curl/curl.h>
-#include "text/Text.h"
+#include "text/text.h"
 #include "Parser.h"
 
 using namespace std;
@@ -292,5 +292,5 @@ inline void URL::remove_www(string &path) {
 	} else {
 		m_has_www = false;
 	}
-	Text::trim(path);
+	text::trim(path);
 }

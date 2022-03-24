@@ -25,7 +25,7 @@
  */
 
 #include "LinkResult.h"
-#include "text/Text.h"
+#include "text/text.h"
 
 using namespace std;
 

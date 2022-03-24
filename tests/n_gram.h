@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_SUITE(n_gram)
 
 BOOST_AUTO_TEST_CASE(words_to_ngram) {
 	vector<uint64_t> ngrams;
-	Text::words_to_ngram_hash({"the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"}, 3, [&ngrams](const uint64_t hash) {
+	text::words_to_ngram_hash({"the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"}, 3, [&ngrams](const uint64_t hash) {
 		ngrams.push_back(hash);
 	});
 

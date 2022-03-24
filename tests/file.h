@@ -36,25 +36,25 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 	{
 		string result = Transfer::file_to_string("/test-data/example.txt", error);
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
 		string result = Transfer::gz_file_to_string("/test-data/example.txt.gz", error);
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
 		string result = Transfer::file_to_string("test-data/example.txt", error);
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
 		string result = Transfer::gz_file_to_string("test-data/example.txt.gz", error);
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 		Transfer::file_to_stream("/test-data/example.txt", ss, error);
 		string result = ss.str();
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 		Transfer::gz_file_to_stream("/test-data/example.txt.gz", ss, error);
 		string result = ss.str();
 		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(Text::trim(result) == "An example file");
+		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 }
 
