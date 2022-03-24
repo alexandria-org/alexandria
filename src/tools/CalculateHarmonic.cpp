@@ -5,8 +5,8 @@
 #include "link/Link.h"
 #include "parser/URL.h"
 #include "system/ThreadPool.h"
-#include "algorithm/Algorithm.h"
-#include "algorithm/HyperBall.h"
+#include "algorithm/algorithm.h"
+#include "algorithm/hyper_ball.h"
 #include <iostream>
 #include <vector>
 #include <mutex>
@@ -108,7 +108,7 @@ namespace Tools {
 		}
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk<string>(files, files.size() / (num_threads * 200), chunks);
+		algorithm::vector_chunk<string>(files, files.size() / (num_threads * 200), chunks);
 
 		ThreadPool pool(num_threads);
 		vector<future<unordered_map<uint64_t, string>>> results;
@@ -234,7 +234,7 @@ namespace Tools {
 		}
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk<string>(files, files.size() / (num_threads * 500), chunks);
+		algorithm::vector_chunk<string>(files, files.size() / (num_threads * 500), chunks);
 
 		ThreadPool pool(num_threads);
 		vector<future<unordered_set<pair<uint32_t, uint32_t>, pair_hash>>> results;
@@ -278,9 +278,9 @@ namespace Tools {
 
 		cout << "running harmonic centrality algorithm on " << num_threads << " threads" << endl;
 
-		//vector<double> harmonic = Algorithm::harmonic_centrality_threaded(hosts.size(), edge_map, 3, num_threads);
+		//vector<double> harmonic = algorithm::harmonic_centrality_threaded(hosts.size(), edge_map, 3, num_threads);
 
-		vector<double> harmonic = Algorithm::hyper_ball(hosts.size(), edge_map);
+		vector<double> harmonic = algorithm::hyper_ball(hosts.size(), edge_map);
 
 		delete [] edge_map;
 

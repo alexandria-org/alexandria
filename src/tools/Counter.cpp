@@ -37,17 +37,17 @@
 #include "link/Link.h"
 #include "link/LinkCounter.h"
 #include "transfer/Transfer.h"
-#include "algorithm/HyperLogLog.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/hyper_log_log.h"
+#include "algorithm/algorithm.h"
 #include "urlstore/UrlStore.h"
 
 using namespace std;
 
 namespace Tools {
 
-	Algorithm::HyperLogLog<size_t> *count_urls(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log<size_t> *count_urls(const vector<string> &warc_paths) {
 
-		Algorithm::HyperLogLog<size_t> *counter = new Algorithm::HyperLogLog<size_t>();
+		algorithm::hyper_log_log<size_t> *counter = new algorithm::hyper_log_log<size_t>();
 
 		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
@@ -72,9 +72,9 @@ namespace Tools {
 		return counter;
 	}
 
-	Algorithm::HyperLogLog<size_t> *count_links(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log<size_t> *count_links(const vector<string> &warc_paths) {
 
-		Algorithm::HyperLogLog<size_t> *counter = new Algorithm::HyperLogLog<size_t>();
+		algorithm::hyper_log_log<size_t> *counter = new algorithm::hyper_log_log<size_t>();
 
 		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
@@ -152,24 +152,24 @@ namespace Tools {
 		}
 
 		vector<vector<string>> thread_input;
-		Algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
+		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
 		vector<vector<string>> link_thread_input;
-		Algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
+		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
 		mutex write_file_mutex;
 
 		/*
 		Run url counters
 		*/
-		vector<future<Algorithm::HyperLogLog<size_t> *>> futures;
+		vector<future<algorithm::hyper_log_log<size_t> *>> futures;
 		for (size_t i = 0; i < num_threads && i < thread_input.size(); i++) {
 			futures.emplace_back(std::async(launch::async, count_urls, thread_input[i]));
 		}
 
-		Algorithm::HyperLogLog<size_t> url_counter;
+		algorithm::hyper_log_log<size_t> url_counter;
 		for (auto &future : futures) {
-			Algorithm::HyperLogLog<size_t> *result = future.get();
+			algorithm::hyper_log_log<size_t> *result = future.get();
 			url_counter += *(result);
 			delete result;
 		}
@@ -183,9 +183,9 @@ namespace Tools {
 			futures.emplace_back(std::async(launch::async, count_links, link_thread_input[i]));
 		}
 
-		Algorithm::HyperLogLog<size_t> link_counter;
+		algorithm::hyper_log_log<size_t> link_counter;
 		for (auto &future : futures) {
-			Algorithm::HyperLogLog<size_t> *result = future.get();
+			algorithm::hyper_log_log<size_t> *result = future.get();
 			link_counter += *(result);
 			delete result;
 		}
@@ -219,7 +219,7 @@ namespace Tools {
 		const size_t chunk_size = 500;
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk(files, chunk_size, chunks);
+		algorithm::vector_chunk(files, chunk_size, chunks);
 
 		for (const vector<string> &chunk : chunks) {
 			Link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);

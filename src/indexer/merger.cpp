@@ -43,6 +43,7 @@ namespace indexer {
 		bool is_merging = false;
 		map<size_t, std::function<void()>> mergers;
 		map<size_t, std::function<void()>> appenders;
+		mutex merger_lock;
 
 		void wait_for_merges() {
 			while (is_merging) {
@@ -57,16 +58,22 @@ namespace indexer {
 		}
 
 		void register_appender(size_t id, std::function<void()> append) {
+			merger_lock.lock();
 			appenders[id] = append;
+			merger_lock.unlock();
 		}
 
 		void register_merger(size_t id, std::function<void()> merge) {
+			merger_lock.lock();
 			mergers[id] = merge;
+			merger_lock.unlock();
 		}
 
 		void deregister_merger(size_t id) {
+			merger_lock.lock();
 			appenders.erase(id);
 			mergers.erase(id);
+			merger_lock.unlock();
 		}
 
 		bool merge_thread_is_running = true;
@@ -83,9 +90,14 @@ namespace indexer {
 			
 			utils::thread_pool pool(24);
 
+			merger_lock.lock();
 			for (auto &iter : appenders) {
 				pool.enqueue([iter]() {
-					iter.second();
+					try {
+						iter.second();
+					} catch (...) {
+
+					}
 				});
 			}
 
@@ -93,6 +105,7 @@ namespace indexer {
 
 			cout << "done... allocated memory: " << memory::allocated_memory() << endl;
 
+			merger_lock.unlock();
 			is_merging = false;
 		}
 
@@ -109,7 +122,11 @@ namespace indexer {
 
 			for (auto &iter : mergers) {
 				pool.enqueue([iter]() {
-					iter.second();
+					try {
+						iter.second();
+					} catch (...) {
+						
+					}
 				});
 			}
 

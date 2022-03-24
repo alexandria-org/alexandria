@@ -12,7 +12,7 @@
 #include <boost/filesystem.hpp>
 #include "link/Link.h"
 #include "full_text/FullText.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "parser/URL.h"
 #include "system/System.h"
 
@@ -282,10 +282,10 @@ namespace Tools {
 		}
 
 		vector<vector<string>> thread_input;
-		Algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
+		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
 		vector<vector<string>> link_thread_input;
-		Algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
+		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
 		mutex write_file_mutex;
 
@@ -347,7 +347,7 @@ namespace Tools {
 		}
 
 		vector<vector<string>> thread_input;
-		Algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
+		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
 		mutex write_file_mutex;
 
@@ -397,7 +397,7 @@ namespace Tools {
 		}
 
 		vector<vector<string>> link_thread_input;
-		Algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
+		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
 		vector<future<unordered_set<size_t>>> futures;
 

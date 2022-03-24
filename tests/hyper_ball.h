@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "algorithm/HyperBall.h"
+#include "algorithm/hyper_ball.h"
 
 BOOST_AUTO_TEST_SUITE(hyper_ball)
 
@@ -42,8 +42,8 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_hyper_ball) {
 			std::make_pair(5, 4),
 		};
 		const size_t n = 1000;
-		vector<uint32_t> *edge_map = Algorithm::set_to_edge_map(n, e);
-		vector<double> h = Algorithm::hyper_ball(n, edge_map);
+		vector<uint32_t> *edge_map = algorithm::set_to_edge_map(n, e);
+		vector<double> h = algorithm::hyper_ball(n, edge_map);
 		delete [] edge_map;
 		BOOST_CHECK(h.size() == n);
 		BOOST_CHECK_CLOSE(h[0], 8.0/3.0, 0.000001);
@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_hyper_ball2) {
 			std::make_pair(4, 8),
 		};
 		const size_t n = 1000;
-		vector<uint32_t> *edge_map = Algorithm::set_to_edge_map(n, e);
-		vector<double> h = Algorithm::hyper_ball(n, edge_map);
+		vector<uint32_t> *edge_map = algorithm::set_to_edge_map(n, e);
+		vector<double> h = algorithm::hyper_ball(n, edge_map);
 		delete [] edge_map;
 		BOOST_CHECK(h.size() == n);
 		BOOST_CHECK_CLOSE(h[5], 4.86666666667, 0.000001);
@@ -120,8 +120,8 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_hyper_ball3) {
 			std::make_pair(25, 24),
 		};
 		const size_t n = 1000;
-		vector<uint32_t> *edge_map = Algorithm::set_to_edge_map(n, e);
-		vector<double> h = Algorithm::hyper_ball(n, edge_map);
+		vector<uint32_t> *edge_map = algorithm::set_to_edge_map(n, e);
+		vector<double> h = algorithm::hyper_ball(n, edge_map);
 		delete [] edge_map;
 		BOOST_CHECK(h.size() == n);
 		BOOST_CHECK_CLOSE(h[0], 2.33333333333, 0.000001);

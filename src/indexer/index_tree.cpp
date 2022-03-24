@@ -28,7 +28,7 @@
 #include "merger.h"
 #include "domain_stats/domain_stats.h"
 #include "link/Link.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "utils/thread_pool.hpp"
 
 using namespace std;

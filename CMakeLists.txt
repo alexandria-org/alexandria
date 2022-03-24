@@ -100,8 +100,8 @@ set(SRC_CLASSES
 
 	"src/KeyValueStore.cpp"
 
-	"src/algorithm/Algorithm.cpp"
-	"src/algorithm/HyperBall.cpp"
+	"src/algorithm/algorithm.cpp"
+	"src/algorithm/hyper_ball.cpp"
 
 	"src/tools/Splitter.cpp"
 	"src/tools/Counter.cpp"

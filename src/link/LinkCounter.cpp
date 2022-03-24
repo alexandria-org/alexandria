@@ -34,7 +34,7 @@
 #include "system/Logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "config.h"
 #include <vector>
 #include <mutex>
@@ -121,7 +121,7 @@ namespace Link {
 		std::vector<std::future<map<string, map<size_t, float>>>> results;
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
+		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
 
 		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
 

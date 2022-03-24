@@ -32,7 +32,7 @@
 #include <math.h>
 #include "system/Logger.h"
 #include "full_text/FullText.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 
 using namespace std;
 
@@ -64,7 +64,7 @@ namespace Link {
 		std::vector<std::future<string>> results;
 
 		vector<vector<string>> chunks;
-		Algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
+		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
 
 		int id = 1;
 		for (const vector<string> &chunk : chunks) {
