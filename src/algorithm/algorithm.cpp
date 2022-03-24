@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "Algorithm.h"
+#include "algorithm.h"
 #include "system/Profiler.h"
 #include <iostream>
 #include <set>
@@ -39,7 +39,7 @@
 
 using namespace std;
 
-namespace Algorithm {
+namespace algorithm {
 
 	/*
 		Returns partitions with indices that are smaller than the values in the dims vector.

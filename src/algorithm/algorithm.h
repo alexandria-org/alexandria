@@ -31,7 +31,7 @@
 #include <unordered_map>
 #include <cstdint>
 
-namespace Algorithm {
+namespace algorithm {
 
 	template<class T>
 	void vector_chunk(const std::vector<T> &vec, size_t chunk_size, std::vector<std::vector<T>> &dest) {

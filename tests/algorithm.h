@@ -24,11 +24,11 @@
  * SOFTWARE.
  */
 
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "algorithm/intersection.h"
-#include "algorithm/HyperBall.h"
+#include "algorithm/hyper_ball.h"
 
-BOOST_AUTO_TEST_SUITE(algorithm)
+BOOST_AUTO_TEST_SUITE(algorithms)
 
 BOOST_AUTO_TEST_CASE(intersection_test) {
 
@@ -108,15 +108,15 @@ BOOST_AUTO_TEST_CASE(intersection_test) {
 BOOST_AUTO_TEST_CASE(incremental_partitions) {
 
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({5}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({5}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 5);
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({6}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({6}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 6);
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({3}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({3}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 3);
 		BOOST_CHECK(res[0] == vector<int>{0});
 		BOOST_CHECK(res[1] == vector<int>{1});
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 	}
 
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({2, 2}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({2, 2}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 4);
 		BOOST_CHECK((res[0] == vector<int>{0, 0}));
 		BOOST_CHECK((res[1] == vector<int>{1, 0}));
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 		BOOST_CHECK((res[3] == vector<int>{1, 1}));
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({3, 3}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 9);
 		BOOST_CHECK((res[0] == vector<int>{0, 0}));
 		BOOST_CHECK((res[1] == vector<int>{1, 0}));
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 		BOOST_CHECK((res[8] == vector<int>{2, 2}));
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3}, 5);
+		vector<vector<int>> res = algorithm::incremental_partitions({3, 3}, 5);
 		BOOST_CHECK_EQUAL(res.size(), 5);
 		BOOST_CHECK((res[0] == vector<int>{0, 0}));
 		BOOST_CHECK((res[1] == vector<int>{1, 0}));
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 		BOOST_CHECK((res[4] == vector<int>{2, 0}));
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({3, 3, 3}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({3, 3, 3}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 27);
 		BOOST_CHECK((res[0] == vector<int>{0, 0, 0}));
 		BOOST_CHECK((res[1] == vector<int>{1, 0, 0}));
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 		BOOST_CHECK((res[15] == vector<int>{0, 2, 1}));
 	}
 	{
-		vector<vector<int>> res = Algorithm::incremental_partitions({2, 3}, 64);
+		vector<vector<int>> res = algorithm::incremental_partitions({2, 3}, 64);
 		BOOST_CHECK_EQUAL(res.size(), 6);
 		BOOST_CHECK((res[0] == vector<int>{0, 0}));
 		BOOST_CHECK((res[1] == vector<int>{1, 0}));
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(binary_search) {
 BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 	{
 		set<pair<uint32_t, uint32_t>> e = {std::make_pair(0, 1), std::make_pair(1, 2), std::make_pair(2, 0)};
-		vector<double> h = Algorithm::harmonic_centrality(3, e, 6);
+		vector<double> h = algorithm::harmonic_centrality(3, e, 6);
 		BOOST_CHECK(h.size() == 3);
 		BOOST_CHECK((h == vector<double>{1.5, 1.5, 1.5}));
 	}
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 			std::make_pair(4, 2),
 			std::make_pair(5, 4),
 		};
-		vector<double> h = Algorithm::harmonic_centrality(7, e, 6);
+		vector<double> h = algorithm::harmonic_centrality(7, e, 6);
 		BOOST_CHECK(h.size() == 7);
 		BOOST_CHECK_CLOSE(h[0], 8.0/3.0, 0.000001);
 		BOOST_CHECK_CLOSE(h[1], 7.0/3.0, 0.000001);
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 			std::make_pair(6, 1),
 			std::make_pair(7, 1),
 		};
-		vector<double> h = Algorithm::harmonic_centrality(8, e, 6);
+		vector<double> h = algorithm::harmonic_centrality(8, e, 6);
 		BOOST_CHECK(h.size() == 8);
 		BOOST_CHECK_CLOSE(h[1], 7, 0.000001);
 	}
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality) {
 BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 	{
 		set<pair<uint32_t, uint32_t>> e = {std::make_pair(0, 1), std::make_pair(1, 2), std::make_pair(2, 0)};
-		vector<double> h = Algorithm::harmonic_centrality_threaded(3, e, 6, 3);
+		vector<double> h = algorithm::harmonic_centrality_threaded(3, e, 6, 3);
 		BOOST_CHECK(h.size() == 3);
 		BOOST_CHECK((h == vector<double>{1.5, 1.5, 1.5}));
 	}
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 			std::make_pair(4, 2),
 			std::make_pair(5, 4),
 		};
-		vector<double> h = Algorithm::harmonic_centrality_threaded(7, e, 6, 2);
+		vector<double> h = algorithm::harmonic_centrality_threaded(7, e, 6, 2);
 		BOOST_CHECK(h.size() == 7);
 		BOOST_CHECK_CLOSE(h[0], 8.0/3.0, 0.000001);
 		BOOST_CHECK_CLOSE(h[1], 7.0/3.0, 0.000001);
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(harmonic_centrality_threaded) {
 			std::make_pair(6, 1),
 			std::make_pair(7, 1),
 		};
-		vector<double> h = Algorithm::harmonic_centrality_threaded(8, e, 6, 1);
+		vector<double> h = algorithm::harmonic_centrality_threaded(8, e, 6, 1);
 		BOOST_CHECK(h.size() == 8);
 		BOOST_CHECK_CLOSE(h[1], 7, 0.000001);
 	}

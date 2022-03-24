@@ -41,7 +41,7 @@
 #include "transfer/Transfer.h"
 #include "hash/Hash.h"
 #include "sort/Sort.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "SearchAllocation.h"
 #include <cassert>
 
@@ -303,7 +303,7 @@ namespace SearchEngine {
 			lengths.push_back(result->num_sections());
 		}
 
-		vector<vector<int>> partitions = Algorithm::incremental_partitions(lengths, Config::ft_section_depth);
+		vector<vector<int>> partitions = algorithm::incremental_partitions(lengths, Config::ft_section_depth);
 
 		// First just try the top sections.
 		{

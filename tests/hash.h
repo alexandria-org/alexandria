@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-//#include "algorithm/HyperBall.h"
 #include "hash/Hash.h"
 
 BOOST_AUTO_TEST_SUITE(hash)

@@ -33,7 +33,7 @@
 #include <cassert>
 #include <boost/filesystem.hpp>
 #include "merger.h"
-#include "algorithm/HyperLogLog.h"
+#include "algorithm/hyper_log_log.h"
 #include "config.h"
 #include "system/Logger.h"
 #include "memory/debugger.h"
@@ -94,7 +94,7 @@ namespace indexer {
 
 		// Counters
 		std::map<uint64_t, size_t> m_document_sizes;
-		std::map<uint64_t, std::shared_ptr<Algorithm::HyperLogLog<size_t>>> m_result_counters;
+		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>> m_result_counters;
 		float m_avg_document_size = 0.0f;
 		size_t m_unique_document_count = 0;
 
@@ -108,11 +108,11 @@ namespace indexer {
 		void reset_key_file(std::ofstream &key_writer);
 		void sort_cache();
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
-		std::shared_ptr<Algorithm::HyperLogLog<size_t>> get_total_counter_for_key(uint64_t key);
+		std::shared_ptr<::algorithm::hyper_log_log<size_t>> get_total_counter_for_key(uint64_t key);
 		size_t total_results_for_key(uint64_t key);
-		void count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll);
-		void read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll);
-		void save_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const;
+		void count_unique(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
+		void read_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
+		void save_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) const;
 		void calculate_avg_document_size();
 
 		std::string mountpoint() const;
@@ -196,12 +196,13 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
 
-		const size_t mem_before = memory::allocated_memory();
+		//const size_t mem_before = memory::allocated_memory();
 
 		memory::reset_usage();
 
 		{
-			std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+			std::unique_ptr<::algorithm::hyper_log_log<size_t>> hll =
+				std::make_unique<::algorithm::hyper_log_log<size_t>>();
 
 			read_meta(hll);
 			memory::record_usage();
@@ -219,22 +220,12 @@ namespace indexer {
 			memory::record_usage();
 		}
 
-		const size_t mem_usage = memory::get_usage();
-		const size_t mem_peak = memory::get_usage_peak();
+		//const size_t mem_usage = memory::get_usage();
+		//const size_t mem_peak = memory::get_usage_peak();
+		//const size_t mem_after = memory::allocated_memory();
 
-		const size_t mem_after = memory::allocated_memory();
-
-		std::cout << "did merge: " << target_filename() << " mem bef: " << mem_before << " mem_after: " << mem_after << " mem_usage: " << mem_usage
-			<< " mem_peak: " << mem_peak << std::endl;
-
-		/*const size_t mem_end = memory::allocated_memory();
-		if (mem_start != mem_end) {
-			if (mem_start <= mem_end) {
-				cout << "done merging, leeked: " << (mem_end - mem_start) << " bytes" << endl;
-			} else {
-				//cout << "done merging, leeked: -" << (mem_start - mem_end) << " bytes" << endl;
-			}
-		}*/
+		/*std::cout << "did merge: " << target_filename() << " mem bef: " << mem_before << " mem_after: " << mem_after << " mem_usage: " << mem_usage
+			<< " mem_peak: " << mem_peak << std::endl;*/
 
 	}
 
@@ -263,7 +254,7 @@ namespace indexer {
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 		m_result_sizes = std::map<uint64_t, size_t>{};
 		m_document_sizes = std::map<uint64_t, size_t>{};
-		m_result_counters = std::map<uint64_t, std::shared_ptr<Algorithm::HyperLogLog<size_t>>>{};
+		m_result_counters = std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>>{};
 
 		std::ofstream writer(cache_filename(), std::ios::trunc);
 		writer.close();
@@ -285,7 +276,7 @@ namespace indexer {
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
 		// Read meta.
-		std::unique_ptr<Algorithm::HyperLogLog<size_t>> hll = std::make_unique<Algorithm::HyperLogLog<size_t>>();
+		std::unique_ptr<::algorithm::hyper_log_log<size_t>> hll = std::make_unique<::algorithm::hyper_log_log<size_t>>();
 		read_meta(hll);
 		count_unique(hll);
 
@@ -680,9 +671,9 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::shared_ptr<Algorithm::HyperLogLog<size_t>> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
+	std::shared_ptr<::algorithm::hyper_log_log<size_t>> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
 		if (m_result_counters.count(key) == 0) {
-			m_result_counters[key] = std::make_shared<Algorithm::HyperLogLog<size_t>>();
+			m_result_counters[key] = std::make_shared<::algorithm::hyper_log_log<size_t>>();
 		}
 		return m_result_counters[key];
 	}
@@ -696,7 +687,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::count_unique(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) {
+	void index_builder<data_record>::count_unique(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) {
 		for (auto &iter : m_cache) {
 
 			// Add to hyper_log_log counter
@@ -710,7 +701,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::read_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) {
+	void index_builder<data_record>::read_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) {
 
 		struct meta {
 			size_t unique_count;
@@ -743,8 +734,8 @@ namespace indexer {
 			infile.read((char *)(&num_total_counters), sizeof(size_t));
 			for (size_t i = 0; i < num_total_counters; i++) {
 				uint64_t key = 0;
-				std::shared_ptr<Algorithm::HyperLogLog<size_t>> ptr =
-					std::make_shared<Algorithm::HyperLogLog<size_t>>();
+				std::shared_ptr<::algorithm::hyper_log_log<size_t>> ptr =
+					std::make_shared<::algorithm::hyper_log_log<size_t>>();
 				infile.read((char *)(&key), sizeof(uint64_t));
 				infile.read(ptr->data(), ptr->data_size());
 				m_result_counters[key] = ptr;
@@ -753,7 +744,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::save_meta(std::unique_ptr<Algorithm::HyperLogLog<size_t>> &hll) const {
+	void index_builder<data_record>::save_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) const {
 
 		struct meta {
 			size_t unique_count;

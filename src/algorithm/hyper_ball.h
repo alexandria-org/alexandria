@@ -29,7 +29,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace Algorithm {
+namespace algorithm {
 
 	std::vector<double> hyper_ball(uint32_t n, const std::vector<uint32_t> *edge_map);
 
