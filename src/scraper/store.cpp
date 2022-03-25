@@ -185,7 +185,7 @@ namespace Scraper {
 	void store::try_upload_until_complete(const string &path, const string &data) {
 
 		size_t retry_num = 1;
-		while (Transfer::upload_gz_file(path, data) == Transfer::ERROR) {
+		while (transfer::upload_gz_file(path, data) == transfer::ERROR) {
 			LOG_INFO("Error uploading file " + path + " retry no " + to_string(retry_num++));
 			std::this_thread::sleep_for(std::chrono::seconds(30));
 		}

@@ -30,7 +30,7 @@
 #include "system/ThreadPool.h"
 #include "logger/logger.h"
 #include "text/text.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include <iostream>
 
 using namespace std;
@@ -47,8 +47,8 @@ namespace Parser {
 
 		LOG_INFO("uploading: " + warc_path);
 		int error;
-		error = Transfer::upload_gz_file(Warc::get_result_path(warc_path), pp.result());
-		error = Transfer::upload_gz_file(Warc::get_link_result_path(warc_path), pp.link_result());
+		error = transfer::upload_gz_file(Warc::get_result_path(warc_path), pp.result());
+		error = transfer::upload_gz_file(Warc::get_link_result_path(warc_path), pp.link_result());
 
 		if (error) {
 			LOG_INFO("error uploading: " + warc_path);
@@ -74,8 +74,8 @@ namespace Parser {
 
 	vector<string> download_warc_paths() {
 		int error;
-		string content = Transfer::file_to_string("nodes/" + Config::node + "/warc.paths", error);
-		if (error == Transfer::ERROR) return {};
+		string content = transfer::file_to_string("nodes/" + Config::node + "/warc.paths", error);
+		if (error == transfer::ERROR) return {};
 
 		content = text::trim(content);
 
@@ -94,8 +94,8 @@ namespace Parser {
 
 	bool upload_warc_paths(const vector<string> &warc_paths) {
 		string content = boost::algorithm::join(warc_paths, "\n");
-		int error = Transfer::upload_file("nodes/" + Config::node + "/warc.paths", content);
-		return error == Transfer::OK;
+		int error = transfer::upload_file("nodes/" + Config::node + "/warc.paths", content);
+		return error == transfer::OK;
 	}
 
 	void warc_downloader() {

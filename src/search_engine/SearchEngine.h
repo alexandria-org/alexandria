@@ -38,7 +38,7 @@
 #include "logger/logger.h"
 #include "system/Profiler.h"
 #include "parser/Parser.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "hash/Hash.h"
 #include "sort/Sort.h"
 #include "algorithm/algorithm.h"
@@ -646,8 +646,8 @@ namespace SearchEngine {
 
 		string buffer;
 		int error;
-		Transfer::url_to_string(Config::data_node + "/?i=" + Parser::urlencode(query), buffer, error);
-		if (error == Transfer::OK) {
+		transfer::url_to_string(Config::data_node + "/?i=" + Parser::urlencode(query), buffer, error);
+		if (error == transfer::OK) {
 			const size_t num_records = buffer.size() / sizeof(DataRecord);
 			DataRecord *data_ptr = storage->result_sets[0]->data_pointer();
 			memcpy(data_ptr, buffer.c_str(), buffer.size());

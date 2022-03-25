@@ -42,7 +42,7 @@ set(SRC_CLASSES
 	"src/file/TsvFileRemote.cpp"
 	"src/file/TsvRow.cpp"
 
-	"src/transfer/Transfer.cpp"
+	"src/transfer/transfer.cpp"
 
 	"src/full_text/FullTextIndexer.cpp"
 	"src/full_text/FullTextIndexerRunner.cpp"

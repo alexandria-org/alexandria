@@ -36,7 +36,7 @@
 #include "parser/URL.h"
 #include "link/Link.h"
 #include "link/LinkCounter.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "algorithm/hyper_log_log.h"
 #include "algorithm/algorithm.h"
 #include "urlstore/UrlStore.h"
@@ -210,7 +210,7 @@ namespace Tools {
 			files_to_download.push_back(warc_path);
 		}
 
-		return Transfer::download_gz_files_to_disk(files_to_download);
+		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
 	void count_link_batch(const SubSystem *sub_system, const string &batch, size_t sub_batch, const vector<string> &files,
@@ -243,7 +243,7 @@ namespace Tools {
 				Link::upload_link_counts(batch, sub_batch, counter);
 			}
 
-			Transfer::delete_downloaded_files(files);
+			transfer::delete_downloaded_files(files);
 		}
 		delete sub_system;
 	}

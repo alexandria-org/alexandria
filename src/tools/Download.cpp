@@ -25,7 +25,7 @@
  */
 
 #include "Download.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "file/TsvFileRemote.h"
 #include "system/Profiler.h"
 #include "algorithm/algorithm.h"
@@ -62,7 +62,7 @@ namespace Tools {
 			//if (files_to_download.size() == 100) break;
 		}
 
-		return Transfer::download_gz_files_to_disk(files_to_download);
+		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
 	unordered_set<size_t> make_url_set_one_thread(const vector<string> &files) {
@@ -101,8 +101,8 @@ namespace Tools {
 		const string filename = "crawl-data/NODE-" + to_string(node_id) + "-small/files/" + to_string(thread_id) + "-" + to_string(file_index) + "-" +
 			to_string(Profiler::now_micro()) + ".gz";
 
-		int error = Transfer::upload_gz_file(filename, data);
-		if (error == Transfer::ERROR) {
+		int error = transfer::upload_gz_file(filename, data);
+		if (error == transfer::ERROR) {
 			LOG_INFO("Upload failed!");
 		}
 	}
@@ -171,8 +171,8 @@ namespace Tools {
 		unordered_set<size_t> url_set = make_url_set(link_files);
 		upload_urls_with_links(files, url_set);
 
-		Transfer::delete_downloaded_files(link_files);
-		Transfer::delete_downloaded_files(files);
+		transfer::delete_downloaded_files(link_files);
+		transfer::delete_downloaded_files(files);
 	}
 
 }

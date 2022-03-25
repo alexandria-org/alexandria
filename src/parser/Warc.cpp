@@ -3,7 +3,7 @@
 #include "tlds.h"
 #include "text/text.h"
 #include "logger/logger.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 
 using namespace std;
 
@@ -270,9 +270,9 @@ namespace Warc {
 	void multipart_download(const string &url, const std::function<void(const string &chunk)> &callback) {
 
 		int error;
-		size_t content_len = Transfer::head_content_length(url, error);
+		size_t content_len = transfer::head_content_length(url, error);
 
-		if (error == Transfer::ERROR) {
+		if (error == transfer::ERROR) {
 			LOG_INFO("Could not make HEAD request to: " + url);
 		}
 
@@ -285,8 +285,8 @@ namespace Warc {
 			size_t retry = 0;
 			while (retry < max_retries) {
 				string buffer;
-				Transfer::url_to_string(url + "?partNumber=" + to_string(part), buffer, error);
-				if (error == Transfer::OK) {
+				transfer::url_to_string(url + "?partNumber=" + to_string(part), buffer, error);
+				if (error == transfer::OK) {
 					read_bytes += buffer.size();
 					callback(buffer);
 					break;
