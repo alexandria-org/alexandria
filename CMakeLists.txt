@@ -28,13 +28,14 @@ include_directories(tests/)
 
 set(SRC_CLASSES
 	
-	"src/api/Api.cpp"
-	"src/api/ApiResponse.cpp"
-	"src/api/ApiStatusResponse.cpp"
+	"src/api/api.cpp"
+	"src/api/api_response.cpp"
+	"src/api/api_status_response.cpp"
 	"src/api/ResultWithSnippet.cpp"
 	"src/api/LinkResult.cpp"
 	"src/api/DomainLinkResult.cpp"
-	"src/api/Worker.cpp"
+
+	"src/worker/worker.cpp"
 
 	"src/file/File.cpp"
 	"src/file/TsvFile.cpp"

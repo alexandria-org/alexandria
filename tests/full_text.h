@@ -26,7 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "full_text/FullText.h"
-#include "api/Api.h"
+#include "api/api.h"
 #include "parser/URL.h"
 #include "hash_table/HashTable.h"
 #include "hash_table/HashTableHelper.h"
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(shard_buffer_size) {
 
 	{
 		stringstream response_stream;
-		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
 
 		string response = response_stream.str();
 

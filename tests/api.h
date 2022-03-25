@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 	{
 		stringstream response_stream;
-		Api::ids("url1.com h1 text", index, allocation, response_stream);
+		api::ids("url1.com h1 text", index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 	{
 		stringstream response_stream;
-		Api::ids("h1 text", index, allocation, response_stream);
+		api::ids("h1 text", index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 	{
 
 		stringstream response_stream;
-		Api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(many_links) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	{
 		stringstream response_stream;
-		Api::word_stats("test07.links.gz", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("test07.links.gz", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 	{
 		stringstream response_stream;
-		Api::url("http://url1.com/my_test_url", hash_table, response_stream);
+		api::url("http://url1.com/my_test_url", hash_table, response_stream);
 
 		string response = response_stream.str();
 
@@ -507,7 +507,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 	{
 		stringstream response_stream;
-		Api::url("http://non-existing-url.com", hash_table, response_stream);
+		api::url("http://non-existing-url.com", hash_table, response_stream);
 
 		string response = response_stream.str();
 
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 
 	{
 		stringstream response_stream;
-		Api::search_remote("1936.com", hash_table, link_index, domain_link_index, allocation, response_stream);
+		api::search_remote("1936.com", hash_table, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 

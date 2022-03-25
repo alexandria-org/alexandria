@@ -42,7 +42,7 @@ namespace SearchAllocation {
 	struct Allocation;
 }
 
-namespace Api {
+namespace api {
 
 	void search(const std::string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
 		SearchAllocation::Allocation *allocation, std::stringstream &response_stream);
