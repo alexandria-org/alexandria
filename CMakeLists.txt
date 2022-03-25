@@ -31,9 +31,8 @@ set(SRC_CLASSES
 	"src/api/api.cpp"
 	"src/api/api_response.cpp"
 	"src/api/api_status_response.cpp"
-	"src/api/ResultWithSnippet.cpp"
-	"src/api/LinkResult.cpp"
-	"src/api/DomainLinkResult.cpp"
+	"src/api/domain_link_result.cpp"
+	"src/api/result_with_snippet.cpp"
 
 	"src/worker/worker.cpp"
 

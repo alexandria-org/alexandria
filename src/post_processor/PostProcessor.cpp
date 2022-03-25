@@ -36,7 +36,7 @@ PostProcessor::~PostProcessor() {
 
 }
 
-void PostProcessor::run(vector<ResultWithSnippet> &results) {
+void PostProcessor::run(vector<api::result_with_snippet> &results) {
 
 }
 

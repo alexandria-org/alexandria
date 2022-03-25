@@ -29,15 +29,16 @@
 #include <iostream>
 #include <vector>
 
-class ResultWithSnippet;
 struct SearchMetric;
 
 namespace api {
 
+	class result_with_snippet;
+
 	class api_response {
 
 		public:
-			api_response(std::vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile);
+			api_response(std::vector<result_with_snippet> &results, const struct SearchMetric &metric, double profile);
 			~api_response();
 
 			friend std::ostream &operator<<(std::ostream &os, const api_response &api_response);

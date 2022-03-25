@@ -35,7 +35,7 @@ using json = nlohmann::ordered_json;
 
 namespace api {
 
-	api_status_response::api_status_response(worker::Status &status) {
+	api_status_response::api_status_response(worker::status &status) {
 
 		json message;
 

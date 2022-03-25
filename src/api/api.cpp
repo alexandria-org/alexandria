@@ -42,8 +42,7 @@
 #include "search_engine/SearchEngine.h"
 #include "stats/Stats.h"
 
-#include "LinkResult.h"
-#include "DomainLinkResult.h"
+#include "domain_link_result.h"
 
 #include "logger/logger.h"
 #include "system/Profiler.h"
@@ -68,10 +67,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -107,10 +106,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -160,10 +159,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -192,10 +191,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -233,10 +232,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -281,10 +280,10 @@ namespace api {
 
 		PostProcessor post_processor(query);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		post_processor.run(with_snippets);
@@ -394,10 +393,10 @@ namespace api {
 
 		SearchEngine::sort_by_score(results);
 
-		vector<ResultWithSnippet> with_snippets;
+		vector<result_with_snippet> with_snippets;
 		for (FullTextRecord &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
-			with_snippets.emplace_back(ResultWithSnippet(tsv_data, res));
+			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
 
 		metric.m_links_handled = links_handled;

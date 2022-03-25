@@ -28,26 +28,33 @@
 
 #include <iostream>
 #include "parser/URL.h"
-#include "link/FullTextRecord.h"
 
-class LinkResult {
+namespace DomainLink {
+	struct FullTextRecord;
+}
 
-public:
-	LinkResult(const std::string &tsv_data, const Link::FullTextRecord &res);
-	~LinkResult();
+namespace api {
 
-	const URL &source_url() const { return m_source_url; };
-	const URL &target_url() const { return m_target_url; };
-	const std::string &link_text() const { return m_link_text; };
-	const float &score() const { return m_score; };
-	const uint64_t &link_hash() const { return m_link_hash; };
+	class domain_link_result {
 
-private:
+	public:
+		domain_link_result(const std::string &tsv_data, const DomainLink::FullTextRecord &res);
+		~domain_link_result();
 
-	URL m_source_url;
-	URL m_target_url;
-	std::string m_link_text;
-	float m_score;
-	uint64_t m_link_hash;
+		const URL &source_url() const { return m_source_url; };
+		const URL &target_url() const { return m_target_url; };
+		const std::string &link_text() const { return m_link_text; };
+		const float &score() const { return m_score; };
+		const uint64_t &link_hash() const { return m_link_hash; };
 
-};
+	private:
+
+		URL m_source_url;
+		URL m_target_url;
+		std::string m_link_text;
+		float m_score;
+		uint64_t m_link_hash;
+
+	};
+
+}

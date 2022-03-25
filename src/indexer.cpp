@@ -34,7 +34,7 @@
 #include "tools/CalculateHarmonic.h"
 #include "tools/generate_url_lists.h"
 #include "parser/URL.h"
-#include "api/Worker.h"
+#include "worker/worker.h"
 #include "indexer/console.h"
 #include <iostream>
 #include <set>
@@ -79,8 +79,8 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--make-urls" && argc > 2) {
 		Tools::generate_url_lists(argv[2]);
 	} else if (arg == "--urlstore") {
-		Worker::start_urlstore_server();
-		Worker::wait_for_urlstore_server();
+		worker::start_urlstore_server();
+		worker::wait_for_urlstore_server();
 	} else if (arg == "--split-with-links") {
 		Tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {

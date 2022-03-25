@@ -24,49 +24,38 @@
  * SOFTWARE.
  */
 
-#include "ResultWithSnippet.h"
-#include "text/text.h"
-#include "full_text/FullTextRecord.h"
+#pragma once
 
-using namespace std;
+#include <iostream>
+#include "parser/URL.h"
 
-ResultWithSnippet::ResultWithSnippet(const string &tsv_data, const FullTextRecord &res)
-: m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
-	size_t pos_start = 0;
-	size_t pos_end = 0;
-	size_t col_num = 0;
-	while (pos_end != string::npos) {
-		pos_end = tsv_data.find('\t', pos_start);
-		const size_t len = pos_end - pos_start;
-		if (col_num == 0) {
-			m_url = URL(tsv_data.substr(pos_start, len));
-		}
-		if (col_num == 1) {
-			m_title = tsv_data.substr(pos_start, len);
-		}
-		if (col_num == 3) {
-			m_meta = tsv_data.substr(pos_start, len);
-		}
-		if (col_num == 4) {
-			m_snippet = make_snippet(tsv_data.substr(pos_start, len));
-			if (m_snippet.size() == 0) {
-				m_snippet = make_snippet(m_meta);
-			}
-		}
+struct FullTextRecord;
 
-		pos_start = pos_end + 1;
-		col_num++;
-	}
-}
+namespace api {
 
-ResultWithSnippet::~ResultWithSnippet() {
+	class result_with_snippet {
+
+	public:
+		result_with_snippet(const std::string &tsv_data, const FullTextRecord &res);
+		~result_with_snippet();
+
+		const URL &url() const { return m_url; };
+		const std::string &title() const { return m_title; };
+		const std::string &snippet() const { return m_snippet; };
+		const float &score() const { return m_score; };
+		const uint64_t &domain_hash() const { return m_domain_hash; };
+
+	private:
+
+		URL m_url;
+		std::string m_title;
+		std::string m_meta;
+		std::string m_snippet;
+		float m_score;
+		uint64_t m_domain_hash;
+
+		std::string make_snippet(const std::string &text) const;
+
+	};
 
 }
-
-string ResultWithSnippet::make_snippet(const string &text) const {
-	string response = text.substr(0, 140);
-	text::trim(response);
-	if (response.size() >= 140) response += "...";
-	return response;
-}
-

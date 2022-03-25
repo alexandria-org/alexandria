@@ -29,7 +29,7 @@
 #include "fcgio.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "api/Worker.h"
+#include "worker/worker.h"
 
 using namespace std;
 
@@ -46,8 +46,8 @@ int main(int argc, const char **argv) {
 		Config::read_config("/etc/alexandria.conf");
 	}
 
-	Worker::start_scraper_server();
-	Worker::wait_for_scraper_server();
+	worker::start_scraper_server();
+	worker::wait_for_scraper_server();
 
 	logger::join_logger_thread();
 

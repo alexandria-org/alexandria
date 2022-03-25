@@ -24,52 +24,53 @@
  * SOFTWARE.
  */
 
-#include "DomainLinkResult.h"
+#include "result_with_snippet.h"
 #include "text/text.h"
-#include "domain_link/FullTextRecord.h"
+#include "full_text/FullTextRecord.h"
 
 using namespace std;
 
-DomainLinkResult::DomainLinkResult(const string &tsv_data, const DomainLink::FullTextRecord &res)
-: m_score(res.m_score), m_link_hash(res.m_value) {
+namespace api {
 
-	string source_host;
-	string source_path;
-	string target_host;
-	string target_path;
+	result_with_snippet::result_with_snippet(const string &tsv_data, const FullTextRecord &res)
+	: m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
+		size_t pos_start = 0;
+		size_t pos_end = 0;
+		size_t col_num = 0;
+		while (pos_end != string::npos) {
+			pos_end = tsv_data.find('\t', pos_start);
+			const size_t len = pos_end - pos_start;
+			if (col_num == 0) {
+				m_url = URL(tsv_data.substr(pos_start, len));
+			}
+			if (col_num == 1) {
+				m_title = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 3) {
+				m_meta = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 4) {
+				m_snippet = make_snippet(tsv_data.substr(pos_start, len));
+				if (m_snippet.size() == 0) {
+					m_snippet = make_snippet(m_meta);
+				}
+			}
 
-	size_t pos_start = 0;
-	size_t pos_end = 0;
-	size_t col_num = 0;
-	while (pos_end != string::npos) {
-		pos_end = tsv_data.find('\t', pos_start);
-		const size_t len = pos_end - pos_start;
-		if (col_num == 0) {
-			source_host = tsv_data.substr(pos_start, len);
+			pos_start = pos_end + 1;
+			col_num++;
 		}
-		if (col_num == 1) {
-			source_path = tsv_data.substr(pos_start, len);
-		}
-		if (col_num == 2) {
-			target_host = tsv_data.substr(pos_start, len);
-		}
-		if (col_num == 3) {
-			target_path = tsv_data.substr(pos_start, len);
-		}
-		if (col_num == 4) {
-			m_link_text = tsv_data.substr(pos_start, len);
-		}
-
-		pos_start = pos_end + 1;
-		col_num++;
 	}
 
-	m_source_url = URL(source_host, source_path);
-	m_target_url = URL(target_host, target_path);
+	result_with_snippet::~result_with_snippet() {
 
-}
+	}
 
-DomainLinkResult::~DomainLinkResult() {
+	string result_with_snippet::make_snippet(const string &text) const {
+		string response = text.substr(0, 140);
+		text::trim(response);
+		if (response.size() >= 140) response += "...";
+		return response;
+	}
 
 }
 

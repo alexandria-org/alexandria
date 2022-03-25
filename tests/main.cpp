@@ -87,7 +87,7 @@ using std::pair;
 void run_before() {
 	Config::read_config("../tests/test_config.conf");
 	logger::start_logger_thread();
-	Worker::start_urlstore_server();
+	worker::start_urlstore_server();
 }
 
 void run_after() {

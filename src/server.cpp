@@ -31,7 +31,7 @@
 #include "fcgio.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "api/Worker.h"
+#include "worker/worker.h"
 #include "hash_table/HashTableHelper.h"
 #include "full_text/FullText.h"
 #include "full_text/FullTextRecord.h"
@@ -77,19 +77,19 @@ int main(int argc, const char **argv) {
 
 	if (argc == 1 && FullText::is_indexed()) {
 
-		//Worker::start_urlstore_server();
+		//worker::start_urlstore_server();
 
 		cout << "starting download server" << endl;
-		Worker::start_download_server();
-		Worker::start_server();
+		worker::start_download_server();
+		worker::start_server();
 
 	} else if (argc == 1 && !FullText::is_indexed()) {
 
-		Worker::Status status;
+		worker::status status;
 		status.items = FullText::total_urls_in_batches();
 		status.items_indexed = 0;
 		status.start_time = Profiler::timestamp();
-		Worker::start_status_server(status);
+		worker::start_status_server(status);
 
 		FullText::index_all_batches("main_index", "main_index", status);
 		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index", status);

@@ -15,8 +15,8 @@
 #include "full_text/FullTextRecord.h"
 #include "full_text/SearchMetric.h"
 #include "search_engine/SearchAllocation.h"
-#include "Api.h"
-#include "api_status_response.h"
+#include "api/api.h"
+#include "api/api_status_response.h"
 #include "link/FullTextRecord.h"
 #include "logger/logger.h"
 #include "system/Profiler.h"
@@ -66,7 +66,7 @@ namespace worker {
 
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-		worker *worker = static_cast<worker *>(data);
+		worker_data *worker = static_cast<worker_data *>(data);
 
 		FCGX_Request request;
 
@@ -161,7 +161,7 @@ namespace worker {
 
 		vector<pthread_t> thread_ids(Config::worker_count);
 
-		worker *workers = new worker[Config::worker_count];
+		worker_data *workers = new worker_data[Config::worker_count];
 		for (size_t i = 0; i < Config::worker_count; i++) {
 			workers[i].socket_id = socket_id;
 			workers[i].thread_id = i;
@@ -203,7 +203,7 @@ namespace worker {
 
 			stringstream response_stream;
 
-			api_status_response api_response(*status);
+			api::api_status_response api_response(*status);
 
 			response_stream << api_response;
 

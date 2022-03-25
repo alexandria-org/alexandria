@@ -24,33 +24,55 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "domain_link_result.h"
+#include "text/text.h"
+#include "domain_link/FullTextRecord.h"
 
-#include <iostream>
-#include "parser/URL.h"
+using namespace std;
 
-namespace DomainLink {
-	struct FullTextRecord;
+namespace api {
+
+	domain_link_result::domain_link_result(const string &tsv_data, const DomainLink::FullTextRecord &res)
+	: m_score(res.m_score), m_link_hash(res.m_value) {
+
+		string source_host;
+		string source_path;
+		string target_host;
+		string target_path;
+
+		size_t pos_start = 0;
+		size_t pos_end = 0;
+		size_t col_num = 0;
+		while (pos_end != string::npos) {
+			pos_end = tsv_data.find('\t', pos_start);
+			const size_t len = pos_end - pos_start;
+			if (col_num == 0) {
+				source_host = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 1) {
+				source_path = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 2) {
+				target_host = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 3) {
+				target_path = tsv_data.substr(pos_start, len);
+			}
+			if (col_num == 4) {
+				m_link_text = tsv_data.substr(pos_start, len);
+			}
+
+			pos_start = pos_end + 1;
+			col_num++;
+		}
+
+		m_source_url = URL(source_host, source_path);
+		m_target_url = URL(target_host, target_path);
+
+	}
+
+	domain_link_result::~domain_link_result() {
+
+	}
+
 }
-
-class DomainLinkResult {
-
-public:
-	DomainLinkResult(const std::string &tsv_data, const DomainLink::FullTextRecord &res);
-	~DomainLinkResult();
-
-	const URL &source_url() const { return m_source_url; };
-	const URL &target_url() const { return m_target_url; };
-	const std::string &link_text() const { return m_link_text; };
-	const float &score() const { return m_score; };
-	const uint64_t &link_hash() const { return m_link_hash; };
-
-private:
-
-	URL m_source_url;
-	URL m_target_url;
-	std::string m_link_text;
-	float m_score;
-	uint64_t m_link_hash;
-
-};

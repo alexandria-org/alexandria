@@ -28,7 +28,7 @@
 
 #include <iostream>
 #include <vector>
-#include "api/ResultWithSnippet.h"
+#include "api/result_with_snippet.h"
 
 class PostProcessor {
 
@@ -36,7 +36,7 @@ public:
 	explicit PostProcessor(const std::string &query);
 	~PostProcessor();
 
-	void run(std::vector<ResultWithSnippet> &results);
+	void run(std::vector<api::result_with_snippet> &results);
 
 private:
 

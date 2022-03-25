@@ -13,7 +13,7 @@ namespace worker {
 
 	};
 
-	struct worker {
+	struct worker_data {
 
 		int socket_id;
 		int thread_id;

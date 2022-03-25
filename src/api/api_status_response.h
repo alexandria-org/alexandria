@@ -38,7 +38,7 @@ namespace api {
 	class api_status_response {
 
 		public:
-			explicit api_status_response(worker::Status &status);
+			explicit api_status_response(worker::status &status);
 			~api_status_response();
 
 			friend std::ostream &operator<<(std::ostream &os, const api_status_response &api_response);
