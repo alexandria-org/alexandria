@@ -25,18 +25,23 @@
  */
 
 #include "UrlToDomain.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
+#include "indexer/merger.h"
 
 using namespace std;
 
 UrlToDomain::UrlToDomain(const string &db_name)
 : m_db_name(db_name)
 {
-	
+	indexer::merger::register_appender((size_t)this, [this]() {
+		for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
+			write(bucket_id);
+		}
+	});
 }
 
 UrlToDomain::~UrlToDomain() {
-
+	indexer::merger::deregister_merger((size_t)this);
 }
 
 void UrlToDomain::add_url(uint64_t url_hash, uint64_t domain_hash) {
@@ -87,6 +92,9 @@ void UrlToDomain::write(size_t indexer_id) {
 		outfile.write((const char *)&(iter.first), sizeof(uint64_t));
 		outfile.write((const char *)&(iter.second), sizeof(uint64_t));
 	}
+
+	m_url_to_domain = std::unordered_map<uint64_t, uint64_t>{}; // Frees memory
+	m_domains = std::unordered_map<uint64_t, size_t>{}; // Frees memory
 
 	outfile.close();
 }

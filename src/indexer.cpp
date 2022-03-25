@@ -27,7 +27,7 @@
 #include <iostream>
 #include "config.h"
 #include "full_text/FullText.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "tools/Splitter.h"
 #include "tools/Counter.h"
 #include "tools/Download.h"
@@ -52,8 +52,8 @@ void help() {
 
 int main(int argc, const char **argv) {
 
-	Logger::start_logger_thread();
-	Logger::verbose(true);
+	logger::start_logger_thread();
+	logger::verbose(true);
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
@@ -107,7 +107,7 @@ int main(int argc, const char **argv) {
 		help();
 	}
 
-	Logger::join_logger_thread();
+	logger::join_logger_thread();
 
 	return 0;
 }

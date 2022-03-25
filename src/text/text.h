@@ -34,11 +34,11 @@
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <sstream>
-#include "Stopwords.h"
+#include "stopwords.h"
 #include "parser/Unicode.h"
 #include "hash/Hash.h"
 
-namespace Text {
+namespace text {
 
 	inline void ltrim(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {

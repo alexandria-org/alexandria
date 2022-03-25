@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(thread_pool2) {
 	vector<int> vec(24);
 	for (int &i : vec) {
 		pool.enqueue([&i]() {
-			this_thread::sleep_for(200ms);
+				std::this_thread::sleep_for(200ms);
 			i = 1;
 		});
 	}

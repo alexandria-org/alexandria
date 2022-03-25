@@ -37,7 +37,7 @@ namespace indexer {
 	}
 
 	std::vector<size_t> snippet::tokens() const {
-		std::vector<std::string> words = Text::get_full_text_words(m_text);
+		std::vector<std::string> words = text::get_full_text_words(m_text);
 		std::vector<size_t> tokens;
 		for (const std::string &word : words) {
 			tokens.push_back(Hash::str(word));

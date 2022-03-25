@@ -26,7 +26,7 @@
 
 #include "Document.h"
 #include "hash/Hash.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "parser/URL.h"
 
 using namespace std;
@@ -47,7 +47,7 @@ namespace Cluster {
 	}
 
 	void Document::read_text(const string &text) {
-		const vector<string> words = Text::get_words(text, 0);
+		const vector<string> words = text::get_words(text, 0);
 
 		for (const string &word : words) {
 			m_counts[Hash::str(word)]++;
@@ -55,7 +55,7 @@ namespace Cluster {
 	}
 
 	void read_text_to_corpus(Corpus &corpus, const string &text) {
-		const vector<string> words = Text::get_words(text, 0);
+		const vector<string> words = text::get_words(text, 0);
 
 		for (const string &word : words) {
 			size_t key = Hash::str(word);

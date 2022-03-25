@@ -28,7 +28,7 @@
 #include "transfer/Transfer.h"
 #include "file/TsvFileRemote.h"
 #include "system/Profiler.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "link/Link.h"
 #include "system/System.h"
 #include "config.h"
@@ -150,7 +150,7 @@ namespace Tools {
 		size_t num_threads = 24;
 
 		vector<vector<string>> thread_input;
-		Algorithm::vector_chunk(local_files, ceil((double)local_files.size() / num_threads), thread_input);
+		algorithm::vector_chunk(local_files, ceil((double)local_files.size() / num_threads), thread_input);
 
 		vector<thread> threads;
 

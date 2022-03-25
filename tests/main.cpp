@@ -80,18 +80,18 @@ using std::pair;
 #include "robot_parser.h"
 #include "scraper.h"
 #include "datetime.h"
-#include "index_array.h"
+//#include "index_array.h"
 #include "memory.h"
 #include "thread_pool.h"
 
 void run_before() {
 	Config::read_config("../tests/test_config.conf");
-	Logger::start_logger_thread();
+	logger::start_logger_thread();
 	Worker::start_urlstore_server();
 }
 
 void run_after() {
-	Logger::join_logger_thread();
+	logger::join_logger_thread();
 }
 
 

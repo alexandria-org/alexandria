@@ -28,10 +28,10 @@
 #include "Transfer.h"
 #include <fstream>
 #include "system/ThreadPool.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "file/File.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "parser/Parser.h"
 
 using namespace std;
@@ -350,7 +350,7 @@ namespace Transfer {
 
 			curl_easy_cleanup(curl);
 
-			const string content_len_str = Parser::get_http_header(Text::lower_case(response_str), "content-length: ");
+			const string content_len_str = Parser::get_http_header(text::lower_case(response_str), "content-length: ");
 			size_t content_len;
 			try {
 				content_len = stoull(content_len_str);

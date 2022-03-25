@@ -26,8 +26,8 @@
 
 #include "config.h"
 #include "Indexer.h"
-#include "system/Logger.h"
-#include "text/Text.h"
+#include "logger/logger.h"
+#include "text/text.h"
 #include "full_text/FullText.h"
 #include "domain_link/FullTextRecord.h"
 #include "link/Link.h"
@@ -120,7 +120,7 @@ namespace DomainLink {
 	void Indexer::add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url,
 		const string &link_text, float score) {
 
-		vector<string> words = Text::get_expanded_full_text_words(link_text);
+		vector<string> words = text::get_expanded_full_text_words(link_text);
 		for (const string &word : words) {
 
 			const uint64_t word_hash = m_hasher(word);

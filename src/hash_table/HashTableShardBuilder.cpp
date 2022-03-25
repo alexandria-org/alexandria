@@ -26,19 +26,20 @@
 
 #include "config.h"
 #include "HashTableShardBuilder.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "file/File.h"
+#include "indexer/merger.h"
 
 using namespace std;
 
 HashTableShardBuilder::HashTableShardBuilder(const string &db_name, size_t shard_id)
 : m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(25 + rand() % 10)
 {
-
+	indexer::merger::register_appender((size_t)this, [this]() {write();});
 }
 
 HashTableShardBuilder::~HashTableShardBuilder() {
-
+	indexer::merger::deregister_merger((size_t)this);
 }
 
 bool HashTableShardBuilder::full() const {
@@ -46,6 +47,9 @@ bool HashTableShardBuilder::full() const {
 }
 
 void HashTableShardBuilder::write() {
+
+	std::lock_guard guard(m_lock);
+
 	ofstream outfile(filename_data(), ios::binary | ios::app);
 	ofstream outfile_pos(filename_pos(), ios::binary | ios::app);
 
@@ -76,10 +80,11 @@ void HashTableShardBuilder::write() {
 		last_pos += data_len + Config::ht_key_size + sizeof(size_t);
 	}
 
-	m_cache.clear();
+	m_cache = std::map<uint64_t, std::string>{}; // to free memory.
 }
 
 void HashTableShardBuilder::truncate() {
+	std::lock_guard guard(m_lock);
 	ofstream outfile(filename_data(), ios::binary | ios::trunc);
 	ofstream outfile_pos(filename_pos(), ios::binary | ios::trunc);
 }
@@ -98,6 +103,8 @@ void HashTableShardBuilder::sort() {
 }
 
 void HashTableShardBuilder::optimize() {
+
+	std::lock_guard guard(m_lock);
 
 	ifstream infile(filename_data(), ios::binary);
 
@@ -154,9 +161,8 @@ void HashTableShardBuilder::optimize() {
 }
 
 void HashTableShardBuilder::add(uint64_t key, const string &value) {
-	m_lock.lock();
+	std::lock_guard guard(m_lock);
 	m_cache[key] = value;
-	m_lock.unlock();
 }
 
 string HashTableShardBuilder::filename_data() const {

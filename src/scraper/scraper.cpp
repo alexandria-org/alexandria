@@ -27,7 +27,7 @@
 #include "scraper.h"
 #include "parser/HtmlParser.h"
 #include "system/datetime.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include <memory>
 
 using namespace std;
@@ -454,7 +454,7 @@ namespace Scraper {
 
 		vector<string> urls;
 		for (const string &url : raw_urls) {
-			if (Text::trim(url).size()) {
+			if (text::trim(url).size()) {
 				urls.push_back(url);
 			}
 		}

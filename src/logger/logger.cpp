@@ -24,13 +24,14 @@
  * SOFTWARE.
  */
 
-#include "Logger.h"
+#include "logger.h"
 #include <thread>
 #include <queue>
 
 using namespace std;
 
-namespace Logger {
+namespace logger {
+
 	thread m_logger_thread;
 	mutex *m_lock = nullptr;
 	queue<string> *m_queue = nullptr;
@@ -170,7 +171,7 @@ namespace Logger {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	LoggedException::LoggedException(const string &message, const string &file, int line)
+	logged_exception::logged_exception(const string &message, const string &file, int line)
 	: m_message(message), m_file(file), m_line(line)
 	{
 		m_formatted_message = format("EXCEPTION", m_file, m_line, m_message, "");

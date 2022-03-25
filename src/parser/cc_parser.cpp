@@ -28,8 +28,8 @@
 #include "config.h"
 #include "parser/Warc.h"
 #include "system/ThreadPool.h"
-#include "system/Logger.h"
-#include "text/Text.h"
+#include "logger/logger.h"
+#include "text/text.h"
 #include "transfer/Transfer.h"
 #include <iostream>
 
@@ -77,15 +77,15 @@ namespace Parser {
 		string content = Transfer::file_to_string("nodes/" + Config::node + "/warc.paths", error);
 		if (error == Transfer::ERROR) return {};
 
-		content = Text::trim(content);
+		content = text::trim(content);
 
 		vector<string> raw_warc_paths;
 		boost::algorithm::split(raw_warc_paths, content, boost::is_any_of("\n"));
 
 		vector<string> warc_paths;
 		for (const string &warc_path : raw_warc_paths) {
-			if (Text::trim(warc_path).size()) {
-				warc_paths.push_back(Text::trim(warc_path));
+			if (text::trim(warc_path).size()) {
+				warc_paths.push_back(text::trim(warc_path));
 			}
 		}
 

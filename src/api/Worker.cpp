@@ -19,7 +19,7 @@
 #include "Api.h"
 #include "ApiStatusResponse.h"
 #include "link/FullTextRecord.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
 #include "scraper/scraper.h"

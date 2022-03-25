@@ -40,7 +40,7 @@ template<typename DataRecord> class FullTextShardBuilder;
 #include "parser/URL.h"
 #include "FullTextRecord.h"
 #include "UrlToDomain.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 
 template<typename DataRecord>
 class FullTextShardBuilder {

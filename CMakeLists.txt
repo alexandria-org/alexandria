@@ -15,6 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 add_subdirectory("deps/leveldb")
 add_subdirectory("deps/abseil-cpp")
 
+find_package(roaring REQUIRED)
 find_package(Threads REQUIRED)
 FIND_PACKAGE(CURL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system iostreams filesystem unit_test_framework)
@@ -83,12 +84,14 @@ set(SRC_CLASSES
 	"src/system/Profiler.cpp"
 	"src/system/System.cpp"
 	"src/system/SubSystem.cpp"
-	"src/system/Logger.cpp"
 	"src/system/datetime.cpp"
+
+	"src/logger/logger.cpp"
 
 	"src/utils/thread_pool.cpp"
 
 	"src/memory/memory.cpp"
+	"src/memory/debugger.cpp"
 
 	"src/sort/Sort.cpp"
 
@@ -98,8 +101,8 @@ set(SRC_CLASSES
 
 	"src/KeyValueStore.cpp"
 
-	"src/algorithm/Algorithm.cpp"
-	"src/algorithm/HyperBall.cpp"
+	"src/algorithm/algorithm.cpp"
+	"src/algorithm/hyper_ball.cpp"
 
 	"src/tools/Splitter.cpp"
 	"src/tools/Counter.cpp"
@@ -125,13 +128,12 @@ set(SRC_CLASSES
 set(SRC_COMMON
 	"src/common/Dictionary.cpp"
 	"src/common/DictionaryRow.cpp"
-	"src/text/Stopwords.cpp"
-	"src/text/Text.cpp"
+	"src/text/stopwords.cpp"
+	"src/text/text.cpp"
 )
 
 add_executable(run_tests
 	"tests/main.cpp"
-	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -147,7 +149,6 @@ add_executable(scraper
 )
 add_executable(indexer
 	"src/indexer.cpp"
-	"src/memory/debugger.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
@@ -167,20 +168,20 @@ target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(scraper PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 target_link_libraries(indexer PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
 

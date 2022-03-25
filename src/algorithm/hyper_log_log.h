@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace Algorithm {
+namespace algorithm {
 
 	/*
 	 * Implementation of the hyper log log algorithm as described by Flajolet1 et al.
@@ -41,14 +41,14 @@ namespace Algorithm {
 	 * */
 
 	template<typename T>
-	class HyperLogLog {
+	class hyper_log_log {
 
 		public:
-			HyperLogLog();
-			HyperLogLog(const HyperLogLog &other);
-			HyperLogLog(const char *b);
-			HyperLogLog(size_t b);
-			~HyperLogLog();
+			hyper_log_log();
+			hyper_log_log(const hyper_log_log &other);
+			hyper_log_log(const char *b);
+			hyper_log_log(size_t b);
+			~hyper_log_log();
 			void insert(T v);
 			void insert_hash(size_t x);
 			size_t size() const;
@@ -60,9 +60,9 @@ namespace Algorithm {
 			char *data() { return m_M; };
 			size_t data_size() const { return m_len; };
 
-			HyperLogLog operator +(const HyperLogLog &hl) const;
-			HyperLogLog &operator +=(const HyperLogLog &hl);
-			HyperLogLog &operator =(const HyperLogLog &other);
+			hyper_log_log operator +(const hyper_log_log &hl) const;
+			hyper_log_log &operator +=(const hyper_log_log &hl);
+			hyper_log_log &operator =(const hyper_log_log &other);
 
 		private:
 			
@@ -75,50 +75,50 @@ namespace Algorithm {
 	};
 
 	template<typename T>
-	HyperLogLog<T>::HyperLogLog() {
+	hyper_log_log<T>::hyper_log_log() {
 		m_M = new char[m_len];
 		memset(m_M, 0, m_len);
 	}
 
 	template<typename T>
-	HyperLogLog<T>::HyperLogLog(const HyperLogLog<T> &other) {
+	hyper_log_log<T>::hyper_log_log(const hyper_log_log<T> &other) {
 		m_M = new char[m_len];
 		memcpy(m_M, other.m_M, m_len);
 	}
 
 	template<typename T>
-	HyperLogLog<T>::HyperLogLog(const char *m) {
+	hyper_log_log<T>::hyper_log_log(const char *m) {
 		m_M = new char[m_len];
 		memcpy(m_M, m, m_len);
 	}
 
 	template<typename T>
-	HyperLogLog<T>::HyperLogLog(size_t b)
+	hyper_log_log<T>::hyper_log_log(size_t b)
 	: m_b(20) {
 		m_M = new char[m_len];
 		memset(m_M, 0, m_len);
 	}
 
 	template<typename T>
-	HyperLogLog<T>::~HyperLogLog() {
-		delete m_M;
+	hyper_log_log<T>::~hyper_log_log() {
+		delete [] m_M;
 	}
 
 	template<typename T>
-	void HyperLogLog<T>::insert(T v) {
+	void hyper_log_log<T>::insert(T v) {
 		size_t x = m_hasher(std::to_string(v));
 		size_t j = x >> (64-m_b);
 		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}
 
 	template<typename T>
-	void HyperLogLog<T>::insert_hash(size_t x) {
+	void hyper_log_log<T>::insert_hash(size_t x) {
 		size_t j = x >> (64-m_b);
 		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}
 
 	template<typename T>
-	size_t HyperLogLog<T>::size() const {
+	size_t hyper_log_log<T>::size() const {
 		double Z = 0.0;
 		for (size_t j = 0; j < m_len; j++) {
 			Z += 1.0 / (1ull << m_M[j]);
@@ -137,7 +137,7 @@ namespace Algorithm {
 	}
 
 	template<typename T>
-	char HyperLogLog<T>::leading_zeros_plus_one(size_t x) const {
+	char hyper_log_log<T>::leading_zeros_plus_one(size_t x) const {
 		size_t num_zeros = 1;
 		for (size_t i = 0; i < 64; i++) {
 			if ((x >> (64 - 1 - i)) & 0x1ull) return num_zeros;
@@ -147,7 +147,7 @@ namespace Algorithm {
 	}
 
 	template<typename T>
-	size_t HyperLogLog<T>::num_zero_registers() const {
+	size_t hyper_log_log<T>::num_zero_registers() const {
 		size_t num_zero = 0;
 		for (size_t i = 0; i < m_len; i++) {
 			if (m_M[i] == 0) num_zero++;
@@ -156,14 +156,14 @@ namespace Algorithm {
 	}
 
 	template<typename T>
-	double HyperLogLog<T>::error_bound() const {
+	double hyper_log_log<T>::error_bound() const {
 		double stdd = 1.04 / sqrt((double)m_len);
 		return stdd * 3; // Gives 99% confidence
 	}
 
 	template<typename T>
-	HyperLogLog<T> HyperLogLog<T>::operator +(const HyperLogLog<T> &hl) const {
-		HyperLogLog res;
+	hyper_log_log<T> hyper_log_log<T>::operator +(const hyper_log_log<T> &hl) const {
+		hyper_log_log res;
 		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
 			res.m_M[i] = std::max(m_M[i], hl.m_M[i]);
 		}
@@ -172,7 +172,7 @@ namespace Algorithm {
 	}
 
 	template<typename T>
-	HyperLogLog<T> &HyperLogLog<T>::operator +=(const HyperLogLog<T> &hl) {
+	hyper_log_log<T> &hyper_log_log<T>::operator +=(const hyper_log_log<T> &hl) {
 		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
 			m_M[i] = std::max(m_M[i], hl.m_M[i]);
 		}
@@ -180,7 +180,7 @@ namespace Algorithm {
 	}
 
 	template<typename T>
-	HyperLogLog<T> &HyperLogLog<T>::operator =(const HyperLogLog<T> &other) {
+	hyper_log_log<T> &hyper_log_log<T>::operator =(const hyper_log_log<T> &other) {
 		memcpy(m_M, other.m_M, m_len);
 		return *this;
 	}

@@ -26,7 +26,7 @@
 
 #include "console.h"
 #include <vector>
-#include "text/Text.h"
+#include "text/text.h"
 #include "indexer/index_tree.h"
 #include "parser/URL.h"
 #include "transfer/Transfer.h"
@@ -97,12 +97,11 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_tree &idx_tree, const string &query) {
+	void cmd_search(index_tree &idx_tree, HashTable &ht, const string &query) {
 		std::vector<indexer::return_record> res = idx_tree.find(query);
 
 		if (res.size() > 10) res.resize(10);
 
-		HashTable ht("index_tree");
 		for (indexer::return_record &rec : res) {
 			const string url_data = ht.find(rec.m_url_hash);
 			const string snippet_data = ht.find(rec.m_value);
@@ -130,7 +129,7 @@ namespace indexer {
 		boost::split(raw_words, input, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			Text::trim(word);
+			text::trim(word);
 			if (word.size()) {
 				words.push_back(word);
 			}
@@ -141,10 +140,10 @@ namespace indexer {
 
 	void console() {
 
-		domain_stats::download_domain_stats();
+		//domain_stats::download_domain_stats();
 
-		LOG_INFO("Done download_domain_stats");
-
+		//LOG_INFO("Done download_domain_stats");
+		
 		indexer::index_tree idx_tree;
 
 		indexer::domain_level domain_level;
@@ -156,6 +155,8 @@ namespace indexer {
 		idx_tree.add_level(&snippet_level);
 
 		//idx_tree.truncate();
+
+		HashTable ht("index_tree");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -174,7 +175,7 @@ namespace indexer {
 			} else if (cmd == "search") {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
-				cmd_search(idx_tree, query);
+				cmd_search(idx_tree, ht, query);
 			} else if (cmd == "quit") {
 				break;
 			}
@@ -185,6 +186,7 @@ namespace indexer {
 	void index_new() {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
+
 		{
 			indexer::index_tree idx_tree;
 
@@ -200,8 +202,9 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			const string batch = "ALEXANDRIA-H3";
-			size_t limit = 100;
+			const string batch = "SMALL-MIX";
+			size_t limit = 1000;
+			//size_t limit = 1;
 
 			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
@@ -232,7 +235,7 @@ namespace indexer {
 			const vector<string> batches = {
 				"LINK-MIX",
 			};
-			size_t limit = 1000;
+			size_t limit = 5000;
 
 			for (const string &batch : batches) {
 
@@ -256,6 +259,8 @@ namespace indexer {
 			}
 
 			merger::stop_merge_thread();
+
+			idx_tree.merge();
 		}
 	}
 

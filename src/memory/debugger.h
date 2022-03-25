@@ -24,9 +24,16 @@
  * SOFTWARE.
  */
 
+#pragma once
+
 #include <iostream>
 
 namespace memory {
 	size_t allocated_memory(); // Returns number of allocated bytes.
 	size_t num_allocated(); // Returns number of allocated pointers.
+
+	void reset_usage();
+	void record_usage();
+	size_t get_usage();
+	size_t get_usage_peak();
 }

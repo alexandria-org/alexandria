@@ -55,6 +55,8 @@ namespace hash_table {
 		for (HashTableShardBuilder *shard : m_shards) {
 			pool.enqueue([shard]() -> void {
 				shard->write();
+				shard->sort();
+				shard->optimize();
 			});
 		}
 

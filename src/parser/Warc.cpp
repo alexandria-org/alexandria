@@ -1,8 +1,8 @@
 
 #include "Warc.h"
 #include "tlds.h"
-#include "text/Text.h"
-#include "system/Logger.h"
+#include "text/text.h"
+#include "logger/logger.h"
 #include "transfer/Transfer.h"
 
 using namespace std;
@@ -212,7 +212,7 @@ namespace Warc {
 		const size_t response_body_start = warc_record.find("\r\n\r\n", warc_response_start + 4);
 
 		string http_header = warc_record.substr(warc_response_start + 4, response_body_start - warc_response_start - 4);
-		Text::lower_case(http_header);
+		text::lower_case(http_header);
 
 		//const size_t http_code = http_response_code(http_header);
 		//const string location = ::Parser::get_http_header(warc_header, "location: ");

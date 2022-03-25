@@ -31,12 +31,12 @@
 #include <fstream>
 #include <iostream>
 
-#define LOG_INFO(msg) (Logger::log("info", __FILE__, __LINE__, msg))
-#define LOG_ERROR(msg) (Logger::log("error", __FILE__, __LINE__, msg))
+#define LOG_INFO(msg) (logger::log("info", __FILE__, __LINE__, msg))
+#define LOG_ERROR(msg) (logger::log("error", __FILE__, __LINE__, msg))
 
-#define LOG_ERROR_EXCEPTION(msg) (Logger::LoggedException(msg, std::string(__FILE__), __LINE__))
+#define LOG_ERROR_EXCEPTION(msg) (logger::logged_exception(msg, std::string(__FILE__), __LINE__))
 
-namespace Logger {
+namespace logger {
 
 	void verbose(bool verbose);
 	void reopen();
@@ -44,7 +44,7 @@ namespace Logger {
 	void log_message(const std::string &type, const std::string &file, int line, const std::string &message, const std::string &meta);
 	void log_string(const std::string &message);
 
-	// Should be called like this: Logger::log("error", __FILE__, __LINE__, error.what());
+	// Should be called like this: logger::log("error", __FILE__, __LINE__, error.what());
 	void log(const std::string &type, const std::string &file, int line, const std::string &message);
 	void log(const std::string &type, const std::string &file, int line, const std::string &message, const std::string &meta);
 
@@ -52,21 +52,21 @@ namespace Logger {
 	void join_logger_thread();
 	void sync();
 
-	class LoggedException : public std::exception {
+	class logged_exception : public std::exception {
 
-	public:
-		LoggedException(const std::string &message, const std::string &file, int line);
+		public:
+			logged_exception(const std::string &message, const std::string &file, int line);
 
-		const char *what() const throw () {
-			return m_formatted_message.c_str();
-		}
+			const char *what() const throw () {
+				return m_formatted_message.c_str();
+			}
 
-	private:
+		private:
 
-		std::string m_message;
-		std::string m_file;
-		int m_line;
-		std::string m_formatted_message;
+			std::string m_message;
+			std::string m_file;
+			int m_line;
+			std::string m_formatted_message;
 
 	};
 

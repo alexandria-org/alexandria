@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-//#include "algorithm/HyperBall.h"
 #include "cluster/Document.h"
 #include "transfer/Transfer.h"
 #include "hash/Hash.h"
@@ -45,8 +44,6 @@ BOOST_AUTO_TEST_CASE(cluster) {
 		const size_t key = Hash::str("aftonbladet.se");
 		BOOST_CHECK(documents.count(key) == 1);
 		BOOST_CHECK(documents[key].size() > 0);
-
-		//Cluster::print_document(corpus, documents[key]);
 	}
 }
 

@@ -24,19 +24,19 @@
  * SOFTWARE.
  */
 
-#include "HyperBall.h"
+#include "hyper_ball.h"
+#include "hyper_log_log.h"
 
-#include "HyperLogLog.h"
 #include "system/Profiler.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include <thread>
 
 using namespace std;
 
-namespace Algorithm {
+namespace algorithm {
 
-	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const vector<uint32_t> *edge_map, vector<HyperLogLog<uint32_t>> &c,
-			vector<HyperLogLog<uint32_t>> &a, vector<double> &harmonic) {
+	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const vector<uint32_t> *edge_map,
+			vector<hyper_log_log<uint32_t>> &c, vector<hyper_log_log<uint32_t>> &a, vector<double> &harmonic) {
 
 		Profiler::instance prof("Timetaker");
 		for (uint32_t v = v_begin; v < v_end; v++) {
@@ -57,8 +57,8 @@ namespace Algorithm {
 
 		const size_t num_threads = min(12, (int)n);
 		const size_t items_per_thread = n / num_threads;
-		vector<HyperLogLog<uint32_t>> c(n);
-		vector<HyperLogLog<uint32_t>> a(n);
+		vector<hyper_log_log<uint32_t>> c(n);
+		vector<hyper_log_log<uint32_t>> a(n);
 		vector<double> harmonic(n, 0.0);
 
 		for (uint32_t v = 0; v < n; v++) {

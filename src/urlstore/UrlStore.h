@@ -36,7 +36,7 @@
 #include "hash/Hash.h"
 #include "transfer/Transfer.h"
 #include "system/Profiler.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "file/File.h"
 #include "json.hpp"
 #include "KeyValueStore.h"

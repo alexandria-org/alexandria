@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "HashTableShard.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 
 using namespace std;
 

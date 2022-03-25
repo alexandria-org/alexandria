@@ -25,7 +25,7 @@
  */
 
 #include "Profiler.h"
-#include "Logger.h"
+#include "logger/logger.h"
 #include <vector>
 
 using namespace std;

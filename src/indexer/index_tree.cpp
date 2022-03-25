@@ -28,7 +28,7 @@
 #include "merger.h"
 #include "domain_stats/domain_stats.h"
 #include "link/Link.h"
-#include "algorithm/Algorithm.h"
+#include "algorithm/algorithm.h"
 #include "utils/thread_pool.hpp"
 
 using namespace std;
@@ -36,10 +36,10 @@ using namespace std;
 namespace indexer {
 
 	index_tree::index_tree() {
-		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 1024);
-		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 1024);
-		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 1024);
-		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 1024);
+		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 2001);
+		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 2001);
+		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
+		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
 		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
 		m_url_to_domain = std::make_unique<UrlToDomain>("index_tree"); 
 	}
@@ -114,7 +114,7 @@ namespace indexer {
 
 				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-				vector<string> words = Text::get_expanded_full_text_words(link_text);
+				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
 					const uint64_t word_hash = Hash::str(word);
@@ -137,7 +137,7 @@ namespace indexer {
 
 				uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
-				vector<string> words = Text::get_expanded_full_text_words(link_text);
+				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
 					const uint64_t word_hash = Hash::str(word);
@@ -152,6 +152,8 @@ namespace indexer {
 	}
 
 	void index_tree::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		m_url_to_domain->read();
 
 		utils::thread_pool pool(num_threads);
 
@@ -168,7 +170,7 @@ namespace indexer {
 		for (level *lvl : m_levels) {
 			lvl->merge();
 		}
-		m_hash_table->merge();
+		//m_hash_table->merge();
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
@@ -198,8 +200,11 @@ namespace indexer {
 
 	std::vector<return_record> index_tree::find(const string &query) {
 
-		vector<link_record> links = m_link_index->find(Text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find(Text::get_tokens(query));
+		vector<link_record> links = m_link_index->find(text::get_tokens(query));
+		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
+
+		//for (auto &link : links) link.m_score = 0.2;
+		//for (auto &link : domain_links) link.m_score = 0.2;
 
 		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
 

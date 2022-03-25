@@ -25,7 +25,7 @@
  */
 
 #include "Dictionary.h"
-#include "system/Logger.h"
+#include "logger/logger.h"
 #include "file/TsvFile.h"
 #include "DictionaryRow.h"
 

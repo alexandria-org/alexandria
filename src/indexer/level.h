@@ -96,12 +96,20 @@ namespace indexer {
 		public:
 		uint64_t m_source_domain;
 		uint64_t m_target_hash;
+
+		link_record() : generic_record() {};
+		link_record(uint64_t value) : generic_record(value) {};
+		link_record(uint64_t value, float score) : generic_record(value, score) {};
 	};
 
 	class domain_link_record : public generic_record {
 		public:
 		uint64_t m_source_domain;
 		uint64_t m_target_domain;
+
+		domain_link_record() : generic_record() {};
+		domain_link_record(uint64_t value) : generic_record(value) {};
+		domain_link_record(uint64_t value, float score) : generic_record(value, score) {};
 	};
 
 	class level {
@@ -161,6 +169,12 @@ namespace indexer {
 
 	class url_record : public generic_record {
 
+		public:
+
+		url_record() : generic_record() {};
+		url_record(uint64_t value) : generic_record(value) {};
+		url_record(uint64_t value, float score) : generic_record(value, score) {};
+
 	};
 
 	class url_level: public level {
@@ -183,6 +197,11 @@ namespace indexer {
 	};
 
 	struct snippet_record : public generic_record {
+
+		public:
+		snippet_record() : generic_record() {};
+		snippet_record(uint64_t value) : generic_record(value) {};
+		snippet_record(uint64_t value, float score) : generic_record(value, score) {};
 
 	};
 

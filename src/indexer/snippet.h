@@ -27,7 +27,7 @@
 #pragma once
 
 #include "level.h"
-#include "text/Text.h"
+#include "text/text.h"
 #include "parser/URL.h"
 
 namespace indexer {

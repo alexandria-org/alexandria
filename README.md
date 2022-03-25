@@ -1,5 +1,7 @@
 # Alexandria.org
 
+[Coding Rules](/documentation/coding_rules.md)
+
 ## Documentation
 1. [Index file format (.fti)](/documentation/index_file_format.md)
 2. [Search Result Ranking](/documentation/search_result_ranking.md)
@@ -78,12 +80,6 @@ cd build
 make run_tests -j24
 ./run_tests
 ```
-
-## Coding rules
-1. Never put "using namespace..." in header files.
-2. Namespaces and Classes written by us should be CamelCase
-3. Everything else should be lower_case
-4. All files within a sub directory must contain namespace that is the same as the directory. For example src/file/TsvFile.h must declare everything within the namespace File.
 
 ## Notes
 On nodes with spinning disks we should turn off energy saving:

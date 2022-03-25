@@ -42,8 +42,8 @@ public:
 	bool full() const;
 	void write();
 	void truncate();
-	void sort();
 	void optimize();
+	void sort();
 
 	void add(uint64_t key, const std::string &value);
 

@@ -25,8 +25,8 @@
  */
 
 #include "config.h"
-#include "text/Text.h"
-#include "system/Logger.h"
+#include "text/text.h"
+#include "logger/logger.h"
 
 using namespace std;
 
@@ -93,14 +93,14 @@ namespace Config {
 			if (comment_pos != string::npos) {
 				line = line.substr(0, comment_pos);
 			}
-			if (Text::trim(line) == "") {
+			if (text::trim(line) == "") {
 				continue;
 			}
 			vector<string> parts;
 			boost::split(parts, line, boost::is_any_of("="));
 
 			for (string &part : parts) {
-				part = Text::trim(part);
+				part = text::trim(part);
 			}
 
 			if (parts[0] == "node") {
