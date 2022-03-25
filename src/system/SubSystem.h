@@ -33,7 +33,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "file/TsvFileRemote.h"
 #include "common/Dictionary.h"
 
 class SubSystem {

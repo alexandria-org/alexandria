@@ -24,26 +24,26 @@
  * SOFTWARE.
  */
 
-#include "TsvFile.h"
+#include "tsv_file.h"
 #include <exception>
 
 using namespace std;
 
-namespace File {
+namespace file {
 
-	TsvFile::TsvFile() {
+	tsv_file::tsv_file() {
 
 	}
 
-	TsvFile::TsvFile(const string &file_name) {
+	tsv_file::tsv_file(const string &file_name) {
 		set_file_name(file_name);
 	}
 
-	TsvFile::~TsvFile() {
+	tsv_file::~tsv_file() {
 		m_file.close();
 	}
 
-	string TsvFile::find(const string &key) {
+	string tsv_file::find(const string &key) {
 		size_t pos = binary_find_position(m_file_size, 0, key);
 		if (pos == string::npos) {
 			return "";
@@ -58,7 +58,7 @@ namespace File {
 		return line;
 	}
 
-	size_t TsvFile::find_first_position(const string &key) {
+	size_t tsv_file::find_first_position(const string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position(m_file_size, 0, key);
@@ -96,7 +96,7 @@ namespace File {
 		return string::npos;
 	}
 
-	size_t TsvFile::find_last_position(const string &key) {
+	size_t tsv_file::find_last_position(const string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position(m_file_size, 0, key);
@@ -140,7 +140,7 @@ namespace File {
 		return ret_pos - last_line_length;
 	}
 
-	size_t TsvFile::find_next_position(const string &key) {
+	size_t tsv_file::find_next_position(const string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position_any(m_file_size, 0, key);
@@ -182,7 +182,7 @@ namespace File {
 		return m_file_size;
 	}
 
-	map<string, string> TsvFile::find_all(const set<string> &keys) {
+	map<string, string> tsv_file::find_all(const set<string> &keys) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		size_t pos = 0;
@@ -202,7 +202,7 @@ namespace File {
 		return result;
 	}
 
-	size_t TsvFile::read_column_into(int column, set<string> &container) {
+	size_t tsv_file::read_column_into(int column, set<string> &container) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
@@ -223,7 +223,7 @@ namespace File {
 		return rows_read;
 	}
 
-	size_t TsvFile::read_column_into(int column, set<string> &container, size_t limit) {
+	size_t tsv_file::read_column_into(int column, set<string> &container, size_t limit) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
@@ -245,25 +245,25 @@ namespace File {
 		return rows_read;
 	}
 
-	size_t TsvFile::size() const {
+	size_t tsv_file::size() const {
 		return m_file_size;
 	}
 
-	bool TsvFile::eof() const {
+	bool tsv_file::eof() const {
 		return m_file.eof();
 	}
 
-	bool TsvFile::is_open() const {
+	bool tsv_file::is_open() const {
 		return m_file.is_open();
 	}
 
-	string TsvFile::get_line() {
+	string tsv_file::get_line() {
 		string line;
 		getline(m_file, line);
 		return line;
 	}
 
-	size_t TsvFile::read_column_into(int column, vector<string> &container) {
+	size_t tsv_file::read_column_into(int column, vector<string> &container) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
@@ -280,7 +280,7 @@ namespace File {
 		return rows_read;
 	}
 
-	size_t TsvFile::read_column_into(int column, vector<string> &container, size_t limit) {
+	size_t tsv_file::read_column_into(int column, vector<string> &container, size_t limit) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
@@ -298,7 +298,7 @@ namespace File {
 		return rows_read;
 	}
 
-	size_t TsvFile::binary_find_position(size_t file_size, size_t offset, const string &key) {
+	size_t tsv_file::binary_find_position(size_t file_size, size_t offset, const string &key) {
 
 		string line;
 
@@ -335,7 +335,7 @@ namespace File {
 		return (size_t)m_file.tellg() - (line.size() + 1u);
 	}
 
-	size_t TsvFile::binary_find_position_any(size_t file_size, size_t offset, const string &key) {
+	size_t tsv_file::binary_find_position_any(size_t file_size, size_t offset, const string &key) {
 
 		string line;
 
@@ -373,7 +373,7 @@ namespace File {
 		return (size_t)m_file.tellg() - (line.size() + 1u);
 	}
 
-	void TsvFile::set_file_name(const string &file_name) {
+	void tsv_file::set_file_name(const string &file_name) {
 
 		m_file_name = file_name;
 		m_original_file_name = file_name;

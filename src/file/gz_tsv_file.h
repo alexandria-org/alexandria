@@ -24,54 +24,34 @@
  * SOFTWARE.
  */
 
-#include "GzTsvFile.h"
-#include <exception>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/algorithm/string.hpp>
+#pragma once
 
-using namespace std;
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <set>
+#include <vector>
+#include <map>
+#include <string.h>
 
-namespace File {
+#define TSV_FILE_DESTINATION "/mnt/0"
 
-	GzTsvFile::GzTsvFile() {
+namespace file {
 
-	}
+	class gz_tsv_file {
 
-	GzTsvFile::GzTsvFile(const string &file_name) {
-		m_file_name = file_name;
+	public:
 
-		ifstream infile(m_file_name);
+		gz_tsv_file();
+		explicit gz_tsv_file(const std::string &file_name);
+		~gz_tsv_file();
 
-		if (infile.is_open()) {
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(infile);
+		size_t read_column_into(size_t column, std::vector<std::string> &container);
 
-			m_data = string(istreambuf_iterator<char>(decompress_stream), {});
-		}
-	}
+	protected:
 
-	GzTsvFile::~GzTsvFile() {
-	}
+		std::string m_file_name;
+		std::string m_data;
 
-	size_t GzTsvFile::read_column_into(size_t column, vector<string> &container) {
-		stringstream ss(m_data);
-
-		string line;
-		size_t rows_read = 0;
-		while (getline(ss, line)) {
-			vector<string> cols;
-			boost::algorithm::split(cols, line, boost::is_any_of("\t"));
-			if (cols.size() > column) {
-				container.push_back(cols[column]);
-			} else {
-				container.push_back("");
-			}
-			rows_read++;
-		}
-
-		return rows_read;
-	}
-
+	};
 }

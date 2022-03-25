@@ -30,7 +30,7 @@
 #include "system/ThreadPool.h"
 #include "logger/logger.h"
 #include "system/Profiler.h"
-#include "file/File.h"
+#include "file/file.h"
 #include "text/text.h"
 #include "parser/Parser.h"
 
@@ -308,7 +308,7 @@ namespace transfer {
 	void delete_downloaded_files(const vector<string> &files) {
 		LOG_INFO("Deleting " + to_string(files.size()) + " downloaded files");
 		for (const string &file : files) {
-			File::delete_file(file);
+			file::delete_file(file);
 		}
 	}
 

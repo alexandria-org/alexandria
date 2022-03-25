@@ -30,8 +30,8 @@
 #include <unordered_map>
 #include "DictionaryRow.h"
 
-namespace File {
-	class TsvFile;
+namespace file {
+	class tsv_file;
 }
 
 class Dictionary {
@@ -39,10 +39,10 @@ class Dictionary {
 public:
 
 	Dictionary();
-	explicit Dictionary(File::TsvFile &tsv_file);
+	explicit Dictionary(file::tsv_file &tsv_file);
 	~Dictionary();
 
-	void load_tsv(File::TsvFile &tsv_file);
+	void load_tsv(file::tsv_file &tsv_file);
 
 	std::unordered_map<size_t, DictionaryRow>::const_iterator find(const std::string &key) const;
 

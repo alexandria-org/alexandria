@@ -27,6 +27,7 @@
 #include "SubSystem.h"
 #include "System.h"
 #include "logger/logger.h"
+#include "file/tsv_file_remote.h"
 
 using namespace boost::iostreams;
 using namespace std;
@@ -34,11 +35,11 @@ using namespace std;
 SubSystem::SubSystem() {
 
 	LOG_INFO("download domain_info.tsv");
-	File::TsvFileRemote domain_index(System::domain_index_filename());
+	file::tsv_file_remote domain_index(System::domain_index_filename());
 	m_domain_index = new Dictionary(domain_index);
 
 	LOG_INFO("download dictionary.tsv");
-	File::TsvFileRemote dictionary(System::dictionary_filename());
+	file::tsv_file_remote dictionary(System::dictionary_filename());
 	m_dictionary = new Dictionary(dictionary);
 
 	dictionary.read_column_into(0, m_words);

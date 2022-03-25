@@ -36,15 +36,15 @@
 
 #define TSV_FILE_DESTINATION "/mnt/0"
 
-namespace File {
+namespace file {
 
-	class TsvFile {
+	class tsv_file {
 
 	public:
 
-		TsvFile();
-		explicit TsvFile(const std::string &file_name);
-		~TsvFile();
+		tsv_file();
+		explicit tsv_file(const std::string &file_name);
+		~tsv_file();
 
 		// Returns the line with the first column equals key. Returns std::string::npos if not present in file.
 		std::string find(const std::string &key);

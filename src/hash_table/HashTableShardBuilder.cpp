@@ -27,7 +27,7 @@
 #include "config.h"
 #include "HashTableShardBuilder.h"
 #include "logger/logger.h"
-#include "file/File.h"
+#include "file/file.h"
 #include "indexer/merger.h"
 
 using namespace std;
@@ -152,10 +152,10 @@ void HashTableShardBuilder::optimize() {
 	outfile_data.close();
 	outfile_pos.close();
 
-	File::copy_file(filename_data_tmp(), filename_data());
-	File::copy_file(filename_pos_tmp(), filename_pos());
-	File::delete_file(filename_data_tmp());
-	File::delete_file(filename_pos_tmp());
+	file::copy_file(filename_data_tmp(), filename_data());
+	file::copy_file(filename_pos_tmp(), filename_pos());
+	file::delete_file(filename_data_tmp());
+	file::delete_file(filename_pos_tmp());
 
 	sort();
 }

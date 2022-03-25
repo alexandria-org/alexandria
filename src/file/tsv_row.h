@@ -26,23 +26,19 @@
 
 #pragma once
 
-#include "TsvFile.h"
+#include <iostream>
+#include <vector>
 
-namespace File {
+namespace file {
 
-	class TsvFileRemote : public TsvFile {
+	class tsv_row {
 
 	public:
-
-		explicit TsvFileRemote(const std::string &file_name);
-		~TsvFileRemote();
-
-		std::string get_path() const;
+		explicit tsv_row(const std::string &line);
+		~tsv_row();
 
 	private:
-
-		int download_file();
-		void create_directory();
+		std::vector<std::string> m_cols;
 
 	};
 

@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "TsvFileRemote.h"
+#include "tsv_file_remote.h"
 #include "logger/logger.h"
 #include "transfer/transfer.h"
 
@@ -36,9 +36,9 @@
 using namespace std;
 using namespace boost::iostreams;
 
-namespace File {
+namespace file {
 
-	TsvFileRemote::TsvFileRemote(const string &file_name) {
+	tsv_file_remote::tsv_file_remote(const string &file_name) {
 		// Check if the file exists.
 
 		m_file_name = file_name;
@@ -52,15 +52,15 @@ namespace File {
 		}
 	}
 
-	TsvFileRemote::~TsvFileRemote() {
+	tsv_file_remote::~tsv_file_remote() {
 		
 	}
 
-	string TsvFileRemote::get_path() const {
+	string tsv_file_remote::get_path() const {
 		return string(TSV_FILE_DESTINATION) + "/" + m_file_name;
 	}
 
-	int TsvFileRemote::download_file() {
+	int tsv_file_remote::download_file() {
 
 		if (m_file_name.find(".gz") == m_file_name.size() - 3) {
 			m_is_gzipped = true;
@@ -91,7 +91,7 @@ namespace File {
 		return error;
 	}
 
-	void TsvFileRemote::create_directory() {
+	void tsv_file_remote::create_directory() {
 		boost::filesystem::path path(get_path());
 		boost::filesystem::create_directories(path.parent_path());
 	}

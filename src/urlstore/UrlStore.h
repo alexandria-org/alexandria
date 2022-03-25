@@ -37,7 +37,7 @@
 #include "transfer/transfer.h"
 #include "system/Profiler.h"
 #include "logger/logger.h"
-#include "file/File.h"
+#include "file/file.h"
 #include "json.hpp"
 #include "KeyValueStore.h"
 #include "parser/URL.h"
@@ -377,7 +377,7 @@ namespace UrlStore {
 
 		UrlStoreBatch batch = get_write_data<StoreData>(store, write_data);
 
-		File::delete_file(filename);
+		file::delete_file(filename);
 
 		return batch;
 	}

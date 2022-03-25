@@ -26,7 +26,7 @@
 
 #include "Dictionary.h"
 #include "logger/logger.h"
-#include "file/TsvFile.h"
+#include "file/tsv_file.h"
 #include "DictionaryRow.h"
 
 using namespace std;
@@ -35,7 +35,7 @@ Dictionary::Dictionary() {
 
 }
 
-Dictionary::Dictionary(File::TsvFile &tsv_file) {
+Dictionary::Dictionary(file::tsv_file &tsv_file) {
 	load_tsv(tsv_file);
 }
 
@@ -43,7 +43,7 @@ Dictionary::~Dictionary() {
 
 }
 
-void Dictionary::load_tsv(File::TsvFile &tsv_file) {
+void Dictionary::load_tsv(file::tsv_file &tsv_file) {
 	while (!tsv_file.eof()) {
 		string line = tsv_file.get_line();
 		stringstream ss(line);

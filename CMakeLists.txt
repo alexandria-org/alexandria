@@ -36,11 +36,11 @@ set(SRC_CLASSES
 
 	"src/worker/worker.cpp"
 
-	"src/file/File.cpp"
-	"src/file/TsvFile.cpp"
-	"src/file/GzTsvFile.cpp"
-	"src/file/TsvFileRemote.cpp"
-	"src/file/TsvRow.cpp"
+	"src/file/file.cpp"
+	"src/file/tsv_file.cpp"
+	"src/file/gz_tsv_file.cpp"
+	"src/file/tsv_file_remote.cpp"
+	"src/file/tsv_row.cpp"
 
 	"src/transfer/transfer.cpp"
 

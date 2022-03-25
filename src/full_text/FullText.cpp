@@ -27,6 +27,7 @@
 #include "FullText.h"
 #include "FullTextShardBuilder.h"
 #include "FullTextIndexerRunner.h"
+#include "file/tsv_file_remote.h"
 #include "link/IndexerRunner.h"
 #include "link/LinkCounter.h"
 #include "transfer/transfer.h"
@@ -107,7 +108,7 @@ namespace FullText {
 
 	vector<string> download_batch(const string &batch, size_t limit, size_t offset) {
 		
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -147,7 +148,7 @@ namespace FullText {
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
 		
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -199,13 +200,13 @@ namespace FullText {
 
 		size_t items = 0;
 		for (const string &batch : Config::batches) {
-			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 			items += warc_paths.size();
 		}
 		for (const string &batch : Config::link_batches) {
-			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 			items += warc_paths.size();

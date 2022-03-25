@@ -24,35 +24,26 @@
  * SOFTWARE.
  */
 
-#include "config.h"
-#include "File.h"
+#pragma once
 
-using namespace std;
+#include "tsv_file.h"
 
-namespace File {
-	string read_test_file(const string &file_name) {
+namespace file {
 
-		ifstream file(Config::test_data_path + file_name);
-		if (file.is_open()) {
-			string ret;
-			file.seekg(0, ios::end);
-			ret.resize(file.tellg());
-			file.seekg(0, ios::beg);
-			file.read(&ret[0], ret.size());
-			file.close();
-			return ret;
-		}
-		return "";
-	}
+	class tsv_file_remote : public tsv_file {
 
-	void copy_file(const string &source, const string &dest) {
-		ifstream infile(source, ios::binary);
-		ofstream outfile(dest, ios::binary | ios::trunc);
+	public:
 
-		outfile << infile.rdbuf();
-	}
+		explicit tsv_file_remote(const std::string &file_name);
+		~tsv_file_remote();
 
-	void delete_file(const string &file) {
-		remove(file.c_str());
-	}
+		std::string get_path() const;
+
+	private:
+
+		int download_file();
+		void create_directory();
+
+	};
+
 }

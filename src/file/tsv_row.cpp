@@ -24,13 +24,13 @@
  * SOFTWARE.
  */
 
-#include "TsvRow.h"
+#include "tsv_row.h"
 
 using namespace std;
 
-namespace File {
+namespace file {
 
-	TsvRow::TsvRow(const string &line) {
+	tsv_row::tsv_row(const string &line) {
 		size_t pos_start = 0;
 		size_t pos_end = 0;
 		while (pos_end != string::npos) {
@@ -40,7 +40,7 @@ namespace File {
 		}
 	}
 
-	TsvRow::~TsvRow() {
+	tsv_row::~tsv_row() {
 
 	}
 

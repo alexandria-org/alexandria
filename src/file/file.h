@@ -27,31 +27,13 @@
 #pragma once
 
 #include <iostream>
-#include <sstream>
 #include <fstream>
-#include <set>
-#include <vector>
-#include <map>
-#include <string.h>
+#include <stdio.h>
 
-#define TSV_FILE_DESTINATION "/mnt/0"
+namespace file {
 
-namespace File {
+	std::string read_test_file(const std::string &file_name);
+	void copy_file(const std::string &source, const std::string &dest);
+	void delete_file(const std::string &file);
 
-	class GzTsvFile {
-
-	public:
-
-		GzTsvFile();
-		explicit GzTsvFile(const std::string &file_name);
-		~GzTsvFile();
-
-		size_t read_column_into(size_t column, std::vector<std::string> &container);
-
-	protected:
-
-		std::string m_file_name;
-		std::string m_data;
-
-	};
 }

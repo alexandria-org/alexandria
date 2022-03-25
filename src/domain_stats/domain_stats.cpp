@@ -27,7 +27,7 @@
 #include "domain_stats.h"
 #include <iostream>
 #include "common/Dictionary.h"
-#include "file/TsvFileRemote.h"
+#include "file/tsv_file_remote.h"
 #include "logger/logger.h"
 #include "system/System.h"
 
@@ -39,7 +39,7 @@ namespace domain_stats {
 
 	void download_domain_stats() {
 		LOG_INFO("download domain_info.tsv");
-		File::TsvFileRemote domain_info_tsv(System::domain_index_filename());
+		file::tsv_file_remote domain_info_tsv(System::domain_index_filename());
 		LOG_INFO("parsing.....");
 		domain_data.load_tsv(domain_info_tsv);
 	}

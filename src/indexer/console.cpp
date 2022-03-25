@@ -32,6 +32,7 @@
 #include "transfer/transfer.h"
 #include "domain_stats/domain_stats.h"
 #include "merger.h"
+#include "file/tsv_file_remote.h"
 
 using namespace std;
 
@@ -46,7 +47,7 @@ namespace indexer {
 		size_t limit = 0;
 		if (args.size() > 2) limit = stoull(args[2]);
 
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -76,7 +77,7 @@ namespace indexer {
 		size_t limit = 0;
 		if (args.size() > 2) limit = stoull(args[2]);
 
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -206,7 +207,7 @@ namespace indexer {
 			size_t limit = 1000;
 			//size_t limit = 1;
 
-			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 
@@ -239,7 +240,7 @@ namespace indexer {
 
 			for (const string &batch : batches) {
 
-				File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+				file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 				vector<string> warc_paths;
 				warc_paths_file.read_column_into(0, warc_paths);
 

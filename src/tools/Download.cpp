@@ -26,7 +26,7 @@
 
 #include "Download.h"
 #include "transfer/transfer.h"
-#include "file/TsvFileRemote.h"
+#include "file/tsv_file_remote.h"
 #include "system/Profiler.h"
 #include "algorithm/algorithm.h"
 #include "link/Link.h"
@@ -46,7 +46,7 @@ namespace Tools {
 
 	vector<string> download_batch(const string &batch) {
 
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 

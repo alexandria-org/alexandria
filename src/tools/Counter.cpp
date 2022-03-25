@@ -40,6 +40,7 @@
 #include "algorithm/hyper_log_log.h"
 #include "algorithm/algorithm.h"
 #include "urlstore/UrlStore.h"
+#include "file/tsv_file_remote.h"
 
 using namespace std;
 
@@ -196,7 +197,7 @@ namespace Tools {
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
 		
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
