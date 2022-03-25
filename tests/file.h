@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "text/text.h"
 #include "file/TsvFileRemote.h"
 #include "hash/Hash.h"
@@ -34,42 +34,42 @@ BOOST_AUTO_TEST_SUITE(file)
 BOOST_AUTO_TEST_CASE(transfer_test) {
 	int error;
 	{
-		string result = Transfer::file_to_string("/test-data/example.txt", error);
-		BOOST_CHECK(error == Transfer::OK);
+		string result = transfer::file_to_string("/test-data/example.txt", error);
+		BOOST_CHECK(error == transfer::OK);
 		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::gz_file_to_string("/test-data/example.txt.gz", error);
-		BOOST_CHECK(error == Transfer::OK);
+		string result = transfer::gz_file_to_string("/test-data/example.txt.gz", error);
+		BOOST_CHECK(error == transfer::OK);
 		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::file_to_string("test-data/example.txt", error);
-		BOOST_CHECK(error == Transfer::OK);
+		string result = transfer::file_to_string("test-data/example.txt", error);
+		BOOST_CHECK(error == transfer::OK);
 		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
-		string result = Transfer::gz_file_to_string("test-data/example.txt.gz", error);
-		BOOST_CHECK(error == Transfer::OK);
-		BOOST_CHECK(text::trim(result) == "An example file");
-	}
-
-	{
-		stringstream ss;
-		Transfer::file_to_stream("/test-data/example.txt", ss, error);
-		string result = ss.str();
-		BOOST_CHECK(error == Transfer::OK);
+		string result = transfer::gz_file_to_string("test-data/example.txt.gz", error);
+		BOOST_CHECK(error == transfer::OK);
 		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 
 	{
 		stringstream ss;
-		Transfer::gz_file_to_stream("/test-data/example.txt.gz", ss, error);
+		transfer::file_to_stream("/test-data/example.txt", ss, error);
 		string result = ss.str();
-		BOOST_CHECK(error == Transfer::OK);
+		BOOST_CHECK(error == transfer::OK);
+		BOOST_CHECK(text::trim(result) == "An example file");
+	}
+
+	{
+		stringstream ss;
+		transfer::gz_file_to_stream("/test-data/example.txt.gz", ss, error);
+		string result = ss.str();
+		BOOST_CHECK(error == transfer::OK);
 		BOOST_CHECK(text::trim(result) == "An example file");
 	}
 }
@@ -77,29 +77,29 @@ BOOST_AUTO_TEST_CASE(transfer_test) {
 BOOST_AUTO_TEST_CASE(handle_errors) {
 	int error;
 	{
-		string result = Transfer::file_to_string("/non-existing.txt", error);
-		BOOST_CHECK(error == Transfer::ERROR);
+		string result = transfer::file_to_string("/non-existing.txt", error);
+		BOOST_CHECK(error == transfer::ERROR);
 	}
 
 	{
-		string result = Transfer::gz_file_to_string("/non-existing.txt.gz", error);
-		BOOST_CHECK(error == Transfer::ERROR);
-	}
-
-	{
-		stringstream ss;
-		Transfer::file_to_stream("/non-existing.txt", ss, error);
-		BOOST_CHECK(error == Transfer::ERROR);
+		string result = transfer::gz_file_to_string("/non-existing.txt.gz", error);
+		BOOST_CHECK(error == transfer::ERROR);
 	}
 
 	{
 		stringstream ss;
-		Transfer::gz_file_to_stream("/non-existing.txt.gz", ss, error);
-		BOOST_CHECK(error == Transfer::ERROR);
+		transfer::file_to_stream("/non-existing.txt", ss, error);
+		BOOST_CHECK(error == transfer::ERROR);
 	}
 
 	{
-		vector<string> downloaded = Transfer::download_gz_files_to_disk({"/non-existing.txt.gz"});
+		stringstream ss;
+		transfer::gz_file_to_stream("/non-existing.txt.gz", ss, error);
+		BOOST_CHECK(error == transfer::ERROR);
+	}
+
+	{
+		vector<string> downloaded = transfer::download_gz_files_to_disk({"/non-existing.txt.gz"});
 		BOOST_CHECK(downloaded.size() == 0);
 	}
 }
@@ -152,22 +152,22 @@ BOOST_AUTO_TEST_CASE(head_content_len) {
 
 	{
 		int error;
-		size_t content_len = Transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com", error);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		size_t content_len = transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com", error);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 		BOOST_CHECK_EQUAL(content_len, 8084);
 	}
 
 	{
 		int error;
-		size_t content_len = Transfer::head_content_length("http://localhost/test-data/10272145489625484395-1002.gz", error);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		size_t content_len = transfer::head_content_length("http://localhost/test-data/10272145489625484395-1002.gz", error);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 		BOOST_CHECK_EQUAL(content_len, 59535774);
 	}
 
 	{
 		int error;
-		size_t content_len = Transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com-not-here", error);
-		BOOST_CHECK_EQUAL(error, Transfer::ERROR);
+		size_t content_len = transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com-not-here", error);
+		BOOST_CHECK_EQUAL(error, transfer::ERROR);
 		BOOST_CHECK_EQUAL(content_len, 0);
 	}
 
@@ -178,11 +178,11 @@ BOOST_AUTO_TEST_CASE(test_upload) {
 	{
 		int error;
 		string buffer;
-		Transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 
-		error = Transfer::upload_file("multipart_test", buffer);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		error = transfer::upload_file("multipart_test", buffer);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 	}
 }
 
@@ -191,16 +191,16 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 	{
 		int error;
 		string buffer;
-		Transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 
-		error = Transfer::upload_gz_file("multipart_test.gz", buffer);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		error = transfer::upload_gz_file("multipart_test.gz", buffer);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 
 		// Download it again as gz file and see if we get the same result.
 		
-		const string result_back = Transfer::gz_file_to_string("multipart_test.gz", error);
-		BOOST_CHECK_EQUAL(error, Transfer::OK);
+		const string result_back = transfer::gz_file_to_string("multipart_test.gz", error);
+		BOOST_CHECK_EQUAL(error, transfer::OK);
 
 		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
 		BOOST_CHECK_EQUAL(Hash::str(result_back), Hash::str(buffer));

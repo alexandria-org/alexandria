@@ -438,14 +438,14 @@ namespace Scraper {
 
 	bool reset_scraper_urls() {
 		string content = "";
-		int error = Transfer::upload_file("nodes/" + Config::node + "/scraper.urls", content);
-		return error == Transfer::OK;
+		int error = transfer::upload_file("nodes/" + Config::node + "/scraper.urls", content);
+		return error == transfer::OK;
 	}
 
 	vector<string> download_scraper_urls() {
 		int error;
-		string content = Transfer::file_to_string("nodes/" + Config::node + "/scraper.urls", error);
-		if (error == Transfer::ERROR) return {};
+		string content = transfer::file_to_string("nodes/" + Config::node + "/scraper.urls", error);
+		if (error == transfer::ERROR) return {};
 
 		reset_scraper_urls();
 

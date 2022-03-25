@@ -30,7 +30,7 @@
 #include "hash_table/HashTableShardBuilder.h"
 #include "KeyValueStore.h"
 #include "parser/URL.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "logger/logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
@@ -145,7 +145,7 @@ namespace Link {
 
 	void upload_link_counts_file(const vector<string> &lines, const string &batch, size_t sub_batch, size_t file_num) {
 		const string file_data = boost::algorithm::join(lines, "\n");
-		Transfer::upload_gz_file("urls/link_counts/" + batch + "/"+to_string(sub_batch)+"/top_" + to_string(file_num) + ".gz", file_data);
+		transfer::upload_gz_file("urls/link_counts/" + batch + "/"+to_string(sub_batch)+"/top_" + to_string(file_num) + ".gz", file_data);
 	}
 
 	float calculate_score(const map<size_t, float> &scores) {

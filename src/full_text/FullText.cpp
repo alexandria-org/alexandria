@@ -29,7 +29,7 @@
 #include "FullTextIndexerRunner.h"
 #include "link/IndexerRunner.h"
 #include "link/LinkCounter.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "search_engine/SearchEngine.h"
 #include "hash_table/HashTableHelper.h"
 #include "urlstore/UrlStore.h"
@@ -121,7 +121,7 @@ namespace FullText {
 			files_to_download.push_back(warc_path);
 		}
 
-		return Transfer::download_gz_files_to_disk(files_to_download);
+		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
 	bool is_indexed() {
@@ -161,7 +161,7 @@ namespace FullText {
 			files_to_download.push_back(warc_path);
 		}
 
-		return Transfer::download_gz_files_to_disk(files_to_download);
+		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
@@ -173,7 +173,7 @@ namespace FullText {
 			vector<string> files = download_batch(batch, limit, offset);
 			if (files.size() == 0) break;
 			index_files(batch, db_name, hash_table_name, files, sub_system);
-			Transfer::delete_downloaded_files(files);
+			transfer::delete_downloaded_files(files);
 			offset += files.size();
 		}
 
@@ -189,7 +189,7 @@ namespace FullText {
 			vector<string> files = download_batch(batch, limit, offset);
 			if (files.size() == 0) break;
 			index_files(batch, db_name, hash_table_name, files, sub_system);
-			Transfer::delete_downloaded_files(files);
+			transfer::delete_downloaded_files(files);
 			offset += files.size();
 			status.items_indexed += files.size();
 		}
@@ -280,7 +280,7 @@ namespace FullText {
 			vector<string> files = download_link_batch(batch, limit, offset);
 			if (files.size() == 0) break;
 			index_link_files(batch, db_name, domain_db_name, hash_table_name, domain_hash_table_name, files, sub_system, url_to_domain);
-			Transfer::delete_downloaded_files(files);
+			transfer::delete_downloaded_files(files);
 			offset += files.size();
 		}
 	}
@@ -295,7 +295,7 @@ namespace FullText {
 			vector<string> files = download_link_batch(batch, limit, offset);
 			if (files.size() == 0) break;
 			index_link_files(batch, db_name, domain_db_name, hash_table_name, domain_hash_table_name, files, sub_system, url_to_domain);
-			Transfer::delete_downloaded_files(files);
+			transfer::delete_downloaded_files(files);
 			offset += files.size();
 			status.items_indexed += files.size();
 		}

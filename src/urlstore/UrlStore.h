@@ -34,7 +34,7 @@
 #include <boost/filesystem.hpp>
 #include "config.h"
 #include "hash/Hash.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "system/Profiler.h"
 #include "logger/logger.h"
 #include "file/File.h"
@@ -287,7 +287,7 @@ namespace UrlStore {
 		append_bitmask<StoreData>(0x0, put_data);
 		append_bitmask<StoreData>(update_bitmask, put_data);
 		append_data_str(data, put_data);
-		Transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
+		transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
 	}
 
 	template <typename StoreData>
@@ -298,12 +298,12 @@ namespace UrlStore {
 		for (const StoreData &data : datas) {
 			append_data_str(data, put_data);
 		}
-		Transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
+		transfer::put(Config::url_store_host + "/store/" + StoreData::uri, put_data);
 	}
 
 	template <typename StoreData>
 	int get(const string &url, StoreData &data) {
-		Transfer::Response res = Transfer::get(Config::url_store_host + "/store/" + StoreData::uri + "/" + url, {"Accept: application/octet-stream"});
+		transfer::Response res = transfer::get(Config::url_store_host + "/store/" + StoreData::uri + "/" + url, {"Accept: application/octet-stream"});
 		if (res.code == 200) {
 			data = StoreData(res.body);
 			return OK;
@@ -314,7 +314,7 @@ namespace UrlStore {
 	template <typename StoreData>
 	int get_many(const std::vector<std::string> &public_keys, std::vector<StoreData> &datas) {
 		const string post_data = boost::algorithm::join(public_keys, "\n");
-		Transfer::Response res = Transfer::post(Config::url_store_host + "/store/" + StoreData::uri, post_data, {"Accept: application/octet-stream"});
+		transfer::Response res = transfer::post(Config::url_store_host + "/store/" + StoreData::uri, post_data, {"Accept: application/octet-stream"});
 		if (res.code == 200) {
 
 			const size_t len = res.body.size();

@@ -25,7 +25,7 @@
  */
 
 #include "config.h"
-#include "Transfer.h"
+#include "transfer.h"
 #include <fstream>
 #include "system/ThreadPool.h"
 #include "logger/logger.h"
@@ -36,7 +36,7 @@
 
 using namespace std;
 
-namespace Transfer {
+namespace transfer {
 
 	hash<string> hasher;
 

@@ -26,7 +26,7 @@
 
 #include "TsvFileRemote.h"
 #include "logger/logger.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -45,7 +45,7 @@ namespace File {
 
 		ifstream infile(get_path());
 
-		if (download_file() == Transfer::OK) {
+		if (download_file() == transfer::OK) {
 			set_file_name(get_path());
 		} else {
 			infile.close();
@@ -73,15 +73,15 @@ namespace File {
 		create_directory();
 		ofstream outfile(get_path(), ios::trunc);
 
-		int error = Transfer::ERROR;
+		int error = transfer::ERROR;
 		if (outfile.good()) {
 			if (m_is_gzipped) {
-				Transfer::gz_file_to_stream(m_file_name, outfile, error);
+				transfer::gz_file_to_stream(m_file_name, outfile, error);
 			} else {
-				Transfer::file_to_stream(m_file_name, outfile, error);
+				transfer::file_to_stream(m_file_name, outfile, error);
 			}
 
-			if (error == Transfer::ERROR) {
+			if (error == transfer::ERROR) {
 				LOG_INFO("Download failed...");
 			}
 		}

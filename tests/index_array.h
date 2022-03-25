@@ -34,7 +34,7 @@
 #include "indexer/merger.h"
 #include "algorithm/hyper_log_log.h"
 #include "parser/URL.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "memory/debugger.h"
 
 BOOST_AUTO_TEST_SUITE(index_array)
@@ -360,11 +360,11 @@ BOOST_AUTO_TEST_CASE(index_files) {
 
 		idx_tree.truncate();
 
-		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(
 			{std::string("crawl-data/ALEXANDRIA-TEST-10/test00.gz")}
 		);
 		idx_tree.add_index_file(local_files[0]);
-		Transfer::delete_downloaded_files(local_files);
+		transfer::delete_downloaded_files(local_files);
 
 		idx_tree.merge();
 
@@ -402,12 +402,12 @@ BOOST_AUTO_TEST_CASE(memtest) {
 
 		idx_tree.truncate();
 
-		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(
 			{std::string("crawl-data/ALEXANDRIA-TEST-10/test00.gz")}
 		);
 		size_t mem_before_index = memory::allocated_memory();
 		idx_tree.add_index_files_threaded(local_files, 24);
-		Transfer::delete_downloaded_files(local_files);
+		transfer::delete_downloaded_files(local_files);
 
 		indexer::merger::force_append();
 

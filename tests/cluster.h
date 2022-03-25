@@ -25,7 +25,7 @@
  */
 
 #include "cluster/Document.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "hash/Hash.h"
 
 BOOST_AUTO_TEST_SUITE(cluster)
@@ -34,8 +34,8 @@ BOOST_AUTO_TEST_CASE(cluster) {
 	{
 		int error;
 		stringstream ss;
-		Transfer::gz_file_to_stream("/test-data/10272145489625484395-1002.gz", ss, error);
-		BOOST_CHECK(error == Transfer::OK);
+		transfer::gz_file_to_stream("/test-data/10272145489625484395-1002.gz", ss, error);
+		BOOST_CHECK(error == transfer::OK);
 
 		Cluster::Corpus corpus;
 		Cluster::Documents documents;

@@ -29,7 +29,7 @@
 #include "text/text.h"
 #include "indexer/index_tree.h"
 #include "parser/URL.h"
-#include "transfer/Transfer.h"
+#include "transfer/transfer.h"
 #include "domain_stats/domain_stats.h"
 #include "merger.h"
 
@@ -58,11 +58,11 @@ namespace indexer {
 				path.replace(pos, 8, ".gz");
 			}
 		}
-		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
 		idx_tree.add_index_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
-		Transfer::delete_downloaded_files(local_files);
+		transfer::delete_downloaded_files(local_files);
 
 		merger::stop_merge_thread();
 	}
@@ -88,11 +88,11 @@ namespace indexer {
 				path.replace(pos, 8, ".gz");
 			}
 		}
-		std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
 		idx_tree.add_link_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
-		Transfer::delete_downloaded_files(local_files);
+		transfer::delete_downloaded_files(local_files);
 
 		merger::stop_merge_thread();
 	}
@@ -218,11 +218,11 @@ namespace indexer {
 					path.replace(pos, 8, ".gz");
 				}
 			}
-			std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
 			idx_tree.add_index_files_threaded(local_files, 24);
 			cout << "done with indexer" << endl;
-			Transfer::delete_downloaded_files(local_files);
+			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 		}
@@ -251,11 +251,11 @@ namespace indexer {
 						path.replace(pos, 8, ".gz");
 					}
 				}
-				std::vector<std::string> local_files = Transfer::download_gz_files_to_disk(warc_paths);
+				std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 				cout << "starting indexer" << endl;
 				idx_tree.add_link_files_threaded(local_files, 24);
 				cout << "done with indexer" << endl;
-				Transfer::delete_downloaded_files(local_files);
+				transfer::delete_downloaded_files(local_files);
 			}
 
 			merger::stop_merge_thread();

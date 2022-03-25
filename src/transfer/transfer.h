@@ -33,7 +33,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-namespace Transfer {
+namespace transfer {
 
 	const std::string username = "alexandria";
 	const std::string password = "wmXN6U4u";
@@ -62,7 +62,7 @@ namespace Transfer {
 	std::vector<std::string> download_gz_files_to_disk(const std::vector<std::string> &files_to_download);
 	void delete_downloaded_files(const std::vector<std::string> &files);
 
-	// Make a http HEAD request and return the content length. Return 0 on failure and sets the error parameter to Transfer::ERROR
+	// Make a http HEAD request and return the content length. Return 0 on failure and sets the error parameter to transfer::ERROR
 	size_t head_content_length(const std::string &url, int &error);
 
 	int upload_file(const std::string &path, const std::string &data);
