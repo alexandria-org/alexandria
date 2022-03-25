@@ -29,20 +29,23 @@
 #include <iostream>
 #include <vector>
 
-namespace Worker {
-	struct Status;
+class ResultWithSnippet;
+struct SearchMetric;
+
+namespace api {
+
+	class api_response {
+
+		public:
+			api_response(std::vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile);
+			~api_response();
+
+			friend std::ostream &operator<<(std::ostream &os, const api_response &api_response);
+
+		private:
+
+			std::string m_response;
+
+	};
+
 }
-
-class ApiStatusResponse {
-
-public:
-	explicit ApiStatusResponse(Worker::Status &status);
-	~ApiStatusResponse();
-
-	friend std::ostream &operator<<(std::ostream &os, const ApiStatusResponse &api_response);
-
-private:
-
-	std::string m_response;
-
-};

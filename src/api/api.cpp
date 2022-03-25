@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#include "Api.h"
-#include "ApiResponse.h"
+#include "api.h"
+#include "api_response.h"
 
 #include "hash_table/HashTable.h"
 #include "post_processor/PostProcessor.h"
@@ -52,7 +52,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-namespace Api {
+namespace api {
 
 	void search(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
 		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
@@ -76,7 +76,7 @@ namespace Api {
 
 		post_processor.run(with_snippets);
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -118,7 +118,7 @@ namespace Api {
 		metric.m_links_handled = links_handled;
 		metric.m_total_url_links_found = total_url_links_found;
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -172,7 +172,7 @@ namespace Api {
 		metric.m_total_url_links_found = total_url_links_found;
 		metric.m_total_domain_links_found = total_domain_links_found;
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -200,7 +200,7 @@ namespace Api {
 
 		post_processor.run(with_snippets);
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -241,7 +241,7 @@ namespace Api {
 
 		post_processor.run(with_snippets);
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -289,7 +289,7 @@ namespace Api {
 
 		post_processor.run(with_snippets);
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}
@@ -404,7 +404,7 @@ namespace Api {
 		metric.m_total_url_links_found = total_url_links_found;
 		metric.m_total_domain_links_found = total_domain_links_found;
 
-		ApiResponse response(with_snippets, metric, profiler.get());
+		api_response response(with_snippets, metric, profiler.get());
 
 		response_stream << response;
 	}

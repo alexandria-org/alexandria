@@ -24,24 +24,45 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "api_status_response.h"
+#include <system/Profiler.h>
 
-#include <iostream>
-#include <vector>
+#include "worker/worker.h"
+#include "json.hpp"
 
-class ResultWithSnippet;
-struct SearchMetric;
+using namespace std;
+using json = nlohmann::ordered_json;
 
-class ApiResponse {
+namespace api {
 
-public:
-	ApiResponse(std::vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile);
-	~ApiResponse();
+	api_status_response::api_status_response(worker::Status &status) {
 
-	friend std::ostream &operator<<(std::ostream &os, const ApiResponse &api_response);
+		json message;
 
-private:
+		message["status"] = "indexing";
+		message["progress"] = (double)status.items_indexed / status.items;
+		message["items"] = status.items;
+		message["items_indexed"] = status.items_indexed;
 
-	std::string m_response;
+		double time_left = 0.0;
+		if (status.items_indexed > 0) {
+			const size_t items_left = status.items - status.items_indexed;
+			const double time_per_item = ((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
+			time_left = (double)items_left * time_per_item;
+		}
+		message["time_left"] = time_left;
 
-};
+		//m_response = message.dump();
+		m_response = message.dump(4);
+	}
+
+	api_status_response::~api_status_response() {
+
+	}
+
+	ostream &operator<<(ostream &os, const api_status_response &api_response) {
+		os << api_response.m_response;
+		return os;
+	}
+
+}

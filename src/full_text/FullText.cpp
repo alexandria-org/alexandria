@@ -180,7 +180,7 @@ namespace FullText {
 	}
 
 	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system,
-		Worker::Status &status) {
+		worker::status &status) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;
@@ -223,7 +223,7 @@ namespace FullText {
 		mark_indexed();
 	}
 
-	void index_all_batches(const string &db_name, const string &hash_table_name, Worker::Status &status) {
+	void index_all_batches(const string &db_name, const string &hash_table_name, worker::status &status) {
 		SubSystem *sub_system = new SubSystem();
 		for (const string &batch : Config::batches) {
 			index_batch(db_name, hash_table_name, batch, sub_system, status);
@@ -251,7 +251,7 @@ namespace FullText {
 	}
 
 	void index_all_link_batches(const string &db_name, const string &domain_db_name, const string &hash_table_name,
-			const string &domain_hash_table_name, Worker::Status &status) {
+			const string &domain_hash_table_name, worker::status &status) {
 
 		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
 		SubSystem *sub_system = new SubSystem();
@@ -286,7 +286,7 @@ namespace FullText {
 	}
 
 	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
-		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, Worker::Status &status) {
+		const string &batch, const SubSystem *sub_system, UrlToDomain *url_to_domain, worker::status &status) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;

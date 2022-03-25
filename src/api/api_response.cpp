@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "ApiResponse.h"
+#include "api_response.h"
 #include "api/ResultWithSnippet.h"
 #include "full_text/SearchMetric.h"
 #include "parser/Unicode.h"
@@ -33,44 +33,47 @@
 using namespace std;
 using json = nlohmann::ordered_json;
 
-ApiResponse::ApiResponse(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {
+namespace api {
 
-	json message;
+	api_response::api_response(vector<ResultWithSnippet> &results, const struct SearchMetric &metric, double profile) {
 
-	json result_array;
-	for (const ResultWithSnippet &result : results) {
-		json json_result;
+		json message;
 
-		json_result["url"] = result.url().str();
-		json_result["title"] = Unicode::encode(result.title());
-		json_result["snippet"] = Unicode::encode(result.snippet());
-		json_result["score"] = result.score();
-		json_result["domain_hash"] = to_string(result.domain_hash());
-		json_result["url_hash"] = to_string(result.url().hash());
+		json result_array;
+		for (const ResultWithSnippet &result : results) {
+			json json_result;
 
-		result_array.push_back(json_result);
+			json_result["url"] = result.url().str();
+			json_result["title"] = Unicode::encode(result.title());
+			json_result["snippet"] = Unicode::encode(result.snippet());
+			json_result["score"] = result.score();
+			json_result["domain_hash"] = to_string(result.domain_hash());
+			json_result["url_hash"] = to_string(result.url().hash());
+
+			result_array.push_back(json_result);
+		}
+
+		message["status"] = "success";
+		message["time_ms"] = profile;
+		message["total_found"] = metric.m_total_found;
+		message["total_url_links_found"] = metric.m_total_url_links_found;
+		message["total_domain_links_found"] = metric.m_total_domain_links_found;
+		message["links_handled"] = metric.m_links_handled;
+		message["link_domain_matches"] = metric.m_link_domain_matches;
+		message["link_url_matches"] = metric.m_link_url_matches;
+		message["results"] = result_array;
+
+		//m_response = message.dump();
+		m_response = message.dump(4);
 	}
 
-	message["status"] = "success";
-	message["time_ms"] = profile;
-	message["total_found"] = metric.m_total_found;
-	message["total_url_links_found"] = metric.m_total_url_links_found;
-	message["total_domain_links_found"] = metric.m_total_domain_links_found;
-	message["links_handled"] = metric.m_links_handled;
-	message["link_domain_matches"] = metric.m_link_domain_matches;
-	message["link_url_matches"] = metric.m_link_url_matches;
-	message["results"] = result_array;
+	api_response::~api_response() {
 
-	//m_response = message.dump();
-	m_response = message.dump(4);
-}
+	}
 
-ApiResponse::~ApiResponse() {
+	ostream &operator<<(ostream &os, const api_response &api_response) {
+		os << api_response.m_response;
+		return os;
+	}
 
 }
-
-ostream &operator<<(ostream &os, const ApiResponse &api_response) {
-	os << api_response.m_response;
-	return os;
-}
-

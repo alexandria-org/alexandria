@@ -3,9 +3,9 @@
 
 #include <iostream>
 
-namespace Worker {
+namespace worker {
 
-	struct Status {
+	struct status {
 
 		size_t items;
 		size_t items_indexed;
@@ -13,7 +13,7 @@ namespace Worker {
 
 	};
 
-	struct Worker {
+	struct worker {
 
 		int socket_id;
 		int thread_id;
@@ -23,7 +23,7 @@ namespace Worker {
 	void test_search(const std::string &query);
 	void start_server();
 	void start_download_server();
-	void start_status_server(Status &status);
+	void start_status_server(status &status);
 	void start_urlstore_server();
 	void join_urlstore_server();
 	void wait_for_urlstore_server();

@@ -1,5 +1,5 @@
 
-#include "Worker.h"
+#include "worker.h"
 #include "fcgio.h"
 #include "config.h"
 #include "parser/URL.h"
@@ -9,7 +9,6 @@
 #include <boost/filesystem.hpp>
 
 #include "post_processor/PostProcessor.h"
-#include "api/ApiResponse.h"
 #include "hash_table/HashTable.h"
 #include "full_text/FullText.h"
 #include "full_text/FullTextIndex.h"
@@ -17,7 +16,7 @@
 #include "full_text/SearchMetric.h"
 #include "search_engine/SearchAllocation.h"
 #include "Api.h"
-#include "ApiStatusResponse.h"
+#include "api_status_response.h"
 #include "link/FullTextRecord.h"
 #include "logger/logger.h"
 #include "system/Profiler.h"
@@ -27,7 +26,7 @@
 using namespace std;
 using namespace std::literals::chrono_literals;
 
-namespace Worker {
+namespace worker {
 
 	void test_search(const string &query) {
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
@@ -41,7 +40,7 @@ namespace Worker {
 		FullTextIndex<DomainLink::FullTextRecord> domain_link_index("domain_link_index");
 
 		stringstream response_stream;
-		Api::search(query, hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search(query, hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		cout << response_stream.rdbuf() << endl;
 
@@ -67,7 +66,7 @@ namespace Worker {
 
 		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
 
-		Worker *worker = static_cast<Worker *>(data);
+		worker *worker = static_cast<worker *>(data);
 
 		FCGX_Request request;
 
@@ -121,23 +120,23 @@ namespace Worker {
 
 			if (query.find("q") != query.end() && deduplicate) {
 				if (Config::index_text) {
-					Api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+					api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				} else {
-					Api::search_remote(query["q"], hash_table, link_index, domain_link_index, allocation, response_stream);
+					api::search_remote(query["q"], hash_table, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				}
 			} else if (query.find("q") != query.end() && !deduplicate) {
-				Api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+				api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("s") != query.end()) {
-				Api::word_stats(query["s"], index, link_index, hash_table.size(), hash_table_link.size(), response_stream);
+				api::word_stats(query["s"], index, link_index, hash_table.size(), hash_table_link.size(), response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("u") != query.end()) {
-				Api::url(query["u"], hash_table, response_stream);
+				api::url(query["u"], hash_table, response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("i") != query.end()) {
-				Api::ids(query["i"], index, allocation, response_stream);
+				api::ids(query["i"], index, allocation, response_stream);
 				output_binary_response(request, response_stream);
 			}
 
@@ -162,7 +161,7 @@ namespace Worker {
 
 		vector<pthread_t> thread_ids(Config::worker_count);
 
-		Worker *workers = new Worker[Config::worker_count];
+		worker *workers = new worker[Config::worker_count];
 		for (size_t i = 0; i < Config::worker_count; i++) {
 			workers[i].socket_id = socket_id;
 			workers[i].thread_id = i;
@@ -181,7 +180,7 @@ namespace Worker {
 		Parser::warc_downloader();
 	}
 
-	void status_server(Status *status) {
+	void status_server(status *status) {
 		FCGX_Init();
 
 		int socket_id = FCGX_OpenSocket("127.0.0.1:8000", 20);
@@ -193,7 +192,7 @@ namespace Worker {
 		FCGX_Request request;
 		FCGX_InitRequest(&request, socket_id, 0);
 
-		LOG_INFO("Status server has started...");
+		LOG_INFO("status server has started...");
 
 		while (true) {
 
@@ -204,7 +203,7 @@ namespace Worker {
 
 			stringstream response_stream;
 
-			ApiStatusResponse api_response(*status);
+			api_status_response api_response(*status);
 
 			response_stream << api_response;
 
@@ -387,7 +386,7 @@ namespace Worker {
 	}
 
 	thread status_server_thread;
-	void start_status_server(Status &status) {
+	void start_status_server(status &status) {
 
 		status_server_thread = std::move(thread(status_server, &status));
 

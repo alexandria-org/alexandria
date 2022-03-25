@@ -25,7 +25,7 @@
  */
 
 #include "hash_table/HashTableHelper.h"
-#include "api/Api.h"
+#include "api/api.h"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search("The Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("The Wikipedia", hash_table, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search("url2.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url2.com", hash_table, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search_all("site:url2.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search_all("site:url2.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 

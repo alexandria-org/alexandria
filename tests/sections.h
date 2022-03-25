@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(sections) {
 
 	{
 		stringstream response_stream;
-		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
 
 		string response = response_stream.str();
 

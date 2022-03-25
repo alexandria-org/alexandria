@@ -24,42 +24,29 @@
  * SOFTWARE.
  */
 
-#include "ApiStatusResponse.h"
-#include <system/Profiler.h>
+#pragma once
 
-#include "Worker.h"
-#include "json.hpp"
+#include <iostream>
+#include <vector>
 
-using namespace std;
-using json = nlohmann::ordered_json;
-
-ApiStatusResponse::ApiStatusResponse(Worker::Status &status) {
-
-	json message;
-
-	message["status"] = "indexing";
-	message["progress"] = (double)status.items_indexed / status.items;
-	message["items"] = status.items;
-	message["items_indexed"] = status.items_indexed;
-
-	double time_left = 0.0;
-	if (status.items_indexed > 0) {
-		const size_t items_left = status.items - status.items_indexed;
-		const double time_per_item = ((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
-		time_left = (double)items_left * time_per_item;
-	}
-	message["time_left"] = time_left;
-
-	//m_response = message.dump();
-	m_response = message.dump(4);
+namespace worker {
+	struct status;
 }
 
-ApiStatusResponse::~ApiStatusResponse() {
+namespace api {
+
+	class api_status_response {
+
+		public:
+			explicit api_status_response(worker::Status &status);
+			~api_status_response();
+
+			friend std::ostream &operator<<(std::ostream &os, const api_status_response &api_response);
+
+		private:
+
+			std::string m_response;
+
+	};
 
 }
-
-ostream &operator<<(ostream &os, const ApiStatusResponse &api_response) {
-	os << api_response.m_response;
-	return os;
-}
-
