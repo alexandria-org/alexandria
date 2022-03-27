@@ -29,10 +29,10 @@
 #include "file/tsv_file_remote.h"
 #include "system/Profiler.h"
 #include "algorithm/algorithm.h"
-#include "link/Link.h"
+#include "url_link/link.h"
 #include "system/System.h"
 #include "config.h"
-#include "full_text/FullText.h"
+#include "logger/logger.h"
 
 #include <math.h>
 #include <unordered_set>
@@ -72,7 +72,7 @@ namespace Tools {
 			ifstream infile(file_path);
 			string line;
 			while (getline(infile, line)) {
-				const Link::Link link(line);
+				const url_link::link link(line);
 				result.insert(link.target_url().hash());
 			}
 		}
@@ -88,7 +88,7 @@ namespace Tools {
 			ifstream infile(file_path);
 			string line;
 			while (getline(infile, line)) {
-				const Link::Link link(line);
+				const url_link::link link(line);
 				total_result.insert(link.target_url().hash());
 			}
 			cout << "size: " << total_result.size() << " done " << (++idx) << "/" << files.size() << endl;

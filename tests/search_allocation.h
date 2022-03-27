@@ -24,15 +24,16 @@
  * SOFTWARE.
  */
 
-#include "search_engine/SearchAllocation.h"
-#include "full_text/FullTextRecord.h"
+#include "search_allocation/search_allocation.h"
+#include "full_text/full_text_record.h"
 
-BOOST_AUTO_TEST_SUITE(search_allocation)
+BOOST_AUTO_TEST_SUITE(test_search_allocation)
 
 BOOST_AUTO_TEST_CASE(create) {
-	SearchAllocation::Storage<FullTextRecord> *search_alloc = SearchAllocation::create_storage<FullTextRecord>();
 
-	SearchAllocation::delete_storage(search_alloc);
+	search_allocation::storage<full_text::full_text_record> *search_alloc = search_allocation::create_storage<full_text::full_text_record>();
+
+	search_allocation::delete_storage(search_alloc);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

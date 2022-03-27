@@ -29,14 +29,16 @@
 #include <iostream>
 #include "parser/URL.h"
 
-struct FullTextRecord;
+namespace full_text {
+	struct full_text_record;
+}
 
 namespace api {
 
 	class result_with_snippet {
 
 	public:
-		result_with_snippet(const std::string &tsv_data, const FullTextRecord &res);
+		result_with_snippet(const std::string &tsv_data, const full_text::full_text_record &res);
 		~result_with_snippet();
 
 		const URL &url() const { return m_url; };

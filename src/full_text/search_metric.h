@@ -26,34 +26,16 @@
 
 #pragma once
 
-#include <iostream>
-#include "parser/URL.h"
+namespace full_text {
 
-namespace domain_link {
-	struct full_text_record;
-}
+	struct search_metric {
 
-namespace api {
-
-	class domain_link_result {
-
-	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
-
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
-
-	private:
-
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
+		size_t m_total_found;
+		size_t m_total_url_links_found;
+		size_t m_total_domain_links_found;
+		size_t m_links_handled;
+		size_t m_link_domain_matches;
+		size_t m_link_url_matches;
 
 	};
 

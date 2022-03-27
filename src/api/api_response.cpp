@@ -26,7 +26,7 @@
 
 #include "api_response.h"
 #include "api/result_with_snippet.h"
-#include "full_text/SearchMetric.h"
+#include "full_text/search_metric.h"
 #include "parser/Unicode.h"
 #include "json.hpp"
 
@@ -35,7 +35,7 @@ using json = nlohmann::ordered_json;
 
 namespace api {
 
-	api_response::api_response(vector<result_with_snippet> &results, const struct SearchMetric &metric, double profile) {
+	api_response::api_response(vector<result_with_snippet> &results, const struct full_text::search_metric &metric, double profile) {
 
 		json message;
 

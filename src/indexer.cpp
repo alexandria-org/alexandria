@@ -24,9 +24,9 @@
  * SOFTWARE.
  */
 
+#include "full_text/full_text.h"
 #include <iostream>
 #include "config.h"
-#include "full_text/FullText.h"
 #include "logger/logger.h"
 #include "tools/Splitter.h"
 #include "tools/Counter.h"
@@ -69,7 +69,7 @@ int main(int argc, const char **argv) {
 	const string arg(argc > 1 ? argv[1] : "");
 
 	if (arg == "--index") {
-		FullText::index_all_batches("main_index", "main_index");
+		full_text::index_all_batches("main_index", "main_index");
 	} else if (arg == "--split") {
 		Tools::run_splitter();
 	} else if (arg == "--count") {

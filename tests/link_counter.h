@@ -26,7 +26,7 @@
 
 #include <map>
 #include <set>
-#include "full_text/FullText.h"
+#include "full_text/full_text.h"
 
 BOOST_AUTO_TEST_SUITE(link_counter)
 

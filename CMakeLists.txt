@@ -44,20 +44,21 @@ set(SRC_CLASSES
 
 	"src/transfer/transfer.cpp"
 
-	"src/full_text/FullTextIndexer.cpp"
-	"src/full_text/FullTextIndexerRunner.cpp"
-	"src/full_text/UrlToDomain.cpp"
-	"src/full_text/FullText.cpp"
+	"src/full_text/full_text_indexer.cpp"
+	"src/full_text/full_text_indexer_runner.cpp"
+	"src/full_text/url_to_domain.cpp"
+	"src/full_text/full_text.cpp"
 
-	"src/search_engine/SearchEngine.cpp"
-	"src/search_engine/SearchAllocation.cpp"
+	"src/search_engine/search_engine.cpp"
 
-	"src/link/Link.cpp"
-	"src/link/Indexer.cpp"
-	"src/link/IndexerRunner.cpp"
-	"src/link/LinkCounter.cpp"
+	"src/search_allocation/search_allocation.cpp"
 
-	"src/domain_link/Indexer.cpp"
+	"src/url_link/link.cpp"
+	"src/url_link/indexer.cpp"
+	"src/url_link/indexer_runner.cpp"
+	"src/url_link/link_counter.cpp"
+
+	"src/domain_link/indexer.cpp"
 
 	"src/hash_table/HashTable.cpp"
 	"src/hash_table/HashTableShard.cpp"

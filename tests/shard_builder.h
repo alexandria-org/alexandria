@@ -24,20 +24,20 @@
  * SOFTWARE.
  */
 
-#include "full_text/FullTextShardBuilder.h"
-#include "full_text/FullTextShard.h"
+#include "full_text/full_text_shard_builder.h"
+#include "full_text/full_text_shard.h"
 
 BOOST_AUTO_TEST_SUITE(shard_builder)
 
 BOOST_AUTO_TEST_CASE(shard_builder) {
 
-	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10);
+	full_text_shard_builder<full_text_record> builder("single_db_test", 10);
 
 	builder.truncate();
 	builder.truncate_cache_files();
 
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 1111ull,
 			.m_score = 0.1f,
 			.m_domain_hash = 2222ull
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 	}
 
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 111ull,
 			.m_score = 0.2f,
 			.m_domain_hash = 222ull
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 	builder.merge();
 
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 112ull,
 			.m_score = 0.2f,
 			.m_domain_hash = 222ull
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 	}
 
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 113ull,
 			.m_score = 0.2f,
 			.m_domain_hash = 222ull
@@ -83,9 +83,9 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 	builder.merge();
 
-	FullTextShard<FullTextRecord> shard("single_db_test", 10);
+	full_text_shard<full_text_record> shard("single_db_test", 10);
 
-	FullTextResultSet<FullTextRecord> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
+	full_text_result_set<full_text_record> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
 	shard.find(123456ull, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);
@@ -118,13 +118,13 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 BOOST_AUTO_TEST_CASE(shard_builder2) {
 
-	FullTextShardBuilder<FullTextRecord> builder("single_db_test", 10);
+	full_text_shard_builder<full_text_record> builder("single_db_test", 10);
 
 	builder.truncate();
 	builder.truncate_cache_files();
 
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 1111ull,
 			.m_score = 0.1f,
 			.m_domain_hash = 2222ull
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 		builder.add(123456ull, record);
 	}
 	{
-		FullTextRecord record = {
+		full_text_record record = {
 			.m_value = 1112ull,
 			.m_score = 0.2f,
 			.m_domain_hash = 2223ull
@@ -145,9 +145,9 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 	builder.append();
 	builder.merge();
 
-	FullTextShard<FullTextRecord> shard("single_db_test", 10);
+	full_text_shard<full_text_record> shard("single_db_test", 10);
 
-	FullTextResultSet<FullTextRecord> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
+	full_text_result_set<full_text_record> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
 	shard.find(123456ull, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);

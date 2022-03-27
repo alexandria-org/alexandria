@@ -10,14 +10,14 @@
 
 #include "post_processor/PostProcessor.h"
 #include "hash_table/HashTable.h"
-#include "full_text/FullText.h"
-#include "full_text/FullTextIndex.h"
-#include "full_text/FullTextRecord.h"
-#include "full_text/SearchMetric.h"
-#include "search_engine/SearchAllocation.h"
+#include "full_text/full_text.h"
+#include "full_text/full_text_index.h"
+#include "full_text/full_text_record.h"
+#include "full_text/search_metric.h"
+#include "search_allocation/search_allocation.h"
 #include "api/api.h"
 #include "api/api_status_response.h"
-#include "link/FullTextRecord.h"
+#include "url_link/full_text_record.h"
 #include "logger/logger.h"
 #include "system/Profiler.h"
 #include "urlstore/UrlStore.h"
@@ -28,23 +28,27 @@ using namespace std::literals::chrono_literals;
 
 namespace worker {
 
+	using full_text::full_text_index;
+	using full_text::full_text_record;
+	using full_text::full_text_result_set;
+
 	void test_search(const string &query) {
-		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+		search_allocation::allocation *allocation = search_allocation::create_allocation();
 
 		HashTable hash_table("main_index");
 		HashTable hash_table_link("link_index");
 		HashTable hash_table_domain_link("domain_link_index");
 
-		FullTextIndex<FullTextRecord> index("main_index");
-		FullTextIndex<Link::FullTextRecord> link_index("link_index");
-		FullTextIndex<DomainLink::FullTextRecord> domain_link_index("domain_link_index");
+		full_text_index<full_text_record> index("main_index");
+		full_text_index<url_link::full_text_record> link_index("link_index");
+		full_text_index<domain_link::full_text_record> domain_link_index("domain_link_index");
 
 		stringstream response_stream;
 		api::search(query, hash_table, index, link_index, domain_link_index, allocation, response_stream);
 
 		cout << response_stream.rdbuf() << endl;
 
-		SearchAllocation::delete_allocation(allocation);
+		search_allocation::delete_allocation(allocation);
 	}
 
 	void output_response(FCGX_Request &request, stringstream &response) {
@@ -64,7 +68,7 @@ namespace worker {
 
 	void *run_worker(void *data) {
 
-		SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+		search_allocation::allocation *allocation = search_allocation::create_allocation();
 
 		worker_data *worker = static_cast<worker_data *>(data);
 
@@ -76,9 +80,9 @@ namespace worker {
 		HashTable hash_table_link("link_index");
 		HashTable hash_table_domain_link("domain_link_index");
 
-		FullTextIndex<FullTextRecord> index("main_index");
-		FullTextIndex<Link::FullTextRecord> link_index("link_index");
-		FullTextIndex<DomainLink::FullTextRecord> domain_link_index("domain_link_index");
+		full_text_index<full_text_record> index("main_index");
+		full_text_index<url_link::full_text_record> link_index("link_index");
+		full_text_index<domain_link::full_text_record> domain_link_index("domain_link_index");
 
 		LOG_INFO("Server has started...");
 
@@ -143,7 +147,7 @@ namespace worker {
 			FCGX_Finish_r(&request);
 		}
 
-		SearchAllocation::delete_allocation(allocation);
+		search_allocation::delete_allocation(allocation);
 
 		FCGX_Free(&request, true);
 

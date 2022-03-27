@@ -24,37 +24,23 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "search_allocation.h"
 
-#include <iostream>
-#include "parser/URL.h"
+namespace search_allocation {
 
-namespace domain_link {
-	struct full_text_record;
-}
+	allocation *create_allocation() {
+		allocation *data_allocation = new allocation;
+		data_allocation->record_storage = create_storage<full_text::full_text_record>();
+		data_allocation->link_storage = create_storage<url_link::full_text_record>();
+		data_allocation->domain_link_storage = create_storage<domain_link::full_text_record>();
+		return data_allocation;
+	}
 
-namespace api {
-
-	class domain_link_result {
-
-	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
-
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
-
-	private:
-
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
-
-	};
+	void delete_allocation(allocation *data_allocation) {
+		delete_storage(data_allocation->record_storage);
+		delete_storage(data_allocation->link_storage);
+		delete_storage(data_allocation->domain_link_storage);
+		delete data_allocation;
+	}
 
 }

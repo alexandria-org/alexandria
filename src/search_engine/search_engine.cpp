@@ -24,37 +24,35 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "search_engine.h"
+#include "text/text.h"
+#include "sort/Sort.h"
+#include "system/Profiler.h"
+#include <cmath>
 
-#include <iostream>
-#include "parser/URL.h"
+using namespace std;
+using namespace full_text;
 
-namespace domain_link {
-	struct full_text_record;
-}
+namespace search_engine {
 
-namespace api {
+	void reset_search_metric(struct search_metric &metric) {
+		metric.m_total_found = 0;
+		metric.m_total_url_links_found = 0;
+		metric.m_total_domain_links_found = 0;
+		metric.m_links_handled = 0;
+		metric.m_link_domain_matches = 0;
+		metric.m_link_url_matches = 0;
+	}
 
-	class domain_link_result {
+	vector<full_text_record> search_deduplicate(search_allocation::storage<full_text_record> *storage,
+		const full_text_index<full_text_record> &index, const vector<url_link::full_text_record> &links,
+		const vector<domain_link::full_text_record> &domain_links, const string &query, size_t limit, struct search_metric &metric) {
 
-	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
+		vector<full_text_record> complete_result = search_wrapper(storage, index, links, domain_links, query, Config::pre_result_limit, metric);
 
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
+		vector<full_text_record> deduped_result = deduplicate_result_vector<full_text_record>(complete_result, limit);
 
-	private:
-
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
-
-	};
+		return deduped_result;
+	}
 
 }

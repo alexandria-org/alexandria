@@ -24,37 +24,50 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "link.h"
 
-#include <iostream>
-#include "parser/URL.h"
+using namespace std;
 
-namespace domain_link {
-	struct full_text_record;
+namespace url_link {
+
+	link::link() {
+
+	}
+
+	link::link(const string &standard_link_data) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, standard_link_data, boost::is_any_of("\t"));
+
+			m_source_url = URL(col_values[0], col_values[1]);
+			m_target_url = URL(col_values[2], col_values[3]);
+			m_link_text = col_values[4].substr(0, 1000);
+
+			m_target_host_hash = m_target_url.host_hash();
+			m_source_harmonic = 0;
+			m_target_harmonic = 0;
+	}
+
+	link::link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic)
+	:
+		m_source_url(source_url),
+		m_target_url(target_url),
+		m_target_host_hash(target_url.host_hash()),
+		m_source_harmonic(source_harmonic),
+		m_target_harmonic(target_harmonic)
+	{
+	}
+
+	link::~link() {
+
+	}
+
+	float link::url_score() const {
+		return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f);
+	}
+
+	float link::domain_score() const {
+		return max(m_source_harmonic - m_target_harmonic, m_source_harmonic / 100.0f)/100.0;
+	}
+
 }
 
-namespace api {
-
-	class domain_link_result {
-
-	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
-
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
-
-	private:
-
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
-
-	};
-
-}

@@ -26,21 +26,22 @@
 
 #include "api.h"
 #include "api_response.h"
+#include "result_with_snippet.h"
 
 #include "hash_table/HashTable.h"
 #include "post_processor/PostProcessor.h"
 
-#include "full_text/SearchMetric.h"
-#include "full_text/FullTextIndex.h"
-#include "full_text/FullTextRecord.h"
+#include "full_text/search_metric.h"
+#include "full_text/full_text_index.h"
+#include "full_text/full_text_record.h"
 
-#include "link/FullTextRecord.h"
-#include "domain_link/FullTextRecord.h"
+#include "url_link/full_text_record.h"
+#include "domain_link/full_text_record.h"
 
-#include "search_engine/SearchAllocation.h"
+#include "search_allocation/search_allocation.h"
 
-#include "search_engine/SearchEngine.h"
-#include "stats/Stats.h"
+#include "search_engine/search_engine.h"
+#include "stats/stats.h"
 
 #include "domain_link_result.h"
 
@@ -53,22 +54,26 @@ using json = nlohmann::json;
 
 namespace api {
 
-	void search(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	using full_text::full_text_index;
+	using full_text::full_text_record;
+	using full_text::full_text_result_set;
+
+	void search(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
 		metric.m_total_found = 0;
 
-		vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index, {}, {}, query, Config::result_limit, metric);
+		vector<full_text_record> results = search_engine::search_deduplicate(allocation->record_storage, index, {}, {}, query, Config::result_limit, metric);
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -80,34 +85,34 @@ namespace api {
 		response_stream << response;
 	}
 
-	void search(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		const FullTextIndex<Link::FullTextRecord> &link_index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	void search(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		const full_text_index<url_link::full_text_record> &link_index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		vector<Link::FullTextRecord> links;
-		Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
-		links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
+		vector<url_link::full_text_record> links;
+		Profiler::instance profiler_links("search_engine::search<url_link::full_text_record>");
+		links = search_engine::search<url_link::full_text_record>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
 		profiler_links.stop();
 
-		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+		sort(links.begin(), links.end(), [](const url_link::full_text_record &a, const url_link::full_text_record &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		const size_t links_handled = links.size();
 		const size_t total_url_links_found = metric.m_total_found;
 
-		vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index, links, {}, query,
+		vector<full_text_record> results = search_engine::search_deduplicate(allocation->record_storage, index, links, {}, query,
 			Config::result_limit, metric);
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -122,45 +127,45 @@ namespace api {
 		response_stream << response;
 	}
 
-	void search(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		const FullTextIndex<Link::FullTextRecord> &link_index,
-		const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	void search(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		const full_text_index<url_link::full_text_record> &link_index,
+		const full_text_index<domain_link::full_text_record> &domain_link_index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		vector<Link::FullTextRecord> links;
-		Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
-		links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
+		vector<url_link::full_text_record> links;
+		Profiler::instance profiler_links("search_engine::search<url_link::full_text_record>");
+		links = search_engine::search<url_link::full_text_record>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
 		profiler_links.stop();
 
-		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+		sort(links.begin(), links.end(), [](const url_link::full_text_record &a, const url_link::full_text_record &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		const size_t links_handled = links.size();
 		const size_t total_url_links_found = metric.m_total_found;
 
-		vector<DomainLink::FullTextRecord> domain_links;
-		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLink::FullTextRecord>");
-		domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage, domain_link_index, {}, {}, query,
+		vector<domain_link::full_text_record> domain_links;
+		Profiler::instance profiler_domain_links("search_engine::search<domain_link::full_text_record>");
+		domain_links = search_engine::search<domain_link::full_text_record>(allocation->domain_link_storage, domain_link_index, {}, {}, query,
 			100000, metric);
 		profiler_domain_links.stop();
 
 		const size_t total_domain_links_found = metric.m_total_found;
 
-		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search_deduplicate(allocation->storage, index, links, domain_links, query,
+		Profiler::instance profiler_index("search_engine::search_with_links");
+		vector<full_text_record> results = search_engine::search_deduplicate(allocation->record_storage, index, links, domain_links, query,
 			Config::result_limit, metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -176,23 +181,23 @@ namespace api {
 		response_stream << response;
 	}
 
-	void search_all(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	void search_all(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search(allocation->storage, index, {}, {}, query, Config::result_limit,
+		Profiler::instance profiler_index("search_engine::search_with_links");
+		vector<full_text_record> results = search_engine::search(allocation->record_storage, index, {}, {}, query, Config::result_limit,
 			metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -204,36 +209,36 @@ namespace api {
 		response_stream << response;
 	}
 
-	void search_all(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		const FullTextIndex<Link::FullTextRecord> &link_index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	void search_all(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		const full_text_index<url_link::full_text_record> &link_index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		vector<Link::FullTextRecord> links;
-		Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
-		links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
+		vector<url_link::full_text_record> links;
+		Profiler::instance profiler_links("search_engine::search<url_link::full_text_record>");
+		links = search_engine::search<url_link::full_text_record>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
 		profiler_links.stop();
 
-		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+		sort(links.begin(), links.end(), [](const url_link::full_text_record &a, const url_link::full_text_record &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		metric.m_total_url_links_found = metric.m_total_found;
 		metric.m_total_found = 0;
 
-		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search(allocation->storage, index, links, {}, query, Config::result_limit,
+		Profiler::instance profiler_index("search_engine::search_with_links");
+		vector<full_text_record> results = search_engine::search(allocation->record_storage, index, links, {}, query, Config::result_limit,
 			metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -245,43 +250,43 @@ namespace api {
 		response_stream << response;
 	}
 
-	void search_all(const string &query, HashTable &hash_table, const FullTextIndex<FullTextRecord> &index,
-		const FullTextIndex<Link::FullTextRecord> &link_index, const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index,
-		SearchAllocation::Allocation *allocation, stringstream &response_stream) {
+	void search_all(const string &query, HashTable &hash_table, const full_text_index<full_text_record> &index,
+		const full_text_index<url_link::full_text_record> &link_index, const full_text_index<domain_link::full_text_record> &domain_link_index,
+		search_allocation::allocation *allocation, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		vector<Link::FullTextRecord> links;
-		Profiler::instance profiler_links("SearchEngine::search<Link::FullTextRecord>");
-		links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
+		vector<url_link::full_text_record> links;
+		Profiler::instance profiler_links("search_engine::search<url_link::full_text_record>");
+		links = search_engine::search<url_link::full_text_record>(allocation->link_storage, link_index, {}, {}, query, 500000, metric);
 		profiler_links.stop();
 
-		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+		sort(links.begin(), links.end(), [](const url_link::full_text_record &a, const url_link::full_text_record &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		metric.m_total_url_links_found = metric.m_total_found;
 		metric.m_total_found = 0;
 
-		Profiler::instance profiler_domain_links("SearchEngine::search<DomainLink::FullTextRecord>");
-		vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
+		Profiler::instance profiler_domain_links("search_engine::search<domain_link::full_text_record>");
+		vector<domain_link::full_text_record> domain_links = search_engine::search<domain_link::full_text_record>(allocation->domain_link_storage,
 			domain_link_index, {}, {}, query, 10000, metric);
 		profiler_domain_links.stop();
 
 		metric.m_total_domain_links_found = metric.m_total_found;
 
-		Profiler::instance profiler_index("SearchEngine::search_with_links");
-		vector<FullTextRecord> results = SearchEngine::search(allocation->storage, index, links, domain_links, query, Config::result_limit,
+		Profiler::instance profiler_index("search_engine::search_with_links");
+		vector<full_text_record> results = search_engine::search(allocation->record_storage, index, links, domain_links, query, Config::result_limit,
 			metric);
 		profiler_index.stop();
 
 		PostProcessor post_processor(query);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}
@@ -309,13 +314,13 @@ namespace api {
 		return result;
 	}
 
-	void word_stats(const string &query, const FullTextIndex<FullTextRecord> &index, const FullTextIndex<Link::FullTextRecord> &link_index,
+	void word_stats(const string &query, const full_text_index<full_text_record> &index, const full_text_index<url_link::full_text_record> &link_index,
 			size_t index_size, size_t link_index_size, stringstream &response_stream) {
 
 		Profiler::instance profiler;
 
-		map<string, double> word_stats = Stats::word_stats<FullTextRecord>(index, query, index_size);
-		map<string, double> link_word_stats = Stats::word_stats<Link::FullTextRecord>(link_index, query, link_index_size);
+		map<string, double> word_stats = stats::word_stats<full_text_record>(index, query, index_size);
+		map<string, double> link_word_stats = stats::word_stats<url_link::full_text_record>(link_index, query, link_index_size);
 
 		double time_ms = profiler.get();
 
@@ -341,41 +346,41 @@ namespace api {
 		response_stream << message;
 	}
 
-	void ids(const std::string &query, const FullTextIndex<FullTextRecord> &index, SearchAllocation::Allocation *allocation,
+	void ids(const std::string &query, const full_text_index<full_text_record> &index, search_allocation::allocation *allocation,
 			std::stringstream &response_stream) {
 
-		vector<FullTextRecord> results = SearchEngine::search_ids(allocation->storage, index, query, Config::result_limit);
+		vector<full_text_record> results = search_engine::search_ids(allocation->record_storage, index, query, Config::result_limit);
 
-		for (const FullTextRecord &result : results) {
-			response_stream.write((char *)&result, sizeof(FullTextRecord));
+		for (const full_text_record &result : results) {
+			response_stream.write((char *)&result, sizeof(full_text_record));
 		}
 
 	}
 
-	void search_remote(const std::string &query, HashTable &hash_table, const FullTextIndex<Link::FullTextRecord> &link_index,
-		const FullTextIndex<DomainLink::FullTextRecord> &domain_link_index, SearchAllocation::Allocation *allocation,
+	void search_remote(const std::string &query, HashTable &hash_table, const full_text_index<url_link::full_text_record> &link_index,
+		const full_text_index<domain_link::full_text_record> &domain_link_index, search_allocation::allocation *allocation,
 		std::stringstream &response_stream) {
 
 		LOG_INFO("SEARCHING REMOTE");
 
 		Profiler::instance profiler;
 
-		future<FullTextResultSet<FullTextRecord> *> fut = async(SearchEngine::search_remote<FullTextRecord>, query, allocation->storage);
+		future<full_text_result_set<full_text_record> *> fut = async(search_engine::search_remote<full_text_record>, query, allocation->record_storage);
 
-		struct SearchMetric metric;
-		SearchEngine::reset_search_metric(metric);
+		struct full_text::search_metric metric;
+		search_engine::reset_search_metric(metric);
 
-		vector<Link::FullTextRecord> links = SearchEngine::search<Link::FullTextRecord>(allocation->link_storage, link_index, {}, {}, query,
+		vector<url_link::full_text_record> links = search_engine::search<url_link::full_text_record>(allocation->link_storage, link_index, {}, {}, query,
 			500000, metric);
 
-		sort(links.begin(), links.end(), [](const Link::FullTextRecord &a, const Link::FullTextRecord &b) {
+		sort(links.begin(), links.end(), [](const url_link::full_text_record &a, const url_link::full_text_record &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		const size_t links_handled = links.size();
 		const size_t total_url_links_found = metric.m_total_found;
 
-		vector<DomainLink::FullTextRecord> domain_links = SearchEngine::search<DomainLink::FullTextRecord>(allocation->domain_link_storage,
+		vector<domain_link::full_text_record> domain_links = search_engine::search<domain_link::full_text_record>(allocation->domain_link_storage,
 			domain_link_index, {}, {}, query, 100000, metric);
 
 		const size_t total_domain_links_found = metric.m_total_found;
@@ -384,17 +389,17 @@ namespace api {
 		metric.m_total_url_links_found = total_url_links_found;
 		metric.m_total_domain_links_found = total_domain_links_found;
 
-		FullTextResultSet<FullTextRecord> *result_set = fut.get();
+		full_text_result_set<full_text_record> *result_set = fut.get();
 
-		SearchEngine::apply_link_scores(links, result_set);
-		SearchEngine::apply_domain_link_scores(domain_links, result_set);
+		search_engine::apply_link_scores(links, result_set);
+		search_engine::apply_domain_link_scores(domain_links, result_set);
 
-		vector<FullTextRecord> results(result_set->span_pointer()->begin(), result_set->span_pointer()->end());
+		vector<full_text_record> results(result_set->span_pointer()->begin(), result_set->span_pointer()->end());
 
-		SearchEngine::sort_by_score(results);
+		search_engine::sort_by_score(results);
 
 		vector<result_with_snippet> with_snippets;
-		for (FullTextRecord &res : results) {
+		for (full_text_record &res : results) {
 			const string tsv_data = hash_table.find(res.m_value);
 			with_snippets.emplace_back(result_with_snippet(tsv_data, res));
 		}

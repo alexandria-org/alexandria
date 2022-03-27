@@ -24,37 +24,12 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <string>
+#include <map>
+#include <vector>
 
-#include <iostream>
-#include "parser/URL.h"
-
-namespace domain_link {
-	struct full_text_record;
-}
-
-namespace api {
-
-	class domain_link_result {
-
-	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
-
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
-
-	private:
-
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
-
-	};
-
+namespace url_link {
+	void run_link_counter(const SubSystem *sub_system, const std::string &batch, size_t sub_batch, const std::vector<std::string> &files,
+			std::map<std::string, std::map<size_t, float>> &counter);
+	void upload_link_counts(const std::string &batch, size_t sub_batch, std::map<std::string, std::map<size_t, float>> &counter);
 }

@@ -29,7 +29,9 @@
 #include <iostream>
 #include <vector>
 
-struct SearchMetric;
+namespace full_text {
+	struct search_metric;
+}
 
 namespace api {
 
@@ -38,7 +40,7 @@ namespace api {
 	class api_response {
 
 		public:
-			api_response(std::vector<result_with_snippet> &results, const struct SearchMetric &metric, double profile);
+			api_response(std::vector<result_with_snippet> &results, const struct full_text::search_metric &metric, double profile);
 			~api_response();
 
 			friend std::ostream &operator<<(std::ostream &os, const api_response &api_response);

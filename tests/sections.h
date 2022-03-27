@@ -45,21 +45,21 @@ BOOST_AUTO_TEST_CASE(sections) {
 	Config::ft_max_sections = 8;
 	Config::ft_section_depth = 64;
 
-	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index");
+	full_text::truncate_url_to_domain("main_index");
+	full_text::truncate_index("test_main_index");
 
 	HashTableHelper::truncate("test_main_index");
 
 	// Index full text
 	{
 		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
 	}
 
 	HashTable hash_table("test_main_index");
-	FullTextIndex<FullTextRecord> index("test_main_index");
+	full_text_index<full_text_record> index("test_main_index");
 
 	{
 		stringstream response_stream;

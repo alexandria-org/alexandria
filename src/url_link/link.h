@@ -26,35 +26,33 @@
 
 #pragma once
 
-#include <iostream>
 #include "parser/URL.h"
 
-namespace domain_link {
-	struct full_text_record;
-}
+namespace url_link {
 
-namespace api {
-
-	class domain_link_result {
+	class link {
 
 	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
+		link();
+		explicit link(const std::string &standard_link_data);
+		link(const URL &source_url, const URL &target_url, float source_harmonic, float target_harmonic);
+		~link();
 
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
+		float url_score() const;
+		float domain_score() const;
+
+		const URL &source_url() const { return m_source_url; }
+		const URL &target_url() const { return m_target_url; }
+		const uint64_t &target_host_hash() const { return m_target_host_hash; }
+		const float &source_harmonic() const { return m_source_harmonic; }
+		const float &target_harmonic() const { return m_target_harmonic; }
 
 	private:
-
 		URL m_source_url;
 		URL m_target_url;
+		uint64_t m_target_host_hash;
+		float m_source_harmonic;
+		float m_target_harmonic;
 		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
-
 	};
-
 }

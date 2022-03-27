@@ -26,13 +26,13 @@
 
 #include "domain_link_result.h"
 #include "text/text.h"
-#include "domain_link/FullTextRecord.h"
+#include "domain_link/full_text_record.h"
 
 using namespace std;
 
 namespace api {
 
-	domain_link_result::domain_link_result(const string &tsv_data, const DomainLink::FullTextRecord &res)
+	domain_link_result::domain_link_result(const string &tsv_data, const domain_link::full_text_record &res)
 	: m_score(res.m_score), m_link_hash(res.m_value) {
 
 		string source_host;

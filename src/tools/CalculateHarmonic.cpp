@@ -2,7 +2,7 @@
 #include "CalculateHarmonic.h"
 
 #include "config.h"
-#include "link/Link.h"
+#include "url_link/link.h"
 #include "parser/URL.h"
 #include "system/ThreadPool.h"
 #include "algorithm/algorithm.h"
@@ -63,7 +63,7 @@ namespace Tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				const Link::Link link(line);
+				const url_link::link link(line);
 
 				const uint64_t source_hash = link.source_url().host_hash();
 				const uint64_t target_hash = link.target_url().host_hash();

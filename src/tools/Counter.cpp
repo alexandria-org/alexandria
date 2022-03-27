@@ -34,8 +34,8 @@
 #include <boost/filesystem.hpp>
 #include "config.h"
 #include "parser/URL.h"
-#include "link/Link.h"
-#include "link/LinkCounter.h"
+#include "url_link/link.h"
+#include "url_link/link_counter.h"
 #include "transfer/transfer.h"
 #include "algorithm/hyper_log_log.h"
 #include "algorithm/algorithm.h"
@@ -86,7 +86,7 @@ namespace Tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				const Link::Link link(line);
+				const url_link::link link(line);
 				counter->insert_hash(link.target_url().hash());
 			}
 
@@ -223,7 +223,7 @@ namespace Tools {
 		algorithm::vector_chunk(files, chunk_size, chunks);
 
 		for (const vector<string> &chunk : chunks) {
-			Link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);
+			url_link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);
 		}
 
 	}
@@ -241,7 +241,7 @@ namespace Tools {
 				map<string, map<size_t, float>> counter;
 				count_link_batch(sub_system, batch, sub_batch, files, counter);
 				// Upload link counts.
-				Link::upload_link_counts(batch, sub_batch, counter);
+				url_link::upload_link_counts(batch, sub_batch, counter);
 			}
 
 			transfer::delete_downloaded_files(files);

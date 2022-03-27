@@ -10,8 +10,8 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
-#include "link/Link.h"
-#include "full_text/FullText.h"
+#include "url_link/link.h"
+#include "full_text/full_text.h"
 #include "algorithm/algorithm.h"
 #include "parser/URL.h"
 #include "system/System.h"
@@ -69,7 +69,7 @@ namespace Tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
-				const size_t node_id = FullText::url_to_node(url);
+				const size_t node_id = full_text::url_to_node(url);
 				cache[node_id].push_back(line);
 			}
 
@@ -115,8 +115,8 @@ namespace Tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				const Link::Link link(line);
-				const size_t node_id = FullText::link_to_node(link);
+				const url_link::link link(line);
+				const size_t node_id = full_text::link_to_node(link);
 				cache[node_id].push_back(line);
 			}
 
@@ -161,7 +161,7 @@ namespace Tools {
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				if (urls.count(url.hash())) {
-					const size_t node_id = FullText::url_to_node(url);
+					const size_t node_id = full_text::url_to_node(url);
 					cache[node_id].push_back(line);
 				}
 			}
@@ -203,7 +203,7 @@ namespace Tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				const Link::Link link(line);
+				const url_link::link link(line);
 				const size_t hash = link.target_url().hash();
 				if (hash >= hash_min && hash <= hash_max) {
 					result.insert(hash);

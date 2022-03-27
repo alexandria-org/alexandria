@@ -27,33 +27,42 @@
 #pragma once
 
 #include <iostream>
+#include <istream>
+#include <vector>
+#include <mutex>
+
 #include "parser/URL.h"
+#include "system/SubSystem.h"
+#include "hash_table/HashTableShardBuilder.h"
+#include "full_text/url_to_domain.h"
+#include "full_text/full_text_shard_builder.h"
+#include "url_link/full_text_record.h"
 
-namespace domain_link {
-	struct full_text_record;
-}
+namespace url_link {
 
-namespace api {
-
-	class domain_link_result {
+	class indexer {
 
 	public:
-		domain_link_result(const std::string &tsv_data, const domain_link::full_text_record &res);
-		~domain_link_result();
 
-		const URL &source_url() const { return m_source_url; };
-		const URL &target_url() const { return m_target_url; };
-		const std::string &link_text() const { return m_link_text; };
-		const float &score() const { return m_score; };
-		const uint64_t &link_hash() const { return m_link_hash; };
+		indexer(int id, const std::string &db_name, const SubSystem *sub_system, full_text::url_to_domain *url_to_domain);
+		~indexer();
+
+		void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
+		void write_cache(std::vector<std::mutex> &write_mutexes);
+		void flush_cache(std::vector<std::mutex> &write_mutexes);
 
 	private:
 
-		URL m_source_url;
-		URL m_target_url;
-		std::string m_link_text;
-		float m_score;
-		uint64_t m_link_hash;
+		int m_indexer_id;
+		const std::string m_db_name;
+		const SubSystem *m_sub_system;
+		full_text::url_to_domain *m_url_to_domain;
+		std::hash<std::string> m_hasher;
+
+		std::vector<full_text::full_text_shard_builder<::url_link::full_text_record> *> m_shards;
+
+		void add_expanded_data_to_shards(uint64_t link_hash, const URL &source_url, const URL &target_url, const std::string &link_text,
+			float score);
 
 	};
 
