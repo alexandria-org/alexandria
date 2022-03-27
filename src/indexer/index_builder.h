@@ -81,7 +81,7 @@ namespace indexer {
 
 		const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 		const size_t m_max_num_keys = 10000;
-		const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
+		const size_t m_buffer_len = config::ft_shard_builder_buffer_len;
 		char *m_buffer;
 		std::mutex m_lock;
 
@@ -126,14 +126,14 @@ namespace indexer {
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size), m_max_results(Config::ft_max_results_per_section) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();});
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(Config::ft_max_results_per_section) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {append();});
 		merger::register_appender((size_t)this, [this]() {append();});
 	}

@@ -26,8 +26,7 @@
 
 #include <map>
 #include <set>
-#include "api/Worker.h"
-#include "full_text/FullText.h"
+#include "full_text/full_text.h"
 
 BOOST_AUTO_TEST_SUITE(link_counter)
 
@@ -42,7 +41,7 @@ BOOST_AUTO_TEST_CASE(link_counter2) {
 
 	std::map<size_t, std::set<size_t>> counter;
 
-	Config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
+	config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
 
 	
 }

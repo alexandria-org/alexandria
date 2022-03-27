@@ -51,7 +51,7 @@ using std::pair;
 
 #include "search_allocation.h"
 #include "file.h"
-#include "url.h"
+#include "test_url.h"
 #include "html_parser.h"
 #include "unicode.h"
 #include "text.h"
@@ -75,19 +75,19 @@ using std::pair;
 #include "shard_builder.h"
 #include "n_gram.h"
 #include "link_counter.h"
-#include "url_store.h"
-#include "key_value_store.h"
+#include "test_url_store.h"
+#include "test_key_value_store.h"
 #include "robot_parser.h"
-#include "scraper.h"
-#include "datetime.h"
+#include "test_scraper.h"
+#include "test_datetime.h"
 //#include "index_array.h"
 #include "memory.h"
 #include "thread_pool.h"
 
 void run_before() {
-	Config::read_config("../tests/test_config.conf");
+	config::read_config("../tests/test_config.conf");
 	logger::start_logger_thread();
-	Worker::start_urlstore_server();
+	worker::start_urlstore_server();
 }
 
 void run_after() {

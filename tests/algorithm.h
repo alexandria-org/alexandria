@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(incremental_partitions) {
 
 BOOST_AUTO_TEST_CASE(binary_search) {
 	{
-		FullTextRecord *records = new FullTextRecord[10];
+		full_text_record *records = new full_text_record[10];
 		records[0].m_value = 1;
 		records[1].m_value = 2;
 		records[2].m_value = 3;
@@ -199,17 +199,17 @@ BOOST_AUTO_TEST_CASE(binary_search) {
 		records[7].m_value = 13;
 		records[8].m_value = 13;
 		records[9].m_value = 100;
-		BOOST_CHECK(SearchEngine::lower_bound(records, 0, 10, 13) == 7);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 0, 10, 10) == 4);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 0, 10, 100) == 9);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 0, 10, 101) == 10);
+		BOOST_CHECK(search_engine::lower_bound(records, 0, 10, 13) == 7);
+		BOOST_CHECK(search_engine::lower_bound(records, 0, 10, 10) == 4);
+		BOOST_CHECK(search_engine::lower_bound(records, 0, 10, 100) == 9);
+		BOOST_CHECK(search_engine::lower_bound(records, 0, 10, 101) == 10);
 
-		BOOST_CHECK(SearchEngine::lower_bound(records, 0, 10, 5) == 4);
+		BOOST_CHECK(search_engine::lower_bound(records, 0, 10, 5) == 4);
 
-		BOOST_CHECK(SearchEngine::lower_bound(records, 5, 10, 11) == 5);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 9, 10, 100) == 9);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 10, 10, 100) == 10);
-		BOOST_CHECK(SearchEngine::lower_bound(records, 9, 10, 101) == 10);
+		BOOST_CHECK(search_engine::lower_bound(records, 5, 10, 11) == 5);
+		BOOST_CHECK(search_engine::lower_bound(records, 9, 10, 100) == 9);
+		BOOST_CHECK(search_engine::lower_bound(records, 10, 10, 100) == 10);
+		BOOST_CHECK(search_engine::lower_bound(records, 9, 10, 101) == 10);
 	}
 }
 

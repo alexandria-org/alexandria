@@ -27,7 +27,7 @@
 #pragma once
 
 #include <iostream>
-#include "parser/URL.h"
+#include "URL.h"
 
 namespace domain_stats {
 	void download_domain_stats();

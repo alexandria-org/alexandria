@@ -28,13 +28,13 @@
 #include <queue>
 #include <curl/curl.h>
 #include "robots.h"
-#include "store.h"
-#include "parser/URL.h"
-#include "urlstore/DomainData.h"
-#include "urlstore/RobotsData.h"
-#include "system/Profiler.h"
+#include "scraper_store.h"
+#include "URL.h"
+#include "url_store/domain_data.h"
+#include "url_store/robots_data.h"
+#include "profiler/profiler.h"
 
-namespace Scraper {
+namespace scraper {
 
 	std::string user_agent_token();
 	std::string user_agent();
@@ -45,7 +45,7 @@ namespace Scraper {
 	class scraper {
 		public:
 
-			scraper(const std::string &domain, store *store);
+			scraper(const std::string &domain, scraper_store *store);
 			~scraper();
 
 			void set_timeout(size_t timeout) { m_timeout = timeout; }
@@ -74,10 +74,10 @@ namespace Scraper {
 			size_t m_num_errors = 0;
 			bool m_blocked = false;
 			CURL *m_curl;
-			store *m_store;
+			scraper_store *m_store;
 			std::queue<URL> m_queue;
 			googlebot::RobotsMatcher m_robots;
-			UrlStore::DomainData m_domain_data;
+			url_store::domain_data m_domain_data;
 			std::string m_robots_content;
 			size_t m_num_total = 0;
 			size_t m_num_www = 0;
@@ -105,10 +105,10 @@ namespace Scraper {
 			friend size_t curl_string_reader(char *ptr, size_t size, size_t nmemb, void *userdata);
 	};
 
-	class stats {
+	class scraper_stats {
 		public:
-			stats();
-			~stats();
+			scraper_stats();
+			~scraper_stats();
 			void gather_statistics(const std::map<std::string, std::unique_ptr<scraper>> &scrapers, size_t urls_in_queue);
 			void start_thread(size_t timeout);
 			void start_count(size_t urls_in_queue);

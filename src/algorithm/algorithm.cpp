@@ -25,7 +25,7 @@
  */
 
 #include "algorithm.h"
-#include "system/Profiler.h"
+#include "profiler/profiler.h"
 #include <iostream>
 #include <set>
 #include <numeric>
@@ -107,7 +107,7 @@ namespace algorithm {
 
 		vector<double> harmonics;
 
-		Profiler::instance prof("Timetaker");
+		profiler::instance prof("Timetaker");
 		for (size_t i = start; i < start + len; i++) {
 			const uint32_t vertex = i;
 

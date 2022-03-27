@@ -30,7 +30,7 @@
 
 using namespace std;
 
-namespace Config {
+namespace config {
 
 	string node = "test0001";
 	string master = "localhost";

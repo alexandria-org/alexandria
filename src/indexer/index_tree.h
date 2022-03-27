@@ -34,7 +34,7 @@
 #include "level.h"
 #include "snippet.h"
 #include "hash_table/builder.h"
-#include "full_text/UrlToDomain.h"
+#include "full_text/url_to_domain.h"
 
 namespace indexer {
 
@@ -68,7 +68,7 @@ namespace indexer {
 
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;
-		std::unique_ptr<UrlToDomain> m_url_to_domain;
+		std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
 
 		std::vector<return_record> find_recursive(const std::string &query, size_t level_num,
 			const std::vector<size_t> &keys, const std::vector<link_record> &links,

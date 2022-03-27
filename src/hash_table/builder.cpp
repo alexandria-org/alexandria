@@ -34,25 +34,25 @@ namespace hash_table {
 
 	builder::builder(const string &db_name)
 	: m_db_name(db_name) {
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			m_shards.push_back(new HashTableShardBuilder(db_name, i));
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
+			m_shards.push_back(new hash_table_shard_builder(db_name, i));
 		}
 	}
 
 	builder::~builder() {
-		for (HashTableShardBuilder *shard : m_shards) {
+		for (hash_table_shard_builder *shard : m_shards) {
 			delete shard;
 		}
 	}
 
 	void builder::add(uint64_t key, const std::string &value) {
-		m_shards[key % Config::ht_num_shards]->add(key, value);
+		m_shards[key % config::ht_num_shards]->add(key, value);
 	}
 
 	void builder::merge() {
 		cout << "Merging hash table" << endl;
 		utils::thread_pool pool(24);
-		for (HashTableShardBuilder *shard : m_shards) {
+		for (hash_table_shard_builder *shard : m_shards) {
 			pool.enqueue([shard]() -> void {
 				shard->write();
 				shard->sort();

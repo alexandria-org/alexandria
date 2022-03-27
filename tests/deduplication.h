@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#include "hash_table/HashTableHelper.h"
-#include "api/Api.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "api/api.h"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -34,29 +34,29 @@ BOOST_AUTO_TEST_SUITE(deduplication)
 
 BOOST_AUTO_TEST_CASE(deduplication) {
 
-	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
-	Config::nodes_in_cluster = 1;
-	Config::node_id = 0;
+	unsigned long long initial_nodes_in_cluster = config::nodes_in_cluster;
+	config::nodes_in_cluster = 1;
+	config::node_id = 0;
 
-	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index");
+	full_text::truncate_url_to_domain("main_index");
+	full_text::truncate_index("test_main_index");
 
-	HashTableHelper::truncate("test_main_index");
+	hash_table_helper::truncate("test_main_index");
 
 	// Index full text
 	{
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-07", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-07", subsys);
 	}
 
-	HashTable hash_table("test_main_index");
-	FullTextIndex<FullTextRecord> index("test_main_index");
+	hash_table::hash_table ht("test_main_index");
+	full_text_index<full_text_record> index("test_main_index");
 
 	{
 		stringstream response_stream;
-		Api::search("The Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("The Wikipedia", ht, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -67,55 +67,55 @@ BOOST_AUTO_TEST_CASE(deduplication) {
 		BOOST_CHECK_EQUAL(json_obj["total_url_links_found"], 0);
 
 		BOOST_CHECK(json_obj.contains("results"));
-		BOOST_CHECK_EQUAL(json_obj["results"].size(), Config::result_limit);
+		BOOST_CHECK_EQUAL(json_obj["results"].size(), config::result_limit);
 	}
 
 	// Reset.
-	Config::nodes_in_cluster = initial_nodes_in_cluster;
-	Config::node_id = 0;
+	config::nodes_in_cluster = initial_nodes_in_cluster;
+	config::node_id = 0;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 
-	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index");
-	FullText::truncate_index("test_link_index");
-	FullText::truncate_index("test_domain_link_index");
+	full_text::truncate_url_to_domain("main_index");
+	full_text::truncate_index("test_main_index");
+	full_text::truncate_index("test_link_index");
+	full_text::truncate_index("test_domain_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
-	Config::nodes_in_cluster = 1;
-	Config::node_id = 0;
+	config::nodes_in_cluster = 1;
+	config::node_id = 0;
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 	}
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
+		url_to_domain *url_store = new url_to_domain("main_index");
+		url_store->read();
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
-		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
-			sub_system, url_to_domain);
+		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
-	FullTextIndex<FullTextRecord> index("test_main_index");
-	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
+	full_text_index<full_text_record> index("test_main_index");
+	full_text_index<url_link::full_text_record> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", ht, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -128,51 +128,51 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication_on_nodes) {
 		BOOST_CHECK_EQUAL(json_obj["results"].size(), 1);
 	}
 
-	SearchAllocation::delete_allocation(allocation);
+	search_allocation::delete_allocation(allocation);
 
 	// Reset config.
-	Config::nodes_in_cluster = 1;
-	Config::node_id = 0;
+	config::nodes_in_cluster = 1;
+	config::node_id = 0;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
-	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index");
-	FullText::truncate_index("test_link_index");
-	FullText::truncate_index("test_domain_link_index");
+	full_text::truncate_url_to_domain("main_index");
+	full_text::truncate_index("test_main_index");
+	full_text::truncate_index("test_link_index");
+	full_text::truncate_index("test_domain_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-06", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-06", subsys);
 	}
 
 	{
 		// Index links
-		UrlToDomain *url_to_domain = new UrlToDomain("main_index");
-		url_to_domain->read();
+		url_to_domain *url_store = new url_to_domain("main_index");
+		url_store->read();
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
-		FullText::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-06",
-			sub_system, url_to_domain);
+		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-06",
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	FullTextIndex<FullTextRecord> index("test_main_index");
-	FullTextIndex<Link::FullTextRecord> link_index("test_link_index");
-	FullTextIndex<DomainLink::FullTextRecord> domain_link_index("test_domain_link_index");
+	hash_table::hash_table ht("test_main_index");
+	full_text_index<full_text_record> index("test_main_index");
+	full_text_index<url_link::full_text_record> link_index("test_link_index");
+	full_text_index<domain_link::full_text_record> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		Api::search("url2.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url2.com", ht, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 
 	{
 		stringstream response_stream;
-		Api::search_all("site:url2.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search_all("site:url2.com", ht, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(api_search_deduplication) {
 		BOOST_CHECK_EQUAL(json_obj["results"].size(), 19);
 	}
 
-	SearchAllocation::delete_allocation(allocation);
+	search_allocation::delete_allocation(allocation);
 	
 }
 

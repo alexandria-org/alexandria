@@ -29,7 +29,7 @@
 #include <iostream>
 #include <vector>
 
-namespace Parser {
+namespace parser {
 
 	std::vector<std::string> download_warc_paths();
 	bool upload_warc_paths(const std::vector<std::string> &warc_paths);

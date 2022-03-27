@@ -24,33 +24,35 @@
  * SOFTWARE.
  */
 
-#include "search_engine/SearchEngine.h"
+#include "search_engine/search_engine.h"
 
-BOOST_AUTO_TEST_SUITE(search_engine)
+using namespace full_text;
+
+BOOST_AUTO_TEST_SUITE(test_search_engine)
 
 BOOST_AUTO_TEST_CASE(apply_link_scores) {
 
 	size_t links_applied;
 
 	{
-		vector<Link::FullTextRecord> links;
-		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(0);
+		vector<url_link::full_text_record> links;
+		full_text_result_set<full_text_record> *results = new full_text_result_set<full_text_record>(0);
 
-		links_applied = SearchEngine::apply_link_scores(links, results);
+		links_applied = search_engine::apply_link_scores(links, results);
 
 		BOOST_CHECK_EQUAL(links_applied, 0);
 
 		delete results;
 	}
 
-	vector<Link::FullTextRecord> links = {Link::FullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_hash = 10123}};
-	FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(1);
-	FullTextRecord *data = results->data_pointer();
-	data[0] = FullTextRecord{.m_value = 10123, .m_score = 0.1, .m_domain_hash = 9999};
+	vector<url_link::full_text_record> links = {url_link::full_text_record{.m_value = 123, .m_score = 0.1, .m_target_hash = 10123}};
+	full_text_result_set<full_text_record> *results = new full_text_result_set<full_text_record>(1);
+	full_text_record *data = results->data_pointer();
+	data[0] = full_text_record{.m_value = 10123, .m_score = 0.1, .m_domain_hash = 9999};
 
 	float score_before = data[0].m_score;
 
-	links_applied = SearchEngine::apply_link_scores(links, results);
+	links_applied = search_engine::apply_link_scores(links, results);
 
 	BOOST_CHECK_EQUAL(links_applied, 1);
 	BOOST_CHECK(data[0].m_score > score_before);
@@ -63,10 +65,10 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 
 	size_t links_applied;
 	{
-		vector<DomainLink::FullTextRecord> links;
-		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(0);
+		vector<domain_link::full_text_record> links;
+		full_text_result_set<full_text_record> *results = new full_text_result_set<full_text_record>(0);
 		
-		links_applied = SearchEngine::apply_domain_link_scores(links, results);
+		links_applied = search_engine::apply_domain_link_scores(links, results);
 
 		BOOST_CHECK_EQUAL(links_applied, 0);
 
@@ -74,14 +76,14 @@ BOOST_AUTO_TEST_CASE(apply_domain_link_scores) {
 	}
 
 	{
-		vector<DomainLink::FullTextRecord> links = {DomainLink::FullTextRecord{.m_value = 123, .m_score = 0.1, .m_target_domain = 9999}};
-		FullTextResultSet<FullTextRecord> *results = new FullTextResultSet<FullTextRecord>(1);
+		vector<domain_link::full_text_record> links = {domain_link::full_text_record{.m_value = 123, .m_score = 0.1, .m_target_domain = 9999}};
+		full_text_result_set<full_text_record> *results = new full_text_result_set<full_text_record>(1);
 
 		float score_before = 0.1;
-		FullTextRecord *data = results->data_pointer();
-		data[0] = FullTextRecord{.m_value = 10123, .m_score = score_before, .m_domain_hash = 9999};
+		full_text_record *data = results->data_pointer();
+		data[0] = full_text_record{.m_value = 10123, .m_score = score_before, .m_domain_hash = 9999};
 
-		links_applied = SearchEngine::apply_domain_link_scores(links, results);
+		links_applied = search_engine::apply_domain_link_scores(links, results);
 
 		BOOST_CHECK_EQUAL(links_applied, 1);
 		BOOST_CHECK(data[0].m_score > score_before);

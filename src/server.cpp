@@ -31,12 +31,12 @@
 #include "fcgio.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "api/Worker.h"
-#include "hash_table/HashTableHelper.h"
-#include "full_text/FullText.h"
-#include "full_text/FullTextRecord.h"
-#include "system/Profiler.h"
-#include "full_text/FullText.h"
+#include "worker/worker.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "full_text/full_text.h"
+#include "full_text/full_text_record.h"
+#include "profiler/profiler.h"
+#include "full_text/full_text.h"
 
 #include <fstream>
 
@@ -53,7 +53,7 @@ void runner(void) {
 		size_t rnd = hasher(to_string(rand())) % (file_len - data_len);
 		infile.seekg(rnd);
 		cout << hasher(to_string(rand())) << endl;
-		Profiler::instance prof("reading data");
+		profiler::instance prof("reading data");
 		infile.read((char *)random_data, data_len);
 		prof.stop();
 		prof.print();
@@ -68,71 +68,71 @@ int main(int argc, const char **argv) {
 	logger::start_logger_thread();
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
-		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
+		config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
-		Config::read_config("/etc/alexandria.conf");
+		config::read_config("/etc/alexandria.conf");
 	}
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (argc == 1 && FullText::is_indexed()) {
+	if (argc == 1 && full_text::is_indexed()) {
 
-		//Worker::start_urlstore_server();
+		//worker::start_urlstore_server();
 
 		cout << "starting download server" << endl;
-		Worker::start_download_server();
-		Worker::start_server();
+		worker::start_download_server();
+		worker::start_server();
 
-	} else if (argc == 1 && !FullText::is_indexed()) {
+	} else if (argc == 1 && !full_text::is_indexed()) {
 
-		Worker::Status status;
-		status.items = FullText::total_urls_in_batches();
+		worker::status status;
+		status.items = full_text::total_urls_in_batches();
 		status.items_indexed = 0;
-		status.start_time = Profiler::timestamp();
-		Worker::start_status_server(status);
+		status.start_time = profiler::timestamp();
+		worker::start_status_server(status);
 
-		FullText::index_all_batches("main_index", "main_index", status);
-		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index", status);
+		full_text::index_all_batches("main_index", "main_index", status);
+		full_text::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index", status);
 
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
-		HashTableHelper::optimize(shards);
-		HashTableHelper::delete_shard_builders(shards);
+		vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("main_index");
+		hash_table_helper::optimize(shards);
+		hash_table_helper::delete_shard_builders(shards);
 
 	} else if (arg == "link") {
 
-		FullText::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
+		full_text::index_all_link_batches("link_index", "domain_link_index", "link_index", "domain_link_index");
 
 	} else if (arg == "count_link") {
 
-		//FullText::count_all_links("main_index", status);
+		//full_text::count_all_links("main_index", status);
 
 	} else if (arg == "optimize") {
 
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
-		HashTableHelper::optimize(shards);
-		HashTableHelper::delete_shard_builders(shards);
+		vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("main_index");
+		hash_table_helper::optimize(shards);
+		hash_table_helper::delete_shard_builders(shards);
 
 	} else if (arg == "truncate_link") {
 
-		HashTableHelper::truncate("link_index");
-		HashTableHelper::truncate("domain_link_index");
+		hash_table_helper::truncate("link_index");
+		hash_table_helper::truncate("domain_link_index");
 
-		FullText::truncate_index("link_index");
-		FullText::truncate_index("domain_link_index");
+		full_text::truncate_index("link_index");
+		full_text::truncate_index("domain_link_index");
 
 	} else if (arg == "truncate") {
 
-		UrlToDomain url_to_domain("main_index");
-		url_to_domain.truncate();
+		full_text::url_to_domain url_store("main_index");
+		url_store.truncate();
 
-		FullText::truncate_url_to_domain("main_index");
-		FullText::truncate_index("main_index");
-		FullText::truncate_index("link_index");
-		FullText::truncate_index("domain_link_index");
+		full_text::truncate_url_to_domain("main_index");
+		full_text::truncate_index("main_index");
+		full_text::truncate_index("link_index");
+		full_text::truncate_index("domain_link_index");
 
-		HashTableHelper::truncate("main_index");
-		HashTableHelper::truncate("link_index");
-		HashTableHelper::truncate("domain_link_index");
+		hash_table_helper::truncate("main_index");
+		hash_table_helper::truncate("link_index");
+		hash_table_helper::truncate("domain_link_index");
 	}
 
 	logger::join_logger_thread();

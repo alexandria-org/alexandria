@@ -27,7 +27,7 @@
 #include "index_tree.h"
 #include "merger.h"
 #include "domain_stats/domain_stats.h"
-#include "link/Link.h"
+#include "url_link/link.h"
 #include "algorithm/algorithm.h"
 #include "utils/thread_pool.hpp"
 
@@ -41,7 +41,7 @@ namespace indexer {
 		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
 		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
 		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
-		m_url_to_domain = std::make_unique<UrlToDomain>("index_tree"); 
+		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_tree"); 
 	}
 
 	index_tree::~index_tree() {
@@ -110,14 +110,14 @@ namespace indexer {
 
 				const string link_text = col_values[4].substr(0, 1000);
 
-				const Link::Link link(source_url, target_url, source_harmonic, target_harmonic);
+				const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
 				uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
 				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
-					const uint64_t word_hash = Hash::str(word);
+					const uint64_t word_hash = ::algorithm::hash(word);
 
 					link_record rec(link_hash, source_harmonic);
 					rec.m_source_domain = source_url.host_hash();
@@ -133,14 +133,14 @@ namespace indexer {
 
 				const string link_text = col_values[4].substr(0, 1000);
 
-				const Link::Link link(source_url, target_url, source_harmonic, target_harmonic);
+				const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
 				uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
 
 				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
-					const uint64_t word_hash = Hash::str(word);
+					const uint64_t word_hash = ::algorithm::hash(word);
 
 					domain_link_record rec(link_hash, source_harmonic);
 					rec.m_source_domain = source_url.host_hash();

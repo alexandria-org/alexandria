@@ -28,7 +28,7 @@
 
 #include "level.h"
 #include "text/text.h"
-#include "parser/URL.h"
+#include "URL.h"
 
 namespace indexer {
 

@@ -24,8 +24,6 @@
  * SOFTWARE.
  */
 
-#include "sort/Sort.h"
-#include "system/Profiler.h"
 
 BOOST_AUTO_TEST_SUITE(performance)
 

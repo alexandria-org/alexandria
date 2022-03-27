@@ -118,7 +118,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			if (Unicode::is_valid(word)) {
+			if (parser::unicode::is_valid(word)) {
 				trim(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);
@@ -142,7 +142,7 @@ namespace text {
 		for (const char &ch : str) {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
-				if (cur_token.size() && Unicode::is_valid(cur_token)) {
+				if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
 					tokens.push_back(str2token(cur_token));
 				}
 				cur_token.clear();
@@ -155,7 +155,7 @@ namespace text {
 		}
 
 		// Remember the last token.
-		if (cur_token.size() && Unicode::is_valid(cur_token)) {
+		if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
 			tokens.push_back(str2token(cur_token));
 		}
 
@@ -163,7 +163,7 @@ namespace text {
 	}
 
 	vector<uint64_t> get_tokens(const string &str) {
-		return get_tokens(str, Hash::str);
+		return get_tokens(str, algorithm::hash);
 	}
 
 	vector<string> get_snippets(const string &str) {
@@ -175,7 +175,7 @@ namespace text {
 		for (const char &ch : str) {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
-				if (cur_token.size() && Unicode::is_valid(cur_token)) {
+				if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
 					if (cur_snippet.size() + cur_token.size() <= snippet_len) {
 						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 						cur_snippet.insert(cur_snippet.end(), ' ');
@@ -194,7 +194,7 @@ namespace text {
 			}
 		}
 
-		if (cur_token.size() && Unicode::is_valid(cur_token)) {
+		if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
 			cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 		}
 
@@ -224,7 +224,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			if (Unicode::is_valid(word)) {
+			if (parser::unicode::is_valid(word)) {
 				trim(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);

@@ -39,11 +39,11 @@ BOOST_AUTO_TEST_CASE(get_tokens) {
 	vector<uint64_t> tokens = text::get_tokens("My name is Josef Cullhed");
 
 	vector<uint64_t> targets = {
-		Hash::str("my"),
-		Hash::str("name"),
-		Hash::str("is"),
-		Hash::str("josef"),
-		Hash::str("cullhed"),
+		algorithm::hash("my"),
+		algorithm::hash("name"),
+		algorithm::hash("is"),
+		algorithm::hash("josef"),
+		algorithm::hash("cullhed"),
 	};
 
 	BOOST_CHECK(tokens == targets);
@@ -53,11 +53,11 @@ BOOST_AUTO_TEST_CASE(get_tokens2) {
 	vector<uint64_t> tokens = text::get_tokens("Test. Ing! the    test   +function+");
 
 	vector<uint64_t> targets = {
-		Hash::str("test"),
-		Hash::str("ing"),
-		Hash::str("the"),
-		Hash::str("test"),
-		Hash::str("function"),
+		algorithm::hash("test"),
+		algorithm::hash("ing"),
+		algorithm::hash("the"),
+		algorithm::hash("test"),
+		algorithm::hash("function"),
 	};
 
 	BOOST_CHECK(tokens == targets);

@@ -24,14 +24,14 @@
  * SOFTWARE.
  */
 
-#include "system/SubSystem.h"
+#include "common/sub_system.h"
 #include "common/Dictionary.h"
 
-BOOST_AUTO_TEST_SUITE(sub_system)
+BOOST_AUTO_TEST_SUITE(test_sub_system)
 
-BOOST_AUTO_TEST_CASE(sub_system) {
+BOOST_AUTO_TEST_CASE(subsys) {
 
-	SubSystem *ss = new SubSystem();
+	common::sub_system *ss = new common::sub_system();
 
 	delete ss;
 }

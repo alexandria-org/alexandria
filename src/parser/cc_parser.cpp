@@ -26,8 +26,8 @@
 
 // main.cpp
 #include "config.h"
-#include "parser/Warc.h"
-#include "system/ThreadPool.h"
+#include "warc/warc.h"
+#include "common/ThreadPool.h"
 #include "logger/logger.h"
 #include "text/text.h"
 #include "transfer/transfer.h"
@@ -35,20 +35,20 @@
 
 using namespace std;
 
-namespace Parser {
+namespace parser {
 
 	void run_downloader(const string &warc_path) {
 
-		Warc::Parser pp;
-		Warc::multipart_download("http://commoncrawl.s3.amazonaws.com/" + warc_path, [&pp](const string &chunk) {
+		warc::parser pp;
+		warc::multipart_download("http://commoncrawl.s3.amazonaws.com/" + warc_path, [&pp](const string &chunk) {
 			stringstream ss(chunk);
 			pp.parse_stream(ss);
 		});
 
 		LOG_INFO("uploading: " + warc_path);
 		int error;
-		error = transfer::upload_gz_file(Warc::get_result_path(warc_path), pp.result());
-		error = transfer::upload_gz_file(Warc::get_link_result_path(warc_path), pp.link_result());
+		error = transfer::upload_gz_file(warc::get_result_path(warc_path), pp.result());
+		error = transfer::upload_gz_file(warc::get_link_result_path(warc_path), pp.link_result());
 
 		if (error) {
 			LOG_INFO("error uploading: " + warc_path);
@@ -74,7 +74,7 @@ namespace Parser {
 
 	vector<string> download_warc_paths() {
 		int error;
-		string content = transfer::file_to_string("nodes/" + Config::node + "/warc.paths", error);
+		string content = transfer::file_to_string("nodes/" + config::node + "/warc.paths", error);
 		if (error == transfer::ERROR) return {};
 
 		content = text::trim(content);
@@ -94,7 +94,7 @@ namespace Parser {
 
 	bool upload_warc_paths(const vector<string> &warc_paths) {
 		string content = boost::algorithm::join(warc_paths, "\n");
-		int error = transfer::upload_file("nodes/" + Config::node + "/warc.paths", content);
+		int error = transfer::upload_file("nodes/" + config::node + "/warc.paths", content);
 		return error == transfer::OK;
 	}
 

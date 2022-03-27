@@ -26,20 +26,20 @@
 
 #include "domain_stats.h"
 #include <iostream>
-#include "common/Dictionary.h"
-#include "file/TsvFileRemote.h"
+#include "common/dictionary.h"
+#include "file/tsv_file_remote.h"
 #include "logger/logger.h"
-#include "system/System.h"
+#include "common/system.h"
 
 using namespace std;
 
 namespace domain_stats {
 
-	Dictionary domain_data;
+	common::dictionary domain_data;
 
 	void download_domain_stats() {
 		LOG_INFO("download domain_info.tsv");
-		File::TsvFileRemote domain_info_tsv(System::domain_index_filename());
+		file::tsv_file_remote domain_info_tsv(common::domain_index_filename());
 		LOG_INFO("parsing.....");
 		domain_data.load_tsv(domain_info_tsv);
 	}
@@ -54,7 +54,7 @@ namespace domain_stats {
 
 		float harmonic = 0.0f;
 		if (iter != domain_data.end()) {
-			const DictionaryRow row = iter->second;
+			const common::dictionary_row row = iter->second;
 			harmonic = row.get_float(1);
 		}
 

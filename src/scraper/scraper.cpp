@@ -25,14 +25,14 @@
  */
 
 #include "scraper.h"
-#include "parser/HtmlParser.h"
-#include "system/datetime.h"
+#include "parser/html_parser.h"
+#include "common/datetime.h"
 #include "text/text.h"
 #include <memory>
 
 using namespace std;
 
-namespace Scraper {
+namespace scraper {
 
 	string user_agent_token() {
 		return "AlexandriaOrgBot";
@@ -44,15 +44,15 @@ namespace Scraper {
 		return ua;
 	}
 
-	stats::stats() {
+	scraper_stats::scraper_stats() {
 	}
 
-	stats::~stats() {
+	scraper_stats::~scraper_stats() {
 		m_running = false;
 		if (m_thread.joinable()) m_thread.join();
 	}
 
-	void stats::gather_statistics(const map<string, unique_ptr<scraper>> &scrapers, size_t urls_in_queue) {
+	void scraper_stats::gather_statistics(const map<string, unique_ptr<scraper>> &scrapers, size_t urls_in_queue) {
 		start_count(urls_in_queue);
 		for (const auto &iter : scrapers) {
 			if (iter.second->finished()) {
@@ -64,14 +64,14 @@ namespace Scraper {
 		end_count();
 	}
 
-	void stats::start_thread(size_t timeout) {
+	void scraper_stats::start_thread(size_t timeout) {
 		m_timeout = timeout;
 		m_thread = std::move(thread([this]() {
 			this->run();
 		}));
 	}
 
-	void stats::start_count(size_t urls_in_queue) {
+	void scraper_stats::start_count(size_t urls_in_queue) {
 		m_lock.lock();
 		m_unfinished_scrapers = 0;
 		m_unfinished_scraped_urls = 0;
@@ -81,11 +81,11 @@ namespace Scraper {
 		m_urls_assigned = 0;
 	}
 
-	void stats::end_count() {
+	void scraper_stats::end_count() {
 		m_lock.unlock();
 	}
 
-	void stats::count_finished(const scraper &scraper) {
+	void scraper_stats::count_finished(const scraper &scraper) {
 		m_scraped_urls += scraper.num_scraped();
 		m_scraped_urls_non200 += scraper.num_scraped_non200();
 		m_scraped_errors += scraper.num_errors();
@@ -93,7 +93,7 @@ namespace Scraper {
 		m_num_blocked += scraper.blocked() ? 1 : 0;
 	}
 
-	void stats::count_unfinished(const scraper &scraper) {
+	void scraper_stats::count_unfinished(const scraper &scraper) {
 		m_unfinished_scraped_urls += scraper.num_scraped();
 		m_unfinished_scraped_urls_non200 += scraper.num_scraped_non200();
 		m_unfinished_scraped_errors += scraper.num_errors();
@@ -101,15 +101,15 @@ namespace Scraper {
 		m_urls_assigned += scraper.size();
 	}
 
-	void stats::run() {
-		size_t time_start = Profiler::timestamp();
+	void scraper_stats::run() {
+		size_t time_start = profiler::timestamp();
 		while (m_running) {
 			std::this_thread::sleep_for(std::chrono::seconds(m_timeout));
-			log_report(Profiler::timestamp() - time_start);
+			log_report(profiler::timestamp() - time_start);
 		}
 	}
 
-	void stats::log_report(size_t dt) {
+	void scraper_stats::log_report(size_t dt) {
 		m_lock.lock();
 		std::stringstream ss;
 		ss.precision(2);
@@ -128,7 +128,7 @@ namespace Scraper {
 		LOG_INFO(ss.str());
 	}
 
-	scraper::scraper(const string &domain, store *store) :
+	scraper::scraper(const string &domain, scraper_store *store) :
 		m_domain(domain), m_store(store)
 	{
 		m_domain_data.m_domain = domain;
@@ -193,9 +193,9 @@ namespace Scraper {
 			if (new_url_str != nullptr) {
 				string new_u_str(new_url_str);
 				URL new_url(new_u_str);
-				update_url(new_url, response_code, System::cur_datetime(), URL());
+				update_url(new_url, response_code, common::cur_datetime(), URL());
 				if (url.canonically_different(new_url)) {
-					update_url(url, 301, System::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
+					update_url(url, 301, common::cur_datetime(), new_url); // A bit of cheeting heere, it is not sure the original url had a 301 response code.
 				}
 				if (response_code == 200) {
 					handle_200_response(m_buffer, response_code, ip, new_url);
@@ -203,7 +203,7 @@ namespace Scraper {
 					handle_non_200_response(m_buffer, response_code, ip, new_url);
 				}
 			} else {
-				update_url(url, response_code, System::cur_datetime(), URL());
+				update_url(url, response_code, common::cur_datetime(), URL());
 				if (response_code == 200) {
 					handle_200_response(m_buffer, response_code, ip, url);
 				} else {
@@ -222,10 +222,10 @@ namespace Scraper {
 			handle_curl_error(url, res, string(m_curl_error_buffer));
 
 			if (res == CURLE_COULDNT_RESOLVE_HOST || res == CURLE_COULDNT_CONNECT) {
-				update_url(url, 10000 + res, System::cur_datetime(), URL());
+				update_url(url, 10000 + res, common::cur_datetime(), URL());
 				mark_all_urls_with_error(10000 + res);
 			} else {
-				update_url(url, 10000 + res, System::cur_datetime(), URL());
+				update_url(url, 10000 + res, common::cur_datetime(), URL());
 			}
 		}
 
@@ -237,12 +237,12 @@ namespace Scraper {
 		while (m_queue.size()) {
 			URL url = filter_url(m_queue.front());
 			m_queue.pop();
-			update_url(url, error_code, System::cur_datetime(), URL());
+			update_url(url, error_code, common::cur_datetime(), URL());
 		}
 	}
 
 	void scraper::update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect) {
-		UrlStore::UrlData url_data;
+		url_store::url_data url_data;
 		url_data.m_url = url;
 		url_data.m_redirect = redirect;
 		url_data.m_http_code = http_code;
@@ -260,7 +260,7 @@ namespace Scraper {
 
 	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
 		m_num_200++;
-		HtmlParser html_parser;
+		parser::html_parser html_parser;
 		html_parser.parse(data, url.str());
 
 		m_num_total++;
@@ -268,7 +268,7 @@ namespace Scraper {
 		if (url.has_https()) m_num_https++; 
 		if (m_num_total == 3) upload_domain_info();
 
-		const string date = System::iso8601_datetime();
+		const string date = common::iso8601_datetime();
 
 		if (html_parser.should_insert()) {
 			const string line = (url.str()
@@ -301,10 +301,10 @@ namespace Scraper {
 
 		check_for_captcha_block(data, response_code);
 
-		HtmlParser html_parser;
+		parser::html_parser html_parser;
 		html_parser.parse(data, url.str());
 
-		const string date = System::iso8601_datetime();
+		const string date = common::iso8601_datetime();
 
 		if (html_parser.should_insert()) {
 			const string line = (url.str()
@@ -328,8 +328,8 @@ namespace Scraper {
 	}
 
 	void scraper::download_domain_data() {
-		int error = UrlStore::get(m_domain, m_domain_data);
-		if (error == UrlStore::ERROR) {
+		int error = url_store::get(m_domain, m_domain_data);
+		if (error == url_store::ERROR) {
 			LOG_INFO("Could not download domain data");
 		}
 	}
@@ -388,7 +388,7 @@ namespace Scraper {
 
 	void scraper::upload_domain_info() {
 		if (m_num_total > 0) {
-			UrlStore::DomainData data;
+			url_store::domain_data data;
 			data.m_domain = m_domain;
 			data.m_has_https = m_num_https > 0;
 			data.m_has_www = m_num_www > 0;
@@ -398,7 +398,7 @@ namespace Scraper {
 	}
 
 	void scraper::upload_robots_txt(const string &robots_content) {
-		UrlStore::RobotsData data;
+		url_store::robots_data data;
 		data.m_domain = m_domain;
 		data.m_robots = robots_content;
 
@@ -438,13 +438,13 @@ namespace Scraper {
 
 	bool reset_scraper_urls() {
 		string content = "";
-		int error = transfer::upload_file("nodes/" + Config::node + "/scraper.urls", content);
+		int error = transfer::upload_file("nodes/" + config::node + "/scraper.urls", content);
 		return error == transfer::OK;
 	}
 
 	vector<string> download_scraper_urls() {
 		int error;
-		string content = transfer::file_to_string("nodes/" + Config::node + "/scraper.urls", error);
+		string content = transfer::file_to_string("nodes/" + config::node + "/scraper.urls", error);
 		if (error == transfer::ERROR) return {};
 
 		reset_scraper_urls();
@@ -464,8 +464,8 @@ namespace Scraper {
 
 	void run_scraper_on_urls(const vector<string> &input_urls) {
 		size_t max_scrapers = 1000;
-		Scraper::store store;
-		Scraper::stats stats;
+		scraper_store store;
+		scraper_stats stats;
 		map<string, unique_ptr<scraper>> scrapers;
 
 		stats.start_thread(60); // Report statistics every minute.

@@ -28,63 +28,65 @@ include_directories(tests/)
 
 set(SRC_CLASSES
 	
-	"src/api/Api.cpp"
-	"src/api/ApiResponse.cpp"
-	"src/api/ApiStatusResponse.cpp"
-	"src/api/ResultWithSnippet.cpp"
-	"src/api/LinkResult.cpp"
-	"src/api/DomainLinkResult.cpp"
-	"src/api/Worker.cpp"
+	"src/api/api.cpp"
+	"src/api/api_response.cpp"
+	"src/api/api_status_response.cpp"
+	"src/api/domain_link_result.cpp"
+	"src/api/result_with_snippet.cpp"
 
-	"src/file/File.cpp"
-	"src/file/TsvFile.cpp"
-	"src/file/GzTsvFile.cpp"
-	"src/file/TsvFileRemote.cpp"
-	"src/file/TsvRow.cpp"
+	"src/worker/worker.cpp"
+
+	"src/file/file.cpp"
+	"src/file/tsv_file.cpp"
+	"src/file/gz_tsv_file.cpp"
+	"src/file/tsv_file_remote.cpp"
+	"src/file/tsv_row.cpp"
 
 	"src/transfer/transfer.cpp"
 
-	"src/full_text/FullTextIndexer.cpp"
-	"src/full_text/FullTextIndexerRunner.cpp"
-	"src/full_text/UrlToDomain.cpp"
-	"src/full_text/FullText.cpp"
+	"src/full_text/full_text_indexer.cpp"
+	"src/full_text/full_text_indexer_runner.cpp"
+	"src/full_text/url_to_domain.cpp"
+	"src/full_text/full_text.cpp"
 
-	"src/search_engine/SearchEngine.cpp"
-	"src/search_engine/SearchAllocation.cpp"
+	"src/search_engine/search_engine.cpp"
 
-	"src/link/Link.cpp"
-	"src/link/Indexer.cpp"
-	"src/link/IndexerRunner.cpp"
-	"src/link/LinkCounter.cpp"
+	"src/search_allocation/search_allocation.cpp"
 
-	"src/domain_link/Indexer.cpp"
+	"src/url_link/link.cpp"
+	"src/url_link/indexer.cpp"
+	"src/url_link/indexer_runner.cpp"
+	"src/url_link/link_counter.cpp"
 
-	"src/hash_table/HashTable.cpp"
-	"src/hash_table/HashTableShard.cpp"
-	"src/hash_table/HashTableShardBuilder.cpp"
-	"src/hash_table/HashTableHelper.cpp"
+	"src/domain_link/indexer.cpp"
+
+	"src/hash_table/hash_table.cpp"
+	"src/hash_table/hash_table_shard.cpp"
+	"src/hash_table/hash_table_shard_builder.cpp"
 	"src/hash_table/builder.cpp"
 
-	"src/post_processor/PostProcessor.cpp"
+	"src/hash_table_helper/hash_table_helper.cpp"
+
+	"src/post_processor/post_processor.cpp"
 	
-	"src/parser/Parser.cpp"
+	"src/parser/parser.cpp"
 	"src/parser/entities.cpp"
-	"src/parser/HtmlLink.cpp"
-	"src/parser/HtmlParser.cpp"
-	"src/parser/Unicode.cpp"
-	"src/parser/URL.cpp"
-	"src/parser/Warc.cpp"
+	"src/parser/html_link.cpp"
+	"src/parser/html_parser.cpp"
+	"src/parser/unicode.cpp"
+
+	"src/URL.cpp"
+
 	"src/parser/cc_parser.cpp"
 
-	"src/urlstore/UrlStore.cpp"
-	"src/urlstore/UrlData.cpp"
-	"src/urlstore/DomainData.cpp"
-	"src/urlstore/RobotsData.cpp"
+	"src/warc/warc.cpp"
+
+	"src/url_store/url_store.cpp"
+	"src/url_store/url_data.cpp"
+	"src/url_store/domain_data.cpp"
+	"src/url_store/robots_data.cpp"
 	
-	"src/system/Profiler.cpp"
-	"src/system/System.cpp"
-	"src/system/SubSystem.cpp"
-	"src/system/datetime.cpp"
+	"src/profiler/profiler.cpp"
 
 	"src/logger/logger.cpp"
 
@@ -93,26 +95,24 @@ set(SRC_CLASSES
 	"src/memory/memory.cpp"
 	"src/memory/debugger.cpp"
 
-	"src/sort/Sort.cpp"
-
-	"src/hash/Hash.cpp"
-
 	"src/config.cpp"
 
-	"src/KeyValueStore.cpp"
+	"src/key_value_store.cpp"
 
 	"src/algorithm/algorithm.cpp"
+	"src/algorithm/sort.cpp"
 	"src/algorithm/hyper_ball.cpp"
+	"src/algorithm/hash.cpp"
 
-	"src/tools/Splitter.cpp"
-	"src/tools/Counter.cpp"
-	"src/tools/Download.cpp"
-	"src/tools/CalculateHarmonic.cpp"
+	"src/tools/splitter.cpp"
+	"src/tools/counter.cpp"
+	"src/tools/download.cpp"
+	"src/tools/calculate_harmonic.cpp"
 	"src/tools/generate_url_lists.cpp"
 
-	"src/cluster/Document.cpp"
+	"src/cluster/document.cpp"
 	"src/scraper/scraper.cpp"
-	"src/scraper/store.cpp"
+	"src/scraper/scraper_store.cpp"
 
 	"src/indexer/level.cpp"
 	"src/indexer/snippet.cpp"
@@ -126,8 +126,11 @@ set(SRC_CLASSES
 )
 
 set(SRC_COMMON
-	"src/common/Dictionary.cpp"
-	"src/common/DictionaryRow.cpp"
+	"src/common/dictionary.cpp"
+	"src/common/system.cpp"
+	"src/common/sub_system.cpp"
+	"src/common/datetime.cpp"
+	"src/common/dictionary_row.cpp"
 	"src/text/stopwords.cpp"
 	"src/text/text.cpp"
 )

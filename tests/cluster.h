@@ -24,24 +24,24 @@
  * SOFTWARE.
  */
 
-#include "cluster/Document.h"
+#include "cluster/document.h"
 #include "transfer/transfer.h"
-#include "hash/Hash.h"
+#include "algorithm/hash.h"
 
-BOOST_AUTO_TEST_SUITE(cluster)
+BOOST_AUTO_TEST_SUITE(test_cluster)
 
-BOOST_AUTO_TEST_CASE(cluster) {
+BOOST_AUTO_TEST_CASE(test_cluster) {
 	{
 		int error;
 		stringstream ss;
 		transfer::gz_file_to_stream("/test-data/10272145489625484395-1002.gz", ss, error);
 		BOOST_CHECK(error == transfer::OK);
 
-		Cluster::Corpus corpus;
-		Cluster::Documents documents;
-		Cluster::read_corpus(corpus, documents, ss);
+		cluster::corpus corpus;
+		cluster::documents documents;
+		cluster::read_corpus(corpus, documents, ss);
 
-		const size_t key = Hash::str("aftonbladet.se");
+		const size_t key = algorithm::hash("aftonbladet.se");
 		BOOST_CHECK(documents.count(key) == 1);
 		BOOST_CHECK(documents[key].size() > 0);
 	}

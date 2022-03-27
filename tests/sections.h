@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#include "hash_table/HashTableHelper.h"
-#include "api/Api.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "api/api.h"
 
 #include "json.hpp"
 
@@ -35,35 +35,35 @@ BOOST_AUTO_TEST_SUITE(sections)
 
 BOOST_AUTO_TEST_CASE(sections) {
 
-	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
-	unsigned long long initial_results_per_section = Config::ft_max_results_per_section;
-	unsigned long long initial_ft_max_sections = Config::ft_max_sections;
-	unsigned long long initial_ft_section_depth = Config::ft_section_depth;
-	Config::nodes_in_cluster = 1;
-	Config::node_id = 0;
-	Config::ft_max_results_per_section = 10;
-	Config::ft_max_sections = 8;
-	Config::ft_section_depth = 64;
+	unsigned long long initial_nodes_in_cluster = config::nodes_in_cluster;
+	unsigned long long initial_results_per_section = config::ft_max_results_per_section;
+	unsigned long long initial_ft_max_sections = config::ft_max_sections;
+	unsigned long long initial_ft_section_depth = config::ft_section_depth;
+	config::nodes_in_cluster = 1;
+	config::node_id = 0;
+	config::ft_max_results_per_section = 10;
+	config::ft_max_sections = 8;
+	config::ft_section_depth = 64;
 
-	SearchAllocation::Allocation *allocation = SearchAllocation::create_allocation();
+	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-	FullText::truncate_url_to_domain("main_index");
-	FullText::truncate_index("test_main_index");
+	full_text::truncate_url_to_domain("main_index");
+	full_text::truncate_index("test_main_index");
 
-	HashTableHelper::truncate("test_main_index");
+	hash_table_helper::truncate("test_main_index");
 
 	// Index full text
 	{
-		SubSystem *sub_system = new SubSystem();
-		FullText::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", subsys);
 	}
 
-	HashTable hash_table("test_main_index");
-	FullTextIndex<FullTextRecord> index("test_main_index");
+	hash_table::hash_table ht("test_main_index");
+	full_text_index<full_text_record> index("test_main_index");
 
 	{
 		stringstream response_stream;
-		Api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("site:en.wikipedia.org Wikipedia", ht, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -78,11 +78,11 @@ BOOST_AUTO_TEST_CASE(sections) {
 	}
 
 	// Reset.
-	Config::nodes_in_cluster = initial_nodes_in_cluster;
-	Config::node_id = 0;
-	Config::ft_max_results_per_section = initial_results_per_section;
-	Config::ft_max_sections = initial_ft_max_sections;
-	Config::ft_section_depth = initial_ft_section_depth;
+	config::nodes_in_cluster = initial_nodes_in_cluster;
+	config::node_id = 0;
+	config::ft_max_results_per_section = initial_results_per_section;
+	config::ft_max_sections = initial_ft_max_sections;
+	config::ft_section_depth = initial_ft_section_depth;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

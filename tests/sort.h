@@ -24,11 +24,11 @@
  * SOFTWARE.
  */
 
-#include "sort/Sort.h"
+#include "algorithm/sort.h"
 
-BOOST_AUTO_TEST_SUITE(sort)
+BOOST_AUTO_TEST_SUITE(test_sort)
 
-struct TestDataStruct1 {
+struct test_data_struct1 {
 	int data1;
 	int data2;
 };
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(merge_arrays) {
 		vector<int> arr3;
 		vector<int> arr4{1, 2, 3, 4, 5, 6};
 
-		Sort::merge_arrays(arr1, arr2, arr3);
+		algorithm::sort::merge_arrays(arr1, arr2, arr3);
 
 		BOOST_CHECK(arr3 == arr4);
 	}
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(merge_arrays) {
 		vector<int> arr3;
 		vector<int> arr4{1, 2, 3, 3, 4, 5, 6};
 
-		Sort::merge_arrays(arr1, arr2, arr3);
+		algorithm::sort::merge_arrays(arr1, arr2, arr3);
 
 		BOOST_CHECK(arr3 == arr4);
 	}
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(merge_arrays) {
 		vector<int> arr3;
 		vector<int> arr4{3, 4, 5, 6};
 
-		Sort::merge_arrays(arr1, arr2, arr3);
+		algorithm::sort::merge_arrays(arr1, arr2, arr3);
 
 		BOOST_CHECK(arr3 == arr4);
 	}
@@ -73,12 +73,12 @@ BOOST_AUTO_TEST_CASE(merge_arrays) {
 BOOST_AUTO_TEST_CASE(merge_arrays_of_struct) {
 
 	{
-		vector<struct TestDataStruct1> arr1{TestDataStruct1{.data1 = 1, .data2 = 2}};
-		vector<struct TestDataStruct1> arr2{TestDataStruct1{.data1 = 2, .data2 = 3}};
-		vector<struct TestDataStruct1> arr3;
-		vector<struct TestDataStruct1> arr4{TestDataStruct1{.data1 = 1, .data2 = 2}, TestDataStruct1{.data1 = 2, .data2 = 3}};
+		vector<struct test_data_struct1> arr1{test_data_struct1{.data1 = 1, .data2 = 2}};
+		vector<struct test_data_struct1> arr2{test_data_struct1{.data1 = 2, .data2 = 3}};
+		vector<struct test_data_struct1> arr3;
+		vector<struct test_data_struct1> arr4{test_data_struct1{.data1 = 1, .data2 = 2}, test_data_struct1{.data1 = 2, .data2 = 3}};
 
-		Sort::merge_arrays(arr1, arr2, [](const struct TestDataStruct1 &a, const struct TestDataStruct1 &b) {
+		algorithm::sort::merge_arrays(arr1, arr2, [](const struct test_data_struct1 &a, const struct test_data_struct1 &b) {
 			return a.data1 < b.data1;
 		}, arr3);
 
@@ -87,13 +87,13 @@ BOOST_AUTO_TEST_CASE(merge_arrays_of_struct) {
 	}
 
 	{
-		vector<struct TestDataStruct1> arr1{TestDataStruct1{.data1 = 1, .data2 = 2}, TestDataStruct1{.data1 = 3, .data2 = 4}};
-		vector<struct TestDataStruct1> arr2{TestDataStruct1{.data1 = 2, .data2 = 3}};
-		vector<struct TestDataStruct1> arr3;
-		vector<struct TestDataStruct1> arr4{TestDataStruct1{.data1 = 1, .data2 = 2}, TestDataStruct1{.data1 = 2, .data2 = 3},
-			TestDataStruct1{.data1 = 3, .data2 = 4}};
+		vector<struct test_data_struct1> arr1{test_data_struct1{.data1 = 1, .data2 = 2}, test_data_struct1{.data1 = 3, .data2 = 4}};
+		vector<struct test_data_struct1> arr2{test_data_struct1{.data1 = 2, .data2 = 3}};
+		vector<struct test_data_struct1> arr3;
+		vector<struct test_data_struct1> arr4{test_data_struct1{.data1 = 1, .data2 = 2}, test_data_struct1{.data1 = 2, .data2 = 3},
+			test_data_struct1{.data1 = 3, .data2 = 4}};
 
-		Sort::merge_arrays(arr1, arr2, [](const struct TestDataStruct1 &a, const struct TestDataStruct1 &b) {
+		algorithm::sort::merge_arrays(arr1, arr2, [](const struct test_data_struct1 &a, const struct test_data_struct1 &b) {
 			return a.data1 < b.data1;
 		}, arr3);
 
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(merge_many_arrays) {
 		vector<vector<int>> inp{arr1, arr2, arr3};
 		vector<int> corr{1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-		Sort::merge_arrays(inp, res);
+		algorithm::sort::merge_arrays(inp, res);
 
 		BOOST_CHECK(res == corr);
 	}
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(merge_many_arrays) {
 		vector<vector<int>> inp{arr1, arr2, arr3};
 		vector<int> corr{1, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-		Sort::merge_arrays(inp, res);
+		algorithm::sort::merge_arrays(inp, res);
 
 		BOOST_CHECK(res == corr);
 	}
@@ -136,36 +136,36 @@ BOOST_AUTO_TEST_CASE(merge_many_arrays) {
 BOOST_AUTO_TEST_CASE(merge_many_arrays_of_struct) {
 
 	{
-		vector<struct TestDataStruct1> arr1{
-			TestDataStruct1{.data1 = 1, .data2 = 11},
-			TestDataStruct1{.data1 = 2, .data2 = 12},
-			TestDataStruct1{.data1 = 3, .data2 = 13}
+		vector<struct test_data_struct1> arr1{
+			test_data_struct1{.data1 = 1, .data2 = 11},
+			test_data_struct1{.data1 = 2, .data2 = 12},
+			test_data_struct1{.data1 = 3, .data2 = 13}
 		};
-		vector<struct TestDataStruct1> arr2 = {
-			TestDataStruct1{.data1 = 4, .data2 = 14},
-			TestDataStruct1{.data1 = 5, .data2 = 15},
-			TestDataStruct1{.data1 = 6, .data2 = 16}
+		vector<struct test_data_struct1> arr2 = {
+			test_data_struct1{.data1 = 4, .data2 = 14},
+			test_data_struct1{.data1 = 5, .data2 = 15},
+			test_data_struct1{.data1 = 6, .data2 = 16}
 		};
-		vector<struct TestDataStruct1> arr3 = {
-			TestDataStruct1{.data1 = 7, .data2 = 17},
-			TestDataStruct1{.data1 = 8, .data2 = 18},
-			TestDataStruct1{.data1 = 9, .data2 = 19}
+		vector<struct test_data_struct1> arr3 = {
+			test_data_struct1{.data1 = 7, .data2 = 17},
+			test_data_struct1{.data1 = 8, .data2 = 18},
+			test_data_struct1{.data1 = 9, .data2 = 19}
 		};
-		vector<struct TestDataStruct1> res;
-		vector<vector<struct TestDataStruct1>> inp{arr1, arr2, arr3};
-		vector<struct TestDataStruct1> corr{
-			TestDataStruct1{.data1 = 1, .data2 = 11},
-			TestDataStruct1{.data1 = 2, .data2 = 12},
-			TestDataStruct1{.data1 = 3, .data2 = 13},
-			TestDataStruct1{.data1 = 4, .data2 = 14},
-			TestDataStruct1{.data1 = 5, .data2 = 15},
-			TestDataStruct1{.data1 = 6, .data2 = 16},
-			TestDataStruct1{.data1 = 7, .data2 = 17},
-			TestDataStruct1{.data1 = 8, .data2 = 18},
-			TestDataStruct1{.data1 = 9, .data2 = 19}
+		vector<struct test_data_struct1> res;
+		vector<vector<struct test_data_struct1>> inp{arr1, arr2, arr3};
+		vector<struct test_data_struct1> corr{
+			test_data_struct1{.data1 = 1, .data2 = 11},
+			test_data_struct1{.data1 = 2, .data2 = 12},
+			test_data_struct1{.data1 = 3, .data2 = 13},
+			test_data_struct1{.data1 = 4, .data2 = 14},
+			test_data_struct1{.data1 = 5, .data2 = 15},
+			test_data_struct1{.data1 = 6, .data2 = 16},
+			test_data_struct1{.data1 = 7, .data2 = 17},
+			test_data_struct1{.data1 = 8, .data2 = 18},
+			test_data_struct1{.data1 = 9, .data2 = 19}
 		};
 
-		Sort::merge_arrays(inp, [](const struct TestDataStruct1 &a, const struct TestDataStruct1 &b) {
+		algorithm::sort::merge_arrays(inp, [](const struct test_data_struct1 &a, const struct test_data_struct1 &b) {
 			return a.data1 < b.data1;
 		}, res);
 

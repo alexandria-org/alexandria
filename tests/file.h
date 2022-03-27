@@ -26,8 +26,8 @@
 
 #include "transfer/transfer.h"
 #include "text/text.h"
-#include "file/TsvFileRemote.h"
-#include "hash/Hash.h"
+#include "file/tsv_file_remote.h"
+#include "algorithm/hash.h"
 
 BOOST_AUTO_TEST_SUITE(file)
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(handle_errors) {
 }
 
 BOOST_AUTO_TEST_CASE(tsv_file_exists) {
-	File::TsvFileRemote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
+	file::tsv_file_remote manual_paths_file("crawl-data/ALEXANDRIA-MANUAL-01/warc.paths.gz");
 	vector<string> warc_paths;
 	manual_paths_file.read_column_into(0, warc_paths);
 
@@ -115,13 +115,13 @@ BOOST_AUTO_TEST_CASE(tsv_file_exists) {
 }
 
 BOOST_AUTO_TEST_CASE(tsv_file_dont_exists) {
-	File::TsvFileRemote manual_paths_file("non-existing-file.gz");
+	file::tsv_file_remote manual_paths_file("non-existing-file.gz");
 	BOOST_CHECK(!manual_paths_file.is_open());
 }
 
 BOOST_AUTO_TEST_CASE(local_tsv_files) {
 
-	File::TsvFile my_file(Config::test_data_path + "tsvtest.tsv");
+	file::tsv_file my_file(config::test_data_path + "tsvtest.tsv");
 
 	BOOST_CHECK_EQUAL(my_file.find_first_position("aaa"), 0);
 	BOOST_CHECK_EQUAL(my_file.find_first_position("aab"), 126);
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(local_tsv_files) {
 	BOOST_CHECK_EQUAL(my_file.find_last_position("aab"), 126);
 	BOOST_CHECK_EQUAL(my_file.find_last_position("european"), string::npos);
 
-	File::TsvFile my_file2(Config::test_data_path + "tsvtest2.tsv");
+	file::tsv_file my_file2(config::test_data_path + "tsvtest2.tsv");
 
 	BOOST_CHECK_EQUAL(my_file2.find_first_position("aaa"), 0);
 	BOOST_CHECK(my_file2.find_first_position("aab") > 0);
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 		BOOST_CHECK_EQUAL(error, transfer::OK);
 
 		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
-		BOOST_CHECK_EQUAL(Hash::str(result_back), Hash::str(buffer));
+		BOOST_CHECK_EQUAL(algorithm::hash(result_back), algorithm::hash(buffer));
 	}
 }
 

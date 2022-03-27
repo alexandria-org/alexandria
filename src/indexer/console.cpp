@@ -28,10 +28,11 @@
 #include <vector>
 #include "text/text.h"
 #include "indexer/index_tree.h"
-#include "parser/URL.h"
+#include "URL.h"
 #include "transfer/transfer.h"
 #include "domain_stats/domain_stats.h"
 #include "merger.h"
+#include "file/tsv_file_remote.h"
 
 using namespace std;
 
@@ -46,7 +47,7 @@ namespace indexer {
 		size_t limit = 0;
 		if (args.size() > 2) limit = stoull(args[2]);
 
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -76,7 +77,7 @@ namespace indexer {
 		size_t limit = 0;
 		if (args.size() > 2) limit = stoull(args[2]);
 
-		File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 		vector<string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
@@ -97,7 +98,7 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_tree &idx_tree, HashTable &ht, const string &query) {
+	void cmd_search(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
 		std::vector<indexer::return_record> res = idx_tree.find(query);
 
 		if (res.size() > 10) res.resize(10);
@@ -156,7 +157,7 @@ namespace indexer {
 
 		//idx_tree.truncate();
 
-		HashTable ht("index_tree");
+		hash_table::hash_table ht("index_tree");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -206,7 +207,7 @@ namespace indexer {
 			size_t limit = 1000;
 			//size_t limit = 1;
 
-			File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 
@@ -239,7 +240,7 @@ namespace indexer {
 
 			for (const string &batch : batches) {
 
-				File::TsvFileRemote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+				file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 				vector<string> warc_paths;
 				warc_paths_file.read_column_into(0, warc_paths);
 

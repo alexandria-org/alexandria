@@ -71,7 +71,7 @@ namespace logger {
 
 			}
 			try {
-				m_file.open(Config::log_file_path, ofstream::out | ofstream::app);
+				m_file.open(config::log_file_path, ofstream::out | ofstream::app);
 				m_last_reopen = chrono::system_clock::now();
 			} catch (exception &error) {
 				try {

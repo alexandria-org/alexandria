@@ -27,7 +27,7 @@
 #pragma once
 
 #include <iostream>
-#include "HashTableShardBuilder.h"
+#include "hash_table_shard_builder.h"
 
 namespace hash_table {
 
@@ -43,7 +43,7 @@ namespace hash_table {
 
 	private:
 
-		std::vector<HashTableShardBuilder *> m_shards;
+		std::vector<hash_table_shard_builder *> m_shards;
 		const std::string m_db_name;
 
 	};
