@@ -6,7 +6,6 @@
 4. All files within a sub-directory must declare everything within a namespace with the same name as the directory. For example src/file/tsv_file.h must declare everything within the namespace file::
 5. Prefer smart pointers over regular pointers.
 6. Prefer if statements over switch statements.
-7. Prefer complete variable names over abbreviations (avoid ptr, desc, inc, len, sz...)
 
 ## Indentation examples
 
