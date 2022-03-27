@@ -57,11 +57,11 @@ BOOST_AUTO_TEST_CASE(thread_pool2) {
 		});
 	}
 
-	double now = Profiler::now_micro();
+	double now = profiler::now_micro();
 
 	pool.run_all();
 
-	double dt = Profiler::now_micro() - now;
+	double dt = profiler::now_micro() - now;
 
 	BOOST_CHECK(dt < (200*2 + 10)*1000);
 

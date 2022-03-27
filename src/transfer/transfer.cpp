@@ -27,18 +27,17 @@
 #include "config.h"
 #include "transfer.h"
 #include <fstream>
-#include "system/ThreadPool.h"
+#include "common/ThreadPool.h"
 #include "logger/logger.h"
-#include "system/Profiler.h"
+#include "profiler/profiler.h"
 #include "file/file.h"
 #include "text/text.h"
-#include "parser/Parser.h"
+#include "parser/parser.h"
+#include "algorithm/hash.h"
 
 using namespace std;
 
 namespace transfer {
-
-	hash<string> hasher;
 
 	size_t curl_stringstream_writer(void *ptr, size_t size, size_t nmemb, stringstream *ss) {
 		size_t byte_size = size * nmemb;
@@ -89,9 +88,9 @@ namespace transfer {
 
 	string make_url(const string &file_path) {
 		if (file_path.size() && file_path[0] != '/') {
-			return "http://" + Config::master + "/" + file_path;
+			return "http://" + config::master + "/" + file_path;
 		}
-		return "http://" + Config::master + file_path;
+		return "http://" + config::master + file_path;
 	}
 
 	string file_to_string(const string &file_path, int &error) {
@@ -270,8 +269,8 @@ namespace transfer {
 	}
 
 	string run_gz_download_thread(const string &file_path) {
-		size_t hash = hasher(file_path);
-		const string target_filename = "/mnt/" + to_string(hash % 8) + "/tmp/tmp_" + to_string(hash);
+		size_t hsh = algorithm::hash(file_path);
+		const string target_filename = "/mnt/" + to_string(hsh % 8) + "/tmp/tmp_" + to_string(hsh);
 		ofstream target_file(target_filename, ios::binary | ios::trunc);
 		int error;
 		gz_file_to_stream(file_path, target_file, error);
@@ -283,7 +282,7 @@ namespace transfer {
 
 	vector<string> download_gz_files_to_disk(const vector<string> &files_to_download) {
 		
-		ThreadPool pool(Config::num_async_file_transfers);
+		ThreadPool pool(config::num_async_file_transfers);
 		std::vector<std::future<string>> results;
 
 		for (const string &file : files_to_download) {
@@ -350,7 +349,7 @@ namespace transfer {
 
 			curl_easy_cleanup(curl);
 
-			const string content_len_str = Parser::get_http_header(text::lower_case(response_str), "content-length: ");
+			const string content_len_str = parser::get_http_header(text::lower_case(response_str), "content-length: ");
 			size_t content_len;
 			try {
 				content_len = stoull(content_len_str);
@@ -369,7 +368,7 @@ namespace transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = "http://" + Config::upload + "/" + path;
+			const string url = "http://" + config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
@@ -381,8 +380,8 @@ namespace transfer {
 			arg.offset = 0;
 
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
-			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
-			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
 			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
 
@@ -403,7 +402,7 @@ namespace transfer {
 		CURL *curl = curl_easy_init();
 		if (curl) {
 			CURLcode res;
-			const string url = "http://" + Config::upload + "/" + path;
+			const string url = "http://" + config::upload + "/" + path;
 			LOG_INFO("Uploading file to:" + url);
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
@@ -422,8 +421,8 @@ namespace transfer {
 			arg.offset = 0;
 
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
-			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
-			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
 			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
 
@@ -459,8 +458,8 @@ namespace transfer {
 
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
-			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
-			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
 
 			stringstream response_stream;
@@ -505,8 +504,8 @@ namespace transfer {
 			arg.offset = 0;
 
 			curl_easy_setopt(curl, CURLOPT_POST, 1l);
-			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
-			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
 			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
@@ -543,8 +542,8 @@ namespace transfer {
 			arg.offset = 0;
 
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
-			curl_easy_setopt(curl, CURLOPT_USERNAME, Config::file_upload_user.c_str());
-			curl_easy_setopt(curl, CURLOPT_PASSWORD, Config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
 			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
 

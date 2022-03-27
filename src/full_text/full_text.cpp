@@ -32,8 +32,8 @@
 #include "url_link/link_counter.h"
 #include "transfer/transfer.h"
 #include "search_engine/search_engine.h"
-#include "hash_table/HashTableHelper.h"
-#include "urlstore/UrlStore.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "url_store/url_store.h"
 
 using namespace std;
 
@@ -52,7 +52,7 @@ namespace full_text {
 	}
 
 	void truncate_index(const string &index_name) {
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; shard_id++) {
 			full_text_shard_builder<struct full_text_record> *shard_builder =
 				new full_text_shard_builder<struct full_text_record>(index_name, shard_id);
 			shard_builder->truncate();
@@ -60,7 +60,7 @@ namespace full_text {
 		}
 	}
 
-	map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const SubSystem *sub_system) {
+	map<uint64_t, float> tsv_data_to_scores(const string &tsv_data, const common::sub_system *sub_system) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 		const vector<float> scores = {10.0, 3.0, 2.0, 1};
@@ -99,7 +99,7 @@ namespace full_text {
 	}
 
 	void index_files(const string &batch, const string &db_name, const string &hash_table_name, const vector<string> &files,
-			const SubSystem *sub_system) {
+			const common::sub_system *sub_system) {
 
 		full_text_indexer_runner indexer(db_name, hash_table_name, batch, sub_system);
 		indexer.run(files);
@@ -165,7 +165,7 @@ namespace full_text {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system) {
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const common::sub_system *sub_system) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;
@@ -180,7 +180,7 @@ namespace full_text {
 
 	}
 
-	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const SubSystem *sub_system,
+	void index_batch(const string &db_name, const string &hash_table_name, const string &batch, const common::sub_system *sub_system,
 		worker::status &status) {
 
 		const size_t limit = 1000;
@@ -199,13 +199,13 @@ namespace full_text {
 	size_t total_urls_in_batches() {
 
 		size_t items = 0;
-		for (const string &batch : Config::batches) {
+		for (const string &batch : config::batches) {
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
 			items += warc_paths.size();
 		}
-		for (const string &batch : Config::link_batches) {
+		for (const string &batch : config::link_batches) {
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths);
@@ -216,8 +216,8 @@ namespace full_text {
 	}
 
 	void index_all_batches(const string &db_name, const string &hash_table_name) {
-		SubSystem *sub_system = new SubSystem();
-		for (const string &batch : Config::batches) {
+		common::sub_system *sub_system = new common::sub_system();
+		for (const string &batch : config::batches) {
 			index_batch(db_name, hash_table_name, batch, sub_system);
 		}
 
@@ -225,15 +225,15 @@ namespace full_text {
 	}
 
 	void index_all_batches(const string &db_name, const string &hash_table_name, worker::status &status) {
-		SubSystem *sub_system = new SubSystem();
-		for (const string &batch : Config::batches) {
+		common::sub_system *sub_system = new common::sub_system();
+		for (const string &batch : config::batches) {
 			index_batch(db_name, hash_table_name, batch, sub_system, status);
 		}
 	}
 
 	void index_single_batch(const string &db_name, const string &hash_table_name, const string &batch) {
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *sub_system = new common::sub_system();
 		index_batch(db_name, hash_table_name, batch, sub_system);
 
 	}
@@ -242,11 +242,11 @@ namespace full_text {
 			const string &domain_hash_table_name) {
 
 		url_to_domain *url_store = new url_to_domain("main_index");
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *sub_system = new common::sub_system();
 
 		url_store->read();
 
-		for (const string &batch : Config::link_batches) {
+		for (const string &batch : config::link_batches) {
 			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_store);
 		}
 	}
@@ -255,24 +255,24 @@ namespace full_text {
 			const string &domain_hash_table_name, worker::status &status) {
 
 		url_to_domain *url_store = new url_to_domain("main_index");
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *sub_system = new common::sub_system();
 
 		url_store->read();
 
-		for (const string &batch : Config::link_batches) {
+		for (const string &batch : config::link_batches) {
 			index_link_batch(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_store, status);
 		}
 	}
 	
 	void index_link_files(const string &batch, const string &db_name, const string &domain_db_name, const string &hash_table_name,
-		const string &domain_hash_table_name, const vector<string> &files, const SubSystem *sub_system, url_to_domain *url_store) {
+		const string &domain_hash_table_name, const vector<string> &files, const common::sub_system *sub_system, url_to_domain *url_store) {
 
 		url_link::indexer_runner indexer(db_name, domain_db_name, hash_table_name, domain_hash_table_name, batch, sub_system, url_store);
 		indexer.run(files);
 	}
 
 	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
-		const string &batch, const SubSystem *sub_system, url_to_domain *url_store) {
+		const string &batch, const common::sub_system *sub_system, url_to_domain *url_store) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;
@@ -287,7 +287,7 @@ namespace full_text {
 	}
 
 	void index_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name, const string &domain_hash_table_name,
-		const string &batch, const SubSystem *sub_system, url_to_domain *url_store, worker::status &status) {
+		const string &batch, const common::sub_system *sub_system, url_to_domain *url_store, worker::status &status) {
 
 		const size_t limit = 1000;
 		size_t offset = 0;
@@ -306,7 +306,7 @@ namespace full_text {
 	void index_single_link_batch(const string &db_name, const string &domain_db_name, const string &hash_table_name,
 		const string &domain_hash_table_name, const string &batch, url_to_domain *url_store) {
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *sub_system = new common::sub_system();
 
 		url_store->read();
 
@@ -314,21 +314,21 @@ namespace full_text {
 	}
 
 	size_t url_to_node(const URL &url) {
-		return url.host_hash() % Config::nodes_in_cluster;
+		return url.host_hash() % config::nodes_in_cluster;
 	}
 
 	// Returns true if this url belongs on this node.
 	bool should_index_url(const URL &url) {
-		return url_to_node(url) == Config::node_id;
+		return url_to_node(url) == config::node_id;
 	}
 
 	size_t link_to_node(const url_link::link &link) {
-		return link.target_url().host_hash() % Config::nodes_in_cluster;
+		return link.target_url().host_hash() % config::nodes_in_cluster;
 	}
 
 	// Returns true if this link belongs on this node.
 	bool should_index_link(const url_link::link &link) {
-		return link_to_node(link) == Config::node_id;
+		return link_to_node(link) == config::node_id;
 	}
 
 }

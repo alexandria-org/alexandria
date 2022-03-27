@@ -24,17 +24,17 @@
  * SOFTWARE.
  */
 
-#include "hash/Hash.h"
+#include "algorithm/hash.h"
 
 BOOST_AUTO_TEST_SUITE(hash)
 
 BOOST_AUTO_TEST_CASE(str) {
 
-	BOOST_CHECK_EQUAL(Hash::str("testing"), 4540905123118180926ull);
-	BOOST_CHECK_EQUAL(Hash::str(""), 6142509188972423790ull);
-	BOOST_CHECK_EQUAL(Hash::str("abcdefghijklmnopqrstuvxyz"), 17219978627035894604ull);
-	BOOST_CHECK_EQUAL(Hash::str("123"), 10089081994332581363ull);
-	BOOST_CHECK_EQUAL(Hash::str("1234"), 15651099383784684535ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("testing"), 4540905123118180926ull);
+	BOOST_CHECK_EQUAL(algorithm::hash(""), 6142509188972423790ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("abcdefghijklmnopqrstuvxyz"), 17219978627035894604ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("123"), 10089081994332581363ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("1234"), 15651099383784684535ull);
 
 }
 

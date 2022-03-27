@@ -34,9 +34,9 @@ namespace full_text {
 #include <vector>
 
 #include "config.h"
-#include "parser/URL.h"
-#include "system/SubSystem.h"
-#include "system/ThreadPool.h"
+#include "URL.h"
+#include "common/sub_system.h"
+#include "common/ThreadPool.h"
 #include "full_text_record.h"
 #include "full_text_shard.h"
 #include "search_metric.h"
@@ -69,7 +69,7 @@ namespace full_text {
 	full_text_index<data_record>::full_text_index(const std::string &db_name)
 	: m_db_name(db_name)
 	{
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; shard_id++) {
 			m_shards.push_back(new full_text_shard<data_record>(m_db_name, shard_id));
 		}
 	}

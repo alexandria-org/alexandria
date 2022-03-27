@@ -25,7 +25,7 @@
  */
 
 #include "text/text.h"
-#include "hash/Hash.h"
+#include "algorithm/hash.h"
 #include "full_text/full_text.h"
 
 BOOST_AUTO_TEST_SUITE(n_gram)
@@ -36,25 +36,25 @@ BOOST_AUTO_TEST_CASE(words_to_ngram) {
 		ngrams.push_back(hash);
 	});
 
-	BOOST_CHECK_EQUAL(ngrams[0], Hash::str("the"));
-	BOOST_CHECK_EQUAL(ngrams[1], Hash::str("the quick"));
-	BOOST_CHECK_EQUAL(ngrams[2], Hash::str("the quick brown"));
+	BOOST_CHECK_EQUAL(ngrams[0], algorithm::hash("the"));
+	BOOST_CHECK_EQUAL(ngrams[1], algorithm::hash("the quick"));
+	BOOST_CHECK_EQUAL(ngrams[2], algorithm::hash("the quick brown"));
 
-	BOOST_CHECK_EQUAL(ngrams[3], Hash::str("quick"));
-	BOOST_CHECK_EQUAL(ngrams[4], Hash::str("quick brown"));
-	BOOST_CHECK_EQUAL(ngrams[5], Hash::str("quick brown fox"));
+	BOOST_CHECK_EQUAL(ngrams[3], algorithm::hash("quick"));
+	BOOST_CHECK_EQUAL(ngrams[4], algorithm::hash("quick brown"));
+	BOOST_CHECK_EQUAL(ngrams[5], algorithm::hash("quick brown fox"));
 
-	BOOST_CHECK_EQUAL(ngrams[6], Hash::str("brown"));
-	BOOST_CHECK_EQUAL(ngrams[7], Hash::str("brown fox"));
-	BOOST_CHECK_EQUAL(ngrams[8], Hash::str("brown fox jumps"));
+	BOOST_CHECK_EQUAL(ngrams[6], algorithm::hash("brown"));
+	BOOST_CHECK_EQUAL(ngrams[7], algorithm::hash("brown fox"));
+	BOOST_CHECK_EQUAL(ngrams[8], algorithm::hash("brown fox jumps"));
 
-	BOOST_CHECK_EQUAL(ngrams[18], Hash::str("the"));
-	BOOST_CHECK_EQUAL(ngrams[19], Hash::str("the lazy"));
-	BOOST_CHECK_EQUAL(ngrams[20], Hash::str("the lazy dog"));
+	BOOST_CHECK_EQUAL(ngrams[18], algorithm::hash("the"));
+	BOOST_CHECK_EQUAL(ngrams[19], algorithm::hash("the lazy"));
+	BOOST_CHECK_EQUAL(ngrams[20], algorithm::hash("the lazy dog"));
 
-	BOOST_CHECK_EQUAL(ngrams[21], Hash::str("lazy"));
-	BOOST_CHECK_EQUAL(ngrams[22], Hash::str("lazy dog"));
-	BOOST_CHECK_EQUAL(ngrams[23], Hash::str("dog"));
+	BOOST_CHECK_EQUAL(ngrams[21], algorithm::hash("lazy"));
+	BOOST_CHECK_EQUAL(ngrams[22], algorithm::hash("lazy dog"));
+	BOOST_CHECK_EQUAL(ngrams[23], algorithm::hash("dog"));
 
 	BOOST_CHECK_EQUAL(ngrams.size(), 24);
 
@@ -62,17 +62,17 @@ BOOST_AUTO_TEST_CASE(words_to_ngram) {
 
 BOOST_AUTO_TEST_CASE(n_gram) {
 
-	size_t initial_results_per_section = Config::ft_max_results_per_section;
+	size_t initial_results_per_section = config::ft_max_results_per_section;
 
-	Config::n_grams = 5;
-	Config::ft_max_results_per_section = 1000;
+	config::n_grams = 5;
+	config::ft_max_results_per_section = 1000;
 
 	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
 	full_text::truncate_url_to_domain("main_index");
 	full_text::truncate_index("test_main_index");
 
-	HashTableHelper::truncate("test_main_index");
+	hash_table_helper::truncate("test_main_index");
 
 	{
 		// Index full text
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(n_gram) {
 
 	{
 		// Count elements in hash tables.
-		HashTable hash_table("test_main_index");
+		hash_table::hash_table ht("test_main_index");
 
 		// Make searches.
 		full_text_index<full_text_record> index("test_main_index");
@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE(n_gram) {
 
 	search_allocation::delete_allocation(allocation);
 
-	Config::n_grams = 1;
-	Config::ft_max_results_per_section = initial_results_per_section;
+	config::n_grams = 1;
+	config::ft_max_results_per_section = initial_results_per_section;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -145,7 +145,7 @@ namespace indexer {
 	void domain_level::add_document(size_t id, const string &doc) {
 		std::vector<std::string> words = text::get_full_text_words(doc);
 		for (std::string &word : words) {
-			m_builder->add(Hash::str(word), domain_record(id));
+			m_builder->add(::algorithm::hash(word), domain_record(id));
 		}
 	}
 
@@ -174,7 +174,7 @@ namespace indexer {
 			for (size_t col : cols) {
 				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builder->add(Hash::str(word), domain_record(domain_hash, harmonic));
+					m_builder->add(::algorithm::hash(word), domain_record(domain_hash, harmonic));
 				}
 			}
 		}
@@ -202,7 +202,7 @@ namespace indexer {
 
 		std::vector<std::vector<domain_record>> results;
 		for (const string &word : words) {
-			size_t token = Hash::str(word);
+			size_t token = ::algorithm::hash(word);
 			results.push_back(idx.find(token));
 		}
 		std::vector<return_record> intersected = intersection(results);
@@ -284,7 +284,7 @@ namespace indexer {
 			for (size_t col : cols) {
 				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builder->add(domain_hash, Hash::str(word), url_record(url_hash));
+					m_builder->add(domain_hash, ::algorithm::hash(word), url_record(url_hash));
 				}
 			}
 		}
@@ -310,7 +310,7 @@ namespace indexer {
 
 			std::vector<std::vector<url_record>> results;
 			for (const string &word : words) {
-				size_t token = Hash::str(word);
+				size_t token = ::algorithm::hash(word);
 				results.push_back(idx.find(key, token));
 			}
 			std::vector<return_record> intersected = intersection(results);
@@ -421,7 +421,7 @@ namespace indexer {
 
 			std::vector<std::vector<snippet_record>> results;
 			for (const string &word : words) {
-				size_t token = Hash::str(word);
+				size_t token = ::algorithm::hash(word);
 				results.push_back(idx.find(key, token));
 			}
 			std::vector<return_record> summed_results = summed_union(results);

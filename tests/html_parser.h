@@ -24,13 +24,13 @@
  * SOFTWARE.
  */
 
-#include "parser/HtmlParser.h"
+#include "parser/html_parser.h"
 #include "file/file.h"
 
 BOOST_AUTO_TEST_SUITE(html_parser)
 
 BOOST_AUTO_TEST_CASE(html_parse1) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse("<title>test1</title>");
 	BOOST_CHECK_EQUAL(parser.title(), "test1");
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(html_parse1) {
 }
 
 BOOST_AUTO_TEST_CASE(html_parse2) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test5.html"));
 	BOOST_CHECK_EQUAL(parser.text().substr(0, 50),
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(html_parse2) {
 }
 
 BOOST_AUTO_TEST_CASE(html_parse3) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test7.html"));
 	BOOST_CHECK_EQUAL(parser.text().substr(0, 20), "Add to wishlist Adde");
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(html_parse3) {
 }
 
 BOOST_AUTO_TEST_CASE(html_parse4) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test8.html"));
 	BOOST_CHECK_EQUAL(parser.text().substr(0, 107), "Hacker News new | past | comments | ask | show | jobs | submit login 1. Apple Broke Up with Me ( merecivili");
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(html_parse4) {
 }
 
 BOOST_AUTO_TEST_CASE(html_parse5) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test10.html"));
 
@@ -93,17 +93,17 @@ BOOST_AUTO_TEST_CASE(html_parse5) {
 }
 
 BOOST_AUTO_TEST_CASE(html_parse6) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test11.html"));
 
 	BOOST_CHECK_EQUAL(parser.meta(), "Svenska Dagbladet står för seriös och faktabaserad kvalitetsjournalistik som utmanar, ifrågasätter och inspirerar");
-	BOOST_CHECK_EQUAL(parser.title(), "SvD | Sveriges kvalitetssajt för nyheter");
+	BOOST_CHECK_EQUAL(parser.title(), "sv_d | Sveriges kvalitetssajt för nyheter");
 
 }
 
 BOOST_AUTO_TEST_CASE(html_parse7) {
-	HtmlParser parser;
+	parser::html_parser parser;
 
 	parser.parse(file::read_test_file("test12.html"));
 
@@ -115,11 +115,11 @@ BOOST_AUTO_TEST_CASE(html_parse7) {
 BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	string html;
-	vector<HtmlLink> links;
+	vector<parser::html_link> links;
 
 	string test2_html = file::read_test_file("test2.html");
 
-	HtmlParser parser;
+	parser::html_parser parser;
 	parser.parse(test2_html);
 	BOOST_CHECK_EQUAL(parser.title(), "Resebyrån Främmande Världar - L. D. Lapinski - inbunden (9789178937943) | Adlibris Bokhandel");
 	BOOST_CHECK_EQUAL(parser.meta(), "inbunden, 2021. Köp boken Resebyrån Främmande Världar av L. D. Lapinski (ISBN 9789178937943) hos Adlibris. Fraktfritt över 229 kr Alltid bra priser och snabb leverans. | Adlibris");
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	html = file::read_test_file("automobileszone.com");
 	parser.parse(html, "http://automobileszone.com/wp-login.php?redirect_to=http%3A%2F%2Fautomobileszone.com%2Fbest-bronco-build-off-our-editors-weigh-in-on-their-ideal-suvs%2F");
-	BOOST_CHECK_EQUAL(parser.text(), "Username or Email Address Password Remember Me Lost your password? ← Back to Automobiles Zone Log in with WordPress.com");
+	BOOST_CHECK_EQUAL(parser.text(), "Username or Email Address Password Remember Me Lost your password? ← Back to Automobiles Zone Log in with word_press.com");
 	BOOST_CHECK(parser.should_insert());
 
 	html = file::read_test_file("vcareprojectmanagement.com");
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 
-	HtmlParser parser;
+	parser::html_parser parser;
 	BOOST_CHECK(!parser.is_exotic_language("hej jag heter josef cullhed"));
 	BOOST_CHECK(!parser.is_exotic_language("åäö"));
 	BOOST_CHECK(!parser.is_exotic_language("Đảng,Đoàn thể - tnxp.hochiminhcity.gov.vn"));
@@ -275,9 +275,9 @@ BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 
 BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 
-	Config::html_parser_long_text_len = 100000;
+	config::html_parser_long_text_len = 100000;
 
-	HtmlParser parser;
+	parser::html_parser parser;
 	string html = file::read_test_file("zlib_manual.html");
 
 	parser.parse(html, "https://zlib.net/manual.html");
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 
 	BOOST_CHECK(has_word);
 
-	Config::html_parser_long_text_len = 1000;
+	config::html_parser_long_text_len = 1000;
 }
 
 /*

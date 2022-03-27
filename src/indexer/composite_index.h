@@ -53,7 +53,7 @@ namespace indexer {
 
 	template<typename data_record>
 	composite_index<data_record>::composite_index(const std::string &db_name, size_t num_shards)
-	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(Config::shard_hash_table_size)
+	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(config::shard_hash_table_size)
 	{
 	}
 

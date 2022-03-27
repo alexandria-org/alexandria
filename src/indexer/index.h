@@ -64,7 +64,7 @@ namespace indexer {
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(Config::shard_hash_table_size) {
+	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size) {
 		read_meta();
 	}
 

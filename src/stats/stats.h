@@ -53,7 +53,7 @@ namespace stats {
 			searched_words.push_back(word);
 
 			uint64_t word_hash = hasher(word);
-			result[word] = shards[word_hash % Config::ft_num_shards]->total_num_results(word_hash);
+			result[word] = shards[word_hash % config::ft_num_shards]->total_num_results(word_hash);
 		}
 
 		return result;

@@ -28,9 +28,9 @@
 
 #include <iostream>
 #include <mutex>
-#include "system/SubSystem.h"
-#include "system/ThreadPool.h"
-#include "hash_table/HashTable.h"
+#include "common/sub_system.h"
+#include "common/ThreadPool.h"
+#include "hash_table/hash_table.h"
 #include "full_text/full_text_index.h"
 #include "full_text/full_text_indexer.h"
 #include "full_text/url_to_domain.h"
@@ -49,7 +49,7 @@ namespace url_link {
 	public:
 
 		indexer_runner(const std::string &db_name, const std::string &domain_db_name, const std::string &hash_table_name, const std::string &domain_hash_table_name,
-			const std::string &cc_batch, const SubSystem *sub_system, full_text::url_to_domain *url_to_domain);
+			const std::string &cc_batch, const common::sub_system *sub_system, full_text::url_to_domain *url_to_domain);
 		~indexer_runner();
 
 		void run(const std::vector<std::string> &local_files);
@@ -58,7 +58,7 @@ namespace url_link {
 
 	private:
 
-		const SubSystem *m_sub_system;
+		const common::sub_system *m_sub_system;
 		const std::string m_cc_batch;
 		const std::string m_db_name;
 		const std::string m_domain_db_name;

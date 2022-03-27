@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "parser/URL.h"
+#include "URL.h"
 
 namespace url_link {
 

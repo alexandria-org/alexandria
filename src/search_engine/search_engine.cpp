@@ -26,8 +26,7 @@
 
 #include "search_engine.h"
 #include "text/text.h"
-#include "sort/Sort.h"
-#include "system/Profiler.h"
+#include "profiler/profiler.h"
 #include <cmath>
 
 using namespace std;
@@ -48,7 +47,7 @@ namespace search_engine {
 		const full_text_index<full_text_record> &index, const vector<url_link::full_text_record> &links,
 		const vector<domain_link::full_text_record> &domain_links, const string &query, size_t limit, struct search_metric &metric) {
 
-		vector<full_text_record> complete_result = search_wrapper(storage, index, links, domain_links, query, Config::pre_result_limit, metric);
+		vector<full_text_record> complete_result = search_wrapper(storage, index, links, domain_links, query, config::pre_result_limit, metric);
 
 		vector<full_text_record> deduped_result = deduplicate_result_vector<full_text_record>(complete_result, limit);
 

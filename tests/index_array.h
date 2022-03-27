@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(index_files) {
 
 		BOOST_REQUIRE_EQUAL(res.size(), 2);
 
-		HashTable ht("index_tree");
+		hash_table ht("index_tree");
 		const std::string snippet1 = ht.find(res[0].m_value);
 		std::cout << "snippet1: " << snippet1 << std::endl;
 

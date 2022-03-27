@@ -38,9 +38,9 @@ class full_text_indexer;
 #include "full_text_shard_builder.h"
 #include "full_text_index.h"
 #include "url_to_domain.h"
-#include "parser/URL.h"
-#include "system/SubSystem.h"
-#include "hash_table/HashTableShardBuilder.h"
+#include "URL.h"
+#include "common/sub_system.h"
+#include "hash_table/hash_table_shard_builder.h"
 #include "url_link/link.h"
 #include "full_text_record.h"
 
@@ -50,10 +50,10 @@ namespace full_text {
 
 		public:
 
-			full_text_indexer(int id, const std::string &db_name, const SubSystem *sub_system, url_to_domain *url_to_domain);
+			full_text_indexer(int id, const std::string &db_name, const common::sub_system *sub_system, url_to_domain *url_to_domain);
 			~full_text_indexer();
 
-			size_t add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream,
+			size_t add_stream(std::vector<hash_table::hash_table_shard_builder *> &shard_builders, std::basic_istream<char> &stream,
 				const std::vector<size_t> &cols, const std::vector<float> &scores, const std::string &batch, std::mutex &write_mutex);
 			size_t write_cache(std::mutex &write_mutex);
 			size_t write_large(std::vector<std::mutex> &write_mutexes);
@@ -81,7 +81,7 @@ namespace full_text {
 
 			int m_indexer_id;
 			const std::string m_db_name;
-			const SubSystem *m_sub_system;
+			const common::sub_system *m_sub_system;
 			std::hash<std::string> m_hasher;
 			std::vector<full_text_shard_builder<struct full_text_record> *> m_shards;
 

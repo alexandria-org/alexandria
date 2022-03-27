@@ -43,7 +43,7 @@ namespace full_text {
 #include "full_text_result_set.h"
 
 #include "logger/logger.h"
-#include "system/Profiler.h"
+#include "profiler/profiler.h"
 
 /*
 File format explained
@@ -107,7 +107,7 @@ namespace full_text {
 		}
 
 		// Read page.
-		Profiler::instance prof2("read keys");
+		profiler::instance prof2("read keys");
 		reader.seekg(key_pos);
 
 		size_t num_keys;
@@ -122,7 +122,7 @@ namespace full_text {
 
 		prof2.stop();
 
-		Profiler::instance prof3("find key");
+		profiler::instance prof3("find key");
 
 		size_t key_data_pos = SIZE_MAX;
 		for (size_t i = 0; i < num_keys; i++) {
@@ -140,7 +140,7 @@ namespace full_text {
 
 		char buffer[64];
 
-		Profiler::instance prof4("read data");
+		profiler::instance prof4("read data");
 
 		// Read position and length.
 		reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
@@ -158,7 +158,7 @@ namespace full_text {
 		reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, std::ios::beg);
 
 		size_t num_records = len / sizeof(data_record);
-		if (num_records > Config::ft_max_results_per_section) num_records = Config::ft_max_results_per_section;
+		if (num_records > config::ft_max_results_per_section) num_records = config::ft_max_results_per_section;
 
 		result_set->prepare_sections(filename(), (size_t)reader.tellg(), len);
 		result_set->read_to_section(0);
@@ -172,9 +172,9 @@ namespace full_text {
 	template<typename data_record>
 	size_t full_text_shard<data_record>::read_key_pos(std::ifstream &reader, uint64_t key) const {
 
-		Profiler::instance prof1("read_key_pos " + key_filename());
+		profiler::instance prof1("read_key_pos " + key_filename());
 
-		const size_t hash_pos = key % Config::shard_hash_table_size;
+		const size_t hash_pos = key % config::shard_hash_table_size;
 
 		std::ifstream key_reader(key_filename(), std::ios::binary);
 

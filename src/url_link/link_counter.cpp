@@ -25,15 +25,15 @@
  */
 
 #include <math.h>
-#include "hash/Hash.h"
-#include "hash_table/HashTable.h"
-#include "hash_table/HashTableShardBuilder.h"
-#include "KeyValueStore.h"
-#include "parser/URL.h"
+#include "algorithm/hash.h"
+#include "hash_table/hash_table.h"
+#include "hash_table/hash_table_shard_builder.h"
+#include "key_value_store.h"
+#include "URL.h"
 #include "transfer/transfer.h"
 #include "logger/logger.h"
-#include "system/Profiler.h"
-#include "urlstore/UrlStore.h"
+#include "profiler/profiler.h"
+#include "url_store/url_store.h"
 #include "algorithm/algorithm.h"
 #include "config.h"
 #include <vector>
@@ -45,7 +45,7 @@ using namespace std;
 
 namespace url_link {
 
-	void count_links_in_stream(const SubSystem *sub_system, size_t sub_batch, KeyValueStore &kv_store, basic_istream<char> &stream,
+	void count_links_in_stream(const common::sub_system *sub_system, size_t sub_batch, key_value_store &kv_store, basic_istream<char> &stream,
 			map<string, map<size_t, float>> &counter) {
 
 		string line;
@@ -61,7 +61,7 @@ namespace url_link {
 				const string link_text = col_values[4].substr(0, 1000);
 				URL source_url(col_values[0], col_values[1]);
 
-				const uint64_t link_hash = Hash::str(source_url.host_top_domain());
+				const uint64_t link_hash = algorithm::hash(source_url.host_top_domain());
 				float harmonic = source_url.harmonic(sub_system);
 
 				counter[target_url.str()][link_hash] = expm1(25.0*harmonic) / 50.0;
@@ -69,12 +69,12 @@ namespace url_link {
 			/*small_cache[target_url_hash] = target_url.str();
 
 			if (small_cache.size() > 1000000) {
-				leveldb::WriteBatch batch;
+				leveldb::write_batch batch;
 				for (const auto &iter : small_cache) {
 					//kv_store.set(to_string(iter.first), iter.second);
 					batch.Put(to_string(iter.first), iter.second);
 				}
-				kv_store.db()->Write(leveldb::WriteOptions(), &batch);
+				kv_store.db()->Write(leveldb::write_options(), &batch);
 				small_cache.clear();
 			}*/
 		}
@@ -88,8 +88,8 @@ namespace url_link {
 		*/
 	}
 
-	map<string, map<size_t, float>> run_count_thread_with_local_files(const SubSystem *sub_system, size_t sub_batch,
-			const vector<string> &local_files, KeyValueStore &kv_store) {
+	map<string, map<size_t, float>> run_count_thread_with_local_files(const common::sub_system *sub_system, size_t sub_batch,
+			const vector<string> &local_files, key_value_store &kv_store) {
 
 		map<string, map<size_t, float>> counter;
 
@@ -114,16 +114,16 @@ namespace url_link {
 		return counter;
 	}
 
-	void run_link_counter(const SubSystem *sub_system, const string &batch, size_t sub_batch, const vector<string> &local_files,
+	void run_link_counter(const common::sub_system *sub_system, const string &batch, size_t sub_batch, const vector<string> &local_files,
 			map<string, map<size_t, float>> &counter) {
 
-		ThreadPool pool(Config::ft_num_threads_indexing);
+		ThreadPool pool(config::ft_num_threads_indexing);
 		std::vector<std::future<map<string, map<size_t, float>>>> results;
 
 		vector<vector<string>> chunks;
-		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
+		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / config::ft_num_threads_indexing) + 1, chunks);
 
-		KeyValueStore kv_store("/mnt/0/tmp_kwstore");
+		key_value_store kv_store("/mnt/0/tmp_kwstore");
 
 		for (const vector<string> &chunk : chunks) {
 
@@ -158,7 +158,7 @@ namespace url_link {
 
 	void upload_link_counts(const string &batch, size_t sub_batch, std::map<string, std::map<size_t, float>> &counter) {
 
-		//KeyValueStore kv_store("/mnt/0/tmp_kwstore");
+		//KeyValue_store kv_store("/mnt/0/tmp_kwstore");
 		//LOG_INFO("Compacting /mnt/0/tmp_kwstore");
 		//kv_store.db()->CompactRange(nullptr, nullptr);
 
@@ -183,20 +183,20 @@ namespace url_link {
 		});
 
 		vector<string> file_lines;
-		vector<UrlStore::UrlData> url_data;
+		vector<url_store::url_data> url_data;
 		size_t file_num = 0;
 		for (const auto &count : counter_vec) {
 			//const string url = kv_store.get(to_string(count.link_hash));
 
 			file_lines.push_back(count.url + "\t" + to_string(count.count) + "\t" + to_string(count.score));
-			url_data.emplace_back(UrlStore::UrlData());
+			url_data.emplace_back(url_store::url_data());
 			url_data.back().m_url = URL(count.url);
 			url_data.back().m_link_count = count.count;
 
 			if (file_lines.size() >= 1000000) {
 				file_num++;
 				thread th1(upload_link_counts_file, file_lines, batch, sub_batch, file_num);
-				thread th2([&url_data] (){ UrlStore::set_many(url_data); });
+				thread th2([&url_data] (){ url_store::set_many(url_data); });
 				th1.join();
 				th2.join();
 				file_lines.clear();
@@ -205,7 +205,7 @@ namespace url_link {
 
 		}
 		upload_link_counts_file(file_lines, batch, sub_batch, ++file_num);
-		UrlStore::set_many(url_data);
+		url_store::set_many(url_data);
 	}
 
 }

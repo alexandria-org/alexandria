@@ -39,7 +39,7 @@ namespace full_text {
 
 #include "full_text_indexer.h"
 #include "full_text_index.h"
-#include "parser/URL.h"
+#include "URL.h"
 #include "full_text_record.h"
 #include "url_to_domain.h"
 #include "logger/logger.h"
@@ -84,7 +84,7 @@ namespace full_text {
 
 			const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
 			const size_t m_max_num_keys = 10000;
-			const size_t m_buffer_len = Config::ft_shard_builder_buffer_len;
+			const size_t m_buffer_len = config::ft_shard_builder_buffer_len;
 			char *m_buffer;
 
 			std::vector<uint64_t> m_keys;
@@ -106,7 +106,7 @@ namespace full_text {
 
 	template<typename data_record>
 	full_text_shard_builder<data_record>::full_text_shard_builder(const std::string &db_name, size_t shard_id)
-	: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(Config::ft_cached_bytes_per_shard() / sizeof(data_record)) {
+	: m_db_name(db_name), m_shard_id(shard_id), m_max_cache_size(config::ft_cached_bytes_per_shard() / sizeof(data_record)) {
 	}
 
 	template<typename data_record>
@@ -129,7 +129,7 @@ namespace full_text {
 
 	template<typename data_record>
 	void full_text_shard_builder<data_record>::sort_cache() {
-		const size_t max_results = Config::ft_max_results_per_section * Config::ft_max_sections;
+		const size_t max_results = config::ft_max_results_per_section * config::ft_max_sections;
 		for (auto &iter : m_cache) {
 			// Make elements unique.
 			std::sort(iter.second.begin(), iter.second.end(), [](const data_record &a, const data_record &b) {
@@ -143,7 +143,7 @@ namespace full_text {
 
 			m_total_results[iter.first] = iter.second.size();
 
-			if (iter.second.size() > Config::ft_max_results_per_section) {
+			if (iter.second.size() > config::ft_max_results_per_section) {
 				std::sort(iter.second.begin(), iter.second.end(), [](const data_record &a, const data_record &b) {
 					return a.m_score > b.m_score;
 				});
@@ -162,9 +162,9 @@ namespace full_text {
 	template<typename data_record>
 	void full_text_shard_builder<data_record>::order_sections_by_value(std::vector<data_record> &results) const {
 		bool stop = false;
-		for (size_t section = 0; section < Config::ft_max_sections; section++) {
-			const size_t start = section * Config::ft_max_results_per_section;
-			size_t end = start + Config::ft_max_results_per_section;
+		for (size_t section = 0; section < config::ft_max_sections; section++) {
+			const size_t start = section * config::ft_max_results_per_section;
+			size_t end = start + config::ft_max_results_per_section;
 			if (end > results.size()) {
 				end = results.size();
 				stop = true;
@@ -472,7 +472,7 @@ namespace full_text {
 
 		std::unordered_map<uint64_t, std::vector<uint64_t>> pages;
 		for (auto &iter : m_cache) {
-			pages[iter.first % Config::shard_hash_table_size].push_back(iter.first);
+			pages[iter.first % config::shard_hash_table_size].push_back(iter.first);
 		}
 
 		for (const auto &iter : pages) {
@@ -493,7 +493,7 @@ namespace full_text {
 
 	template<typename data_record>
 	void full_text_shard_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
-		assert(key < Config::shard_hash_table_size);
+		assert(key < config::shard_hash_table_size);
 		key_writer.seekp(key * sizeof(uint64_t));
 		key_writer.write((char *)&page_pos, sizeof(size_t));
 	}
@@ -544,7 +544,7 @@ namespace full_text {
 	void full_text_shard_builder<data_record>::reset_key_file(std::ofstream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
-		for (size_t i = 0; i < Config::shard_hash_table_size; i++) {
+		for (size_t i = 0; i < config::shard_hash_table_size; i++) {
 			key_writer.write((char *)&data, sizeof(uint64_t));
 		}
 	}

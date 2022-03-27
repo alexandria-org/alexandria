@@ -25,7 +25,7 @@
  */
 
 #include "api_status_response.h"
-#include <system/Profiler.h>
+#include <profiler/profiler.h>
 
 #include "worker/worker.h"
 #include "json.hpp"
@@ -47,7 +47,7 @@ namespace api {
 		double time_left = 0.0;
 		if (status.items_indexed > 0) {
 			const size_t items_left = status.items - status.items_indexed;
-			const double time_per_item = ((double)(Profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
+			const double time_per_item = ((double)(profiler::timestamp() - status.start_time)) / (double)status.items_indexed;
 			time_left = (double)items_left * time_per_item;
 		}
 		message["time_left"] = time_left;

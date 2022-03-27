@@ -37,13 +37,13 @@ using namespace std;
 namespace full_text {
 
 	full_text_indexer_runner::full_text_indexer_runner(const string &db_name, const string &hash_table_name, const string &cc_batch,
-			const SubSystem *sub_system)
+			const common::sub_system *sub_system)
 	:
 		m_cc_batch(cc_batch),
 		m_db_name(db_name),
 		m_hash_table_name(hash_table_name),
-		m_hash_table_mutexes(Config::ft_num_shards),
-		m_full_text_mutexes(Config::ft_num_shards)
+		m_hash_table_mutexes(config::ft_num_shards),
+		m_full_text_mutexes(config::ft_num_shards)
 	{
 		m_sub_system = sub_system;
 		m_did_allocate_sub_system = false;
@@ -54,20 +54,20 @@ namespace full_text {
 		m_cc_batch(cc_batch),
 		m_db_name(db_name),
 		m_hash_table_name(hash_table_name),
-		m_hash_table_mutexes(Config::ft_num_shards),
-		m_full_text_mutexes(Config::ft_num_shards)
+		m_hash_table_mutexes(config::ft_num_shards),
+		m_full_text_mutexes(config::ft_num_shards)
 	{
-		m_sub_system = new SubSystem();
+		m_sub_system = new common::sub_system();
 		m_did_allocate_sub_system = true;
 	}
 
-	full_text_indexer_runner::full_text_indexer_runner(const string &db_name, const string &hash_table_name, const SubSystem *sub_system)
+	full_text_indexer_runner::full_text_indexer_runner(const string &db_name, const string &hash_table_name, const common::sub_system *sub_system)
 	:
 		m_cc_batch("none"),
 		m_db_name(db_name),
 		m_hash_table_name(hash_table_name),
-		m_hash_table_mutexes(Config::ft_num_shards),
-		m_full_text_mutexes(Config::ft_num_shards)
+		m_hash_table_mutexes(config::ft_num_shards),
+		m_full_text_mutexes(config::ft_num_shards)
 	{
 		m_sub_system = sub_system;
 		m_did_allocate_sub_system = false;
@@ -83,11 +83,11 @@ namespace full_text {
 
 		truncate_cache();
 
-		ThreadPool pool(Config::ft_num_threads_indexing);
+		ThreadPool pool(config::ft_num_threads_indexing);
 		std::vector<std::future<string>> results;
 
 		vector<vector<string>> chunks;
-		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
+		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / config::ft_num_threads_indexing) + 1, chunks);
 
 		int id = 1;
 		for (const vector<string> &chunk : chunks) {
@@ -115,13 +115,13 @@ namespace full_text {
 
 		const size_t merge_batch_size = 500;
 
-		ThreadPool merge_pool(Config::ft_num_threads_merging);
+		ThreadPool merge_pool(config::ft_num_threads_merging);
 		std::vector<std::future<string>> merge_results;
 
 		// Loop over shards and merge them.
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; ) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; ) {
 
-			while (shard_id < Config::ft_num_shards && merge_results.size() < merge_batch_size) {
+			while (shard_id < config::ft_num_shards && merge_results.size() < merge_batch_size) {
 
 				merge_results.emplace_back(
 					merge_pool.enqueue([this, shard_id] {
@@ -144,15 +144,15 @@ namespace full_text {
 		LOG_INFO("Sorting...");
 
 		// Loop over hash table shards and merge them.
-		for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
-			HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
+		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+			hash_table::hash_table_shard_builder *shard = new hash_table::hash_table_shard_builder(m_hash_table_name, shard_id);
 			shard->sort();
 			delete shard;
 		}
 	}
 
 	void full_text_indexer_runner::truncate_cache() {
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; shard_id++) {
 			full_text_shard_builder<struct full_text_record> *shard_builder =
 				new full_text_shard_builder<struct full_text_record>(m_db_name, shard_id);
 			shard_builder->truncate_cache_files();
@@ -163,9 +163,9 @@ namespace full_text {
 
 	string full_text_indexer_runner::run_index_thread_with_local_files(const vector<string> &local_files, int id) {
 
-		vector<HashTableShardBuilder *> shard_builders;
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
+		vector<hash_table::hash_table_shard_builder *> shard_builders;
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
+			shard_builders.push_back(new hash_table::hash_table_shard_builder(m_hash_table_name, i));
 		}
 
 		url_to_domain url_to_domain(m_db_name);
@@ -181,7 +181,7 @@ namespace full_text {
 
 			stream.close();
 
-			for (size_t i = 0; i < Config::ht_num_shards; i++) {
+			for (size_t i = 0; i < config::ht_num_shards; i++) {
 				if (shard_builders[i]->full()) {
 					m_hash_table_mutexes[i].lock();
 					shard_builders[i]->write();
@@ -197,7 +197,7 @@ namespace full_text {
 		indexer.flush_cache(m_full_text_mutexes);
 
 		LOG_INFO("Done, writing hash table shards");
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
 			m_hash_table_mutexes[i].lock();
 			shard_builders[i]->write();
 			m_hash_table_mutexes[i].unlock();
@@ -209,7 +209,7 @@ namespace full_text {
 		m_write_url_to_domain_mutex.unlock();
 
 		LOG_INFO("Done, deleting hash table shards");
-		for (HashTableShardBuilder *shard_builder : shard_builders) {
+		for (hash_table::hash_table_shard_builder *shard_builder : shard_builders) {
 			delete shard_builder;
 		}
 

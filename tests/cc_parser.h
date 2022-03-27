@@ -25,46 +25,46 @@
  */
 
 #include "config.h"
-#include "parser/Warc.h"
-#include "parser/URL.h"
+#include "warc/warc.h"
+#include "URL.h"
 #include "parser/cc_parser.h"
 
 BOOST_AUTO_TEST_SUITE(cc_parser)
 
 BOOST_AUTO_TEST_CASE(download_warc_paths) {
 	{
-		vector<string> paths = Parser::download_warc_paths();
+		vector<string> paths = parser::download_warc_paths();
 		BOOST_CHECK_EQUAL(paths.size(), 0);
 
 		paths.push_back("test_path/testing1");
 		paths.push_back("test_path/testing2");
 
-		BOOST_CHECK(Parser::upload_warc_paths(paths));
+		BOOST_CHECK(parser::upload_warc_paths(paths));
 	}
 	{
-		vector<string> paths = Parser::download_warc_paths();
+		vector<string> paths = parser::download_warc_paths();
 		BOOST_CHECK_EQUAL(paths.size(), 2);
 		BOOST_CHECK_EQUAL(paths[0], "test_path/testing1");
 		BOOST_CHECK_EQUAL(paths[1], "test_path/testing2");
 	}
-	BOOST_CHECK(Parser::upload_warc_paths({}));
+	BOOST_CHECK(parser::upload_warc_paths({}));
 }
 
 BOOST_AUTO_TEST_CASE(download_warc) {
 
 	string buffer;
-	Warc::multipart_download("http://alexandria-test-data.s3.amazonaws.com/multipart_test", [&buffer](const string &data) {
+	warc::multipart_download("http://alexandria-test-data.s3.amazonaws.com/multipart_test", [&buffer](const string &data) {
 		buffer.append(data);
 	});
 
 	BOOST_CHECK_EQUAL(buffer.size(), 15728640);
-	BOOST_CHECK_EQUAL(Hash::str(buffer), 1803966798292769636ull);
+	BOOST_CHECK_EQUAL(algorithm::hash(buffer), 1803966798292769636ull);
 }
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch) {
-	ifstream infile(Config::test_data_path + "bokus_test.warc.gz", std::ios::binary);
+	ifstream infile(config::test_data_path + "bokus_test.warc.gz", std::ios::binary);
 
-	Warc::Parser pp;
+	warc::parser pp;
 	pp.parse_stream(infile);
 
 	{
@@ -129,27 +129,27 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 
 	string response;
 	{
-		Warc::Parser pp;
-		ifstream infile(Config::test_data_path + "warc_test.gz", std::ios::binary);
+		warc::parser pp;
+		ifstream infile(config::test_data_path + "warc_test.gz", std::ios::binary);
 		pp.parse_stream(infile);
 
 		response = pp.result();
 	}
 
 	vector<string> files = {
-		Config::test_data_path + "warc_test.gz.aa",
-		Config::test_data_path + "warc_test.gz.ab",
-		Config::test_data_path + "warc_test.gz.ac",
-		Config::test_data_path + "warc_test.gz.ad",
-		Config::test_data_path + "warc_test.gz.ae",
-		Config::test_data_path + "warc_test.gz.af",
-		Config::test_data_path + "warc_test.gz.ag",
-		Config::test_data_path + "warc_test.gz.ah",
-		Config::test_data_path + "warc_test.gz.ai",
-		Config::test_data_path + "warc_test.gz.aj"
+		config::test_data_path + "warc_test.gz.aa",
+		config::test_data_path + "warc_test.gz.ab",
+		config::test_data_path + "warc_test.gz.ac",
+		config::test_data_path + "warc_test.gz.ad",
+		config::test_data_path + "warc_test.gz.ae",
+		config::test_data_path + "warc_test.gz.af",
+		config::test_data_path + "warc_test.gz.ag",
+		config::test_data_path + "warc_test.gz.ah",
+		config::test_data_path + "warc_test.gz.ai",
+		config::test_data_path + "warc_test.gz.aj"
 	};
 
-	Warc::Parser pp;
+	warc::parser pp;
 
 	for (const string &filename : files) {
 		ifstream infile(filename, std::ios::binary);
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch_301) {
 
-	Warc::Parser pp;
-	ifstream infile(Config::test_data_path + "long_warc.gz", std::ios::binary);
+	warc::parser pp;
+	ifstream infile(config::test_data_path + "long_warc.gz", std::ios::binary);
 	pp.parse_stream(infile);
 
 }

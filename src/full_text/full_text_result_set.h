@@ -47,9 +47,9 @@ namespace full_text {
 			size_t max_size() const { return m_max_size; }
 
 			const data_record *data_pointer() const { return m_data_pointer; }
-			const data_record *section_pointer(size_t section) const { return &m_data_pointer[section * Config::ft_max_results_per_section]; }
+			const data_record *section_pointer(size_t section) const { return &m_data_pointer[section * config::ft_max_results_per_section]; }
 			data_record *data_pointer() { return m_data_pointer; }
-			data_record *section_pointer(size_t section) { return &m_data_pointer[section * Config::ft_max_results_per_section]; }
+			data_record *section_pointer(size_t section) { return &m_data_pointer[section * config::ft_max_results_per_section]; }
 			std::span<data_record> *span_pointer() { return &m_span; }
 
 			size_t total_num_results() const { return m_total_num_results ; };
@@ -111,7 +111,7 @@ namespace full_text {
 
 		m_size = len / sizeof(data_record);
 		m_total_size = m_size;
-		if (m_size > Config::ft_max_results_per_section) m_size = Config::ft_max_results_per_section;
+		if (m_size > config::ft_max_results_per_section) m_size = config::ft_max_results_per_section;
 
 		m_file_descriptor = open(filename.c_str(), O_RDONLY);
 		posix_fadvise(m_file_descriptor, offset, m_total_size * sizeof(data_record), POSIX_FADV_SEQUENTIAL);
@@ -126,7 +126,7 @@ namespace full_text {
 	template<typename data_record>
 	void full_text_result_set<data_record>::read_to_section(size_t section) {
 		size_t read_start = m_records_read;
-		size_t read_end = (section + 1) * Config::ft_max_results_per_section;
+		size_t read_end = (section + 1) * config::ft_max_results_per_section;
 		if (read_end > m_total_size) read_end = m_total_size;
 
 		if (read_start > read_end) return;
@@ -150,8 +150,8 @@ namespace full_text {
 
 	template<typename data_record>
 	size_t full_text_result_set<data_record>::num_sections() {
-		// Ceiling integer division of m_total_size/Config::ft_max_results_per_section;
-		return (m_total_size + Config::ft_max_results_per_section - 1) / Config::ft_max_results_per_section;
+		// Ceiling integer division of m_total_size/config::ft_max_results_per_section;
+		return (m_total_size + config::ft_max_results_per_section - 1) / config::ft_max_results_per_section;
 	}
 
 	template<typename data_record>

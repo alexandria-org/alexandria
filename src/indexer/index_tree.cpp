@@ -117,7 +117,7 @@ namespace indexer {
 				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
-					const uint64_t word_hash = Hash::str(word);
+					const uint64_t word_hash = ::algorithm::hash(word);
 
 					link_record rec(link_hash, source_harmonic);
 					rec.m_source_domain = source_url.host_hash();
@@ -140,7 +140,7 @@ namespace indexer {
 				vector<string> words = text::get_expanded_full_text_words(link_text);
 				for (const string &word : words) {
 
-					const uint64_t word_hash = Hash::str(word);
+					const uint64_t word_hash = ::algorithm::hash(word);
 
 					domain_link_record rec(link_hash, source_harmonic);
 					rec.m_source_domain = source_url.host_hash();

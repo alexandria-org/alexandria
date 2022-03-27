@@ -2,14 +2,14 @@
 #include "worker.h"
 #include "fcgio.h"
 #include "config.h"
-#include "parser/URL.h"
+#include "URL.h"
 #include "parser/cc_parser.h"
 #include <pthread.h>
 #include <signal.h>
 #include <boost/filesystem.hpp>
 
-#include "post_processor/PostProcessor.h"
-#include "hash_table/HashTable.h"
+#include "post_processor/post_processor.h"
+#include "hash_table/hash_table.h"
 #include "full_text/full_text.h"
 #include "full_text/full_text_index.h"
 #include "full_text/full_text_record.h"
@@ -19,8 +19,8 @@
 #include "api/api_status_response.h"
 #include "url_link/full_text_record.h"
 #include "logger/logger.h"
-#include "system/Profiler.h"
-#include "urlstore/UrlStore.h"
+#include "profiler/profiler.h"
+#include "url_store/url_store.h"
 #include "scraper/scraper.h"
 
 using namespace std;
@@ -35,16 +35,16 @@ namespace worker {
 	void test_search(const string &query) {
 		search_allocation::allocation *allocation = search_allocation::create_allocation();
 
-		HashTable hash_table("main_index");
-		HashTable hash_table_link("link_index");
-		HashTable hash_table_domain_link("domain_link_index");
+		hash_table::hash_table ht("main_index");
+		hash_table::hash_table ht_link("link_index");
+		hash_table::hash_table ht_domain_link("domain_link_index");
 
 		full_text_index<full_text_record> index("main_index");
 		full_text_index<url_link::full_text_record> link_index("link_index");
 		full_text_index<domain_link::full_text_record> domain_link_index("domain_link_index");
 
 		stringstream response_stream;
-		api::search(query, hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search(query, ht, index, link_index, domain_link_index, allocation, response_stream);
 
 		cout << response_stream.rdbuf() << endl;
 
@@ -76,9 +76,9 @@ namespace worker {
 
 		FCGX_InitRequest(&request, worker->socket_id, 0);
 
-		HashTable hash_table("main_index");
-		HashTable hash_table_link("link_index");
-		HashTable hash_table_domain_link("domain_link_index");
+		hash_table::hash_table ht("main_index");
+		hash_table::hash_table ht_link("link_index");
+		hash_table::hash_table ht_domain_link("domain_link_index");
 
 		full_text_index<full_text_record> index("main_index");
 		full_text_index<url_link::full_text_record> link_index("link_index");
@@ -123,21 +123,21 @@ namespace worker {
 			}
 
 			if (query.find("q") != query.end() && deduplicate) {
-				if (Config::index_text) {
-					api::search(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+				if (config::index_text) {
+					api::search(query["q"], ht, index, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				} else {
-					api::search_remote(query["q"], hash_table, link_index, domain_link_index, allocation, response_stream);
+					api::search_remote(query["q"], ht, link_index, domain_link_index, allocation, response_stream);
 					output_response(request, response_stream);
 				}
 			} else if (query.find("q") != query.end() && !deduplicate) {
-				api::search_all(query["q"], hash_table, index, link_index, domain_link_index, allocation, response_stream);
+				api::search_all(query["q"], ht, index, link_index, domain_link_index, allocation, response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("s") != query.end()) {
-				api::word_stats(query["s"], index, link_index, hash_table.size(), hash_table_link.size(), response_stream);
+				api::word_stats(query["s"], index, link_index, ht.size(), ht_link.size(), response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("u") != query.end()) {
-				api::url(query["u"], hash_table, response_stream);
+				api::url(query["u"], ht, response_stream);
 				output_response(request, response_stream);
 			} else if (query.find("i") != query.end()) {
 				api::ids(query["i"], index, allocation, response_stream);
@@ -163,17 +163,17 @@ namespace worker {
 			return;
 		}
 
-		vector<pthread_t> thread_ids(Config::worker_count);
+		vector<pthread_t> thread_ids(config::worker_count);
 
-		worker_data *workers = new worker_data[Config::worker_count];
-		for (size_t i = 0; i < Config::worker_count; i++) {
+		worker_data *workers = new worker_data[config::worker_count];
+		for (size_t i = 0; i < config::worker_count; i++) {
 			workers[i].socket_id = socket_id;
 			workers[i].thread_id = i;
 
 			pthread_create(&thread_ids[i], NULL, run_worker, &workers[i]);
 		}
 
-		for (size_t i = 0; i < Config::worker_count; i++) {
+		for (size_t i = 0; i < config::worker_count; i++) {
 			pthread_join(thread_ids[i], NULL);
 		}
 
@@ -181,7 +181,7 @@ namespace worker {
 	}
 
 	void download_server() {
-		Parser::warc_downloader();
+		parser::warc_downloader();
 	}
 
 	void status_server(status *status) {
@@ -220,7 +220,7 @@ namespace worker {
 		close(socket_id);
 	}
 
-	void urlstore_worker(UrlStore::all_stores &stores, int socket_id, mutex &accept_mutex) {
+	void urlstore_worker(url_store::all_stores &stores, int socket_id, mutex &accept_mutex) {
 
 		FCGX_Request request;
 		FCGX_InitRequest(&request, socket_id, 0);
@@ -279,13 +279,13 @@ namespace worker {
 
 				if (error == 0) {
 					if (type == "url") {
-						UrlStore::handle_put_request(stores.url, post_data, response_stream);
+						url_store::handle_put_request(stores.url, post_data, response_stream);
 					}
 					if (type == "domain") {
-						UrlStore::handle_put_request(stores.domain, post_data, response_stream);
+						url_store::handle_put_request(stores.domain, post_data, response_stream);
 					}
 					if (type == "robots") {
-						UrlStore::handle_put_request(stores.robots, post_data, response_stream);
+						url_store::handle_put_request(stores.robots, post_data, response_stream);
 					}
 					FCGX_FPrintF(request.out, "Content-type: text/html\r\n\r\n");
 					FCGX_FPrintF(request.out, "%s", "Data Uploaded");
@@ -303,24 +303,24 @@ namespace worker {
 				
 				if (accept == "application/octet-stream") {
 					if (type == "url") {
-						UrlStore::handle_binary_get_request(stores.url, public_key, response_stream);
+						url_store::handle_binary_get_request(stores.url, public_key, response_stream);
 					}
 					if (type == "domain") {
-						UrlStore::handle_binary_get_request(stores.domain, public_key, response_stream);
+						url_store::handle_binary_get_request(stores.domain, public_key, response_stream);
 					}
 					if (type == "robots") {
-						UrlStore::handle_binary_get_request(stores.robots, public_key, response_stream);
+						url_store::handle_binary_get_request(stores.robots, public_key, response_stream);
 					}
 					output_binary_response(request, response_stream);
 				} else {
 					if (type == "url") {
-						UrlStore::handle_get_request(stores.url, public_key, response_stream);
+						url_store::handle_get_request(stores.url, public_key, response_stream);
 					}
 					if (type == "domain") {
-						UrlStore::handle_get_request(stores.domain, public_key, response_stream);
+						url_store::handle_get_request(stores.domain, public_key, response_stream);
 					}
 					if (type == "robots") {
-						UrlStore::handle_get_request(stores.robots, public_key, response_stream);
+						url_store::handle_get_request(stores.robots, public_key, response_stream);
 					}
 					output_response(request, response_stream);
 				}
@@ -333,7 +333,7 @@ namespace worker {
 				}
 
 				string post_data;
-				Profiler::instance prof("[urlstore] read post data");
+				profiler::instance prof("[urlstore] read post data");
 				while (true) {
 
 					const size_t read_bytes = FCGX_GetStr(buffer, buffer_len, request.in);
@@ -351,24 +351,24 @@ namespace worker {
 				if (error == 0) {
 					if (accept == "application/octet-stream") {
 						if (type == "url") {
-							UrlStore::handle_binary_post_request(stores.url, post_data, response_stream);
+							url_store::handle_binary_post_request(stores.url, post_data, response_stream);
 						}
 						if (type == "domain") {
-							UrlStore::handle_binary_post_request(stores.domain, post_data, response_stream);
+							url_store::handle_binary_post_request(stores.domain, post_data, response_stream);
 						}
 						if (type == "robots") {
-							UrlStore::handle_binary_post_request(stores.robots, post_data, response_stream);
+							url_store::handle_binary_post_request(stores.robots, post_data, response_stream);
 						}
 						output_binary_response(request, response_stream);
 					} else {
 						if (type == "url") {
-							UrlStore::handle_post_request(stores.url, post_data, response_stream);
+							url_store::handle_post_request(stores.url, post_data, response_stream);
 						}
 						if (type == "domain") {
-							UrlStore::handle_post_request(stores.domain, post_data, response_stream);
+							url_store::handle_post_request(stores.domain, post_data, response_stream);
 						}
 						if (type == "robots") {
-							UrlStore::handle_post_request(stores.robots, post_data, response_stream);
+							url_store::handle_post_request(stores.robots, post_data, response_stream);
 						}
 						output_response(request, response_stream);
 					}
@@ -398,13 +398,13 @@ namespace worker {
 
 	void start_urlstore_workers() {
 
-		boost::filesystem::create_directories(Config::url_store_cache_path);
+		boost::filesystem::create_directories(config::url_store_cache_path);
 
-		UrlStore::all_stores stores;
+		url_store::all_stores stores;
 
-		thread url_inserter_thread(UrlStore::urlstore_inserter<UrlStore::UrlData>, std::ref(stores.url));
-		thread domain_inserter_thread(UrlStore::urlstore_inserter<UrlStore::DomainData>, std::ref(stores.domain));
-		thread robots_inserter_thread(UrlStore::urlstore_inserter<UrlStore::RobotsData>, std::ref(stores.robots));
+		thread url_inserter_thread(url_store::urlstore_inserter<url_store::url_data>, std::ref(stores.url));
+		thread domain_inserter_thread(url_store::urlstore_inserter<url_store::domain_data>, std::ref(stores.domain));
+		thread robots_inserter_thread(url_store::urlstore_inserter<url_store::robots_data>, std::ref(stores.robots));
 
 		FCGX_Init();
 		int socket_id = FCGX_OpenSocket("127.0.0.1:8001", 20);
@@ -417,7 +417,7 @@ namespace worker {
 
 		mutex accept_mutex;
 
-		for (size_t i = 0; i < Config::worker_count; i++) {
+		for (size_t i = 0; i < config::worker_count; i++) {
 			threads.emplace_back(thread(urlstore_worker, ref(stores), socket_id, ref(accept_mutex)));
 		}
 
@@ -446,7 +446,7 @@ namespace worker {
 	}
 
 	void scraper_server() {
-		Scraper::url_downloader();
+		scraper::url_downloader();
 	}
 
 	thread scraper_server_thread;

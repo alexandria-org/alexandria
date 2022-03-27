@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(link_counter2) {
 
 	std::map<size_t, std::set<size_t>> counter;
 
-	Config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
+	config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
 
 	
 }

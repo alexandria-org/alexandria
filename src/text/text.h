@@ -36,7 +36,7 @@
 #include <sstream>
 #include "stopwords.h"
 #include "parser/Unicode.h"
-#include "hash/Hash.h"
+#include "algorithm/hash.h"
 
 namespace text {
 
@@ -145,7 +145,7 @@ namespace text {
 				for (size_t k = i + 1; k <= i + j; k++) {
 					n_gram += " " + words[k];
 				}
-				fun(Hash::str(n_gram));
+				fun(algorithm::hash(n_gram));
 			}
 		}
 	}

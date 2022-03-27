@@ -30,7 +30,7 @@
 #include <fstream>
 #include <vector>
 
-namespace Config {
+namespace config {
 
 	extern std::string node;
 	extern std::string master;

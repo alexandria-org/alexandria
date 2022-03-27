@@ -31,9 +31,9 @@
 #include <vector>
 #include <mutex>
 
-#include "parser/URL.h"
-#include "system/SubSystem.h"
-#include "hash_table/HashTableShardBuilder.h"
+#include "URL.h"
+#include "common/sub_system.h"
+#include "hash_table/hash_table_shard_builder.h"
 #include "full_text/url_to_domain.h"
 #include "full_text/full_text_shard_builder.h"
 #include "domain_link/full_text_record.h"
@@ -44,10 +44,10 @@ namespace domain_link {
 
 	public:
 
-		indexer(int id, const std::string &db_name, const SubSystem *sub_system, full_text::url_to_domain *url_to_domain);
+		indexer(int id, const std::string &db_name, const common::sub_system *sub_system, full_text::url_to_domain *url_to_domain);
 		~indexer();
 
-		void add_stream(std::vector<HashTableShardBuilder *> &shard_builders, std::basic_istream<char> &stream);
+		void add_stream(std::vector<hash_table::hash_table_shard_builder *> &shard_builders, std::basic_istream<char> &stream);
 		void write_cache(std::vector<std::mutex> &write_mutexes);
 		void flush_cache(std::vector<std::mutex> &write_mutexes);
 
@@ -55,7 +55,7 @@ namespace domain_link {
 
 		int m_indexer_id;
 		const std::string m_db_name;
-		const SubSystem *m_sub_system;
+		const common::sub_system *m_sub_system;
 		full_text::url_to_domain *m_url_to_domain;
 		std::hash<std::string> m_hasher;
 

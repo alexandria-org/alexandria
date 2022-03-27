@@ -39,17 +39,17 @@ using namespace std;
 namespace url_link {
 
 	indexer_runner::indexer_runner(const string &db_name, const string &domain_db_name, const string &hash_table_name,
-		const string &domain_hash_table_name, const string &cc_batch, const SubSystem *sub_system, full_text::url_to_domain *url_to_domain)
+		const string &domain_hash_table_name, const string &cc_batch, const common::sub_system *sub_system, full_text::url_to_domain *url_to_domain)
 	:
 		m_cc_batch(cc_batch),
 		m_db_name(db_name),
 		m_domain_db_name(domain_db_name),
 		m_hash_table_name(hash_table_name),
 		m_domain_hash_table_name(domain_hash_table_name),
-		m_hash_table_mutexes(Config::ft_num_shards),
-		m_domain_hash_table_mutexes(Config::ft_num_shards),
-		m_link_mutexes(Config::ft_num_shards),
-		m_domain_link_mutexes(Config::ft_num_shards)
+		m_hash_table_mutexes(config::ft_num_shards),
+		m_domain_hash_table_mutexes(config::ft_num_shards),
+		m_link_mutexes(config::ft_num_shards),
+		m_domain_link_mutexes(config::ft_num_shards)
 	{
 		m_sub_system = sub_system;
 		m_url_to_domain = url_to_domain;
@@ -60,11 +60,11 @@ namespace url_link {
 
 	void indexer_runner::run(const vector<string> &local_files) {
 
-		ThreadPool pool(Config::ft_num_threads_indexing);
+		ThreadPool pool(config::ft_num_threads_indexing);
 		std::vector<std::future<string>> results;
 
 		vector<vector<string>> chunks;
-		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / Config::ft_num_threads_indexing) + 1, chunks);
+		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / config::ft_num_threads_indexing) + 1, chunks);
 
 		int id = 1;
 		for (const vector<string> &chunk : chunks) {
@@ -92,13 +92,13 @@ namespace url_link {
 
 		const size_t merge_batch_size = 250;
 
-		ThreadPool merge_pool(Config::li_num_threads_merging);
+		ThreadPool merge_pool(config::li_num_threads_merging);
 		std::vector<std::future<string>> merge_results;
 
 		// Loop over shards and merge them.
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; ) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; ) {
 
-			while (shard_id < Config::ft_num_shards && merge_results.size() < merge_batch_size) {
+			while (shard_id < config::ft_num_shards && merge_results.size() < merge_batch_size) {
 
 				merge_results.emplace_back(
 					merge_pool.enqueue([this, shard_id] {
@@ -122,13 +122,13 @@ namespace url_link {
 		LOG_INFO("Sorting...");
 
 		// Loop over hash table shards and merge them.
-		for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
-			HashTableShardBuilder *shard = new HashTableShardBuilder(m_hash_table_name, shard_id);
+		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+			hash_table::hash_table_shard_builder *shard = new hash_table::hash_table_shard_builder(m_hash_table_name, shard_id);
 			shard->sort();
 			delete shard;
 		}
-		for (size_t shard_id = 0; shard_id < Config::ht_num_shards; shard_id++) {
-			HashTableShardBuilder *shard = new HashTableShardBuilder(m_domain_hash_table_name, shard_id);
+		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+			hash_table::hash_table_shard_builder *shard = new hash_table::hash_table_shard_builder(m_domain_hash_table_name, shard_id);
 			shard->sort();
 			delete shard;
 		}
@@ -136,14 +136,14 @@ namespace url_link {
 
 	string indexer_runner::run_index_thread_with_local_files(const vector<string> &local_files, int id) {
 
-		vector<HashTableShardBuilder *> shard_builders;
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			shard_builders.push_back(new HashTableShardBuilder(m_hash_table_name, i));
+		vector<hash_table::hash_table_shard_builder *> shard_builders;
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
+			shard_builders.push_back(new hash_table::hash_table_shard_builder(m_hash_table_name, i));
 		}
 
-		vector<HashTableShardBuilder *> domain_shard_builders;
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
-			domain_shard_builders.push_back(new HashTableShardBuilder(m_domain_hash_table_name, i));
+		vector<hash_table::hash_table_shard_builder *> domain_shard_builders;
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
+			domain_shard_builders.push_back(new hash_table::hash_table_shard_builder(m_domain_hash_table_name, i));
 		}
 
 		::url_link::indexer indexer(id, m_db_name, m_sub_system, m_url_to_domain);
@@ -168,7 +168,7 @@ namespace url_link {
 
 			stream.close();
 
-			for (size_t i = 0; i < Config::ht_num_shards; i++) {
+			for (size_t i = 0; i < config::ht_num_shards; i++) {
 				if (shard_builders[i]->full()) {
 					m_hash_table_mutexes[i].lock();
 					shard_builders[i]->write();
@@ -176,7 +176,7 @@ namespace url_link {
 				}
 			}
 
-			for (size_t i = 0; i < Config::ht_num_shards; i++) {
+			for (size_t i = 0; i < config::ht_num_shards; i++) {
 				if (domain_shard_builders[i]->full()) {
 					m_domain_hash_table_mutexes[i].lock();
 					domain_shard_builders[i]->write();
@@ -191,23 +191,23 @@ namespace url_link {
 		indexer.flush_cache(m_link_mutexes);
 		domain_link_indexer.flush_cache(m_domain_link_mutexes);
 
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
 			m_hash_table_mutexes[i].lock();
 			shard_builders[i]->write();
 			m_hash_table_mutexes[i].unlock();
 		}
 
-		for (size_t i = 0; i < Config::ht_num_shards; i++) {
+		for (size_t i = 0; i < config::ht_num_shards; i++) {
 			m_domain_hash_table_mutexes[i].lock();
 			domain_shard_builders[i]->write();
 			m_domain_hash_table_mutexes[i].unlock();
 		}
 
-		for (HashTableShardBuilder *shard_builder : shard_builders) {
+		for (auto shard_builder : shard_builders) {
 			delete shard_builder;
 		}
 
-		for (HashTableShardBuilder *domain_shard_builder : domain_shard_builders) {
+		for (auto domain_shard_builder : domain_shard_builders) {
 			delete domain_shard_builder;
 		}
 

@@ -33,7 +33,7 @@ namespace file {
 
 	string read_test_file(const string &file_name) {
 
-		ifstream file(Config::test_data_path + file_name);
+		ifstream file(config::test_data_path + file_name);
 		if (file.is_open()) {
 			string ret;
 			file.seekg(0, ios::end);

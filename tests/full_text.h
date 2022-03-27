@@ -27,9 +27,9 @@
 #include <boost/test/unit_test.hpp>
 #include "full_text/full_text.h"
 #include "api/api.h"
-#include "parser/URL.h"
-#include "hash_table/HashTable.h"
-#include "hash_table/HashTableHelper.h"
+#include "URL.h"
+#include "hash_table/hash_table.h"
+#include "hash_table_helper/hash_table_helper.h"
 #include "full_text/full_text.h"
 #include "full_text/url_to_domain.h"
 #include "full_text/full_text_index.h"
@@ -58,9 +58,9 @@ BOOST_AUTO_TEST_CASE(indexer) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
@@ -76,10 +76,10 @@ BOOST_AUTO_TEST_CASE(indexer) {
 
 	{
 		// Count elements in hash tables.
-		HashTable hash_table("test_main_index");
-		HashTable hash_table_link("test_link_index");
+		hash_table::hash_table ht("test_main_index");
+		hash_table::hash_table ht_link("test_link_index");
 
-		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+		BOOST_CHECK_EQUAL(ht.size(), 8);
 
 		// Make searches.
 		full_text::full_text_index<full_text_record> index("test_main_index");
@@ -112,14 +112,14 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 	full_text::truncate_index("test_link_index");
 	full_text::truncate_index("test_domain_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 	}
 
 	full_text::url_to_domain *url_store = new full_text::url_to_domain("test_main_index");
@@ -141,10 +141,10 @@ BOOST_AUTO_TEST_CASE(indexer_multiple_link_batches) {
 
 	{
 		// Count elements in hash tables.
-		HashTable hash_table("test_main_index");
-		HashTable hash_table_link("test_link_index");
+		hash_table::hash_table ht("test_main_index");
+		hash_table::hash_table ht_link("test_link_index");
 
-		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+		BOOST_CHECK_EQUAL(ht.size(), 8);
 
 		// Make searches.
 		full_text::full_text_index<full_text_record> index("test_main_index");
@@ -186,14 +186,14 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 	full_text::truncate_index("test_link_index");
 	full_text::truncate_index("test_domain_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-05", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-05", subsys);
 	}
 
 	{
@@ -203,19 +203,19 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 		BOOST_CHECK_EQUAL(url_store->size(), 10);
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-05",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
 	{
 		// Count elements in hash tables.
-		HashTable hash_table("test_main_index");
-		HashTable hash_table_link("test_link_index");
-		HashTable hash_table_domain_link("test_domain_link_index");
+		hash_table::hash_table ht("test_main_index");
+		hash_table::hash_table ht_link("test_link_index");
+		hash_table::hash_table ht_domain_link("test_domain_link_index");
 
-		BOOST_CHECK_EQUAL(hash_table.size(), 10);
+		BOOST_CHECK_EQUAL(ht.size(), 10);
 
 		// Make searches.
 		full_text::full_text_index<full_text_record> index("test_main_index");
@@ -276,9 +276,9 @@ BOOST_AUTO_TEST_CASE(domain_links) {
 
 BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 
-	unsigned long long initial_nodes_in_cluster = Config::nodes_in_cluster;
-	Config::nodes_in_cluster = 1;
-	Config::node_id = 0;
+	unsigned long long initial_nodes_in_cluster = config::nodes_in_cluster;
+	config::nodes_in_cluster = 1;
+	config::node_id = 0;
 
 	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
@@ -286,21 +286,21 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-03", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-03", subsys);
 	}
 
 	{
 		// Count elements in hash tables.
-		HashTable hash_table("test_main_index");
+		hash_table::hash_table ht("test_main_index");
 
-		BOOST_CHECK_EQUAL(hash_table.size(), 8);
+		BOOST_CHECK_EQUAL(ht.size(), 8);
 
 		// Make searches.
 		full_text::full_text_index<full_text_record> index("test_main_index");
@@ -323,35 +323,35 @@ BOOST_AUTO_TEST_CASE(indexer_test_deduplication) {
 	search_allocation::delete_allocation(allocation);
 
 	// Reset.
-	Config::nodes_in_cluster = initial_nodes_in_cluster;
-	Config::node_id = 0;
+	config::nodes_in_cluster = initial_nodes_in_cluster;
+	config::node_id = 0;
 }
 
 BOOST_AUTO_TEST_CASE(shard_buffer_size) {
 
-	size_t initial_buffer_len = Config::ft_shard_builder_buffer_len;
-	Config::ft_shard_builder_buffer_len = 48;
+	size_t initial_buffer_len = config::ft_shard_builder_buffer_len;
+	config::ft_shard_builder_buffer_len = 48;
 
 	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
 	full_text::truncate_url_to_domain("main_index");
 	full_text::truncate_index("test_main_index");
 
-	HashTableHelper::truncate("test_main_index");
+	hash_table_helper::truncate("test_main_index");
 
 	// Index full text twice
 	{
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", subsys);
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-08", subsys);
 	}
 
-	HashTable hash_table("test_main_index");
+	hash_table::hash_table ht("test_main_index");
 	full_text::full_text_index<full_text_record> index("test_main_index");
 
 	{
 		stringstream response_stream;
-		api::search("site:en.wikipedia.org Wikipedia", hash_table, index, allocation, response_stream);
+		api::search("site:en.wikipedia.org Wikipedia", ht, index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(shard_buffer_size) {
 
 	search_allocation::delete_allocation(allocation);
 
-	Config::ft_shard_builder_buffer_len = initial_buffer_len;
+	config::ft_shard_builder_buffer_len = initial_buffer_len;
 }
 
 BOOST_AUTO_TEST_CASE(is_indexed) {
@@ -379,8 +379,8 @@ BOOST_AUTO_TEST_CASE(is_indexed) {
 
 	// Index full text
 	{
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("main_index", "main_index", "ALEXANDRIA-TEST-08", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("main_index", "main_index", "ALEXANDRIA-TEST-08", subsys);
 	}
 
 	BOOST_CHECK(full_text::is_indexed());

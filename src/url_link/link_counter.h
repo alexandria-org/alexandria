@@ -29,7 +29,7 @@
 #include <vector>
 
 namespace url_link {
-	void run_link_counter(const SubSystem *sub_system, const std::string &batch, size_t sub_batch, const std::vector<std::string> &files,
+	void run_link_counter(const common::sub_system *sub_system, const std::string &batch, size_t sub_batch, const std::vector<std::string> &files,
 			std::map<std::string, std::map<size_t, float>> &counter);
 	void upload_link_counts(const std::string &batch, size_t sub_batch, std::map<std::string, std::map<size_t, float>> &counter);
 }

@@ -28,7 +28,7 @@
 #include <vector>
 #include "text/text.h"
 #include "indexer/index_tree.h"
-#include "parser/URL.h"
+#include "URL.h"
 #include "transfer/transfer.h"
 #include "domain_stats/domain_stats.h"
 #include "merger.h"
@@ -98,7 +98,7 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_tree &idx_tree, HashTable &ht, const string &query) {
+	void cmd_search(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
 		std::vector<indexer::return_record> res = idx_tree.find(query);
 
 		if (res.size() > 10) res.resize(10);
@@ -157,7 +157,7 @@ namespace indexer {
 
 		//idx_tree.truncate();
 
-		HashTable ht("index_tree");
+		hash_table::hash_table ht("index_tree");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {

@@ -28,9 +28,9 @@
 
 #include <iostream>
 #include <mutex>
-#include "system/SubSystem.h"
-#include "system/ThreadPool.h"
-#include "hash_table/HashTable.h"
+#include "common/sub_system.h"
+#include "common/ThreadPool.h"
+#include "hash_table/hash_table.h"
 #include "full_text_record.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -43,9 +43,9 @@ namespace full_text {
 
 		public:
 
-			full_text_indexer_runner(const std::string &db_name, const std::string &hash_table_name, const std::string &cc_batch, const SubSystem *sub_system);
+			full_text_indexer_runner(const std::string &db_name, const std::string &hash_table_name, const std::string &cc_batch, const common::sub_system *sub_system);
 			full_text_indexer_runner(const std::string &db_name, const std::string &hash_table_name, const std::string &cc_batch);
-			full_text_indexer_runner(const std::string &db_name, const std::string &hash_table_name, const SubSystem *sub_system);
+			full_text_indexer_runner(const std::string &db_name, const std::string &hash_table_name, const common::sub_system *sub_system);
 			~full_text_indexer_runner();
 
 			void run(const std::vector<std::string> &local_files);
@@ -59,7 +59,7 @@ namespace full_text {
 			const std::string m_cc_batch;
 			const std::string m_db_name;
 			const std::string m_hash_table_name;
-			const SubSystem *m_sub_system;
+			const common::sub_system *m_sub_system;
 
 			std::vector<std::mutex> m_hash_table_mutexes;
 			std::vector<std::mutex> m_full_text_mutexes;

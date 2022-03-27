@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#include "hash_table/HashTableHelper.h"
-#include "api/Api.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "api/api.h"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -41,14 +41,14 @@ BOOST_AUTO_TEST_CASE(api_search) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	// Index full text
 	{
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 	}
 
 	{
@@ -58,20 +58,20 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 		BOOST_CHECK_EQUAL(url_store->size(), 8);
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
 	full_text_index<full_text_record> index("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", ht, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("Meta Description Text", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(api_search) {
 
 	{
 		stringstream response_stream;
-		api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("more uniq", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -136,8 +136,8 @@ BOOST_AUTO_TEST_CASE(api_search) {
  * */
 BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
-	Config::index_snippets = false;
-	Config::n_grams = 5;
+	config::index_snippets = false;
+	config::n_grams = 5;
 
 	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
@@ -145,18 +145,18 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	// Index full text
 	{
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
 	full_text_index<full_text_record> index("test_main_index");
 
 	{
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(api_search_no_snippets) {
 
 	search_allocation::delete_allocation(allocation);
 
-	Config::index_snippets = true;
+	config::index_snippets = true;
 }
 
 BOOST_AUTO_TEST_CASE(api_search_compact) {
@@ -193,12 +193,12 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
-	SubSystem *sub_system = new SubSystem();
-	full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+	common::sub_system *subsys = new common::sub_system();
+	full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 
 	{
 		// Index links
@@ -207,20 +207,20 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 		BOOST_CHECK_EQUAL(url_store->size(), 8);
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
 	full_text_index<full_text_record> index("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		api::search("url1.com", hash_table, index, link_index, allocation, response_stream);
+		api::search("url1.com", ht, index, link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 	{
 
 		stringstream response_stream;
-		api::word_stats("Meta Description Text", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("Meta Description Text", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(api_search_compact) {
 
 	{
 		stringstream response_stream;
-		api::word_stats("more uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("more uniq", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -288,14 +288,14 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 	full_text::truncate_index("test_link_index");
 	full_text::truncate_index("test_domain_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-01", subsys);
 	}
 
 	{
@@ -305,21 +305,21 @@ BOOST_AUTO_TEST_CASE(api_search_with_domain_links) {
 
 		BOOST_CHECK_EQUAL(url_store->size(), 8);
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-01",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
 	full_text_index<full_text_record> index("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 	full_text_index<domain_link::full_text_record> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search("url1.com", ht, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -346,14 +346,14 @@ BOOST_AUTO_TEST_CASE(many_links) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-06", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-06", subsys);
 	}
 
 	{
@@ -361,20 +361,20 @@ BOOST_AUTO_TEST_CASE(many_links) {
 		url_to_domain *url_store = new url_to_domain("test_main_index");
 		url_store->read();
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-06",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
+	hash_table::hash_table ht("test_main_index");
 	full_text_index<full_text_record> index("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 	full_text_index<domain_link::full_text_record> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		api::search("url1.com", hash_table, index, link_index, domain_link_index, allocation, response_stream);
+		api::search("url1.com", ht, index, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -396,14 +396,14 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-02", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-02", subsys);
 	}
 
 	{
@@ -413,20 +413,20 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 		BOOST_CHECK_EQUAL(url_store->size(), 8);
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-02",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
-	HashTable link_hash_table("test_link_index");
+	hash_table::hash_table ht("test_main_index");
+	hash_table::hash_table link_ht("test_link_index");
 	full_text_index<full_text_record> index("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 
 	{
 		stringstream response_stream;
-		api::word_stats("uniq", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("uniq", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(api_word_stats) {
 
 	{
 		stringstream response_stream;
-		api::word_stats("test07.links.gz", index, link_index, hash_table.size(), link_hash_table.size(), response_stream);
+		api::word_stats("test07.links.gz", index, link_index, ht.size(), link_ht.size(), response_stream);
 
 		string response = response_stream.str();
 
@@ -466,14 +466,14 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-04", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-04", subsys);
 	}
 
 	{
@@ -481,17 +481,17 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 		url_to_domain *url_store = new url_to_domain("test_main_index");
 		url_store->read();
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-04",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
+	hash_table::hash_table ht("test_main_index");
 
 	{
 		stringstream response_stream;
-		api::url("http://url1.com/my_test_url", hash_table, response_stream);
+		api::url("http://url1.com/my_test_url", ht, response_stream);
 
 		string response = response_stream.str();
 
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(api_hash_table) {
 
 	{
 		stringstream response_stream;
-		api::url("http://non-existing-url.com", hash_table, response_stream);
+		api::url("http://non-existing-url.com", ht, response_stream);
 
 		string response = response_stream.str();
 
@@ -529,8 +529,8 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 	// This test relies on remote server to be running. Should be implemented propely...
 	return;
 
-	Config::index_snippets = true;
-	Config::index_text = false;
+	config::index_snippets = true;
+	config::index_text = false;
 
 	search_allocation::allocation *allocation = search_allocation::create_allocation();
 
@@ -538,14 +538,14 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 	full_text::truncate_index("test_main_index");
 	full_text::truncate_index("test_link_index");
 
-	HashTableHelper::truncate("test_main_index");
-	HashTableHelper::truncate("test_link_index");
-	HashTableHelper::truncate("test_domain_link_index");
+	hash_table_helper::truncate("test_main_index");
+	hash_table_helper::truncate("test_link_index");
+	hash_table_helper::truncate("test_domain_link_index");
 
 	{
 		// Index full text
-		SubSystem *sub_system = new SubSystem();
-		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-09", sub_system);
+		common::sub_system *subsys = new common::sub_system();
+		full_text::index_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-09", subsys);
 	}
 
 	{
@@ -553,19 +553,19 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 		url_to_domain *url_store = new url_to_domain("test_main_index");
 		url_store->read();
 
-		SubSystem *sub_system = new SubSystem();
+		common::sub_system *subsys = new common::sub_system();
 
 		full_text::index_link_batch("test_link_index", "test_domain_link_index", "test_link_index", "test_domain_link_index", "ALEXANDRIA-TEST-09",
-			sub_system, url_store);
+			subsys, url_store);
 	}
 
-	HashTable hash_table("test_main_index");
+	hash_table::hash_table ht("test_main_index");
 	full_text_index<url_link::full_text_record> link_index("test_link_index");
 	full_text_index<domain_link::full_text_record> domain_link_index("test_domain_link_index");
 
 	{
 		stringstream response_stream;
-		api::search_remote("1936.com", hash_table, link_index, domain_link_index, allocation, response_stream);
+		api::search_remote("1936.com", ht, link_index, domain_link_index, allocation, response_stream);
 
 		string response = response_stream.str();
 
@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(api_no_text) {
 
 	search_allocation::delete_allocation(allocation);
 
-	Config::index_text = true;
+	config::index_text = true;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

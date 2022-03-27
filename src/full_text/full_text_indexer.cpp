@@ -34,11 +34,11 @@ using namespace std;
 
 namespace full_text {
 
-	full_text_indexer::full_text_indexer(int id, const string &db_name, const SubSystem *sub_system, url_to_domain *url_to_domain)
+	full_text_indexer::full_text_indexer(int id, const string &db_name, const common::sub_system *sub_system, url_to_domain *url_to_domain)
 	: m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 	{
 		m_url_to_domain = url_to_domain;
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; shard_id++) {
 			full_text_shard_builder<struct full_text_record> *shard_builder =
 				new full_text_shard_builder<struct full_text_record>(db_name, shard_id);
 			m_shards.push_back(shard_builder);
@@ -51,7 +51,7 @@ namespace full_text {
 		}
 	}
 
-	size_t full_text_indexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream,
+	size_t full_text_indexer::add_stream(vector<hash_table::hash_table_shard_builder *> &shard_builders, basic_istream<char> &stream,
 		const vector<size_t> &cols, const vector<float> &scores, const string &batch, mutex &write_mutex) {
 
 		string line;
@@ -69,11 +69,11 @@ namespace full_text {
 
 			uint64_t key_hash = url.hash();
 
-			if (Config::index_snippets) {
-				shard_builders[key_hash % Config::ht_num_shards]->add(key_hash, line + "\t" + batch);
+			if (config::index_snippets) {
+				shard_builders[key_hash % config::ht_num_shards]->add(key_hash, line + "\t" + batch);
 			}
 
-			if (Config::index_text) {
+			if (config::index_text) {
 
 				const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
@@ -88,7 +88,7 @@ namespace full_text {
 				}
 				for (const auto &iter : word_map) {
 					const uint64_t word_hash = iter.first;
-					const size_t shard_id = word_hash % Config::ft_num_shards;
+					const size_t shard_id = word_hash % config::ft_num_shards;
 					m_shards[shard_id]->add(word_hash, full_text_record{.m_value = key_hash, .m_score = iter.second, .m_domain_hash = url.host_hash()});
 				}
 				word_map.clear();
@@ -118,7 +118,7 @@ namespace full_text {
 		if (full_shards.size()) {
 			write_mutex.lock();
 
-			ThreadPool pool(Config::ft_num_threads_appending);
+			ThreadPool pool(config::ft_num_threads_appending);
 			std::vector<std::future<void>> results;
 			for (full_text_shard_builder<struct full_text_record> *shard : full_shards) {
 				results.emplace_back(pool.enqueue([shard] {
@@ -160,8 +160,8 @@ namespace full_text {
 		vector<string> words = text::get_expanded_full_text_words(text);
 		map<uint64_t, uint64_t> uniq;
 
-		if (Config::n_grams > 1) {
-			text::words_to_ngram_hash(words, Config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
+		if (config::n_grams > 1) {
+			text::words_to_ngram_hash(words, config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
 				if (uniq.find(hash) == uniq.end()) {
 					word_map[hash] += score;
 					uniq[hash] = hash;
@@ -169,7 +169,7 @@ namespace full_text {
 			});
 		} else {
 			for (const string &word : words) {
-				const uint64_t word_hash = Hash::str(word);
+				const uint64_t word_hash = algorithm::hash(word);
 				if (uniq.find(word_hash) == uniq.end()) {
 					word_map[word_hash] += score;
 					uniq[word_hash] = word_hash;
@@ -197,7 +197,7 @@ namespace full_text {
 		for (const string &word : words) {
 
 			const uint64_t word_hash = m_hasher(word);
-			const size_t shard_id = word_hash % Config::ft_num_shards;
+			const size_t shard_id = word_hash % config::ft_num_shards;
 
 			m_shards[shard_id]->add(word_hash, full_text_record{.m_value = url.hash(), .m_score = score, .m_domain_hash = url.host_hash()});
 		}

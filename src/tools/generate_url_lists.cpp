@@ -37,7 +37,7 @@
 using namespace std;
 using namespace boost::filesystem;
 
-namespace Tools {
+namespace tools {
 
 	vector<string> read_urls_with_many_links(const std::string &file_path) {
 

@@ -26,7 +26,7 @@
 
 #include "config.h"
 
-namespace Tools {
+namespace tools {
 
 	void generate_url_lists(const std::string &batch_path);
 

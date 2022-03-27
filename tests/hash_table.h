@@ -24,52 +24,52 @@
  * SOFTWARE.
  */
 
-#include "hash_table/HashTable.h"
-#include "hash_table/HashTableHelper.h"
+#include "hash_table/hash_table.h"
+#include "hash_table_helper/hash_table_helper.h"
 
 BOOST_AUTO_TEST_SUITE(hash_table)
 
 BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 
-	HashTableHelper::truncate("test_index");
+	hash_table_helper::truncate("test_index");
 
 	{
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("test_index");
+		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 1000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
+			hash_table_helper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
-		HashTableHelper::write(shards);
-		HashTableHelper::sort(shards);
+		hash_table_helper::write(shards);
+		hash_table_helper::sort(shards);
 
-		HashTableHelper::delete_shard_builders(shards);
+		hash_table_helper::delete_shard_builders(shards);
 	}
 
 	{
-		HashTable hash_table("test_index");
+		hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 1000);
 	}
 
 	{
 		// Add more elements.
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("test_index");
+		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 1000; i < 2000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
+			hash_table_helper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
-		HashTableHelper::write(shards);
-		HashTableHelper::sort(shards);
+		hash_table_helper::write(shards);
+		hash_table_helper::sort(shards);
 
-		HashTableHelper::delete_shard_builders(shards);
+		hash_table_helper::delete_shard_builders(shards);
 	}
 
 	{
-		HashTable hash_table("test_index");
+		hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 2000);
 	}
@@ -78,45 +78,45 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 
 BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 
-	HashTableHelper::truncate("test_index");
+	hash_table_helper::truncate("test_index");
 
 	{
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("test_index");
+		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 100000; i < 200000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
+			hash_table_helper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
-		HashTableHelper::write(shards);
-		HashTableHelper::sort(shards);
+		hash_table_helper::write(shards);
+		hash_table_helper::sort(shards);
 
-		HashTableHelper::delete_shard_builders(shards);
+		hash_table_helper::delete_shard_builders(shards);
 	}
 
 	{
-		HashTable hash_table("test_index");
+		hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 100000);
 	}
 
 	{
 		// Add more elements.
-		vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("test_index");
+		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 100000; i++) {
-			HashTableHelper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
+			hash_table_helper::add_data(shards, i, "Random test data with id: " + std::to_string(i));
 		}
 
-		HashTableHelper::write(shards);
-		HashTableHelper::sort(shards);
+		hash_table_helper::write(shards);
+		hash_table_helper::sort(shards);
 
-		HashTableHelper::delete_shard_builders(shards);
+		hash_table_helper::delete_shard_builders(shards);
 	}
 
 	{
-		HashTable hash_table("test_index");
+		hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 200000);
 	}
@@ -125,13 +125,13 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 
 BOOST_AUTO_TEST_CASE(optimize) {
 
-	HashTableHelper::truncate("test_index");
+	hash_table_helper::truncate("test_index");
 
 	size_t shard_size = 0;
 	size_t shard_file_size = 0;
 
 	{
-		HashTableShardBuilder builder("test_index", 0);
+		hash_table_shard_builder builder("test_index", 0);
 
 		builder.add(1, "data element 1 v1");
 		builder.add(2, "data element 2 v1");
@@ -140,14 +140,14 @@ BOOST_AUTO_TEST_CASE(optimize) {
 		builder.write();
 		builder.sort();
 
-		HashTableShard shard("test_index", 0);
+		hash_table_shard shard("test_index", 0);
 		shard_size = shard.size();
 		shard_file_size = shard.file_size();
 	}
 
 	{
 		// Add some more elements with identical keys.
-		HashTableShardBuilder builder("test_index", 0);
+		hash_table_shard_builder builder("test_index", 0);
 
 		builder.add(1, "data element 1 v2");
 		builder.add(2, "data element 2 v2");
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(optimize) {
 
 		builder.optimize();
 
-		HashTableShard shard("test_index", 0);
+		hash_table_shard shard("test_index", 0);
 
 		BOOST_CHECK_EQUAL(shard.size(), shard_size);
 		BOOST_CHECK_EQUAL(shard.file_size(), shard_file_size);
@@ -171,10 +171,10 @@ BOOST_AUTO_TEST_CASE(optimize) {
 
 BOOST_AUTO_TEST_CASE(optimize_empty) {
 
-	HashTableHelper::truncate("main_index");
+	hash_table_helper::truncate("main_index");
 
-	vector<HashTableShardBuilder *> shards = HashTableHelper::create_shard_builders("main_index");
-	HashTableHelper::optimize(shards);
+	vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("main_index");
+	hash_table_helper::optimize(shards);
 
 }
 

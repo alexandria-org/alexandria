@@ -36,13 +36,13 @@ using namespace std;
 
 namespace url_link {
 
-	indexer::indexer(int id, const string &db_name, const SubSystem *sub_system, full_text::url_to_domain *url_to_domain)
+	indexer::indexer(int id, const string &db_name, const common::sub_system *sub_system, full_text::url_to_domain *url_to_domain)
 	: m_indexer_id(id), m_db_name(db_name), m_sub_system(sub_system)
 	{
 		m_url_to_domain = url_to_domain;
-		for (size_t shard_id = 0; shard_id < Config::ft_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < config::ft_num_shards; shard_id++) {
 			full_text::full_text_shard_builder<::url_link::full_text_record> *shard_builder =
-				new full_text::full_text_shard_builder<::url_link::full_text_record>(m_db_name, shard_id, Config::li_cached_bytes_per_shard);
+				new full_text::full_text_shard_builder<::url_link::full_text_record>(m_db_name, shard_id, config::li_cached_bytes_per_shard);
 			m_shards.push_back(shard_builder);
 		}
 	}
@@ -53,7 +53,7 @@ namespace url_link {
 		}
 	}
 
-	void indexer::add_stream(vector<HashTableShardBuilder *> &shard_builders, basic_istream<char> &stream) {
+	void indexer::add_stream(vector<hash_table::hash_table_shard_builder *> &shard_builders, basic_istream<char> &stream) {
 
 		string line;
 		while (getline(stream, line)) {
@@ -119,7 +119,7 @@ namespace url_link {
 		for (const string &word : words) {
 
 			const uint64_t word_hash = m_hasher(word);
-			const size_t shard_id = word_hash % Config::ft_num_shards;
+			const size_t shard_id = word_hash % config::ft_num_shards;
 
 			m_shards[shard_id]->add(word_hash, ::url_link::full_text_record{.m_value = link_hash, .m_score = score,
 				.m_source_domain = source_url.host_hash(), .m_target_hash = target_url.hash()});

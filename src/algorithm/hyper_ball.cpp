@@ -27,7 +27,7 @@
 #include "hyper_ball.h"
 #include "hyper_log_log.h"
 
-#include "system/Profiler.h"
+#include "profiler/profiler.h"
 #include "logger/logger.h"
 #include <thread>
 
@@ -38,7 +38,7 @@ namespace algorithm {
 	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const vector<uint32_t> *edge_map,
 			vector<hyper_log_log<uint32_t>> &c, vector<hyper_log_log<uint32_t>> &a, vector<double> &harmonic) {
 
-		Profiler::instance prof("Timetaker");
+		profiler::instance prof("Timetaker");
 		for (uint32_t v = v_begin; v < v_end; v++) {
 			a[v] = c[v];
 			for (const uint32_t &w : edge_map[v]) {

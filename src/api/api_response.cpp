@@ -27,7 +27,7 @@
 #include "api_response.h"
 #include "api/result_with_snippet.h"
 #include "full_text/search_metric.h"
-#include "parser/Unicode.h"
+#include "parser/unicode.h"
 #include "json.hpp"
 
 using namespace std;
@@ -44,8 +44,8 @@ namespace api {
 			json json_result;
 
 			json_result["url"] = result.url().str();
-			json_result["title"] = Unicode::encode(result.title());
-			json_result["snippet"] = Unicode::encode(result.snippet());
+			json_result["title"] = parser::unicode::encode(result.title());
+			json_result["snippet"] = parser::unicode::encode(result.snippet());
 			json_result["score"] = result.score();
 			json_result["domain_hash"] = to_string(result.domain_hash());
 			json_result["url_hash"] = to_string(result.url().hash());

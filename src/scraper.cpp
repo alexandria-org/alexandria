@@ -41,9 +41,9 @@ int main(int argc, const char **argv) {
 	logger::start_logger_thread();
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
-		Config::read_config(getenv("ALEXANDRIA_CONFIG"));
+		config::read_config(getenv("ALEXANDRIA_CONFIG"));
 	} else {
-		Config::read_config("/etc/alexandria.conf");
+		config::read_config("/etc/alexandria.conf");
 	}
 
 	worker::start_scraper_server();

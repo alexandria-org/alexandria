@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 			.m_domain_hash = 222ull
 		};
 
-		builder.add(123457ull + Config::shard_hash_table_size, record);
+		builder.add(123457ull + config::shard_hash_table_size, record);
 		builder.append();
 	}
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 	full_text_shard<full_text_record> shard("single_db_test", 10);
 
-	full_text_result_set<full_text_record> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
+	full_text_result_set<full_text_record> result_set(config::ft_max_results_per_section * config::ft_max_sections);
 	shard.find(123456ull, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(shard_builder) {
 
 	result_set.close_sections();
 
-	shard.find(123457ull + Config::shard_hash_table_size, &result_set);
+	shard.find(123457ull + config::shard_hash_table_size, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);
 	BOOST_CHECK_EQUAL(result_set.data_pointer()[0].m_value, 113ull);
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 			.m_domain_hash = 2223ull
 		};
 
-		builder.add(123456ull + Config::shard_hash_table_size, record);
+		builder.add(123456ull + config::shard_hash_table_size, record);
 	}
 
 	builder.append();
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 
 	full_text_shard<full_text_record> shard("single_db_test", 10);
 
-	full_text_result_set<full_text_record> result_set(Config::ft_max_results_per_section * Config::ft_max_sections);
+	full_text_result_set<full_text_record> result_set(config::ft_max_results_per_section * config::ft_max_sections);
 	shard.find(123456ull, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(shard_builder2) {
 
 	result_set.close_sections();
 
-	shard.find(123456ull + Config::shard_hash_table_size, &result_set);
+	shard.find(123456ull + config::shard_hash_table_size, &result_set);
 
 	BOOST_CHECK_EQUAL(result_set.size(), 1);
 	BOOST_CHECK_EQUAL(result_set.data_pointer()[0].m_value, 1112ull);

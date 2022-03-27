@@ -36,12 +36,12 @@
 #include "url_link/full_text_record.h"
 #include "domain_link/full_text_record.h"
 #include "logger/logger.h"
-#include "system/Profiler.h"
-#include "parser/Parser.h"
+#include "profiler/profiler.h"
+#include "parser/parser.h"
 #include "transfer/transfer.h"
-#include "hash/Hash.h"
-#include "sort/Sort.h"
+#include "algorithm/hash.h"
 #include "algorithm/algorithm.h"
+#include "algorithm/sort.h"
 #include "search_allocation/search_allocation.h"
 #include <cassert>
 
@@ -81,7 +81,7 @@ namespace search_engine {
 
 	/*
 		Search for the exact phrase. Will treat the whole phrase as an n_gram so will only give results when num words in query are less
-		or equal to Config::n_gram.
+		or equal to config::n_gram.
 	*/
 	template<typename data_record>
 	vector<data_record> search_exact(search_allocation::storage<data_record> *storage, const full_text_index<data_record> &index,
@@ -307,13 +307,13 @@ namespace search_engine {
 			lengths.push_back(result->num_sections());
 		}
 
-		vector<vector<int>> partitions = algorithm::incremental_partitions(lengths, Config::ft_section_depth);
+		vector<vector<int>> partitions = algorithm::incremental_partitions(lengths, config::ft_section_depth);
 
 		// First just try the top sections.
 		{
 			vector<data_record> result;
 			value_intersection(sorted_result_sets, partitions[0], result);
-			if (result.size() >= Config::result_limit) {
+			if (result.size() >= config::result_limit) {
 				dest->copy_vector(result);
 				return;
 			}
@@ -350,7 +350,7 @@ namespace search_engine {
 		}
 		// merge
 		vector<data_record> merged_vec;
-		Sort::merge_arrays(results, [](const data_record &a, const data_record &b) {
+		algorithm::sort::merge_arrays(results, [](const data_record &a, const data_record &b) {
 			return a.m_value < b.m_value;
 		}, merged_vec);
 
@@ -426,7 +426,7 @@ namespace search_engine {
 
 		map<uint64_t, size_t> d_count;
 		for (const data_record &result : results) {
-			if (d_count[result.m_domain_hash] < Config::deduplicate_domain_count) {
+			if (d_count[result.m_domain_hash] < config::deduplicate_domain_count) {
 				deduped.push_back(result);
 			} else {
 				non_deduped.push_back(result);
@@ -439,7 +439,7 @@ namespace search_engine {
 				non_deduped.resize(num_missing);
 			}
 			vector<data_record> ret;
-			Sort::merge_arrays(deduped, non_deduped, [] (const data_record &a, const data_record &b) {
+			algorithm::sort::merge_arrays(deduped, non_deduped, [] (const data_record &a, const data_record &b) {
 				return a.m_score > b.m_score;
 			}, ret);
 			return ret;
@@ -454,7 +454,7 @@ namespace search_engine {
 	vector<full_text_result_set<data_record> *> search_shards(vector<full_text_result_set<data_record> *> &result_sets,
 		const vector<full_text_shard<data_record> *> &shards, const vector<string> &words) {
 
-		assert(words.size() <= Config::query_max_words);
+		assert(words.size() <= config::query_max_words);
 		assert(words.size() <= result_sets.size());
 
 		vector<full_text_result_set<data_record> *> result_vector;
@@ -467,9 +467,9 @@ namespace search_engine {
 			
 			searched_words.push_back(word);
 
-			uint64_t word_hash = Hash::str(word);
+			uint64_t word_hash = algorithm::hash(word);
 
-			shards[word_hash % Config::ft_num_shards]->find(word_hash, result_sets[word_id]);
+			shards[word_hash % config::ft_num_shards]->find(word_hash, result_sets[word_id]);
 
 			result_vector.push_back(result_sets[word_id]);
 			word_id++;
@@ -482,14 +482,14 @@ namespace search_engine {
 	vector<full_text_result_set<data_record> *> search_shards_exact(vector<full_text_result_set<data_record> *> &result_sets,
 		const vector<full_text_shard<data_record> *> &shards, const vector<string> &words) {
 
-		assert(words.size() <= Config::query_max_words);
+		assert(words.size() <= config::query_max_words);
 		assert(words.size() <= result_sets.size());
 
 		vector<full_text_result_set<data_record> *> result_vector;
 
-		uint64_t n_gram_hash = Hash::str(boost::join(words, " "));
+		uint64_t n_gram_hash = algorithm::hash(boost::join(words, " "));
 
-		shards[n_gram_hash % Config::ft_num_shards]->find(n_gram_hash, result_sets[0]);
+		shards[n_gram_hash % config::ft_num_shards]->find(n_gram_hash, result_sets[0]);
 
 		result_vector.push_back(result_sets[0]);
 
@@ -503,7 +503,7 @@ namespace search_engine {
 
 		reset_search_metric(metric);
 
-		vector<string> words = text::get_full_text_words(query, Config::query_max_words);
+		vector<string> words = text::get_full_text_words(query, config::query_max_words);
 		if (words.size() == 0) return new full_text_result_set<data_record>(0);
 
 		vector<full_text_result_set<data_record> *> result_vector = search_shards<data_record>(storage->result_sets, shards, words);
@@ -541,7 +541,7 @@ namespace search_engine {
 
 		reset_search_metric(metric);
 
-		vector<string> words = text::get_full_text_words(query, Config::query_max_words);
+		vector<string> words = text::get_full_text_words(query, config::query_max_words);
 		if (words.size() == 0) return new full_text_result_set<data_record>(0);
 
 		vector<full_text_result_set<data_record> *> result_vector = search_shards_exact<data_record>(storage->result_sets, shards, words);
@@ -633,9 +633,9 @@ namespace search_engine {
 
 		vector<string> words = text::get_expanded_full_text_words(query);
 
-		uint64_t key = Hash::str(boost::algorithm::join(words, " "));
+		uint64_t key = algorithm::hash(boost::algorithm::join(words, " "));
 
-		index.shards()[key % Config::ft_num_shards]->find(key, storage->result_sets[0]);
+		index.shards()[key % config::ft_num_shards]->find(key, storage->result_sets[0]);
 
 		vector<data_record> ret(storage->result_sets[0]->span_pointer()->begin(), storage->result_sets[0]->span_pointer()->end());
 
@@ -650,7 +650,7 @@ namespace search_engine {
 
 		string buffer;
 		int error;
-		transfer::url_to_string(Config::data_node + "/?i=" + Parser::urlencode(query), buffer, error);
+		transfer::url_to_string(config::data_node + "/?i=" + parser::urlencode(query), buffer, error);
 		if (error == transfer::OK) {
 			const size_t num_records = buffer.size() / sizeof(data_record);
 			data_record *data_ptr = storage->result_sets[0]->data_pointer();

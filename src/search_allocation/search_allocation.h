@@ -44,7 +44,7 @@ namespace search_allocation {
 	struct storage {
 		/*
 			result_sets holds pre-allocated object of class full_text_result_set.
-			result_sets[0 ... Config::query_max_words]
+			result_sets[0 ... config::query_max_words]
 		*/
 		std::vector<full_text::full_text_result_set<data_record> *> result_sets;
 
@@ -63,10 +63,10 @@ namespace search_allocation {
 		storage<data_record> *record_storage = new storage<data_record>;
 
 		// Allocate result_sets.
-		for (size_t j = 0; j < Config::query_max_words; j++) {
-			record_storage->result_sets.push_back(new full_text::full_text_result_set<data_record>(Config::ft_max_results_per_section * Config::ft_max_sections));
+		for (size_t j = 0; j < config::query_max_words; j++) {
+			record_storage->result_sets.push_back(new full_text::full_text_result_set<data_record>(config::ft_max_results_per_section * config::ft_max_sections));
 		}
-		record_storage->intersected_result = new full_text::full_text_result_set<data_record>(Config::ft_max_results_per_section * Config::ft_max_sections);
+		record_storage->intersected_result = new full_text::full_text_result_set<data_record>(config::ft_max_results_per_section * config::ft_max_sections);
 
 		return record_storage;
 	}
@@ -75,7 +75,7 @@ namespace search_allocation {
 	void delete_storage(storage<data_record> *storage) {
 
 		// delete result_sets.
-		for (size_t j = 0; j < Config::query_max_words; j++) {
+		for (size_t j = 0; j < config::query_max_words; j++) {
 			delete storage->result_sets[j];
 		}
 		delete storage->intersected_result;

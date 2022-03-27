@@ -40,13 +40,13 @@ namespace indexer {
 		std::vector<std::string> words = text::get_full_text_words(m_text);
 		std::vector<size_t> tokens;
 		for (const std::string &word : words) {
-			tokens.push_back(Hash::str(word));
+			tokens.push_back(::algorithm::hash(word));
 		}
 		return tokens;
 	}
 
 	size_t snippet::domain_hash() const {
-		return Hash::str(m_domain);
+		return ::algorithm::hash(m_domain);
 	}
 
 	size_t snippet::url_hash() const {
