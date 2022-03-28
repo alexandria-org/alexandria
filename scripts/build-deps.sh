@@ -11,7 +11,7 @@ base_path=`pwd`
 cd $base_path
 cd deps
 
-cd zlib-1.2.11
+cd zlib-1.2.12
 ./configure
 make -j4
 make install
