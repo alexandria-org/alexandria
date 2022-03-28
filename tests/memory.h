@@ -29,8 +29,21 @@
 BOOST_AUTO_TEST_SUITE(memory)
 
 BOOST_AUTO_TEST_CASE(mem) {
-	size_t available_memory = memory::get_available_memory();
-	std::cout << "available_memory:" << available_memory << std::endl;
+	memory::update();
+
+	BOOST_CHECK(memory::get_available_memory() > 0);
+	BOOST_CHECK(memory::get_total_memory() > 0);
+
+	const size_t used1 = memory::get_used_memory();
+
+	char *some_mem = new char[1000000];
+	memory::update();
+
+	const size_t used2 = memory::get_used_memory();
+
+	BOOST_CHECK(used1 < used2);
+
+	delete some_mem;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

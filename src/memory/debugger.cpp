@@ -33,27 +33,25 @@
 
 using namespace std;
 
+/*
+	This memory manager exists so that we can know exactly how many bytes we currently have allocated. Since the OS
+	is running a virtual memory system we can only know exactly how many bytes we have allocated right now if we
+	keep a counter ourselves.
+
+	To do this we overload the global new, new[], delete and delete[] operators.
+
+	The problem is knowing how much memory is freed, we only have the pointer and not the length. To fix this issue
+	we allocate sizeof(size_t) bytes more when allocating memory, then we store the length there and return a pointer
+	to the address at offset "sizeof(size_t)" from the allocated pointer.
+
+	This seems like absolute madness at first but I don't have any other solution.
+*/
+
 namespace memory {
 
 	mutex lock;
 	size_t mem_counter;
 	size_t ptr_counter;
-
-	bool debugger_enabled() {
-		return false;
-	}
-
-	void enable_debugger() {
-
-	}
-
-	void enable_mem_counter() {
-
-	}
-
-	size_t disable_debugger() {
-		return 0;
-	}
 
 	size_t allocated_memory() {
 		return mem_counter;
@@ -90,7 +88,10 @@ namespace memory {
 	}
 }
 
-//https://en.cppreference.com/w/cpp/memory/new/operator_new
+/*
+	Overload the global new, new[], delete and delete[] operators.
+*/
+// https://en.cppreference.com/w/cpp/memory/new/operator_new
 void *operator new(size_t n) {
 
 	void *m = malloc(n + sizeof(size_t));

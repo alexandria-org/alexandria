@@ -30,8 +30,22 @@
 
 namespace memory {
 
+	/*
+		Returns the number of bytes of available memory on the system. So this is how much our virtual memory can expand.
+	*/
 	size_t get_available_memory();
+
+	/*
+		Returns the size in bytes of our virtual memory (vsize)
+		same as vsize in /proc/[pid]/stat here: https://man7.org/linux/man-pages/man5/proc.5.html
+	*/
+	size_t get_used_memory();
+
+	/*
+		Returns the total number of bytes in the system RAM.
+	*/
 	size_t get_total_memory();
+
 	void update();
 
 }
