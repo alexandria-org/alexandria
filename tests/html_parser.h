@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(html_parse6) {
 	parser.parse(file::read_test_file("test11.html"));
 
 	BOOST_CHECK_EQUAL(parser.meta(), "Svenska Dagbladet står för seriös och faktabaserad kvalitetsjournalistik som utmanar, ifrågasätter och inspirerar");
-	BOOST_CHECK_EQUAL(parser.title(), "sv_d | Sveriges kvalitetssajt för nyheter");
+	BOOST_CHECK_EQUAL(parser.title(), "SvD | Sveriges kvalitetssajt för nyheter");
 
 }
 
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(html_parse_links) {
 
 	html = file::read_test_file("automobileszone.com");
 	parser.parse(html, "http://automobileszone.com/wp-login.php?redirect_to=http%3A%2F%2Fautomobileszone.com%2Fbest-bronco-build-off-our-editors-weigh-in-on-their-ideal-suvs%2F");
-	BOOST_CHECK_EQUAL(parser.text(), "Username or Email Address Password Remember Me Lost your password? ← Back to Automobiles Zone Log in with word_press.com");
+	BOOST_CHECK_EQUAL(parser.text(), "Username or Email Address Password Remember Me Lost your password? ← Back to Automobiles Zone Log in with WordPress.com");
 	BOOST_CHECK(parser.should_insert());
 
 	html = file::read_test_file("vcareprojectmanagement.com");
