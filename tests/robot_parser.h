@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_SUITE(robot_parser)
 
 BOOST_AUTO_TEST_CASE(parse) {
 	std::string robots_content = "Sitemap: https://www.omnible.se/sitemap.xml\n"
-		"User-agent: alexandria_bot\n"
+		"User-agent: AlexandriaBot\n"
 		"Disallow: *\n"
 		"User-agent: *   # all agents\n"
 		"Disallow: /*crawl=no*\n"
