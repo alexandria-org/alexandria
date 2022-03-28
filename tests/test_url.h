@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "url.h"
+#include "URL.h"
 
 BOOST_AUTO_TEST_SUITE(test_url)
 

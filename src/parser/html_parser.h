@@ -36,7 +36,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "html_link.h"
-#include "parser/Unicode.h"
+#include "parser/unicode.h"
 
 #define HTML_PARSER_LONG_TEXT_LEN 1000
 #define HTML_PARSER_MAX_H1_LEN 400

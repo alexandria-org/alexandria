@@ -25,7 +25,7 @@
  */
 
 #include "common/sub_system.h"
-#include "common/Dictionary.h"
+#include "common/dictionary.h"
 
 BOOST_AUTO_TEST_SUITE(test_sub_system)
 

@@ -35,7 +35,7 @@
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 #include "stopwords.h"
-#include "parser/Unicode.h"
+#include "parser/unicode.h"
 #include "algorithm/hash.h"
 
 namespace text {
