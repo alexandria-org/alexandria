@@ -104,7 +104,10 @@ namespace indexer {
 		if (res.size() > 10) res.resize(10);
 
 		for (indexer::return_record &rec : res) {
-			const string url_data = ht.find(rec.m_url_hash);
+			const string host = ht.find(rec.m_value);
+
+			cout << host << endl;
+			/*const string url_data = ht.find(rec.m_url_hash);
 			const string snippet_data = ht.find(rec.m_value);
 
 			vector<string> parts;
@@ -113,7 +116,7 @@ namespace indexer {
 			const string url = parts[0];
 			cout << title << endl;
 			cout << url << endl;
-			cout << snippet_data << endl << endl;
+			cout << snippet_data << endl << endl;*/
 		}
 	}
 
@@ -148,12 +151,12 @@ namespace indexer {
 		indexer::index_tree idx_tree;
 
 		indexer::domain_level domain_level;
-		indexer::url_level url_level;
-		indexer::snippet_level snippet_level;
+		//indexer::url_level url_level;
+		//indexer::snippet_level snippet_level;
 
 		idx_tree.add_level(&domain_level);
-		idx_tree.add_level(&url_level);
-		idx_tree.add_level(&snippet_level);
+		//idx_tree.add_level(&url_level);
+		//idx_tree.add_level(&snippet_level);
 
 		//idx_tree.truncate();
 
@@ -192,19 +195,19 @@ namespace indexer {
 			indexer::index_tree idx_tree;
 
 			indexer::domain_level domain_level;
-			indexer::url_level url_level;
-			indexer::snippet_level snippet_level;
+			//indexer::url_level url_level;
+			//indexer::snippet_level snippet_level;
 
 			idx_tree.add_level(&domain_level);
-			idx_tree.add_level(&url_level);
-			idx_tree.add_level(&snippet_level);
+			//idx_tree.add_level(&url_level);
+			//idx_tree.add_level(&snippet_level);
 
 			idx_tree.truncate();
 
 			merger::start_merge_thread();
 
 			const string batch = "SMALL-MIX";
-			size_t limit = 1000;
+			size_t limit = 10;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -234,9 +237,9 @@ namespace indexer {
 			merger::start_merge_thread();
 
 			const vector<string> batches = {
-				"LINK-MIX",
+				"SMALL-LINK-MIX",
 			};
-			size_t limit = 5000;
+			size_t limit = 100;
 
 			for (const string &batch : batches) {
 

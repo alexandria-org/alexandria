@@ -168,6 +168,7 @@ namespace indexer {
 			float harmonic = domain_stats::harmonic_centrality(url);
 
 			add_url(url.hash(), domain_hash);
+			add_data(url.host_hash(), url.host());
 
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 

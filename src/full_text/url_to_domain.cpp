@@ -54,6 +54,7 @@ namespace full_text {
 	}
 
 	void url_to_domain::read() {
+		lock_guard lock(m_lock);
 		for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
 			const string file_name = "/mnt/"+(to_string(bucket_id))+"/full_text/url_to_domain_"+m_db_name+".fti";
 
@@ -82,7 +83,8 @@ namespace full_text {
 		}
 	}
 
-	void url_to_domain::write(size_t indexer_id) {
+	void url_to_domain::write(size_t indexer_id) {\
+		lock_guard lock(m_lock);
 		const string file_name = "/mnt/"+(to_string(indexer_id % 8))+"/full_text/url_to_domain_"+m_db_name+".fti";
 
 		ofstream outfile(file_name, ios::binary | ios::app);

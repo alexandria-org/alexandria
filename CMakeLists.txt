@@ -105,6 +105,7 @@ set(SRC_CLASSES
 	"src/algorithm/hash.cpp"
 
 	"src/tools/splitter.cpp"
+	"src/tools/find_links.cpp"
 	"src/tools/counter.cpp"
 	"src/tools/download.cpp"
 	"src/tools/calculate_harmonic.cpp"
