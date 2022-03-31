@@ -52,6 +52,7 @@ namespace algorithm {
 			void insert(T v);
 			void insert_hash(size_t x);
 			size_t size() const;
+			void reset();
 			char leading_zeros_plus_one(size_t x) const;
 			size_t num_zero_registers() const;
 			double error_bound() const;
@@ -94,7 +95,7 @@ namespace algorithm {
 
 	template<typename T>
 	hyper_log_log<T>::hyper_log_log(size_t b)
-	: m_b(20) {
+	: m_b(b) {
 		m_M = new char[m_len];
 		memset(m_M, 0, m_len);
 	}
@@ -134,6 +135,11 @@ namespace algorithm {
 		}
 
 		return (size_t)E;
+	}
+
+	template<typename T>
+	void hyper_log_log<T>::reset() {
+		memset(m_M, 0, m_len);
 	}
 
 	template<typename T>

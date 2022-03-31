@@ -136,10 +136,16 @@ set(SRC_COMMON
 	"src/text/text.cpp"
 )
 
+set(SRC_TESTS
+	"tests/test_sharded_index_builder.cpp"
+	"tests/hyper_log_log.cpp"
+)
+
 add_executable(run_tests
 	"tests/main.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
+	${SRC_TESTS}
 )
 add_executable(server
 	"src/server.cpp"

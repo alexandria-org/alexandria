@@ -64,8 +64,6 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
-		size_t document_size(uint64_t document_id) { return m_document_sizes[document_id]; }
-
 		void calculate_scores(algorithm algo);
 
 		void calculate_scores_for_token(algorithm algo, uint64_t token, std::vector<data_record> &records);
@@ -93,9 +91,7 @@ namespace indexer {
 
 
 		// Counters
-		std::map<uint64_t, size_t> m_document_sizes;
 		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>> m_result_counters;
-		float m_avg_document_size = 0.0f;
 		size_t m_unique_document_count = 0;
 
 		void read_append_cache();
@@ -253,7 +249,6 @@ namespace indexer {
 		// Reset caches and counters.
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 		m_result_sizes = std::map<uint64_t, size_t>{};
-		m_document_sizes = std::map<uint64_t, size_t>{};
 		m_result_counters = std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>>{};
 
 		std::ofstream writer(cache_filename(), std::ios::trunc);
@@ -302,7 +297,7 @@ namespace indexer {
 
 	template<typename data_record>
 	float index_builder<data_record>::calculate_score_for_record(algorithm algo, uint64_t token, const data_record &record) {
-		if (algo == algorithm::bm25) {
+		/*if (algo == algorithm::bm25) {
 			// reference: https://en.wikipedia.org/wiki/Okapi_BM25
 			const float k1 = 1.2f;
 			const float b = 0.75f;
@@ -315,7 +310,7 @@ namespace indexer {
 			float tf = 0.0f;
 			if (m_document_sizes.count(record.m_value)) tf = (float)record.count() / m_document_sizes[record.m_value];
 			return tf * log((float)m_unique_document_count / total_results_for_key(token));
-		}
+		}*/
 
 		return record.m_score;
 	}
@@ -385,7 +380,6 @@ namespace indexer {
 			for (size_t i = 0; i < num_records; i++) {
 				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
 				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
-				m_document_sizes[record->m_value]++;
 				m_cache[key].push_back(*record);
 			}
 		}
@@ -712,22 +706,11 @@ namespace indexer {
 		infile.seekg(0, std::ios::end);
 		//size_t meta_file_size = infile.tellg();
 
-		m_document_sizes.clear();
 		m_result_counters.clear();
 
 		if (infile.is_open()) {
 			infile.seekg(sizeof(meta));
 			infile.read(hll->data(), hll->data_size());
-
-			size_t num_docs = 0;
-			infile.read((char *)(&num_docs), sizeof(size_t));
-			for (size_t i = 0; i < num_docs; i++) {
-				uint64_t doc_id = 0;
-				size_t count = 0;
-				infile.read((char *)(&doc_id), sizeof(uint64_t));
-				infile.read((char *)(&count), sizeof(size_t));
-				m_document_sizes[doc_id] = count;
-			}
 
 			// Read total counters.
 			size_t num_total_counters = 0;
@@ -760,14 +743,6 @@ namespace indexer {
 			outfile.write((char *)(&m), sizeof(m));
 			outfile.write(hll->data(), hll->data_size());
 
-			// Write document sizes.
-			const size_t num_docs = m_document_sizes.size();
-			outfile.write((char *)(&num_docs), sizeof(size_t));
-			for (const auto &iter : m_document_sizes) {
-				outfile.write((char *)(&iter.first), sizeof(uint64_t));
-				outfile.write((char *)(&iter.second), sizeof(size_t));
-			}
-
 			// Write total counters.
 			const size_t num_total_counters = m_result_counters.size();
 			outfile.write((char *)(&num_total_counters), sizeof(size_t));
@@ -780,11 +755,7 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::calculate_avg_document_size() {
-		size_t total_count = 0;
-		for (const auto &iter : m_document_sizes) {
-			total_count += iter.second;
-		}
-		m_avg_document_size = (float)total_count / m_document_sizes.size();
+		
 	}
 
 	template<typename data_record>
