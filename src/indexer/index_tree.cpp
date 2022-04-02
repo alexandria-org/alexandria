@@ -100,52 +100,36 @@ namespace indexer {
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 			URL target_url(col_values[2], col_values[3]);
+			URL source_url(col_values[0], col_values[1]);
 
-			if (m_url_to_domain->has_url(target_url.hash())) {
+			float target_harmonic = domain_stats::harmonic_centrality(target_url);
+			float source_harmonic = domain_stats::harmonic_centrality(source_url);
 
-				URL source_url(col_values[0], col_values[1]);
+			const string link_text = col_values[4].substr(0, 1000);
 
-				float target_harmonic = domain_stats::harmonic_centrality(target_url);
-				float source_harmonic = domain_stats::harmonic_centrality(source_url);
+			const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
-				const string link_text = col_values[4].substr(0, 1000);
+			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
+			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
-				const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
+			const bool has_url = m_url_to_domain->has_url(target_url.hash());
 
-				uint64_t link_hash = source_url.link_hash(target_url, link_text);
+			vector<string> words = text::get_expanded_full_text_words(link_text);
+			for (const string &word : words) {
 
-				vector<string> words = text::get_expanded_full_text_words(link_text);
-				for (const string &word : words) {
+				const uint64_t word_hash = ::algorithm::hash(word);
 
-					const uint64_t word_hash = ::algorithm::hash(word);
+				domain_link_record rec(domain_link_hash, source_harmonic);
+				rec.m_source_domain = source_url.host_hash();
+				rec.m_target_domain = target_url.host_hash();
+				m_domain_link_index_builder->add(word_hash, rec);
 
+				// Add the url link.
+				if (has_url) {
 					link_record rec(link_hash, source_harmonic);
 					rec.m_source_domain = source_url.host_hash();
 					rec.m_target_hash = target_url.hash();
 					m_link_index_builder->add(word_hash, rec);
-				}
-			}
-			if (m_url_to_domain->has_domain(target_url.host_hash())) {
-				URL source_url(col_values[0], col_values[1]);
-
-				float target_harmonic = domain_stats::harmonic_centrality(target_url);
-				float source_harmonic = domain_stats::harmonic_centrality(source_url);
-
-				const string link_text = col_values[4].substr(0, 1000);
-
-				const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
-
-				uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
-
-				vector<string> words = text::get_expanded_full_text_words(link_text);
-				for (const string &word : words) {
-
-					const uint64_t word_hash = ::algorithm::hash(word);
-
-					domain_link_record rec(link_hash, source_harmonic);
-					rec.m_source_domain = source_url.host_hash();
-					rec.m_target_domain = target_url.host_hash();
-					m_domain_link_index_builder->add(word_hash, rec);
 				}
 			}
 		}
@@ -202,9 +186,6 @@ namespace indexer {
 
 		vector<link_record> links = m_link_index->find(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
-
-		//for (auto &link : links) link.m_score = 0.2;
-		//for (auto &link : domain_links) link.m_score = 0.2;
 
 		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
 

@@ -27,6 +27,7 @@
 #define BOOST_TEST_MODULE "Unit tests for alexandria.org"
 
 #define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
@@ -67,7 +68,6 @@ using std::pair;
 #include "deduplication.h"
 #include "sections.h"
 #include "logger.h"
-#include "hyper_log_log.h"
 #include "hyper_ball.h"
 #include "cluster.h"
 #include "cc_parser.h"
@@ -94,13 +94,12 @@ void run_after() {
 	logger::join_logger_thread();
 }
 
-
 int BOOST_TEST_CALL_DECL
 main(int argc, char* argv[]) {
 
 	run_before();
 
-    int ret = ::boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
+    int ret = ::boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
 
 	run_after();
 

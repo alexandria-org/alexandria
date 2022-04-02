@@ -27,45 +27,10 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <mutex>
 
-namespace full_text {
+namespace tools {
 
-	class url_to_domain {
+	void find_links();
 
-		public:
-			explicit url_to_domain(const std::string &db_name);
-			~url_to_domain();
-
-			void add_url(uint64_t url_hash, uint64_t domain_hash);
-			void read();
-			void write(size_t indexer_id);
-			void truncate();
-
-			size_t size() const {
-				return m_url_to_domain.size();
-			}
-
-			bool has_url(uint64_t url_hash) {
-				std::lock_guard guard(m_lock); 
-				return m_url_to_domain.count(url_hash) > 0;
-			}
-
-			bool has_domain(uint64_t domain_hash) {
-				return m_domains.count(domain_hash) > 0;
-			}
-
-
-			const std::unordered_map<uint64_t, uint64_t> &get_url_to_domain() const { return m_url_to_domain; };
-			const std::unordered_map<uint64_t, size_t> &domains() const { return m_domains; };
-
-		private:
-			const std::string m_db_name;
-			std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
-			std::unordered_map<uint64_t, size_t> m_domains;
-			std::mutex m_lock;
-
-	};
 }
+

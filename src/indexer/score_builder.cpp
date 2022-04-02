@@ -24,48 +24,38 @@
  * SOFTWARE.
  */
 
-#pragma once
-
+#include "score_builder.h"
 #include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <mutex>
+#include <map>
 
-namespace full_text {
+namespace indexer {
 
-	class url_to_domain {
+	score_builder::score_builder(size_t num_documents, const std::map<uint64_t, size_t> *document_sizes)
+	: m_num_documents(num_documents), m_document_sizes(document_sizes)
+	{
+		calculate_avg_document_size();
+	}
+		
+	float score_builder::score() const {
+		return 0.0f;
+	}
 
-		public:
-			explicit url_to_domain(const std::string &db_name);
-			~url_to_domain();
+	size_t score_builder::document_size(uint64_t doc_id) const {
+		if (m_document_sizes->count(doc_id)) {
+			return m_document_sizes->at(doc_id);
+		}
+		return 0;
+	}
 
-			void add_url(uint64_t url_hash, uint64_t domain_hash);
-			void read();
-			void write(size_t indexer_id);
-			void truncate();
-
-			size_t size() const {
-				return m_url_to_domain.size();
+	void score_builder::calculate_avg_document_size() {
+		m_avg_document_size = 0.0f;
+		if (m_document_sizes->size()) {
+			size_t sum = 0;
+			for (const auto &iter : *m_document_sizes) {
+				sum += iter.second;
 			}
+			m_avg_document_size = (float)sum / m_document_sizes->size();
+		}
+	}
 
-			bool has_url(uint64_t url_hash) {
-				std::lock_guard guard(m_lock); 
-				return m_url_to_domain.count(url_hash) > 0;
-			}
-
-			bool has_domain(uint64_t domain_hash) {
-				return m_domains.count(domain_hash) > 0;
-			}
-
-
-			const std::unordered_map<uint64_t, uint64_t> &get_url_to_domain() const { return m_url_to_domain; };
-			const std::unordered_map<uint64_t, size_t> &domains() const { return m_domains; };
-
-		private:
-			const std::string m_db_name;
-			std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
-			std::unordered_map<uint64_t, size_t> m_domains;
-			std::mutex m_lock;
-
-	};
 }

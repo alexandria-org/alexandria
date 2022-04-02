@@ -33,6 +33,7 @@
 #include "tools/download.h"
 #include "tools/calculate_harmonic.h"
 #include "tools/generate_url_lists.h"
+#include "tools/find_links.h"
 #include "URL.h"
 #include "worker/worker.h"
 #include "indexer/console.h"
@@ -99,6 +100,8 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--host-hash-mod") {
 		URL url(argv[2]);
 		cout << url.host_hash() % stoull(argv[3]) << endl;
+	} else if (arg == "--find-links") {
+		tools::find_links();
 	} else if (arg == "--console") {
 		indexer::console();
 	} else if (arg == "--index-new") {

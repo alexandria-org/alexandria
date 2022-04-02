@@ -26,6 +26,7 @@
 
 #include "console.h"
 #include <vector>
+#include <iomanip>
 #include "text/text.h"
 #include "indexer/index_tree.h"
 #include "URL.h"
@@ -103,17 +104,20 @@ namespace indexer {
 
 		if (res.size() > 10) res.resize(10);
 
-		for (indexer::return_record &rec : res) {
-			const string url_data = ht.find(rec.m_url_hash);
-			const string snippet_data = ht.find(rec.m_value);
+		cout << setw(50) << "domain";
+		cout << setw(20) << "score";
+		cout << setw(20) << "url_links";
+		cout << setw(20) << "domain_links";
+		cout << endl;
 
-			vector<string> parts;
-			boost::algorithm::split(parts, url_data, boost::is_any_of("\t"));
-			const string title = parts[1];
-			const string url = parts[0];
-			cout << title << endl;
-			cout << url << endl;
-			cout << snippet_data << endl << endl;
+		for (indexer::return_record &rec : res) {
+			const string host = ht.find(rec.m_value);
+
+			cout << setw(50) << host;
+			cout << setw(20) << rec.m_score;
+			cout << setw(20) << rec.m_num_url_links;
+			cout << setw(20) << rec.m_num_domain_links;
+			cout << endl;
 		}
 	}
 
@@ -148,12 +152,12 @@ namespace indexer {
 		indexer::index_tree idx_tree;
 
 		indexer::domain_level domain_level;
-		indexer::url_level url_level;
-		indexer::snippet_level snippet_level;
+		//indexer::url_level url_level;
+		//indexer::snippet_level snippet_level;
 
 		idx_tree.add_level(&domain_level);
-		idx_tree.add_level(&url_level);
-		idx_tree.add_level(&snippet_level);
+		//idx_tree.add_level(&url_level);
+		//idx_tree.add_level(&snippet_level);
 
 		//idx_tree.truncate();
 
@@ -192,19 +196,19 @@ namespace indexer {
 			indexer::index_tree idx_tree;
 
 			indexer::domain_level domain_level;
-			indexer::url_level url_level;
-			indexer::snippet_level snippet_level;
+			//indexer::url_level url_level;
+			//indexer::snippet_level snippet_level;
 
 			idx_tree.add_level(&domain_level);
-			idx_tree.add_level(&url_level);
-			idx_tree.add_level(&snippet_level);
+			//idx_tree.add_level(&url_level);
+			//idx_tree.add_level(&snippet_level);
 
 			idx_tree.truncate();
 
 			merger::start_merge_thread();
 
 			const string batch = "SMALL-MIX";
-			size_t limit = 1000;
+			size_t limit = 20;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -226,6 +230,8 @@ namespace indexer {
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
+
+			idx_tree.calculate_scores_for_level(0);
 		}
 
 		{
@@ -234,9 +240,9 @@ namespace indexer {
 			merger::start_merge_thread();
 
 			const vector<string> batches = {
-				"LINK-MIX",
+				"SMALL-LINK-MIX",
 			};
-			size_t limit = 5000;
+			size_t limit = 1000;
 
 			for (const string &batch : batches) {
 

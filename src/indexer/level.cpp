@@ -168,6 +168,7 @@ namespace indexer {
 			float harmonic = domain_stats::harmonic_centrality(url);
 
 			add_url(url.hash(), domain_hash);
+			add_data(url.host_hash(), url.host());
 
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
@@ -186,7 +187,7 @@ namespace indexer {
 	}
 
 	void domain_level::calculate_scores() {
-		//m_builder->calculate_scores(indexer::algorithm::bm25);
+		m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
 	void domain_level::clean_up() {
@@ -231,6 +232,7 @@ namespace indexer {
 				if (domain_unique.count(p) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					results[j].m_score += url_score;
+					results[j].m_num_domain_links++;
 					applied_links++;
 					domain_unique[p] = links[i].m_source_domain;
 				}
@@ -341,6 +343,7 @@ namespace indexer {
 				if (domain_unique.count(p) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					results[j].m_score += url_score;
+					results[j].m_num_url_links++;
 					applied_links++;
 					domain_unique[p] = links[i].m_source_domain;
 				}

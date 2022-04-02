@@ -27,45 +27,29 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <mutex>
+#include <map>
 
-namespace full_text {
+namespace indexer {
 
-	class url_to_domain {
+	class score_builder {
 
-		public:
-			explicit url_to_domain(const std::string &db_name);
-			~url_to_domain();
+	public:
 
-			void add_url(uint64_t url_hash, uint64_t domain_hash);
-			void read();
-			void write(size_t indexer_id);
-			void truncate();
+		score_builder(size_t num_documents, const std::map<uint64_t, size_t> *document_sizes);
+		
+		float score() const;
+		size_t document_count() const { return m_num_documents; }
+		size_t document_size(uint64_t doc_id) const;
+		float avg_document_size() const { return m_avg_document_size; };
 
-			size_t size() const {
-				return m_url_to_domain.size();
-			}
+	private:
 
-			bool has_url(uint64_t url_hash) {
-				std::lock_guard guard(m_lock); 
-				return m_url_to_domain.count(url_hash) > 0;
-			}
+		size_t m_num_documents;
+		float m_avg_document_size;
+		const std::map<uint64_t, size_t> *m_document_sizes;
 
-			bool has_domain(uint64_t domain_hash) {
-				return m_domains.count(domain_hash) > 0;
-			}
-
-
-			const std::unordered_map<uint64_t, uint64_t> &get_url_to_domain() const { return m_url_to_domain; };
-			const std::unordered_map<uint64_t, size_t> &domains() const { return m_domains; };
-
-		private:
-			const std::string m_db_name;
-			std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
-			std::unordered_map<uint64_t, size_t> m_domains;
-			std::mutex m_lock;
+		void calculate_avg_document_size();
 
 	};
+
 }

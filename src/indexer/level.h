@@ -68,6 +68,12 @@ namespace indexer {
 			return m_value < b.m_value;
 		}
 
+		struct storage_order {
+			inline bool operator() (const generic_record &a, const generic_record &b) {
+				return a.m_value < b.m_value;
+			}
+		};
+
 		generic_record operator+(const generic_record &b) const {
 			generic_record sum;
 			sum.m_value = m_value;
@@ -89,6 +95,8 @@ namespace indexer {
 
 		public:
 		uint64_t m_url_hash;
+		size_t m_num_url_links = 0;
+		size_t m_num_domain_links = 0;
 
 	};
 
@@ -100,6 +108,13 @@ namespace indexer {
 		link_record() : generic_record() {};
 		link_record(uint64_t value) : generic_record(value) {};
 		link_record(uint64_t value, float score) : generic_record(value, score) {};
+
+		struct storage_order {
+			inline bool operator() (const link_record &a, const link_record &b) {
+				return a.m_target_hash < b.m_target_hash;
+			}
+		};
+
 	};
 
 	class domain_link_record : public generic_record {
@@ -110,6 +125,13 @@ namespace indexer {
 		domain_link_record() : generic_record() {};
 		domain_link_record(uint64_t value) : generic_record(value) {};
 		domain_link_record(uint64_t value, float score) : generic_record(value, score) {};
+
+		struct storage_order {
+			inline bool operator() (const domain_link_record &a, const domain_link_record &b) {
+				return a.m_target_domain < b.m_target_domain;
+			}
+		};
+
 	};
 
 	class level {

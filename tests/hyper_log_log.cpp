@@ -24,8 +24,12 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "algorithm/hyper_log_log.h"
 #include <cstdlib>
+#include <vector>
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(hyper_log_log)
 
@@ -113,6 +117,16 @@ BOOST_AUTO_TEST_CASE(hyper_log_log_data_copy) {
 		}
 		BOOST_CHECK(std::abs((int)hll.size() - (int)size) < size * hl1.error_bound());
 	}
+}
+
+BOOST_AUTO_TEST_CASE(hyper_log_log_test2) {
+	algorithm::hyper_log_log<int> hl1(8);
+
+	for (size_t i = 0; i < 1500000; i++) {
+		hl1.insert(rand());
+	}
+
+	cout << "size: " << hl1.size() << endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

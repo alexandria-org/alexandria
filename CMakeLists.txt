@@ -105,6 +105,7 @@ set(SRC_CLASSES
 	"src/algorithm/hash.cpp"
 
 	"src/tools/splitter.cpp"
+	"src/tools/find_links.cpp"
 	"src/tools/counter.cpp"
 	"src/tools/download.cpp"
 	"src/tools/calculate_harmonic.cpp"
@@ -119,6 +120,7 @@ set(SRC_CLASSES
 	"src/indexer/index_tree.cpp"
 	"src/indexer/console.cpp"
 	"src/indexer/merger.cpp"
+	"src/indexer/score_builder.cpp"
 
 	"src/domain_stats/domain_stats.cpp"
 
@@ -135,10 +137,16 @@ set(SRC_COMMON
 	"src/text/text.cpp"
 )
 
+set(SRC_TESTS
+	"tests/test_sharded_index_builder.cpp"
+	"tests/hyper_log_log.cpp"
+)
+
 add_executable(run_tests
 	"tests/main.cpp"
 	${SRC_CLASSES}
 	${SRC_COMMON}
+	${SRC_TESTS}
 )
 add_executable(server
 	"src/server.cpp"
