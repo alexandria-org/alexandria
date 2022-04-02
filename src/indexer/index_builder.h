@@ -33,6 +33,7 @@
 #include <cassert>
 #include <boost/filesystem.hpp>
 #include "merger.h"
+#include "score_builder.h"
 #include "algorithm/hyper_log_log.h"
 #include "config.h"
 #include "logger/logger.h"
@@ -64,11 +65,12 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
-		void calculate_scores(algorithm algo);
+		void calculate_scores(algorithm algo, const score_builder &score);
 
-		void calculate_scores_for_token(algorithm algo, uint64_t token, std::vector<data_record> &records);
-		float calculate_score_for_record(algorithm algo, uint64_t token, const data_record &record);
-		float idf(uint64_t token);
+		void calculate_scores_for_token(algorithm algo, const score_builder &score, uint64_t token,
+			std::vector<data_record> &records);
+		float calculate_score_for_record(algorithm algo, const score_builder &score, uint64_t token,
+			const data_record &record);
 
 	private:
 
@@ -109,7 +111,6 @@ namespace indexer {
 		void count_unique(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
 		void read_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
 		void save_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) const;
-		void calculate_avg_document_size();
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
@@ -266,7 +267,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::calculate_scores(algorithm algo) {
+	void index_builder<data_record>::calculate_scores(algorithm algo, const score_builder &score) {
 
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
@@ -278,10 +279,8 @@ namespace indexer {
 		// Read the current file.
 		read_data_to_cache();
 
-		calculate_avg_document_size();
-
 		for (auto &iter : m_cache) {
-			calculate_scores_for_token(algo, iter.first, iter.second);
+			calculate_scores_for_token(algo, score, iter.first, iter.second);
 		}
 
 		sort_cache();
@@ -289,38 +288,39 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::calculate_scores_for_token(algorithm algo, uint64_t token, std::vector<data_record> &records) {
+	void index_builder<data_record>::calculate_scores_for_token(algorithm algo, const score_builder &score,
+			uint64_t token, std::vector<data_record> &records) {
 		for (data_record &record : records) {
-			record.m_score = calculate_score_for_record(algo, token, record);
+			record.m_score = calculate_score_for_record(algo, score, token, record);
 		}
 	}
 
 	template<typename data_record>
-	float index_builder<data_record>::calculate_score_for_record(algorithm algo, uint64_t token, const data_record &record) {
-		/*if (algo == algorithm::bm25) {
+	float index_builder<data_record>::calculate_score_for_record(algorithm algo, const score_builder &score,
+			uint64_t token, const data_record &record) {
+
+		float val1 = (score.document_count() - total_results_for_key(token) + 0.5f);
+		float val2 = (total_results_for_key(token) + 0.5f);
+		float idf = log((val1 / val2) + 1.0f);
+
+		if (algo == algorithm::bm25) {
 			// reference: https://en.wikipedia.org/wiki/Okapi_BM25
 			const float k1 = 1.2f;
 			const float b = 0.75f;
 			float tf = 0.0f;
-			if (m_document_sizes.count(record.m_value)) tf = (float)record.count() / m_document_sizes[record.m_value];
-			return idf(token) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * ((float)m_document_sizes[record.m_value] / m_avg_document_size)));
+			const size_t doc_size = score.document_size(record.m_value);
+			if (doc_size) tf = (float)record.count() / doc_size;
+			return idf * tf * (k1 + 1) / (tf + k1 * (1 - b + b * ((float)doc_size / score.avg_document_size())));
 		}
 		if (algo == algorithm::tf_idf) {
 			// reference: https://en.wikipedia.org/wiki/Tf-idf
 			float tf = 0.0f;
-			if (m_document_sizes.count(record.m_value)) tf = (float)record.count() / m_document_sizes[record.m_value];
-			return tf * log((float)m_unique_document_count / total_results_for_key(token));
-		}*/
+			const size_t doc_size = score.document_size(record.m_value);
+			if (doc_size) tf = (float)record.count() / doc_size;
+			return tf * idf;
+		}
 
 		return record.m_score;
-	}
-
-	template<typename data_record>
-	float index_builder<data_record>::idf(uint64_t token) {
-		// reference: https://en.wikipedia.org/wiki/Okapi_BM25
-		float val1 = (m_unique_document_count - total_results_for_key(token) + 0.5f);
-		float val2 = (total_results_for_key(token) + 0.5f);
-		return log((val1 / val2) + 1.0f);
 	}
 
 	template<typename data_record>
@@ -751,11 +751,6 @@ namespace indexer {
 				outfile.write(iter.second->data(), iter.second->data_size());
 			}
 		}
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::calculate_avg_document_size() {
-		
 	}
 
 	template<typename data_record>

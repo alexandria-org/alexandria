@@ -120,6 +120,7 @@ set(SRC_CLASSES
 	"src/indexer/index_tree.cpp"
 	"src/indexer/console.cpp"
 	"src/indexer/merger.cpp"
+	"src/indexer/score_builder.cpp"
 
 	"src/domain_stats/domain_stats.cpp"
 

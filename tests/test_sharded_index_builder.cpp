@@ -28,6 +28,8 @@
 #include "indexer/sharded_index_builder.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
+#include "text/text.h"
+#include "algorithm/hash.h"
 
 BOOST_AUTO_TEST_SUITE(test_sharded_index_builder)
 
@@ -38,11 +40,12 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder) {
 
 		idx.truncate();
 
-		idx.add(101, indexer::generic_record(1000, 0.1));
-		idx.add(102, indexer::generic_record(1001, 0.1));
+		idx.add(101, indexer::generic_record(1000, 1.0f));
+		idx.add(102, indexer::generic_record(1001, 1.0f));
 
 		idx.append();
 		idx.merge();
+		idx.calculate_scores(indexer::algorithm::bm25);
 
 		BOOST_CHECK(idx.num_documents() == 2);
 		BOOST_CHECK(idx.document_size(1000) == 1);
@@ -56,7 +59,57 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder) {
 		BOOST_CHECK(res[0].m_value == 1000);
 	}
 
-	
+}
+
+BOOST_AUTO_TEST_CASE(test_sharded_index_builder_bm25) {
+
+	const string domain1 = "heroes 3 wiki heroes 3 wiki heroes 3 wiki heroes 3 wiki heroes 3 wiki";
+	const string domain2 = "the most exclusive news about the tv series heroes and its 3 episodes "
+		"can be found in the wiki";
+	const string domain3 = "one of the best things with being a programmer is that you can also play heroes 3 "
+		"and write wiki pages";
+
+	{
+		indexer::sharded_index_builder<indexer::generic_record> idx("test_index", 10);
+
+		idx.truncate();
+
+		// index domain1
+		for (const auto &word : text::get_full_text_words(domain1)) {
+			const size_t key = algorithm::hash(word);
+			indexer::generic_record record(1, 1.0f);
+			idx.add(key, record);
+		}
+
+		// index domain2
+		for (const auto &word : text::get_full_text_words(domain2)) {
+			const size_t key = algorithm::hash(word);
+			indexer::generic_record record(2, 1.0f);
+			idx.add(key, record);
+		}
+
+		// index domain3
+		for (const auto &word : text::get_full_text_words(domain3)) {
+			const size_t key = algorithm::hash(word);
+			indexer::generic_record record(3, 1.0f);
+			idx.add(key, record);
+		}
+
+		idx.append();
+		idx.merge();
+		idx.calculate_scores(indexer::algorithm::bm25);
+
+		BOOST_CHECK(idx.num_documents() == 3);
+		BOOST_CHECK(idx.document_size(1) == 15);
+	}
+
+	{
+		indexer::sharded_index<indexer::generic_record> idx("test_index", 10);
+		vector<indexer::generic_record> res = idx.find(algorithm::hash("heroes"));
+
+		BOOST_REQUIRE(res.size() == 3);
+		BOOST_CHECK(res[0].m_value == 1);
+	}
 
 }
 

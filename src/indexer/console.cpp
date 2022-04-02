@@ -229,6 +229,8 @@ namespace indexer {
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
+
+			idx_tree.calculate_scores_for_level(0);
 		}
 
 		{

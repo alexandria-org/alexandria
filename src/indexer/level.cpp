@@ -187,7 +187,7 @@ namespace indexer {
 	}
 
 	void domain_level::calculate_scores() {
-		//m_builder->calculate_scores(indexer::algorithm::bm25);
+		m_builder->calculate_scores(indexer::algorithm::bm25);
 	}
 
 	void domain_level::clean_up() {
