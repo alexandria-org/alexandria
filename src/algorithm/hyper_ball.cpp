@@ -36,7 +36,7 @@ using namespace std;
 namespace algorithm {
 
 	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const vector<uint32_t> *edge_map,
-			vector<hyper_log_log<uint32_t>> &c, vector<hyper_log_log<uint32_t>> &a, vector<double> &harmonic) {
+			vector<hyper_log_log> &c, vector<hyper_log_log> &a, vector<double> &harmonic) {
 
 		profiler::instance prof("Timetaker");
 		for (uint32_t v = v_begin; v < v_end; v++) {
@@ -46,7 +46,7 @@ namespace algorithm {
 			}
 
 			// a[v] is t + 1 and c[v] is at t
-			harmonic[v] += (1.0 / (t + 1.0)) * (a[v].size() - c[v].size());
+			harmonic[v] += (1.0 / (t + 1.0)) * (a[v].count() - c[v].count());
 		}
 		for (uint32_t v = v_begin; v < v_end; v++) {
 			c[v] = a[v];
@@ -57,8 +57,8 @@ namespace algorithm {
 
 		const size_t num_threads = min(12, (int)n);
 		const size_t items_per_thread = n / num_threads;
-		vector<hyper_log_log<uint32_t>> c(n);
-		vector<hyper_log_log<uint32_t>> a(n);
+		vector<hyper_log_log> c(n);
+		vector<hyper_log_log> a(n);
 		vector<double> harmonic(n, 0.0);
 
 		for (uint32_t v = 0; v < n; v++) {

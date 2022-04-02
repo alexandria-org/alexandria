@@ -46,9 +46,9 @@ using namespace std;
 
 namespace tools {
 
-	algorithm::hyper_log_log<size_t> *count_urls(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log *count_urls(const vector<string> &warc_paths) {
 
-		algorithm::hyper_log_log<size_t> *counter = new algorithm::hyper_log_log<size_t>();
+		algorithm::hyper_log_log *counter = new algorithm::hyper_log_log();
 
 		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
@@ -60,7 +60,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
-				counter->insert_hash(url.hash());
+				counter->insert(url.hash());
 			}
 
 			if (idx % 100 == 0) {
@@ -73,9 +73,9 @@ namespace tools {
 		return counter;
 	}
 
-	algorithm::hyper_log_log<size_t> *count_links(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log *count_links(const vector<string> &warc_paths) {
 
-		algorithm::hyper_log_log<size_t> *counter = new algorithm::hyper_log_log<size_t>();
+		algorithm::hyper_log_log *counter = new algorithm::hyper_log_log();
 
 		size_t idx = 0;
 		for (const string &warc_path : warc_paths) {
@@ -87,7 +87,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
-				counter->insert_hash(link.target_url().hash());
+				counter->insert(link.target_url().hash());
 			}
 
 			if (idx % 100 == 0) {
@@ -163,14 +163,14 @@ namespace tools {
 		/*
 		Run url counters
 		*/
-		vector<future<algorithm::hyper_log_log<size_t> *>> futures;
+		vector<future<algorithm::hyper_log_log *>> futures;
 		for (size_t i = 0; i < num_threads && i < thread_input.size(); i++) {
 			futures.emplace_back(std::async(launch::async, count_urls, thread_input[i]));
 		}
 
-		algorithm::hyper_log_log<size_t> url_counter;
+		algorithm::hyper_log_log url_counter;
 		for (auto &future : futures) {
-			algorithm::hyper_log_log<size_t> *result = future.get();
+			algorithm::hyper_log_log *result = future.get();
 			url_counter += *(result);
 			delete result;
 		}
@@ -184,15 +184,15 @@ namespace tools {
 			futures.emplace_back(std::async(launch::async, count_links, link_thread_input[i]));
 		}
 
-		algorithm::hyper_log_log<size_t> link_counter;
+		algorithm::hyper_log_log link_counter;
 		for (auto &future : futures) {
-			algorithm::hyper_log_log<size_t> *result = future.get();
+			algorithm::hyper_log_log *result = future.get();
 			link_counter += *(result);
 			delete result;
 		}
 
-		cout << "Uniq urls: " << url_counter.size() << endl;
-		cout << "Uniq links: " << link_counter.size() << endl;
+		cout << "Uniq urls: " << url_counter.count() << endl;
+		cout << "Uniq links: " << link_counter.count() << endl;
 	}
 
 	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {

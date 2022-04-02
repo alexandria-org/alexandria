@@ -93,7 +93,7 @@ namespace indexer {
 
 
 		// Counters
-		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>> m_result_counters;
+		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log>> m_result_counters;
 		size_t m_unique_document_count = 0;
 
 		void read_append_cache();
@@ -106,11 +106,11 @@ namespace indexer {
 		void reset_key_file(std::ofstream &key_writer);
 		void sort_cache();
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
-		std::shared_ptr<::algorithm::hyper_log_log<size_t>> get_total_counter_for_key(uint64_t key);
+		std::shared_ptr<::algorithm::hyper_log_log> get_total_counter_for_key(uint64_t key);
 		size_t total_results_for_key(uint64_t key);
-		void count_unique(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
-		void read_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll);
-		void save_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) const;
+		void count_unique(std::unique_ptr<::algorithm::hyper_log_log> &hll);
+		void read_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll);
+		void save_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) const;
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
@@ -198,8 +198,8 @@ namespace indexer {
 		memory::reset_usage();
 
 		{
-			std::unique_ptr<::algorithm::hyper_log_log<size_t>> hll =
-				std::make_unique<::algorithm::hyper_log_log<size_t>>();
+			std::unique_ptr<::algorithm::hyper_log_log> hll =
+				std::make_unique<::algorithm::hyper_log_log>();
 
 			read_meta(hll);
 			memory::record_usage();
@@ -250,7 +250,7 @@ namespace indexer {
 		// Reset caches and counters.
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 		m_result_sizes = std::map<uint64_t, size_t>{};
-		m_result_counters = std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log<size_t>>>{};
+		m_result_counters = std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log>>{};
 
 		std::ofstream writer(cache_filename(), std::ios::trunc);
 		writer.close();
@@ -272,7 +272,7 @@ namespace indexer {
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
 		// Read meta.
-		std::unique_ptr<::algorithm::hyper_log_log<size_t>> hll = std::make_unique<::algorithm::hyper_log_log<size_t>>();
+		std::unique_ptr<::algorithm::hyper_log_log> hll = std::make_unique<::algorithm::hyper_log_log>();
 		read_meta(hll);
 		count_unique(hll);
 
@@ -665,9 +665,9 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::shared_ptr<::algorithm::hyper_log_log<size_t>> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
+	std::shared_ptr<::algorithm::hyper_log_log> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
 		if (m_result_counters.count(key) == 0) {
-			m_result_counters[key] = std::make_shared<::algorithm::hyper_log_log<size_t>>();
+			m_result_counters[key] = std::make_shared<::algorithm::hyper_log_log>();
 		}
 		return m_result_counters[key];
 	}
@@ -675,13 +675,13 @@ namespace indexer {
 	template<typename data_record>
 	size_t index_builder<data_record>::total_results_for_key(uint64_t key) {
 		if (m_result_counters.count(key)) {
-			return m_result_counters[key]->size();
+			return m_result_counters[key]->count();
 		}
 		return m_result_sizes[key];
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::count_unique(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) {
+	void index_builder<data_record>::count_unique(std::unique_ptr<::algorithm::hyper_log_log> &hll) {
 		for (auto &iter : m_cache) {
 
 			// Add to hyper_log_log counter
@@ -691,11 +691,11 @@ namespace indexer {
 
 		}
 
-		m_unique_document_count = hll->size();
+		m_unique_document_count = hll->count();
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::read_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) {
+	void index_builder<data_record>::read_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) {
 
 		struct meta {
 			size_t unique_count;
@@ -717,8 +717,8 @@ namespace indexer {
 			infile.read((char *)(&num_total_counters), sizeof(size_t));
 			for (size_t i = 0; i < num_total_counters; i++) {
 				uint64_t key = 0;
-				std::shared_ptr<::algorithm::hyper_log_log<size_t>> ptr =
-					std::make_shared<::algorithm::hyper_log_log<size_t>>();
+				std::shared_ptr<::algorithm::hyper_log_log> ptr =
+					std::make_shared<::algorithm::hyper_log_log>();
 				infile.read((char *)(&key), sizeof(uint64_t));
 				infile.read(ptr->data(), ptr->data_size());
 				m_result_counters[key] = ptr;
@@ -727,7 +727,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::save_meta(std::unique_ptr<::algorithm::hyper_log_log<size_t>> &hll) const {
+	void index_builder<data_record>::save_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) const {
 
 		struct meta {
 			size_t unique_count;
@@ -735,7 +735,7 @@ namespace indexer {
 
 		meta m;
 
-		m.unique_count = hll->size();
+		m.unique_count = hll->count();
 
 		std::ofstream outfile(meta_filename(), std::ios::binary | std::ios::trunc);
 
