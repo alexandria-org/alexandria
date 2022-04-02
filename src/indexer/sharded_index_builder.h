@@ -54,7 +54,7 @@ namespace indexer {
 		*/
 		void calculate_scores(algorithm algo);
 
-		size_t num_documents() const { return m_document_counter.size(); }
+		size_t num_documents() const { return m_document_counter.count(); }
 		size_t document_size(uint64_t document_id) { return m_document_sizes[document_id]; }
 
 		void truncate();
@@ -65,7 +65,7 @@ namespace indexer {
 
 		std::string m_db_name;
 		std::vector<std::shared_ptr<index_builder<data_record>>> m_shards;
-		::algorithm::hyper_log_log<uint64_t> m_document_counter;
+		::algorithm::hyper_log_log m_document_counter;
 		std::map<uint64_t, size_t> m_document_sizes;
 		float m_avg_document_size = 0.0f;
 
@@ -187,7 +187,7 @@ namespace indexer {
 
 		if (meta_file.is_open()) {
 
-			size_t document_count = m_document_counter.size();
+			size_t document_count = m_document_counter.count();
 
 			meta_file.write((char *)&document_count, sizeof(size_t));
 			char *data = m_document_counter.data();

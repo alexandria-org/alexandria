@@ -103,6 +103,7 @@ set(SRC_CLASSES
 	"src/algorithm/sort.cpp"
 	"src/algorithm/hyper_ball.cpp"
 	"src/algorithm/hash.cpp"
+	"src/algorithm/hyper_log_log.cpp"
 
 	"src/tools/splitter.cpp"
 	"src/tools/find_links.cpp"
