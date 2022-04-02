@@ -658,10 +658,10 @@ namespace indexer {
 			if (records.size() > m_max_results) {
 				records.resize(m_max_results);
 			}
-
-			// Order by value.
-			std::sort(records.begin(), records.end());
 		}
+
+		// Order by storage_order.
+		std::sort(records.begin(), records.end(), typename data_record::storage_order());
 	}
 
 	template<typename data_record>

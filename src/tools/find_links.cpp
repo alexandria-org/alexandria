@@ -72,7 +72,7 @@ namespace tools {
 	void find_links_for_hosts(const set<size_t> &host_hashes) {
 		const string batch = "LINK-MIX";
 		const size_t num_threads = 12;
-		size_t limit = 1000;
+		size_t limit = 4000;
 
 		file::gz_tsv_file batch_file("/mnt/crawl-data/"+batch+"/warc.paths.gz");
 
@@ -97,7 +97,7 @@ namespace tools {
 
 	void find_links() {
 		const string batch = "SMALL-MIX";
-		size_t limit = 10;
+		size_t limit = 20;
 
 		file::gz_tsv_file batch_file("/mnt/crawl-data/"+batch+"/warc.paths.gz");
 

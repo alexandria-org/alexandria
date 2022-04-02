@@ -109,7 +109,8 @@ namespace indexer {
 
 			const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
-			uint64_t link_hash = source_url.domain_link_hash(target_url, link_text);
+			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
+			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
 			const bool has_url = m_url_to_domain->has_url(target_url.hash());
 
@@ -118,7 +119,7 @@ namespace indexer {
 
 				const uint64_t word_hash = ::algorithm::hash(word);
 
-				domain_link_record rec(link_hash, source_harmonic);
+				domain_link_record rec(domain_link_hash, source_harmonic);
 				rec.m_source_domain = source_url.host_hash();
 				rec.m_target_domain = target_url.host_hash();
 				m_domain_link_index_builder->add(word_hash, rec);
@@ -185,9 +186,6 @@ namespace indexer {
 
 		vector<link_record> links = m_link_index->find(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
-
-		//for (auto &link : links) link.m_score = 0.2;
-		//for (auto &link : domain_links) link.m_score = 0.2;
 
 		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
 

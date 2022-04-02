@@ -26,6 +26,7 @@
 
 #include "console.h"
 #include <vector>
+#include <iomanip>
 #include "text/text.h"
 #include "indexer/index_tree.h"
 #include "URL.h"
@@ -103,20 +104,20 @@ namespace indexer {
 
 		if (res.size() > 10) res.resize(10);
 
+		cout << setw(50) << "domain";
+		cout << setw(20) << "score";
+		cout << setw(20) << "url_links";
+		cout << setw(20) << "domain_links";
+		cout << endl;
+
 		for (indexer::return_record &rec : res) {
 			const string host = ht.find(rec.m_value);
 
-			cout << host << endl;
-			/*const string url_data = ht.find(rec.m_url_hash);
-			const string snippet_data = ht.find(rec.m_value);
-
-			vector<string> parts;
-			boost::algorithm::split(parts, url_data, boost::is_any_of("\t"));
-			const string title = parts[1];
-			const string url = parts[0];
-			cout << title << endl;
-			cout << url << endl;
-			cout << snippet_data << endl << endl;*/
+			cout << setw(50) << host;
+			cout << setw(20) << rec.m_score;
+			cout << setw(20) << rec.m_num_url_links;
+			cout << setw(20) << rec.m_num_domain_links;
+			cout << endl;
 		}
 	}
 
@@ -207,7 +208,7 @@ namespace indexer {
 			merger::start_merge_thread();
 
 			const string batch = "SMALL-MIX";
-			size_t limit = 10;
+			size_t limit = 20;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -241,7 +242,7 @@ namespace indexer {
 			const vector<string> batches = {
 				"SMALL-LINK-MIX",
 			};
-			size_t limit = 100;
+			size_t limit = 1000;
 
 			for (const string &batch : batches) {
 

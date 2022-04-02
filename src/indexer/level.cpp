@@ -232,6 +232,7 @@ namespace indexer {
 				if (domain_unique.count(p) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					results[j].m_score += url_score;
+					results[j].m_num_domain_links++;
 					applied_links++;
 					domain_unique[p] = links[i].m_source_domain;
 				}
@@ -342,6 +343,7 @@ namespace indexer {
 				if (domain_unique.count(p) == 0) {
 					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
 					results[j].m_score += url_score;
+					results[j].m_num_url_links++;
 					applied_links++;
 					domain_unique[p] = links[i].m_source_domain;
 				}
