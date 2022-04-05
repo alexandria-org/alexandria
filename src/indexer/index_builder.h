@@ -94,7 +94,6 @@ namespace indexer {
 
 		// Counters
 		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log>> m_result_counters;
-		size_t m_unique_document_count = 0;
 
 		void read_append_cache();
 		void read_data_to_cache();
@@ -108,7 +107,6 @@ namespace indexer {
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
 		std::shared_ptr<::algorithm::hyper_log_log> get_total_counter_for_key(uint64_t key);
 		size_t total_results_for_key(uint64_t key);
-		void count_unique(std::unique_ptr<::algorithm::hyper_log_log> &hll);
 		void read_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll);
 		void save_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) const;
 
@@ -205,8 +203,6 @@ namespace indexer {
 			memory::record_usage();
 			read_append_cache();
 			memory::record_usage();
-			count_unique(hll);
-			memory::record_usage();
 			sort_cache();
 			memory::record_usage();
 			save_file();
@@ -274,7 +270,6 @@ namespace indexer {
 		// Read meta.
 		std::unique_ptr<::algorithm::hyper_log_log> hll = std::make_unique<::algorithm::hyper_log_log>();
 		read_meta(hll);
-		count_unique(hll);
 
 		// Read the current file.
 		read_data_to_cache();
@@ -285,6 +280,7 @@ namespace indexer {
 
 		sort_cache();
 		save_file();
+		truncate_cache_files();
 	}
 
 	template<typename data_record>
@@ -381,6 +377,12 @@ namespace indexer {
 				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
 				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
 				m_cache[key].push_back(*record);
+			}
+
+			if (memory::panic()) {
+				memory::start_panic_cleanup();
+				sort_cache();
+				memory::stop_panic_cleanup();
 			}
 		}
 	}
@@ -662,6 +664,8 @@ namespace indexer {
 
 		// Order by storage_order.
 		std::sort(records.begin(), records.end(), typename data_record::storage_order());
+
+		records.shrink_to_fit(); // Save memory.
 	}
 
 	template<typename data_record>
@@ -678,20 +682,6 @@ namespace indexer {
 			return m_result_counters[key]->count();
 		}
 		return m_result_sizes[key];
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::count_unique(std::unique_ptr<::algorithm::hyper_log_log> &hll) {
-		for (auto &iter : m_cache) {
-
-			// Add to hyper_log_log counter
-			for (const data_record &r : iter.second) {
-				hll->insert(r.m_value);
-			}
-
-		}
-
-		m_unique_document_count = hll->count();
 	}
 
 	template<typename data_record>

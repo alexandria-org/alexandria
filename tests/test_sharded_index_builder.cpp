@@ -97,7 +97,12 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder_bm25) {
 
 		idx.append();
 		idx.merge();
+
+		// Memory footprint should be same before and after calculate_scores.
+		const size_t mem_before = memory::allocated_memory();
 		idx.calculate_scores(indexer::algorithm::bm25);
+		const size_t mem_after = memory::allocated_memory();
+		BOOST_CHECK_EQUAL(mem_before, mem_after);
 
 		BOOST_CHECK(idx.num_documents() == 3);
 		BOOST_CHECK(idx.document_size(1) == 15);

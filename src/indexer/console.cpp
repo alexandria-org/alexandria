@@ -192,7 +192,7 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		{
+		for (const string &batch : config::batches) {
 			indexer::index_tree idx_tree;
 
 			indexer::domain_level domain_level;
@@ -203,12 +203,11 @@ namespace indexer {
 			//idx_tree.add_level(&url_level);
 			//idx_tree.add_level(&snippet_level);
 
-			idx_tree.truncate();
+			//idx_tree.truncate();
 
 			merger::start_merge_thread();
 
-			const string batch = "SMALL-MIX";
-			size_t limit = 20;
+			size_t limit = 200000;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -224,15 +223,17 @@ namespace indexer {
 				}
 			}
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
-			cout << "starting indexer" << endl;
+			cout << "starting indexer, allocated_memory: " << memory::allocated_memory() << endl;
 			idx_tree.add_index_files_threaded(local_files, 24);
-			cout << "done with indexer" << endl;
+			cout << "done with indexer, allocated_memory: " << memory::allocated_memory() << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 
-			idx_tree.calculate_scores_for_level(0);
+			//idx_tree.calculate_scores_for_level(0);
 		}
+
+		return;
 
 		{
 			indexer::index_tree idx_tree;

@@ -26,8 +26,11 @@
 
 #pragma once
 
+#include <iostream>
+
 namespace tools {
 
+	void run_counter_per_domain(const std::string &batch);
 	void run_counter();
 	void count_all_links();
 

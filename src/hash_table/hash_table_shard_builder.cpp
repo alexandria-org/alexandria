@@ -113,7 +113,16 @@ namespace hash_table {
 		if (!infile.is_open()) return;
 
 		const size_t buffer_len = 1024*1024*20;
-		char *buffer = new char[buffer_len];
+		
+		std::unique_ptr<char[]> buffer_allocator;
+		try {
+			buffer_allocator = std::make_unique<char[]>(buffer_len);
+		} catch (std::bad_alloc &exception) {
+			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+			std::cout << "tried to allocate: " << buffer_len << " bytes" << std::endl;
+			return;
+		}
+		char *buffer = buffer_allocator.get();
 
 		ofstream outfile_data(filename_data_tmp(), ios::binary | ios::trunc);
 		ofstream outfile_pos(filename_pos_tmp(), ios::binary | ios::trunc);

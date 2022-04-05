@@ -75,6 +75,8 @@ int main(int argc, const char **argv) {
 		tools::run_splitter();
 	} else if (arg == "--count") {
 		tools::run_counter();
+		} else if (arg == "--count-domains") {
+		tools::run_counter_per_domain(argv[2]);
 	} else if (arg == "--count-links") {
 		tools::count_all_links();
 	} else if (arg == "--make-urls" && argc > 2) {

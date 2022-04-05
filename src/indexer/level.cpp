@@ -191,7 +191,7 @@ namespace indexer {
 	}
 
 	void domain_level::clean_up() {
-		m_builder = std::make_shared<sharded_index_builder<domain_record>>("domain", 1024);
+		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 8192);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,

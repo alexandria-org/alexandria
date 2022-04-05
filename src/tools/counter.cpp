@@ -46,6 +46,85 @@ using namespace std;
 
 namespace tools {
 
+	map<string, size_t> count_urls_per_domain(const vector<string> &warc_paths) {
+
+		map<string, size_t> counts;
+
+		size_t idx = 0;
+		for (const string &warc_path : warc_paths) {
+			ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			string line;
+			while (getline(decompress_stream, line)) {
+				const URL url(line.substr(0, line.find("\t")));
+				counts[url.host()]++;
+			}
+
+			if (idx % 100 == 0) {
+				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+			} 
+
+			idx++;
+		}
+
+		return counts;
+	}
+
+	void run_counter_per_domain(const string &batch) {
+
+		const size_t num_threads = 12;
+
+		vector<string> files;
+		vector<string> link_files;
+
+		const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+
+		ifstream infile(file_name);
+
+		boost::iostreams::filtering_istream decompress_stream;
+		decompress_stream.push(boost::iostreams::gzip_decompressor());
+		decompress_stream.push(infile);
+
+		string line;
+		while (getline(decompress_stream, line)) {
+			string warc_path = string("/mnt/") + line;
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".gz");
+			}
+
+			files.push_back(warc_path);
+		}
+
+		vector<vector<string>> thread_input;
+		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
+
+		/*
+		Run url counters
+		*/
+		vector<future<map<string, size_t>>> futures;
+		for (size_t i = 0; i < num_threads && i < thread_input.size(); i++) {
+			futures.emplace_back(std::async(launch::async, count_urls_per_domain, thread_input[i]));
+		}
+
+		map<string, size_t> all_counts;
+		for (auto &future : futures) {
+			map<string, size_t> result = future.get();
+			for (const auto &iter : result) {
+				all_counts[iter.first] += iter.second;
+			}
+		}
+
+		futures.clear();
+
+		for (const auto &iter : all_counts) {
+			cout << iter.first << "\t" << iter.second << endl;
+		}
+	}
+
 	algorithm::hyper_log_log *count_urls(const vector<string> &warc_paths) {
 
 		algorithm::hyper_log_log *counter = new algorithm::hyper_log_log();

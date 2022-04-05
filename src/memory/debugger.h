@@ -36,4 +36,8 @@ namespace memory {
 	void record_usage();
 	size_t get_usage();
 	size_t get_usage_peak();
+
+	bool panic();
+	void start_panic_cleanup();
+	void stop_panic_cleanup();
 }
