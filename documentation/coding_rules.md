@@ -9,17 +9,17 @@
 
 ## Indentation examples
 
-Intent with tabs.
+Indent with tabs.
 
 ### pointers
-```
+```c++
 // * and & are glued to the variable
 int *ptr = new int[100];
 int *ptr2 = &addr;
 ```
 
 ### operators
-```
+```c++
 // Spaces between binary operators
 int a = 1 + 2;
 int b = multiple * (add1 + add2);
@@ -32,7 +32,7 @@ int b = -a;
 ```
 
 ### functions
-```
+```c++
 // Spaces after comma
 int add(int a, int b) {
     return a + b;
@@ -43,7 +43,7 @@ add(123, 333);
 ```
 
 ### classes
-```
+```c++
 template<typename data_record>
 class index_builder {
     public:
@@ -60,7 +60,7 @@ class index_builder {
 
 
 ### if
-```
+```c++
 // Space between "if" and "("
 // Space between ")" and "{"
 if (something) {
@@ -71,7 +71,7 @@ if (something) {
 ```
 
 ### loops
-```
+```c++
 // Prefer range based loops.
 for (const auto &iter : m_map) {
 
