@@ -3,8 +3,6 @@
 apt-get update
 apt-get -y install vim parted zip unzip nginx
 
-echo "\nALEXANDRIA_LIVE=1" >> /etc/environment
-
 _mkpart() { 
 	disc=$1
 	mountpoint1=$2
@@ -134,6 +132,7 @@ ft_max_sections = 8
 ft_max_results_per_section = 2000000
 ft_section_depth = 4" > /etc/alexandria.conf
 
+mkdir /alexandria
 cd /alexandria
 wget https://github.com/alexandria-org/alexandria/releases/download/v1.0/alexandria.zip
 unzip alexandria.zip
