@@ -56,6 +56,7 @@ namespace parser {
 	public:
 
 		html_parser();
+		html_parser(size_t long_text_len);
 		~html_parser();
 
 		void parse(const std::string &html, const std::string &url);
@@ -80,6 +81,7 @@ namespace parser {
 		std::vector<html_link> m_internal_links;
 		std::vector<std::pair<size_t, size_t>> m_invisible_pos;
 
+		const size_t m_long_text_len = 1000;
 		char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];
 		const size_t m_long_str_buf_len;
 		char *m_long_str_buf;

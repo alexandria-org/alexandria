@@ -36,6 +36,11 @@ namespace scraper {
 	scraper_store::scraper_store() {
 
 	}
+
+	scraper_store::scraper_store(bool do_upload)
+	: m_do_upload(do_upload)
+	{
+	}
 	
 	scraper_store::~scraper_store() {
 		m_upload_limit = 0;
@@ -91,6 +96,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_url_datas() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_url_datas.size() > 1000) {
 			vector<url_store::url_data> tmp_datas;
@@ -104,6 +110,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_domain_datas() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_domain_datas.size() > 1000) {
 			vector<url_store::domain_data> tmp_datas;
@@ -116,6 +123,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_robots_datas() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_robots_datas.size() > 1000) {
 			vector<url_store::robots_data> tmp_datas;
@@ -128,6 +136,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_results() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_results.size() >= m_upload_limit) {
 			const string all_results = boost::algorithm::join(m_results, "");
@@ -146,6 +155,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_non_200_results() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_non_200_results.size() >= m_non_200_upload_limit) {
 			const string all_results = boost::algorithm::join(m_non_200_results, "");
@@ -162,6 +172,7 @@ namespace scraper {
 	}
 
 	void scraper_store::upload_curl_errors() {
+		if (!m_do_upload) return;
 		m_lock.lock();
 		if (m_curl_errors.size() >= m_curl_errors_upload_limit) {
 			const string all_results = boost::algorithm::join(m_curl_errors, "");

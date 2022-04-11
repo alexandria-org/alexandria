@@ -37,6 +37,7 @@ namespace scraper {
 	class scraper_store {
 		public:
 			scraper_store();
+			scraper_store(bool do_upload);
 			~scraper_store();
 
 			void add_url_data(const url_store::url_data &data);
@@ -54,6 +55,8 @@ namespace scraper {
 			void upload_curl_errors();
 			std::string tail() const;
 
+			std::vector<std::string> get_results() const { return m_results; }
+
 		private:
 			std::mutex m_lock;
 			std::vector<url_store::url_data> m_url_datas;
@@ -67,6 +70,7 @@ namespace scraper {
 			size_t m_upload_limit = 50000;
 			size_t m_non_200_upload_limit = 10000;
 			size_t m_curl_errors_upload_limit = 10000;
+			bool m_do_upload = true;
 
 			void try_upload_until_complete(const std::string &path, const std::string &data);
 			void internal_upload_results(const std::string &all_results, const std::string &all_link_results);

@@ -35,6 +35,7 @@
 #include "composite_index_builder.h"
 #include "sharded_index_builder.h"
 #include "index.h"
+#include "generic_record.h"
 
 namespace indexer {
 
@@ -42,51 +43,6 @@ namespace indexer {
 	enum class level_type { domain = 101, url = 102, snippet = 103};
 
 	std::string level_to_str(level_type lvl);
-
-	/*
-	This is the base class for the record stored on disk. Needs to be small!
-	*/
-	#pragma pack(4)
-	class generic_record {
-
-		public:
-		uint64_t m_value;
-		float m_score;
-		uint32_t m_count = 1;
-
-		generic_record() : m_value(0), m_score(0.0f) {};
-		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
-		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
-
-		size_t count() const { return (size_t)m_count; }
-
-		bool operator==(const generic_record &b) const {
-			return m_value == b.m_value;
-		}
-
-		bool operator<(const generic_record &b) const {
-			return m_value < b.m_value;
-		}
-
-		struct storage_order {
-			inline bool operator() (const generic_record &a, const generic_record &b) {
-				return a.m_value < b.m_value;
-			}
-		};
-
-		generic_record operator+(const generic_record &b) const {
-			generic_record sum;
-			sum.m_value = m_value;
-			sum.m_count = m_count + b.m_count;
-			return sum;
-		}
-
-		generic_record &operator+=(const generic_record &b) {
-			m_count += b.m_count;
-			return *this;
-		}
-
-	};
 
 	/*
 	This is the returned record from the index_tree. It contains more data than the stored record.

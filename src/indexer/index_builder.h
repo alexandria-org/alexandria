@@ -29,6 +29,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <set>
 #include <cstring>
 #include <cassert>
 #include <boost/filesystem.hpp>
@@ -38,8 +39,23 @@
 #include "config.h"
 #include "logger/logger.h"
 #include "memory/debugger.h"
+#include "roaring/roaring.hh"
 
 namespace indexer {
+
+	/*
+		<hash-table-data> uint8_t[hash_table_size]
+		<num-records> uint64_t
+		<records> data_record[num-records] sequence of records, the position of the record is the internal_id
+		<page-data> page[num_pages]
+
+		page format:
+		<num_keys> uint64_t
+		<key-data> uint64_t[num_keys] sorted by key for binary search
+		<pos-data> uint64_t[num_keys] position of record data start
+		<len-data> uint64_t[num_keys] length of record data
+		<record-data> <bitmap>[num_keys] bitmap is a roaring bitmap (CRoaring)
+	*/
 
 	enum class algorithm { bm25 = 101, tf_idf = 102};
 
@@ -51,6 +67,7 @@ namespace indexer {
 		index_builder& operator=(const index_builder &);
 	public:
 
+		index_builder(const std::string &file_name);
 		index_builder(const std::string &db_name, size_t id);
 		index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
 		index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
@@ -65,59 +82,69 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
-		void calculate_scores(algorithm algo, const score_builder &score);
+		/*void calculate_scores(algorithm algo, const score_builder &score);
 
 		void calculate_scores_for_token(algorithm algo, const score_builder &score, uint64_t token,
 			std::vector<data_record> &records);
 		float calculate_score_for_record(algorithm algo, const score_builder &score, uint64_t token,
-			const data_record &record);
+			const data_record &record);*/
+
+		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
 
 	private:
 
+		std::string m_file_name;
 		std::string m_db_name;
 		const size_t m_id;
-		const size_t m_hash_table_size;
+
+		size_t m_hash_table_size;
 		const size_t m_max_results;
 
-		const size_t m_max_cache_file_size = 300 * 1000 * 1000; // 200mb.
-		const size_t m_max_num_keys = 10000;
 		const size_t m_buffer_len = config::ft_shard_builder_buffer_len;
 		char *m_buffer;
 		std::mutex m_lock;
 
+		// Id map
+		map<uint64_t, uint16_t> m_id_map_16_bit;
+
 		// Caches
-		std::vector<uint64_t> m_keys;
+		std::vector<uint64_t> m_key_cache;
+		std::vector<data_record> m_record_cache;
+
+		std::map<uint64_t, vector<data_record>> m_cache;
+
 		std::vector<data_record> m_records;
-		std::map<uint64_t, std::vector<data_record>> m_cache;
-		std::map<uint64_t, size_t> m_result_sizes;
-
-
-		// Counters
-		std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log>> m_result_counters;
+		std::unordered_map<uint64_t, uint32_t> m_record_id_to_internal_id;
+		std::map<uint64_t, roaring::Roaring> m_bitmaps;
 
 		void read_append_cache();
 		void read_data_to_cache();
-		bool read_page(std::ifstream &reader);
+		bool read_page(std::ifstream &reader, char *buffer, size_t buffer_len);
+		void reset_cache_variables();
 		void save_file();
 		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
 		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
-		bool use_key_file() const;
-		void reset_key_file(std::ofstream &key_writer);
+		void reset_key_map(std::ofstream &key_writer);
+		void write_records(std::ofstream &writer);
+		size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 		void sort_cache();
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
-		std::shared_ptr<::algorithm::hyper_log_log> get_total_counter_for_key(uint64_t key);
-		size_t total_results_for_key(uint64_t key);
-		void read_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll);
-		void save_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) const;
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
 		std::string key_cache_filename() const;
-		std::string key_filename() const;
 		std::string target_filename() const;
 		std::string meta_filename() const;
 
 	};
+
+	template<typename data_record>
+	index_builder<data_record>::index_builder(const std::string &file_name)
+	: m_file_name(file_name), m_id(0), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section)
+	{
+		merger::register_merger((size_t)this, [this]() {merge();});
+		merger::register_appender((size_t)this, [this]() {append();});
+	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
@@ -153,10 +180,10 @@ namespace indexer {
 		m_lock.lock();
 
 		// Amortized constant
-		m_keys.push_back(key);
-		m_records.push_back(record);
+		m_key_cache.push_back(key);
+		m_record_cache.push_back(record);
 
-		assert(m_records.size() == m_keys.size());
+		assert(m_record_cache.size() == m_key_cache.size());
 
 		m_lock.unlock();
 
@@ -165,7 +192,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::append() {
 
-		assert(m_records.size() == m_keys.size());
+		assert(m_record_cache.size() == m_key_cache.size());
 
 		std::ofstream record_writer(cache_filename(), std::ios::binary | std::ios::app);
 		if (!record_writer.is_open()) {
@@ -179,13 +206,13 @@ namespace indexer {
 				std::string(strerror(errno)));
 		}
 
-		record_writer.write((const char *)m_records.data(), m_records.size() * sizeof(data_record));
-		key_writer.write((const char *)m_keys.data(), m_keys.size() * sizeof(uint64_t));
+		record_writer.write((const char *)m_record_cache.data(), m_record_cache.size() * sizeof(data_record));
+		key_writer.write((const char *)m_key_cache.data(), m_key_cache.size() * sizeof(uint64_t));
 
-		m_records.clear();
-		m_keys.clear();
-		m_records.shrink_to_fit();
-		m_keys.shrink_to_fit();
+		m_record_cache.clear();
+		m_key_cache.clear();
+		m_record_cache.shrink_to_fit();
+		m_key_cache.shrink_to_fit();
 	}
 
 	template<typename data_record>
@@ -193,24 +220,10 @@ namespace indexer {
 
 		//const size_t mem_before = memory::allocated_memory();
 
-		memory::reset_usage();
-
 		{
-			std::unique_ptr<::algorithm::hyper_log_log> hll =
-				std::make_unique<::algorithm::hyper_log_log>();
-
-			read_meta(hll);
-			memory::record_usage();
 			read_append_cache();
-			memory::record_usage();
-			sort_cache();
-			memory::record_usage();
 			save_file();
-			memory::record_usage();
-			save_meta(hll);
-			memory::record_usage();
 			truncate_cache_files();
-			memory::record_usage();
 		}
 
 		//const size_t mem_usage = memory::get_usage();
@@ -232,9 +245,6 @@ namespace indexer {
 
 		std::ofstream target_writer(target_filename(), std::ios::trunc);
 		target_writer.close();
-
-		std::ofstream meta_writer(meta_filename(), std::ios::trunc);
-		meta_writer.close();
 	}
 
 	/*
@@ -243,10 +253,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::truncate_cache_files() {
 
-		// Reset caches and counters.
-		m_cache = std::map<uint64_t, std::vector<data_record>>{};
-		m_result_sizes = std::map<uint64_t, size_t>{};
-		m_result_counters = std::map<uint64_t, std::shared_ptr<::algorithm::hyper_log_log>>{};
+		reset_cache_variables();
 
 		std::ofstream writer(cache_filename(), std::ios::trunc);
 		writer.close();
@@ -262,7 +269,7 @@ namespace indexer {
 		}
 	}
 
-	template<typename data_record>
+	/*template<typename data_record>
 	void index_builder<data_record>::calculate_scores(algorithm algo, const score_builder &score) {
 
 		m_cache = std::map<uint64_t, std::vector<data_record>>{};
@@ -317,7 +324,7 @@ namespace indexer {
 		}
 
 		return record.m_score;
-	}
+	}*/
 
 	template<typename data_record>
 	void index_builder<data_record>::read_append_cache() {
@@ -376,13 +383,13 @@ namespace indexer {
 			for (size_t i = 0; i < num_records; i++) {
 				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
 				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
-				m_cache[key].push_back(*record);
-			}
-
-			if (memory::panic()) {
-				memory::start_panic_cleanup();
-				sort_cache();
-				memory::stop_panic_cleanup();
+				
+				if (m_record_id_to_internal_id.count(record->m_value) == 0) {
+					m_record_id_to_internal_id[record->m_value] = (uint32_t)m_records.size();
+					m_records.push_back(*record);
+				}
+				const uint32_t internal_id = m_record_id_to_internal_id[record->m_value];
+				m_bitmaps[key].add(internal_id);
 			}
 		}
 	}
@@ -393,43 +400,66 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::read_data_to_cache() {
 
-		m_cache = std::map<uint64_t, std::vector<data_record>>{};
+		reset_cache_variables();
 
 		std::ifstream reader(target_filename(), std::ios::binary);
 		if (!reader.is_open()) return;
 
 		reader.seekg(0, std::ios::end);
 		const size_t file_size = reader.tellg();
-		if (file_size == 0) return;
-		reader.seekg(0, std::ios::beg);
+		if (file_size <= hash_table_byte_size()) return;
+		reader.seekg(hash_table_byte_size(), std::ios::beg);
 
+		size_t num_records;
+		reader.read((char *)&num_records, sizeof(size_t));
+
+		// Read records.
+		const size_t record_buffer_len = 10000;
+		std::unique_ptr<data_record[]> record_buffer_allocator = std::make_unique<data_record[]>(record_buffer_len);
+		data_record *record_buffer = record_buffer_allocator.get();
+
+		size_t records_read = 0;
+		while (records_read < num_records) {
+			size_t records_left = num_records - records_read;
+			size_t records_to_read = min(records_left, record_buffer_len);
+			reader.read((char *)record_buffer, sizeof(data_record) * records_to_read);
+
+			for (size_t i = 0; i < records_to_read; i++) {
+				m_records.push_back(record_buffer[i]);
+			}
+		}
+
+		// Build record_to_internal_id map
+		uint32_t internal_id = 0;
+		for (const data_record &rec : m_records) {
+			m_record_id_to_internal_id[rec.m_value] = internal_id++;
+		}
+
+		const size_t buffer_len = std::max(1000, (int)internal_id);
 		std::unique_ptr<char[]> buffer_allocator;
 		try {
-			buffer_allocator = std::make_unique<char[]>(m_buffer_len);
+			buffer_allocator = std::make_unique<char[]>(buffer_len);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << m_buffer_len << " bytes" << std::endl;
 			return;
 		}
-		m_buffer = buffer_allocator.get();
-		while (read_page(reader)) {
+		char *buffer = buffer_allocator.get();
+		while (read_page(reader, buffer, buffer_len)) {
 		}
 	}
 
 	template<typename data_record>
-	bool index_builder<data_record>::read_page(std::ifstream &reader) {
+	bool index_builder<data_record>::read_page(std::ifstream &reader, char *buffer, size_t buffer_len) {
 
-		char buffer[64];
-
-		reader.read(buffer, 8);
-
+		reader.read(buffer, sizeof(uint64_t));
 		if (reader.eof()) return false;
 
 		uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
 		std::unique_ptr<char[]> vector_buffer_allocator;
 		try {
-			vector_buffer_allocator = std::make_unique<char[]>(num_keys * 8);
+			vector_buffer_allocator = std::make_unique<char[]>(num_keys * sizeof(uint64_t));
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << num_keys << " keys" << std::endl;
@@ -439,7 +469,7 @@ namespace indexer {
 		char *vector_buffer = vector_buffer_allocator.get();
 
 		// Read the keys.
-		reader.read(vector_buffer, num_keys * 8);
+		reader.read(vector_buffer, num_keys * sizeof(uint64_t));
 		std::vector<uint64_t> keys;
 		for (size_t i = 0; i < num_keys; i++) {
 			keys.push_back(*((uint64_t *)(&vector_buffer[i*8])));
@@ -455,55 +485,43 @@ namespace indexer {
 		// Read the lengths.
 		reader.read(vector_buffer, num_keys * 8);
 		std::vector<size_t> lens;
+		size_t max_len = 0;
 		size_t data_size = 0;
 		for (size_t i = 0; i < num_keys; i++) {
 			size_t len = *((size_t *)(&vector_buffer[i*8]));
-			m_result_sizes[keys[i]] = len / sizeof(data_record);
+			if (len > max_len) max_len = len;
 			lens.push_back(len);
 			data_size += len;
 		}
 
-		// Read the totals.
-		reader.read(vector_buffer, num_keys * 8);
-
 		if (data_size == 0) return true;
 
-		// Read the data.
-		size_t total_read_data = 0;
-		size_t key_id = 0;
-		size_t num_records_for_key = lens[key_id] / sizeof(data_record);
-		while (total_read_data < data_size) {
-			const size_t to_read_now = std::min(m_buffer_len, data_size - total_read_data);
-			reader.read(m_buffer, to_read_now);
-			const size_t read_len = reader.gcount();
+		if (max_len > buffer_len) {
+			throw out_of_range("buffer_len is too small in read_page");
+		}
 
-			if (read_len == 0) {
+		// Read the bitmap data.
+		for (size_t i = 0; i < num_keys; i++) {
+			const size_t len = lens[i];
+			reader.read(buffer, len);
+			const size_t read_len = reader.gcount();
+			if (read_len != len) {
 				LOG_INFO("Data stopped before end. Ignoring shard " + m_id);
-				m_cache = std::map<uint64_t, std::vector<data_record>>{};
+				reset_cache_variables();
 				break;
 			}
 
-			total_read_data += read_len;
-
-			size_t num_records = read_len / sizeof(data_record);
-			for (size_t i = 0; i < num_records; i++) {
-				while (num_records_for_key == 0 && key_id < num_keys) {
-					key_id++;
-					num_records_for_key = lens[key_id] / sizeof(data_record);
-				}
-
-				if (num_records_for_key > 0) {
-
-					const data_record *record = (data_record *)&m_buffer[i * sizeof(data_record)];
-					
-					m_cache[keys[key_id]].push_back(*record);
-
-					num_records_for_key--;
-				}
-			}
+			m_bitmaps[keys[i]] = roaring::Roaring::readSafe(buffer, len);
 		}
 
 		return true;
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::reset_cache_variables() {
+		m_records = std::vector<data_record>{};
+		m_record_id_to_internal_id = std::unordered_map<uint64_t, uint32_t>{};
+		m_bitmaps = std::map<uint64_t, roaring::Roaring>{};
 	}
 
 	template<typename data_record>
@@ -514,20 +532,11 @@ namespace indexer {
 			throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
 		}
 
-		const bool open_keyfile = use_key_file();
-
-		std::ofstream key_writer;
-		if (open_keyfile) {
-			key_writer.open(key_filename(), std::ios::binary | std::ios::trunc);
-			if (!key_writer.is_open()) {
-				throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
-			}
-
-			reset_key_file(key_writer);
-		}
+		reset_key_map(writer);
+		write_records(writer);
 
 		std::map<uint64_t, std::vector<uint64_t>> pages;
-		for (auto &iter : m_cache) {
+		for (auto &iter : m_bitmaps) {
 			if (m_hash_table_size) {
 				pages[iter.first % m_hash_table_size].push_back(iter.first);
 			} else {
@@ -536,11 +545,9 @@ namespace indexer {
 		}
 
 		for (const auto &iter : pages) {
-			const size_t page_pos = write_page(writer, iter.second);
+			size_t page_pos = write_page(writer, iter.second);
+			write_key(writer, iter.first, page_pos);
 			writer.flush();
-			if (open_keyfile) {
-				write_key(key_writer, iter.first, page_pos);
-			}
 		}
 	}
 
@@ -559,6 +566,8 @@ namespace indexer {
 	template<typename data_record>
 	size_t index_builder<data_record>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
 
+		writer.seekp(0, ios::end);
+
 		const size_t page_pos = writer.tellp();
 
 		size_t num_keys = keys.size();
@@ -568,45 +577,55 @@ namespace indexer {
 
 		std::vector<size_t> v_pos;
 		std::vector<size_t> v_len;
-		std::vector<size_t> v_tot;
 
+		size_t max_len = 0;
 		size_t pos = 0;
 		for (uint64_t key : keys) {
 
+			m_bitmaps[key].runOptimize();
+			m_bitmaps[key].shrinkToFit();
+
 			// Store position and length
-			size_t len = m_cache[key].size() * sizeof(data_record);
+			const size_t len = m_bitmaps[key].getSizeInBytes();
+
+			if (len > max_len) max_len = len;
 			
 			v_pos.push_back(pos);
 			v_len.push_back(len);
-			v_tot.push_back(total_results_for_key(key));
 
 			pos += len;
 		}
 		
 		writer.write((char *)v_pos.data(), keys.size() * 8);
 		writer.write((char *)v_len.data(), keys.size() * 8);
-		writer.write((char *)v_tot.data(), keys.size() * 8);
+
+		std::unique_ptr<char[]> buffer_allocator = make_unique<char[]>(max_len);
+		char *buffer = buffer_allocator.get();
 
 		// Write data.
 		for (uint64_t key : keys) {
-			writer.write((char *)m_cache[key].data(), sizeof(data_record) * m_cache[key].size());
+			const size_t len = m_bitmaps[key].getSizeInBytes();
+			m_bitmaps[key].write(buffer);
+			writer.write(buffer, len);
 		}
 
 		return page_pos;
 	}
 
 	template<typename data_record>
-	bool index_builder<data_record>::use_key_file() const {
-		return m_hash_table_size > 0;
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::reset_key_file(std::ofstream &key_writer) {
+	void index_builder<data_record>::reset_key_map(std::ofstream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
 		for (size_t i = 0; i < m_hash_table_size; i++) {
 			key_writer.write((char *)&data, sizeof(uint64_t));
 		}
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::write_records(std::ofstream &writer) {
+		const size_t num_records = m_records.size();
+		writer.write((char *)&num_records, sizeof(uint64_t));
+		writer.write((char *)m_records.data(), num_records * sizeof(data_record));
 	}
 
 	template<typename data_record>
@@ -634,8 +653,6 @@ namespace indexer {
 		auto last = std::unique(records.begin(), records.end());
 		records.erase(last, records.end());
 
-		m_result_sizes[key] = records.size();
-
 		if (records.size() > m_max_results) {
 
 			/*
@@ -644,7 +661,7 @@ namespace indexer {
 				This should be OK since the table already takes up a lot of memory, so adding 15K hyper log log
 				registers should not blow up.
 				For example m_max_results should be around 2M long
-			*/
+			
 			auto total_counter = get_total_counter_for_key(key);
 
 			for (const data_record &record : records) {
@@ -659,7 +676,7 @@ namespace indexer {
 			// Truncate everything with low score.
 			if (records.size() > m_max_results) {
 				records.resize(m_max_results);
-			}
+			}*/
 		}
 
 		// Order by storage_order.
@@ -669,108 +686,26 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::shared_ptr<::algorithm::hyper_log_log> index_builder<data_record>::get_total_counter_for_key(uint64_t key) {
-		if (m_result_counters.count(key) == 0) {
-			m_result_counters[key] = std::make_shared<::algorithm::hyper_log_log>();
-		}
-		return m_result_counters[key];
-	}
-
-	template<typename data_record>
-	size_t index_builder<data_record>::total_results_for_key(uint64_t key) {
-		if (m_result_counters.count(key)) {
-			return m_result_counters[key]->count();
-		}
-		return m_result_sizes[key];
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::read_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) {
-
-		struct meta {
-			size_t unique_count;
-		};
-
-		std::ifstream infile(meta_filename(), std::ios::binary);
-
-		infile.seekg(0, std::ios::end);
-		//size_t meta_file_size = infile.tellg();
-
-		m_result_counters.clear();
-
-		if (infile.is_open()) {
-			infile.seekg(sizeof(meta));
-			infile.read(hll->data(), hll->data_size());
-
-			// Read total counters.
-			size_t num_total_counters = 0;
-			infile.read((char *)(&num_total_counters), sizeof(size_t));
-			for (size_t i = 0; i < num_total_counters; i++) {
-				uint64_t key = 0;
-				std::shared_ptr<::algorithm::hyper_log_log> ptr =
-					std::make_shared<::algorithm::hyper_log_log>();
-				infile.read((char *)(&key), sizeof(uint64_t));
-				infile.read(ptr->data(), ptr->data_size());
-				m_result_counters[key] = ptr;
-			}
-		}
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::save_meta(std::unique_ptr<::algorithm::hyper_log_log> &hll) const {
-
-		struct meta {
-			size_t unique_count;
-		};
-
-		meta m;
-
-		m.unique_count = hll->count();
-
-		std::ofstream outfile(meta_filename(), std::ios::binary | std::ios::trunc);
-
-		if (outfile.is_open()) {
-			outfile.write((char *)(&m), sizeof(m));
-			outfile.write(hll->data(), hll->data_size());
-
-			// Write total counters.
-			const size_t num_total_counters = m_result_counters.size();
-			outfile.write((char *)(&num_total_counters), sizeof(size_t));
-			for (const auto &iter : m_result_counters) {
-				outfile.write((char *)(&iter.first), sizeof(uint64_t));
-				outfile.write(iter.second->data(), iter.second->data_size());
-			}
-		}
-	}
-
-	template<typename data_record>
 	std::string index_builder<data_record>::mountpoint() const {
 		return std::to_string(m_id % 8);
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::cache_filename() const {
+		if (m_file_name != "") return m_file_name + ".cache";
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".cache";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::key_cache_filename() const {
+		if (m_file_name != "") return m_file_name + ".cache.keys";
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +".cache.keys";
 	}
 
 	template<typename data_record>
-	std::string index_builder<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".keys";
-	}
-
-	template<typename data_record>
 	std::string index_builder<data_record>::target_filename() const {
+		if (m_file_name != "") return m_file_name + ".data";
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
-	}
-
-	template<typename data_record>
-	std::string index_builder<data_record>::meta_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
 	}
 
 }

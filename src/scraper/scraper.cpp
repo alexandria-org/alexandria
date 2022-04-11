@@ -166,6 +166,7 @@ namespace scraper {
 	}
 
 	void scraper::handle_url(const URL &url) {
+		cout << url.str() << endl;
 		m_buffer.resize(0);
 		curl_easy_setopt(m_curl, CURLOPT_USERAGENT, user_agent().c_str());
 		curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1l);
@@ -260,7 +261,7 @@ namespace scraper {
 
 	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
 		m_num_200++;
-		parser::html_parser html_parser;
+		parser::html_parser html_parser(100000);
 		html_parser.parse(data, url.str());
 
 		m_num_total++;

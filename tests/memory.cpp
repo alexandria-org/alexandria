@@ -24,24 +24,30 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "memory/memory.h"
+#include "memory/debugger.h"
 
-BOOST_AUTO_TEST_SUITE(memory)
+BOOST_AUTO_TEST_SUITE(test_memory)
 
-BOOST_AUTO_TEST_CASE(mem) {
+BOOST_AUTO_TEST_CASE(test_memory) {
 	memory::update();
 
 	BOOST_CHECK(memory::get_available_memory() > 0);
 	BOOST_CHECK(memory::get_total_memory() > 0);
 
-	const size_t used1 = memory::get_used_memory();
+	const size_t used1 = memory::allocated_memory();
 
-	char *some_mem = new char[1000000];
+	const size_t memlen = 1000000;
+	char *some_mem = new char[memlen];
+	for (size_t i = 0; i < memlen; i++) {
+		some_mem[i] = 1;
+	}
 	memory::update();
 
-	const size_t used2 = memory::get_used_memory();
+	const size_t used2 = memory::allocated_memory();
 
-	BOOST_CHECK(used1 < used2);
+	BOOST_CHECK(used1 + 1000000 == used2);
 
 	delete some_mem;
 }
