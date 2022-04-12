@@ -170,6 +170,8 @@ namespace indexer {
 			add_url(url.hash(), domain_hash);
 			add_data(url.host_hash(), url.host());
 
+			const string h = url.host();
+
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
 			for (size_t col : cols) {
@@ -199,12 +201,14 @@ namespace indexer {
 
 		std::vector<std::string> words = text::get_full_text_words(query);
 		
-		sharded_index<domain_record> idx("domain", 1024);
+		sharded_index<domain_record> idx("domain", 8192);
 
 		std::vector<std::vector<domain_record>> results;
 		for (const string &word : words) {
 			size_t token = ::algorithm::hash(word);
-			results.push_back(idx.find(token));
+			std::vector<domain_record> res = idx.find(token);
+			sort(res.begin(), res.end());
+			results.emplace_back(std::move(res));
 		}
 		std::vector<return_record> intersected = intersection(results);
 		apply_domain_links(domain_links, intersected);

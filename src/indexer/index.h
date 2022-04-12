@@ -43,6 +43,7 @@ namespace indexer {
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
+		std::vector<data_record> find(uint64_t key, std::function<data_record(uint32_t)> &id_to_rec) const;
 
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
@@ -107,6 +108,20 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find(uint64_t key) const {
 
+			std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
+				data_record rec;
+				m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
+				m_reader->read((char *)&rec, sizeof(data_record));
+				return rec;
+			};
+
+			return find(key, id_to_rec);
+	}
+
+	template<typename data_record>
+	std::vector<data_record> index<data_record>::find(uint64_t key,
+		std::function<data_record(uint32_t)> &id_to_rec) const {
+
 		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {
@@ -155,10 +170,7 @@ namespace indexer {
 
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : rr) {
-			data_record rec;
-			m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + internal_id * sizeof(data_record));
-			m_reader->read((char *)&rec, sizeof(data_record));
-			ret.push_back(rec);
+			ret.emplace_back(id_to_rec(internal_id));
 		}
 
 		return ret;

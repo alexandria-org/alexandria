@@ -50,19 +50,26 @@ namespace indexer {
 		size_t m_num_shards;
 		size_t m_hash_table_size;
 
+		std::vector<data_record> m_records;
+		std::map<uint64_t, uint32_t> m_record_id_map;
+
+		void read_meta();
+		std::string filename() const;
+
 	};
 
 	template<typename data_record>
 	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards)
 	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(config::shard_hash_table_size)
 	{
+		read_meta();
 	}
 
 	template<typename data_record>
 	sharded_index<data_record>::sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size)
 	: m_db_name(db_name), m_num_shards(num_shards), m_hash_table_size(hash_table_size)
 	{
-
+		read_meta();
 	}
 
 	template<typename data_record>
@@ -71,9 +78,14 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find(uint64_t key) const {
+
+		std::function<data_record(uint32_t id)> id_to_rec = [this](uint32_t id) {
+			return m_records[id];
+		};
+
 		const size_t shard_id = key % m_num_shards;
 		index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
-		return idx.find(key);
+		return idx.find(key, id_to_rec);
 	}
 
 	template<typename data_record>
@@ -85,6 +97,31 @@ namespace indexer {
 		}
 
 		return ::algorithm::intersection(results);
+	}
+
+	template<typename data_record>
+	void sharded_index<data_record>::read_meta() {
+		std::ifstream meta_file(filename(), std::ios::binary);
+
+		if (meta_file.is_open()) {
+
+			// Read records.
+			size_t num_records;
+			meta_file.read((char *)(&num_records), sizeof(size_t));
+			for (size_t i = 0; i < num_records; i++) {
+				data_record rec;
+				meta_file.read((char *)(&rec), sizeof(data_record));
+
+				m_record_id_map[rec.m_value] = m_records.size();
+				m_records.push_back(rec);
+			}
+		}
+	}
+
+	template<typename data_record>
+	std::string sharded_index<data_record>::filename() const {
+		// This file will contain meta data on the index. For example the hyper log log document counter.
+		return "/mnt/0/full_text/" + m_db_name + ".meta";
 	}
 
 }

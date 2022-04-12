@@ -71,6 +71,7 @@ namespace indexer {
 		index_builder(const std::string &db_name, size_t id);
 		index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
 		index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
+		index_builder(const std::string &db_name, size_t id, std::function<uint32_t(const data_record &)> &rec_to_id);
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
@@ -104,18 +105,22 @@ namespace indexer {
 		char *m_buffer;
 		std::mutex m_lock;
 
-		// Id map
-		map<uint64_t, uint16_t> m_id_map_16_bit;
-
 		// Caches
 		std::vector<uint64_t> m_key_cache;
 		std::vector<data_record> m_record_cache;
-
-		std::map<uint64_t, vector<data_record>> m_cache;
+		
 
 		std::vector<data_record> m_records;
-		std::unordered_map<uint64_t, uint32_t> m_record_id_to_internal_id;
+		std::map<uint64_t, uint32_t> m_record_id_map;
 		std::map<uint64_t, roaring::Roaring> m_bitmaps;
+
+		std::function<uint32_t(const data_record &)> m_record_id_to_internal_id = [this](const data_record &record) {
+			if (m_record_id_map.count(record.m_value) == 0) {
+				m_record_id_map[record.m_value] = m_records.size();
+				m_records.push_back(record);
+			}
+			return m_record_id_map[record.m_value];
+		};
 
 		void read_append_cache();
 		void read_data_to_cache();
@@ -127,8 +132,7 @@ namespace indexer {
 		void reset_key_map(std::ofstream &key_writer);
 		void write_records(std::ofstream &writer);
 		size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
-		void sort_cache();
-		void sort_record_list(uint64_t key, std::vector<data_record> &records);
+		uint32_t default_record_to_internal_id(const data_record &record);
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
@@ -140,7 +144,8 @@ namespace indexer {
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &file_name)
-	: m_file_name(file_name), m_id(0), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section)
+	: m_file_name(file_name), m_id(0), m_hash_table_size(config::shard_hash_table_size),
+		m_max_results(config::ft_max_results_per_section)
 	{
 		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();});
@@ -164,6 +169,15 @@ namespace indexer {
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
 		merger::register_merger((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();});
+	}
+
+	template<typename data_record>
+	index_builder<data_record>::index_builder(const std::string &db_name, size_t id,
+		std::function<uint32_t(const data_record &)> &rec_to_id)
+	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
+		m_record_id_to_internal_id = rec_to_id;
+		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();});
 	}
 
@@ -269,67 +283,8 @@ namespace indexer {
 		}
 	}
 
-	/*template<typename data_record>
-	void index_builder<data_record>::calculate_scores(algorithm algo, const score_builder &score) {
-
-		m_cache = std::map<uint64_t, std::vector<data_record>>{};
-
-		// Read meta.
-		std::unique_ptr<::algorithm::hyper_log_log> hll = std::make_unique<::algorithm::hyper_log_log>();
-		read_meta(hll);
-
-		// Read the current file.
-		read_data_to_cache();
-
-		for (auto &iter : m_cache) {
-			calculate_scores_for_token(algo, score, iter.first, iter.second);
-		}
-
-		sort_cache();
-		save_file();
-		truncate_cache_files();
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::calculate_scores_for_token(algorithm algo, const score_builder &score,
-			uint64_t token, std::vector<data_record> &records) {
-		for (data_record &record : records) {
-			record.m_score = calculate_score_for_record(algo, score, token, record);
-		}
-	}
-
-	template<typename data_record>
-	float index_builder<data_record>::calculate_score_for_record(algorithm algo, const score_builder &score,
-			uint64_t token, const data_record &record) {
-
-		float val1 = (score.document_count() - total_results_for_key(token) + 0.5f);
-		float val2 = (total_results_for_key(token) + 0.5f);
-		float idf = log((val1 / val2) + 1.0f);
-
-		if (algo == algorithm::bm25) {
-			// reference: https://en.wikipedia.org/wiki/Okapi_BM25
-			const float k1 = 1.2f;
-			const float b = 0.75f;
-			float tf = 0.0f;
-			const size_t doc_size = score.document_size(record.m_value);
-			if (doc_size) tf = (float)record.count() / doc_size;
-			return idf * tf * (k1 + 1) / (tf + k1 * (1 - b + b * ((float)doc_size / score.avg_document_size())));
-		}
-		if (algo == algorithm::tf_idf) {
-			// reference: https://en.wikipedia.org/wiki/Tf-idf
-			float tf = 0.0f;
-			const size_t doc_size = score.document_size(record.m_value);
-			if (doc_size) tf = (float)record.count() / doc_size;
-			return tf * idf;
-		}
-
-		return record.m_score;
-	}*/
-
 	template<typename data_record>
 	void index_builder<data_record>::read_append_cache() {
-
-		m_cache = std::map<uint64_t, std::vector<data_record>>{};
 
 		// Read the current file.
 		read_data_to_cache();
@@ -383,12 +338,8 @@ namespace indexer {
 			for (size_t i = 0; i < num_records; i++) {
 				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
 				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
-				
-				if (m_record_id_to_internal_id.count(record->m_value) == 0) {
-					m_record_id_to_internal_id[record->m_value] = (uint32_t)m_records.size();
-					m_records.push_back(*record);
-				}
-				const uint32_t internal_id = m_record_id_to_internal_id[record->m_value];
+				const uint32_t internal_id = m_record_id_to_internal_id(*record);
+
 				m_bitmaps[key].add(internal_id);
 			}
 		}
@@ -425,17 +376,12 @@ namespace indexer {
 			reader.read((char *)record_buffer, sizeof(data_record) * records_to_read);
 
 			for (size_t i = 0; i < records_to_read; i++) {
+				m_record_id_map[record_buffer[i].m_value] = m_records.size();
 				m_records.push_back(record_buffer[i]);
 			}
 		}
 
-		// Build record_to_internal_id map
-		uint32_t internal_id = 0;
-		for (const data_record &rec : m_records) {
-			m_record_id_to_internal_id[rec.m_value] = internal_id++;
-		}
-
-		const size_t buffer_len = std::max(1000, (int)internal_id);
+		const size_t buffer_len = std::max(1000, (int)m_records.size());
 		std::unique_ptr<char[]> buffer_allocator;
 		try {
 			buffer_allocator = std::make_unique<char[]>(buffer_len);
@@ -520,7 +466,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::reset_cache_variables() {
 		m_records = std::vector<data_record>{};
-		m_record_id_to_internal_id = std::unordered_map<uint64_t, uint32_t>{};
+		m_record_id_map = std::map<uint64_t, uint32_t>{};
 		m_bitmaps = std::map<uint64_t, roaring::Roaring>{};
 	}
 
@@ -561,7 +507,7 @@ namespace indexer {
 	}
 
 	/*
-	 * Writes the page with keys, appending it to the file stream writer. Takes data from m_cache.
+	 * Writes the page with keys, appending it to the file stream writer.
 	 * */
 	template<typename data_record>
 	size_t index_builder<data_record>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
@@ -629,60 +575,12 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::sort_cache() {
-		for (auto &iter : m_cache) {
-			sort_record_list(iter.first, iter.second);
+	uint32_t index_builder<data_record>::default_record_to_internal_id(const data_record &record) {
+		if (m_record_id_map.count(record.m_value) == 0) {
+			m_record_id_map[record.m_value] = m_records.size();
+			m_records.push_back(record);
 		}
-	}
-
-	template<typename data_record>
-	void index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
-		// Sort records.
-		std::sort(records.begin(), records.end());
-
-		// Sum equal elements.
-		for (size_t i = 0, j = 1; i < records.size() && j < records.size(); j++) {
-			if (records[i] != records[j]) {
-				i = j;
-			} else {
-				records[i] += records[j];
-			}
-		}
-
-		// Delete consecutive elements. Only keeping the first.
-		auto last = std::unique(records.begin(), records.end());
-		records.erase(last, records.end());
-
-		if (records.size() > m_max_results) {
-
-			/*
-				These results should be truncated.
-				Then we need to create a hyper log log object that can keep track of total number of results.
-				This should be OK since the table already takes up a lot of memory, so adding 15K hyper log log
-				registers should not blow up.
-				For example m_max_results should be around 2M long
-			
-			auto total_counter = get_total_counter_for_key(key);
-
-			for (const data_record &record : records) {
-				total_counter->insert(record.m_value);
-			}
-
-			// Sort all the records by score, so that we truncate away everything with lowest score.
-			std::sort(records.begin(), records.end(), [](const data_record &a, const data_record &b) {
-				return a.m_score > b.m_score;
-			});
-
-			// Truncate everything with low score.
-			if (records.size() > m_max_results) {
-				records.resize(m_max_results);
-			}*/
-		}
-
-		// Order by storage_order.
-		std::sort(records.begin(), records.end(), typename data_record::storage_order());
-
-		records.shrink_to_fit(); // Save memory.
+		return m_record_id_map[record.m_value];
 	}
 
 	template<typename data_record>

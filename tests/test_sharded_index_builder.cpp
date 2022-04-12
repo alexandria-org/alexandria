@@ -25,11 +25,14 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include "indexer/index_tree.h"
 #include "indexer/sharded_index_builder.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
+#include "indexer/merger.h"
 #include "text/text.h"
 #include "algorithm/hash.h"
+#include "transfer/transfer.h"
 
 BOOST_AUTO_TEST_SUITE(test_sharded_index_builder)
 
@@ -61,61 +64,42 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder) {
 
 }
 
-BOOST_AUTO_TEST_CASE(test_sharded_index_builder_bm25) {
+BOOST_AUTO_TEST_CASE(test_with_real_data) {
 
-	const string domain1 = "heroes 3 wiki heroes 3 wiki heroes 3 wiki heroes 3 wiki heroes 3 wiki";
-	const string domain2 = "the most exclusive news about the tv series heroes and its 3 episodes "
-		"can be found in the wiki";
-	const string domain3 = "one of the best things with being a programmer is that you can also play heroes 3 "
-		"and write wiki pages";
+	const size_t mem_before = memory::allocated_memory();
+	{
+		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz"};
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+
+		indexer::index_tree idx_tree;
+
+		indexer::domain_level domain_level;
+		idx_tree.add_level(&domain_level);
+
+		idx_tree.truncate();
+
+		indexer::merger::start_merge_thread();
+		idx_tree.add_index_files_threaded(local_files, 1);
+		indexer::merger::stop_merge_thread();
+	
+		transfer::delete_downloaded_files(local_files);
+	}
+	const size_t mem_after = memory::allocated_memory();
+	BOOST_CHECK(mem_before == mem_after);
+	cout << "diff: " << mem_after - mem_before << endl;
 
 	{
-		indexer::sharded_index_builder<indexer::generic_record> idx("test_index", 10);
+		hash_table::hash_table ht("index_tree");
+		indexer::index_tree idx_tree;
+		indexer::domain_level domain_level;
+		idx_tree.add_level(&domain_level);
 
-		idx.truncate();
+		std::vector<indexer::return_record> res = idx_tree.find("microsoft corporation main site");
 
-		// index domain1
-		for (const auto &word : text::get_full_text_words(domain1)) {
-			const size_t key = algorithm::hash(word);
-			indexer::generic_record record(1, 1.0f);
-			idx.add(key, record);
-		}
-
-		// index domain2
-		for (const auto &word : text::get_full_text_words(domain2)) {
-			const size_t key = algorithm::hash(word);
-			indexer::generic_record record(2, 1.0f);
-			idx.add(key, record);
-		}
-
-		// index domain3
-		for (const auto &word : text::get_full_text_words(domain3)) {
-			const size_t key = algorithm::hash(word);
-			indexer::generic_record record(3, 1.0f);
-			idx.add(key, record);
-		}
-
-		idx.append();
-		idx.merge();
-
-		// Memory footprint should be same before and after calculate_scores.
-		const size_t mem_before = memory::allocated_memory();
-		idx.calculate_scores(indexer::algorithm::bm25);
-		const size_t mem_after = memory::allocated_memory();
-		BOOST_CHECK_EQUAL(mem_before, mem_after);
-
-		BOOST_CHECK(idx.num_documents() == 3);
-		BOOST_CHECK(idx.document_size(1) == 15);
+		BOOST_REQUIRE(res.size() == 1);
+		const string host = ht.find(res[0].m_value);
+		BOOST_CHECK(host == "microsoft.com");
 	}
-
-	{
-		indexer::sharded_index<indexer::generic_record> idx("test_index", 10);
-		vector<indexer::generic_record> res = idx.find(algorithm::hash("heroes"));
-
-		BOOST_REQUIRE(res.size() == 3);
-		BOOST_CHECK(res[0].m_value == 1);
-	}
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()

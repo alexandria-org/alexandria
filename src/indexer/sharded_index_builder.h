@@ -41,7 +41,6 @@ namespace indexer {
 	public:
 
 		sharded_index_builder(const std::string &db_name, size_t num_shards);
-		sharded_index_builder(const std::string &db_name, size_t num_shards, size_t hash_table_size);
 		~sharded_index_builder();
 
 		void add(uint64_t key, const data_record &record);
@@ -63,11 +62,15 @@ namespace indexer {
 
 	private:
 
+		std::mutex m_lock;
 		std::string m_db_name;
 		std::vector<std::shared_ptr<index_builder<data_record>>> m_shards;
 		::algorithm::hyper_log_log m_document_counter;
 		std::map<uint64_t, size_t> m_document_sizes;
 		float m_avg_document_size = 0.0f;
+
+		std::vector<data_record> m_records;
+		std::map<uint64_t, uint32_t> m_record_id_map;
 
 		void read_meta();
 		void write_meta();
@@ -77,21 +80,19 @@ namespace indexer {
 
 	template<typename data_record>
 	sharded_index_builder<data_record>::sharded_index_builder(const std::string &db_name, size_t num_shards) {
+
+		std::function<uint32_t(const data_record &)> rec_to_id = [this](const data_record &record) {
+			std::lock_guard guard(m_lock);
+			if (m_record_id_map.count(record.m_value) == 0) {
+				m_record_id_map[record.m_value] = m_records.size();
+				m_records.push_back(record);
+			}
+			return m_record_id_map[record.m_value];
+		};
+
 		m_db_name = db_name;
 		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index_builder<data_record>>(db_name, shard_id));
-		}
-		create_directories();
-		read_meta();
-	}
-
-	template<typename data_record>
-	sharded_index_builder<data_record>::sharded_index_builder(const std::string &db_name, size_t num_shards,
-			size_t hash_table_size) {
-	
-		db_name = m_db_name;
-		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			m_shards.push_back(std::make_shared<index_builder<data_record>>(db_name, shard_id, hash_table_size));
+			m_shards.push_back(std::make_shared<index_builder<data_record>>(db_name, shard_id, rec_to_id));
 		}
 		create_directories();
 		read_meta();
@@ -99,14 +100,16 @@ namespace indexer {
 
 	template<typename data_record>
 	sharded_index_builder<data_record>::~sharded_index_builder() {
+		write_meta();
 	}
 
 	template<typename data_record>
 	void sharded_index_builder<data_record>::add(uint64_t key, const data_record &record) {
 		m_shards[key % m_shards.size()]->add(key, record);
 
-		m_document_counter.insert(record.m_value);
+		/*m_document_counter.insert(record.m_value);
 		m_document_sizes[record.m_value]++; // Raw non unique document size.
+		*/
 	}
 
 	template<typename data_record>
@@ -121,7 +124,6 @@ namespace indexer {
 		for (auto &shard : m_shards) {
 			shard->merge();
 		}
-		write_meta();
 	}
 
 	template<typename data_record>
@@ -141,8 +143,8 @@ namespace indexer {
 			shard->truncate();
 		}
 		std::ofstream meta_file(filename(), std::ios::trunc);
-		m_document_sizes.clear();
-		m_document_counter.reset();
+		m_records = std::vector<data_record>{};
+		m_record_id_map = std::map<uint64_t, uint32_t>{};
 	}
 
 	template<typename data_record>
@@ -165,19 +167,18 @@ namespace indexer {
 
 		if (meta_file.is_open()) {
 
-			meta_file.seekg(sizeof(size_t));
-			char *data = m_document_counter.data();
-			meta_file.read(data, m_document_counter.data_size());
+			// Read records.
+			size_t num_records;
+			meta_file.read((char *)(&num_records), sizeof(size_t));
+			if (meta_file.eof()) return;
+			for (size_t i = 0; i < num_records; i++) {
+				data_record rec;
+				meta_file.read((char *)(&rec), sizeof(data_record));
 
-			size_t num_docs = 0;
-			meta_file.read((char *)(&num_docs), sizeof(size_t));
-			for (size_t i = 0; i < num_docs; i++) {
-				uint64_t doc_id = 0;
-				size_t count = 0;
-				meta_file.read((char *)(&doc_id), sizeof(uint64_t));
-				meta_file.read((char *)(&count), sizeof(size_t));
-				m_document_sizes[doc_id] = count;
+				m_record_id_map[rec.m_value] = m_records.size();
+				m_records.push_back(rec);
 			}
+
 		}
 	}
 
@@ -187,18 +188,11 @@ namespace indexer {
 
 		if (meta_file.is_open()) {
 
-			size_t document_count = m_document_counter.count();
-
-			meta_file.write((char *)&document_count, sizeof(size_t));
-			char *data = m_document_counter.data();
-			meta_file.write(data, m_document_counter.data_size());
-
-			// Write document sizes.
-			const size_t num_docs = m_document_sizes.size();
-			meta_file.write((char *)(&num_docs), sizeof(size_t));
-			for (const auto &iter : m_document_sizes) {
-				meta_file.write((char *)(&iter.first), sizeof(uint64_t));
-				meta_file.write((char *)(&iter.second), sizeof(size_t));
+			// Write records.
+			const size_t num_records = m_records.size();
+			meta_file.write((char *)(&num_records), sizeof(size_t));
+			for (const data_record &record : m_records) {
+				meta_file.write((char *)(&record), sizeof(data_record));
 			}
 		}
 	}

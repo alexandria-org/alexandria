@@ -88,7 +88,7 @@ namespace indexer {
 			std::cout << "APPENDING ALL: " << appenders.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " <<
 				(available_memory * mem_limit) << std::endl;
 			
-			utils::thread_pool pool(24);
+			utils::thread_pool pool(32);
 
 			merger_lock.lock();
 			for (auto &iter : appenders) {
@@ -118,7 +118,7 @@ namespace indexer {
 			std::cout << "MERGING ALL: " << mergers.size() << " mergers allocated memory: " << memory::allocated_memory() << " limit is: " <<
 				(available_memory * mem_limit) << std::endl;
 			
-			utils::thread_pool pool(1);
+			utils::thread_pool pool(32);
 
 			for (auto &iter : mergers) {
 				pool.enqueue([iter]() {
