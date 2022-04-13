@@ -31,6 +31,6 @@
 namespace indexer {
 
 	void console();
-	void index_new();
+	void index_new(const std::string &batch);
 
 }

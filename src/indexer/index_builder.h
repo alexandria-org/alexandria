@@ -124,7 +124,7 @@ namespace indexer {
 
 		void read_append_cache();
 		void read_data_to_cache();
-		bool read_page(std::ifstream &reader, char *buffer, size_t buffer_len);
+		bool read_page(std::ifstream &reader);
 		void reset_cache_variables();
 		void save_file();
 		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
@@ -381,27 +381,16 @@ namespace indexer {
 			}
 		}
 
-		const size_t buffer_len = std::max(1000, (int)m_records.size());
-		std::unique_ptr<char[]> buffer_allocator;
-		try {
-			buffer_allocator = std::make_unique<char[]>(buffer_len);
-		} catch (std::bad_alloc &exception) {
-			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << m_buffer_len << " bytes" << std::endl;
-			return;
-		}
-		char *buffer = buffer_allocator.get();
-		while (read_page(reader, buffer, buffer_len)) {
+		while (read_page(reader)) {
 		}
 	}
 
 	template<typename data_record>
-	bool index_builder<data_record>::read_page(std::ifstream &reader, char *buffer, size_t buffer_len) {
+	bool index_builder<data_record>::read_page(std::ifstream &reader) {
 
-		reader.read(buffer, sizeof(uint64_t));
+		uint64_t num_keys;
+		reader.read((char *)&num_keys, sizeof(uint64_t));
 		if (reader.eof()) return false;
-
-		uint64_t num_keys = *((uint64_t *)(&buffer[0]));
 
 		std::unique_ptr<char[]> vector_buffer_allocator;
 		try {
@@ -442,9 +431,15 @@ namespace indexer {
 
 		if (data_size == 0) return true;
 
-		if (max_len > buffer_len) {
-			throw out_of_range("buffer_len is too small in read_page");
+		std::unique_ptr<char[]> buffer_allocator;
+		try {
+			buffer_allocator = std::make_unique<char[]>(max_len);
+		} catch (std::bad_alloc &exception) {
+			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
+			std::cout << "tried to allocate: " << max_len << " bytes" << std::endl;
+			return false;
 		}
+		char *buffer = buffer_allocator.get();
 
 		// Read the bitmap data.
 		for (size_t i = 0; i < num_keys; i++) {

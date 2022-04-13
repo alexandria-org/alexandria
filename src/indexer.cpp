@@ -107,7 +107,7 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--console") {
 		indexer::console();
 	} else if (arg == "--index-new") {
-		indexer::index_new();
+		indexer::index_new(argv[2]);
 	} else {
 		help();
 	}

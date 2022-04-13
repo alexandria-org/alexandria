@@ -188,11 +188,17 @@ namespace indexer {
 	}
 
 	
-	void index_new() {
+	void index_new(const string &batch) {
+
+		index_builder<domain_record> ib("domain", 592);
+		ib.merge();
+
+		return;
+
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		for (const string &batch : config::batches) {
+		{
 			indexer::index_tree idx_tree;
 
 			indexer::domain_level domain_level;
