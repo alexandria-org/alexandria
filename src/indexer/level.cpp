@@ -193,7 +193,7 @@ namespace indexer {
 	}
 
 	void domain_level::clean_up() {
-		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 8192);
+		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 1024);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
@@ -201,7 +201,7 @@ namespace indexer {
 
 		std::vector<std::string> words = text::get_full_text_words(query);
 		
-		sharded_index<domain_record> idx("domain", 8192);
+		sharded_index<domain_record> idx("domain", 1024);
 
 		std::vector<std::vector<domain_record>> results;
 		for (const string &word : words) {

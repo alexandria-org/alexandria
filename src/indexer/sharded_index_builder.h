@@ -47,6 +47,7 @@ namespace indexer {
 		
 		void append();
 		void merge();
+		void merge_one(size_t id);
 
 		/*
 			This function calculate scores. Should run after a merge.
@@ -124,6 +125,11 @@ namespace indexer {
 		for (auto &shard : m_shards) {
 			shard->merge();
 		}
+	}
+
+	template<typename data_record>
+	void sharded_index_builder<data_record>::merge_one(size_t id) {
+		m_shards[id]->merge();
 	}
 
 	template<typename data_record>

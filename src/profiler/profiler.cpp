@@ -27,10 +27,13 @@
 #include "profiler.h"
 #include "logger/logger.h"
 #include <vector>
+#include <map>
 
 using namespace std;
 
 namespace profiler {
+
+	map<string, double> profiles_per_name;
 
 	std::chrono::_V2::system_clock::time_point start_time = std::chrono::high_resolution_clock::now();
 
@@ -47,6 +50,7 @@ namespace profiler {
 	}
 
 	instance::~instance() {
+		profiles_per_name[m_name] += get();
 		if (!m_has_stopped) {
 			stop();
 		}
@@ -57,7 +61,6 @@ namespace profiler {
 	}
 
 	double instance::get() const {
-		if (!m_enabled) return 0;
 		auto timer_elapsed = chrono::high_resolution_clock::now() - m_start_time;
 		auto microseconds = chrono::duration_cast<std::chrono::microseconds>(timer_elapsed).count();
 
@@ -109,6 +112,18 @@ namespace profiler {
 	size_t timestamp() {
 		const auto p1 = std::chrono::system_clock::now();
 		return std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count();
+	}
+
+	void print_report() {
+
+		double total_ms = 0.0;
+		for (const auto &iter : profiles_per_name) {
+			total_ms += iter.second;
+		}
+
+		for (const auto &iter : profiles_per_name) {
+			cout << iter.first << ": " << iter.second << "ms (" << 100.0 * (iter.second / total_ms) << "%)" << endl;
+		}
 	}
 
 }

@@ -190,10 +190,14 @@ namespace indexer {
 	
 	void index_new(const string &batch) {
 
-		index_builder<domain_record> ib("domain", 592);
-		ib.merge();
+		/*indexer::sharded_index_builder<domain_record> ib("domain", 1024);
+		ib.merge_one(858);
+		ib.merge_one(626);
+		ib.merge_one(770);
 
-		return;
+		profiler::print_report();
+		
+		return;*/
 
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
@@ -236,6 +240,8 @@ namespace indexer {
 
 			merger::stop_merge_thread();
 		}
+
+		profiler::print_report();
 
 		return;
 

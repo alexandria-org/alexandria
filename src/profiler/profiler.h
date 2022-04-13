@@ -49,7 +49,7 @@ namespace profiler {
 
 	private:
 		std::string m_name;
-		bool m_enabled = true;
+		bool m_enabled = false;
 		bool m_has_stopped = false;
 		std::chrono::_V2::system_clock::time_point m_start_time;
 	};
@@ -61,5 +61,6 @@ namespace profiler {
 	void report_print();
 	double now_micro();
 	size_t timestamp();
+	void print_report();
 
 }

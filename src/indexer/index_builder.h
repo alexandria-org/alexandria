@@ -30,6 +30,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <cstring>
 #include <cassert>
 #include <boost/filesystem.hpp>
@@ -37,6 +38,7 @@
 #include "score_builder.h"
 #include "algorithm/hyper_log_log.h"
 #include "config.h"
+#include "profiler/profiler.h"
 #include "logger/logger.h"
 #include "memory/debugger.h"
 #include "roaring/roaring.hh"
@@ -289,6 +291,8 @@ namespace indexer {
 		// Read the current file.
 		read_data_to_cache();
 
+		profiler::instance prof("index_builder::read_append_cache");
+
 		// Read the cache into memory.
 		std::ifstream reader(cache_filename(), std::ios::binary);
 		if (!reader.is_open()) {
@@ -300,48 +304,57 @@ namespace indexer {
 			throw LOG_ERROR_EXCEPTION("Could not open full text shard (" + key_cache_filename() + "). Error: " + std::string(strerror(errno)));
 		}
 
-		const size_t buffer_len = 100000;
-		const size_t buffer_size = sizeof(data_record) * buffer_len;
-		const size_t key_buffer_size = sizeof(uint64_t) * buffer_len;
+		const size_t buffer_len = 10000;
 
-		std::unique_ptr<char[]> buffer_allocator;
+		std::unique_ptr<data_record[]> buffer_allocator;
 		try {
-			buffer_allocator = std::make_unique<char[]>(buffer_size);
+			buffer_allocator = std::make_unique<data_record[]>(buffer_len);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << buffer_size << " bytes" << std::endl;
+			std::cout << "tried to allocate: " << buffer_len * sizeof(data_record) << " bytes" << std::endl;
 			return;
 		}
 
-		std::unique_ptr<char[]> key_buffer_allocator;
+		std::unique_ptr<uint64_t[]> key_buffer_allocator;
 		try {
-			key_buffer_allocator = std::make_unique<char[]>(key_buffer_size);
+			key_buffer_allocator = std::make_unique<uint64_t[]>(buffer_len);
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << key_buffer_size << " bytes" << std::endl;
+			std::cout << "tried to allocate: " << buffer_len * sizeof(uint64_t) << " bytes" << std::endl;
 			return;
 		}
 
-		char *buffer = buffer_allocator.get();
-		char *key_buffer = key_buffer_allocator.get();
+		data_record *buffer = buffer_allocator.get();
+		uint64_t *key_buffer = key_buffer_allocator.get();
 
 		reader.seekg(0, std::ios::beg);
 
+		unordered_map<uint64_t, uint32_t> internal_id_map; 
+		unordered_map<uint64_t, vector<uint32_t>> bitmap_data;
+
 		while (!reader.eof()) {
 
-			reader.read(buffer, buffer_size);
-			key_reader.read(key_buffer, key_buffer_size);
+			reader.read((char *)buffer, buffer_len * sizeof(data_record));
+			key_reader.read((char *)key_buffer, buffer_len * sizeof(uint64_t));
 
 			const size_t read_bytes = reader.gcount();
 			const size_t num_records = read_bytes / sizeof(data_record);
 
 			for (size_t i = 0; i < num_records; i++) {
-				const data_record *record = (data_record *)&buffer[i * sizeof(data_record)];
-				const uint64_t key = *((uint64_t *)&key_buffer[i * sizeof(uint64_t)]);
-				const uint32_t internal_id = m_record_id_to_internal_id(*record);
-
-				m_bitmaps[key].add(internal_id);
+				const auto map_iter = internal_id_map.find(buffer[i].m_value);
+				if (map_iter == internal_id_map.end()) {
+					const uint32_t internal_id = m_record_id_to_internal_id(buffer[i]);
+					internal_id_map[buffer[i].m_value] = internal_id;
+					bitmap_data[key_buffer[i]].push_back(internal_id);
+				} else {
+					bitmap_data[key_buffer[i]].push_back(map_iter->second);
+				}
 			}
+		}
+
+		// Insert the bitmap data.
+		for (const auto &iter : bitmap_data) {
+			m_bitmaps[iter.first].addMany(iter.second.size(), iter.second.data());
 		}
 	}
 
@@ -350,6 +363,8 @@ namespace indexer {
 	 * */
 	template<typename data_record>
 	void index_builder<data_record>::read_data_to_cache() {
+
+		profiler::instance prof("index_builder::read_data_to_cache");
 
 		reset_cache_variables();
 
@@ -467,6 +482,8 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::save_file() {
+
+		profiler::instance prof("index_builder::save_file");
 
 		std::ofstream writer(target_filename(), std::ios::binary | std::ios::trunc);
 		if (!writer.is_open()) {
