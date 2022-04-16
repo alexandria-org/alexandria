@@ -93,7 +93,9 @@ namespace indexer {
 
 		std::vector<std::vector<data_record>> results;
 		for (uint64_t key : keys) {
-			results.emplace_back(find(key));
+			std::vector<data_record> res = find(key);
+			sort(res.begin(), res.end());
+			results.emplace_back(std::move(res));
 		}
 
 		return ::algorithm::intersection(results);

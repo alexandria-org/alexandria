@@ -48,10 +48,6 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder) {
 
 		idx.append();
 		idx.merge();
-		idx.calculate_scores(indexer::algorithm::bm25);
-
-		BOOST_CHECK(idx.num_documents() == 2);
-		BOOST_CHECK(idx.document_size(1000) == 1);
 	}
 
 	{

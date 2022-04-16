@@ -194,19 +194,19 @@ namespace indexer {
 
 	void domain_level::clean_up() {
 		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 1024);
+		m_search_index = std::make_unique<sharded_index<domain_record>>("domain", 1024);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
 		std::vector<std::string> words = text::get_full_text_words(query);
-		
-		sharded_index<domain_record> idx("domain", 1024);
 
 		std::vector<std::vector<domain_record>> results;
 		for (const string &word : words) {
 			size_t token = ::algorithm::hash(word);
-			std::vector<domain_record> res = idx.find(token);
+			std::vector<domain_record> res = m_search_index->find(token);
+			sort(res.begin(), res.end());
 			results.emplace_back(std::move(res));
 		}
 		std::vector<return_record> intersected = intersection(results);

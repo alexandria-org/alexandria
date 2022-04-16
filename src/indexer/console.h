@@ -31,6 +31,7 @@
 namespace indexer {
 
 	void console();
-	void index_new(const std::string &batch);
+	void index_urls(const std::string &batch);
+	void index_links(const std::string &batch);
 
 }

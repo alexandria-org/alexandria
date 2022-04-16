@@ -72,8 +72,10 @@ namespace file {
 
 		size_t read_column_into(int column, std::set<std::string> &container);
 		size_t read_column_into(int column, std::set<std::string> &container, size_t limit);
+		size_t read_column_into(int column, std::set<std::string> &container, size_t limit, size_t offset);
 		size_t read_column_into(int column, std::vector<std::string> &container);
 		size_t read_column_into(int column, std::vector<std::string> &container, size_t limit);
+		size_t read_column_into(int column, std::vector<std::string> &container, size_t limit, size_t offset);
 
 		size_t size() const;
 		bool eof() const;

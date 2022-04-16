@@ -25,6 +25,7 @@
  */
 
 #include "URL.h"
+#include "algorithm/hash.h"
 #include "parser/parser.h"
 #include <curl/curl.h>
 #include "text/text.h"
@@ -36,9 +37,15 @@ URL::URL() {
 }
 
 URL::URL(const URL &url) :
-	m_url_string(url.str())
+	m_url_string(url.m_url_string),
+	m_host(url.m_host),
+	m_host_reverse(url.m_host_reverse),
+	m_scheme(url.m_scheme),
+	m_path(url.m_path),
+	m_query(url.m_query),
+	m_status(url.m_status),
+	m_has_www(url.m_has_www)
 {
-	m_status = parse();
 }
 
 URL::URL(const string &url) :
@@ -77,19 +84,19 @@ string URL::key() const {
 }
 
 uint64_t URL::hash() const {
-	return m_hasher(m_host + m_path + m_query);
+	return ::algorithm::hash(m_host + m_path + m_query);
 }
 
 uint64_t URL::host_hash() const {
-	return m_hasher(m_host);
+	return ::algorithm::hash(m_host);
 }
 
 uint64_t URL::link_hash(const URL &target_url, const string &link_text) const {
-	return m_hasher(host_top_domain() + target_url.str() + link_text);
+	return ::algorithm::hash(host_top_domain() + target_url.str() + link_text);
 }
 
 uint64_t URL::domain_link_hash(const URL &target_url, const string &link_text) const {
-	return m_hasher(host_top_domain() + target_url.host() + link_text);
+	return ::algorithm::hash(host_top_domain() + target_url.host() + link_text);
 }
 
 bool URL::canonically_different(const URL &url) const {

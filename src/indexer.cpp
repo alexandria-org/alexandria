@@ -106,8 +106,10 @@ int main(int argc, const char **argv) {
 		tools::find_links();
 	} else if (arg == "--console") {
 		indexer::console();
-	} else if (arg == "--index-new") {
-		indexer::index_new(argv[2]);
+	} else if (arg == "--index-urls") {
+		indexer::index_urls(argv[2]);
+	} else if (arg == "--index-links") {
+		indexer::index_links(argv[2]);
 	} else {
 		help();
 	}

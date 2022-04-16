@@ -34,6 +34,7 @@
 #include "index_builder.h"
 #include "composite_index_builder.h"
 #include "sharded_index_builder.h"
+#include "sharded_index.h"
 #include "index.h"
 #include "generic_record.h"
 
@@ -129,6 +130,7 @@ namespace indexer {
 	class domain_level: public level {
 		private:
 		std::unique_ptr<sharded_index_builder<domain_record>> m_builder;
+		std::unique_ptr<sharded_index<domain_record>> m_search_index;
 		public:
 		domain_level();
 		level_type get_type() const;
