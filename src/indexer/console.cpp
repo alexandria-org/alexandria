@@ -160,7 +160,7 @@ namespace indexer {
 		//idx_tree.add_level(&snippet_level);
 
 		//idx_tree.truncate();
-
+		
 		hash_table::hash_table ht("index_tree");
 
 		string input;
@@ -188,7 +188,7 @@ namespace indexer {
 	}
 
 	
-	void index_new(const string &batch) {
+	void index_urls(const string &batch) {
 
 		/*indexer::sharded_index_builder<domain_record> ib("domain", 1024);
 		ib.merge_one(858);
@@ -271,7 +271,7 @@ namespace indexer {
 				}
 				std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 				cout << "starting indexer" << endl;
-				idx_tree.add_link_files_threaded(local_files, 24);
+				idx_tree.add_link_files_threaded(local_files, 32);
 				cout << "done with indexer" << endl;
 				transfer::delete_downloaded_files(local_files);
 			}
@@ -280,6 +280,33 @@ namespace indexer {
 
 			idx_tree.merge();
 		}
+	}
+
+	void index_links(const string &batch) {
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+
+		{
+			indexer::index_tree idx_tree;
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, 5000, 1000);
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_tree.add_link_files_threaded(local_files, 32);
+			cout << "done with indexer" << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			idx_tree.merge();
+		}
+		profiler::print_report();
 	}
 
 }

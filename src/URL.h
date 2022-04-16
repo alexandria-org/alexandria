@@ -75,7 +75,6 @@ public:
 
 private:
 
-	std::hash<std::string> m_hasher;
 	std::string m_url_string;
 	std::string m_host;
 	std::string m_host_reverse;

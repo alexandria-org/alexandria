@@ -50,7 +50,6 @@ namespace profiler {
 	}
 
 	instance::~instance() {
-		profiles_per_name[m_name] += get();
 		if (!m_has_stopped) {
 			stop();
 		}
@@ -76,8 +75,9 @@ namespace profiler {
 	}
 
 	void instance::stop() {
-		if (!m_enabled) return;
 		m_has_stopped = true;
+		profiles_per_name[m_name] += get();
+		if (!m_enabled) return;
 		LOG_INFO("profiler [" + m_name + "] took " + to_string(get()) + "ms");
 	}
 
