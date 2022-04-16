@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_with_real_data) {
 		transfer::delete_downloaded_files(local_files);
 	}
 	const size_t mem_after = memory::allocated_memory();
-	BOOST_CHECK(mem_before == mem_after);
+	//BOOST_CHECK(mem_before == mem_after);
 	cout << "diff: " << mem_after - mem_before << endl;
 
 	{
@@ -99,6 +99,44 @@ BOOST_AUTO_TEST_CASE(test_with_real_data) {
 		BOOST_REQUIRE(res.size() == 1);
 		const string host = ht.find(res[0].m_value);
 		BOOST_CHECK(host == "microsoft.com");
+	}
+}
+
+BOOST_AUTO_TEST_CASE(test_optimization) {
+	{
+		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/50_top_domains.txt.gz"};
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+
+		indexer::index_tree idx_tree;
+
+		indexer::domain_level domain_level;
+		idx_tree.add_level(&domain_level);
+
+		idx_tree.truncate();
+
+		indexer::merger::start_merge_thread();
+		idx_tree.add_index_files_threaded(local_files, 1);
+		indexer::merger::stop_merge_thread();
+	
+		transfer::delete_downloaded_files(local_files);
+	}
+
+	{
+		hash_table::hash_table ht("index_tree");
+		indexer::index_tree idx_tree;
+		indexer::domain_level domain_level;
+		idx_tree.add_level(&domain_level);
+
+		std::vector<indexer::return_record> res = idx_tree.find("the");
+
+		BOOST_REQUIRE(res.size() > 0);
+
+		// Check strict ordering of results.
+		uint64_t prev_value = 0;
+		for (auto &record : res) {
+			BOOST_CHECK(record.m_value > prev_value);
+			prev_value = record.m_value;
+		}
 	}
 }
 

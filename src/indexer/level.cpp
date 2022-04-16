@@ -207,7 +207,6 @@ namespace indexer {
 		for (const string &word : words) {
 			size_t token = ::algorithm::hash(word);
 			std::vector<domain_record> res = idx.find(token);
-			sort(res.begin(), res.end());
 			results.emplace_back(std::move(res));
 		}
 		std::vector<return_record> intersected = intersection(results);

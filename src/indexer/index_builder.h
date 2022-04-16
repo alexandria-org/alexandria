@@ -291,7 +291,7 @@ namespace indexer {
 		// Read the current file.
 		read_data_to_cache();
 
-		profiler::instance prof("index_builder::read_append_cache");
+		//profiler::instance prof("index_builder::read_append_cache");
 
 		// Read the cache into memory.
 		std::ifstream reader(cache_filename(), std::ios::binary);
@@ -364,7 +364,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::read_data_to_cache() {
 
-		profiler::instance prof("index_builder::read_data_to_cache");
+		//profiler::instance prof("index_builder::read_data_to_cache");
 
 		reset_cache_variables();
 
@@ -483,7 +483,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::save_file() {
 
-		profiler::instance prof("index_builder::save_file");
+		//profiler::instance prof("index_builder::save_file");
 
 		std::ofstream writer(target_filename(), std::ios::binary | std::ios::trunc);
 		if (!writer.is_open()) {
