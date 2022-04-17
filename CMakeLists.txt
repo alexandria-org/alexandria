@@ -143,6 +143,7 @@ set(SRC_COMMON
 set(SRC_TESTS
 	"tests/test_sharded_index_builder.cpp"
 	"tests/test_index_reader.cpp"
+	"tests/test_top_k.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 )
