@@ -190,15 +190,6 @@ namespace indexer {
 	
 	void index_urls(const string &batch) {
 
-		/*indexer::sharded_index_builder<domain_record> ib("domain", 1024);
-		ib.merge_one(858);
-		ib.merge_one(626);
-		ib.merge_one(770);
-
-		profiler::print_report();
-		
-		return;*/
-
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
@@ -242,57 +233,9 @@ namespace indexer {
 		}
 
 		profiler::print_report();
-
-		return;
-
-		{
-			indexer::index_tree idx_tree;
-
-			merger::start_merge_thread();
-
-			const vector<string> batches = {
-				"SMALL-LINK-MIX",
-			};
-			size_t limit = 1000;
-
-			for (const string &batch : batches) {
-
-				file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-				vector<string> warc_paths;
-				warc_paths_file.read_column_into(0, warc_paths);
-
-				if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
-
-				for (string &path : warc_paths) {
-					const size_t pos = path.find(".warc.gz");
-					if (pos != string::npos) {
-						path.replace(pos, 8, ".gz");
-					}
-				}
-				std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
-				cout << "starting indexer" << endl;
-				idx_tree.add_link_files_threaded(local_files, 32);
-				cout << "done with indexer" << endl;
-				transfer::delete_downloaded_files(local_files);
-			}
-
-			merger::stop_merge_thread();
-
-			idx_tree.merge();
-		}
 	}
 
 	void index_links(const string &batch) {
-
-		sharded_index_builder<link_record> link_index("link_index", 2001);
-		sharded_index_builder<domain_link_record> domain_link_index("domain_link_index", 2001);
-		sharded_index_builder<domain_record> domain_index("domain", 1024);
-
-		link_index.optimize();
-		domain_link_index.optimize();
-		domain_index.optimize();
-
-		return;
 
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
@@ -304,7 +247,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 5000, 1000);
+			warc_paths_file.read_column_into(0, warc_paths, 1000, 0);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
