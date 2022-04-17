@@ -284,6 +284,16 @@ namespace indexer {
 
 	void index_links(const string &batch) {
 
+		sharded_index_builder<link_record> link_index("link_index", 2001);
+		sharded_index_builder<domain_link_record> domain_link_index("domain_link_index", 2001);
+		sharded_index_builder<domain_record> domain_index("domain", 1024);
+
+		link_index.optimize();
+		domain_link_index.optimize();
+		domain_index.optimize();
+
+		return;
+
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 

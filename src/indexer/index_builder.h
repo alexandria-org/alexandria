@@ -77,6 +77,7 @@ namespace indexer {
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
+		void transform(const std::function<uint32_t(uint32_t)> &transform);
 		
 		void append();
 		void merge();
@@ -203,6 +204,25 @@ namespace indexer {
 
 		m_lock.unlock();
 
+	}
+
+	/*
+		Transforms all the bitmaps in the index. Basically generating new bitmaps with the transform applied.
+	*/
+	template<typename data_record>
+	void index_builder<data_record>::transform(const std::function<uint32_t(uint32_t)> &transform) {
+		read_data_to_cache();
+
+		// Apply transforms.
+		for (auto &iter : m_bitmaps) {
+			::roaring::Roaring rr;
+			for (uint32_t v : iter.second) {
+				rr.add(transform(v));
+			}
+			m_bitmaps[iter.first] = rr;
+		}
+
+		save_file();
 	}
 
 	template<typename data_record>

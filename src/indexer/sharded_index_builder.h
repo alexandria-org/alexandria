@@ -29,6 +29,8 @@
 #include "index_builder.h"
 #include "algorithm/hyper_log_log.h"
 
+#include <numeric>
+
 namespace indexer {
 
 	template<typename data_record>
@@ -48,6 +50,7 @@ namespace indexer {
 		void append();
 		void merge();
 		void merge_one(size_t id);
+		void optimize();
 
 		/*
 			This function calculate scores. Should run after a merge.
@@ -76,6 +79,8 @@ namespace indexer {
 		void read_meta();
 		void write_meta();
 		std::string filename() const;
+		bool needs_optimization() const;
+		void sort_records();
 
 	};
 
@@ -130,6 +135,13 @@ namespace indexer {
 	template<typename data_record>
 	void sharded_index_builder<data_record>::merge_one(size_t id) {
 		m_shards[id]->merge();
+	}
+
+	template<typename data_record>
+	void sharded_index_builder<data_record>::optimize() {
+		if (needs_optimization()) {
+			sort_records();
+		}
 	}
 
 	template<typename data_record>
@@ -208,4 +220,40 @@ namespace indexer {
 		// This file will contain meta data on the index. For example the hyper log log document counter.
 		return "/mnt/0/full_text/" + m_db_name + ".meta";
 	}
+
+	template<typename data_record>
+	bool sharded_index_builder<data_record>::needs_optimization() const {
+		// Just check if the records are sorted by storage order.
+		if (m_records.size() <= 1) return false;
+		
+		typename data_record::storage_order ordered;
+		for (size_t i = 0; i < m_records.size() - 1; i++) {
+			if (!ordered(m_records[i], m_records[i + 1])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template<typename data_record>
+	void sharded_index_builder<data_record>::sort_records() {
+		std::vector<uint32_t> permutation(m_records.size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+
+		typename data_record::storage_order ordered;
+
+		std::sort(permutation.begin(), permutation.end(), [this, &ordered](const size_t &a, const size_t &b) {
+			return ordered(m_records[a], m_records[b]);
+		});
+
+		for (auto &shard : m_shards) {
+			shard->transform([&permutation](uint32_t v) {
+				return permutation[v];
+			});
+		}
+
+		// Reorder the records and save...
+		sort(m_records.begin(), m_records.end(), ordered);
+	}
+
 }

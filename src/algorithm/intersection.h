@@ -26,8 +26,11 @@
 #pragma once
 
 #include <vector>
+#include "roaring/roaring.hh"
 
 namespace algorithm {
+
+	roaring::Roaring intersection(const std::vector<roaring::Roaring> &input);
 
 	template<typename item>
 	std::vector<item> intersection(const std::vector<std::vector<item>> &input,

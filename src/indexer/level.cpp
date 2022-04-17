@@ -186,6 +186,7 @@ namespace indexer {
 	void domain_level::merge() {
 		m_builder->append();
 		m_builder->merge();
+		m_builder->optimize();
 	}
 
 	void domain_level::calculate_scores() {
@@ -201,15 +202,14 @@ namespace indexer {
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
 		std::vector<std::string> words = text::get_full_text_words(query);
+		std::vector<uint64_t> tokens(words.size());
+		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
-		std::vector<std::vector<domain_record>> results;
-		for (const string &word : words) {
-			size_t token = ::algorithm::hash(word);
-			std::vector<domain_record> res = m_search_index->find(token);
-			sort(res.begin(), res.end());
-			results.emplace_back(std::move(res));
+		std::vector<domain_record> res = m_search_index->find(tokens);
+		std::vector<return_record> intersected;
+		for (const auto r : res) {
+			intersected.emplace_back(return_record(r.m_value));
 		}
-		std::vector<return_record> intersected = intersection(results);
 		apply_domain_links(domain_links, intersected);
 		sort_and_get_top_results(intersected, 100); // Pick top 100 domains.
 		return intersected;
@@ -298,7 +298,6 @@ namespace indexer {
 	void url_level::merge() {
 		m_builder->append();
 		m_builder->merge();
-		//m_builder->calculate_scores(algorithm::bm25);
 	}
 
 	void url_level::clean_up() {

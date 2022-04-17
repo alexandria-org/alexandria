@@ -200,10 +200,7 @@ namespace indexer {
 		vector<link_record> links = m_link_index->find(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
 
-		sort(links.begin(), links.end(), link_record::storage_order());
-		sort(domain_links.begin(), domain_links.end(), domain_link_record::storage_order());
-
-		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
+		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
 
 		// Sort by score.
 		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {
@@ -217,7 +214,7 @@ namespace indexer {
 		const std::vector<size_t> &keys, const vector<link_record> &links,
 		const vector<domain_link_record> &domain_links) {
 
-		std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
+		/*std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
 		
 		if (level_num == m_levels.size() - 1) {
 			// This is the last level, return the results instead of going deeper.
@@ -228,7 +225,8 @@ namespace indexer {
 		for (const return_record &rec : all_results) {
 			next_level_keys.push_back(rec.m_value);
 		}
-		return find_recursive(query, level_num + 1, next_level_keys, links, domain_links);
+		return find_recursive(query, level_num + 1, next_level_keys, links, domain_links);*/
+		return {};
 	}
 
 	void index_tree::create_directories(level_type lvl) {

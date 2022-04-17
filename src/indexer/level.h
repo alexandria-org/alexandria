@@ -37,6 +37,7 @@
 #include "sharded_index.h"
 #include "index.h"
 #include "generic_record.h"
+#include "roaring/roaring.hh"
 
 namespace indexer {
 
@@ -106,6 +107,8 @@ namespace indexer {
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links) = 0;
 
 		protected:
+		template<typename data_record>
+		roaring::Roaring intersection(const std::vector<roaring::Roaring> &input) const;
 		template<typename data_record>
 		std::vector<return_record> intersection(const std::vector<std::vector<data_record>> &input) const;
 

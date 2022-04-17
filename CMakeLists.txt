@@ -100,6 +100,7 @@ set(SRC_CLASSES
 	"src/key_value_store.cpp"
 
 	"src/algorithm/algorithm.cpp"
+	"src/algorithm/intersection.cpp"
 	"src/algorithm/sort.cpp"
 	"src/algorithm/hyper_ball.cpp"
 	"src/algorithm/hash.cpp"

@@ -79,26 +79,48 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find(uint64_t key) const {
 
+		const size_t shard_id = key % m_num_shards;
+		index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+
+		roaring::Roaring rr = idx.find_bitmap(key);
+
 		std::function<data_record(uint32_t id)> id_to_rec = [this](uint32_t id) {
 			return m_records[id];
 		};
 
-		const size_t shard_id = key % m_num_shards;
-		index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
-		return idx.find(key, id_to_rec);
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
 	}
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find(const std::vector<uint64_t> &keys) const {
 
-		std::vector<std::vector<data_record>> results;
+		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
-			std::vector<data_record> res = find(key);
-			sort(res.begin(), res.end());
+
+			const size_t shard_id = key % m_num_shards;
+			index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+			
+			roaring::Roaring res = idx.find_bitmap(key);
 			results.emplace_back(std::move(res));
 		}
 
-		return ::algorithm::intersection(results);
+		roaring::Roaring rr = ::algorithm::intersection(results);
+
+		std::function<data_record(uint32_t id)> id_to_rec = [this](uint32_t id) {
+			return m_records[id];
+		};
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
 	}
 
 	template<typename data_record>

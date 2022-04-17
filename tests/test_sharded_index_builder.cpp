@@ -115,6 +115,8 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 		indexer::merger::stop_merge_thread();
 	
 		transfer::delete_downloaded_files(local_files);
+
+		idx_tree.merge();
 	}
 
 	{
@@ -126,6 +128,24 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 		std::vector<indexer::return_record> res = idx_tree.find("the");
 
 		BOOST_REQUIRE(res.size() > 0);
+
+		// Check strict ordering of results.
+		uint64_t prev_value = 0;
+		for (auto &record : res) {
+			BOOST_CHECK(record.m_value > prev_value);
+			prev_value = record.m_value;
+		}
+	}
+
+	{
+		hash_table::hash_table ht("index_tree");
+		indexer::index_tree idx_tree;
+		indexer::domain_level domain_level;
+		idx_tree.add_level(&domain_level);
+
+		std::vector<indexer::return_record> res = idx_tree.find("the people");
+
+		BOOST_REQUIRE(res.size() == 3);
 
 		// Check strict ordering of results.
 		uint64_t prev_value = 0;

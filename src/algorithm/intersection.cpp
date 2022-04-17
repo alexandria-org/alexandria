@@ -24,51 +24,21 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "intersection.h"
 
-namespace indexer {
-	/*
-	This is the base class for the record stored on disk. Needs to be small!
-	*/
-	#pragma pack(4)
-	class generic_record {
+namespace algorithm {
 
-		public:
-		uint64_t m_value;
-		float m_score;
-		uint32_t m_count = 1;
+	roaring::Roaring intersection(const std::vector<roaring::Roaring> &input) {
 
-		generic_record() : m_value(0), m_score(0.0f) {};
-		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
-		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
+		if (input.size() == 0) return roaring::Roaring();
 
-		size_t count() const { return (size_t)m_count; }
+		roaring::Roaring intersection = input[0];
 
-		bool operator==(const generic_record &b) const {
-			return m_value == b.m_value;
+		for (size_t i = 1; i < input.size(); i++) {
+			intersection &= input[i];
 		}
 
-		bool operator<(const generic_record &b) const {
-			return m_value < b.m_value;
-		}
+		return intersection;
+	}
 
-		struct storage_order {
-			inline bool operator() (const generic_record &a, const generic_record &b) {
-				return a.m_value < b.m_value;
-			}
-		};
-
-		generic_record operator+(const generic_record &b) const {
-			generic_record sum;
-			sum.m_value = m_value;
-			sum.m_count = m_count + b.m_count;
-			return sum;
-		}
-
-		generic_record &operator+=(const generic_record &b) {
-			m_count += b.m_count;
-			return *this;
-		}
-
-	};
 }

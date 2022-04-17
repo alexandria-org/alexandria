@@ -43,7 +43,7 @@ namespace indexer {
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
-		std::vector<data_record> find(uint64_t key, std::function<data_record(uint32_t)> &id_to_rec) const;
+		roaring::Roaring find_bitmap(uint64_t key) const;
 
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
@@ -108,24 +108,29 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find(uint64_t key) const {
 
-			std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
-				data_record rec;
-				m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
-				m_reader->read((char *)&rec, sizeof(data_record));
-				return rec;
-			};
+		roaring::Roaring rr = find_bitmap(key);
 
-			return find(key, id_to_rec);
+		std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
+			data_record rec;
+			m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
+			m_reader->read((char *)&rec, sizeof(data_record));
+			return rec;
+		};
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find(uint64_t key,
-		std::function<data_record(uint32_t)> &id_to_rec) const {
-
+	roaring::Roaring index<data_record>::find_bitmap(uint64_t key) const {
 		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {
-			return {};
+			return roaring::Roaring();
 		}
 
 		// Read page.
@@ -145,7 +150,7 @@ namespace indexer {
 		}
 
 		if (key_data_pos == SIZE_MAX) {
-			return {};
+			return roaring::Roaring();
 		}
 
 		char buffer[64];
@@ -166,14 +171,7 @@ namespace indexer {
 
 		m_reader->read(data, len);
 
-		roaring::Roaring rr = roaring::Roaring::readSafe(data, len);
-
-		std::vector<data_record> ret;
-		for (uint32_t internal_id : rr) {
-			ret.emplace_back(id_to_rec(internal_id));
-		}
-
-		return ret;
+		return roaring::Roaring::readSafe(data, len);
 	}
 
 	template<typename data_record>
