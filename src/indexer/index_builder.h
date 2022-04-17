@@ -223,6 +223,7 @@ namespace indexer {
 		}
 
 		save_file();
+		truncate_cache_files();
 	}
 
 	template<typename data_record>
