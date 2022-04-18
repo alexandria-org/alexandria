@@ -73,6 +73,10 @@ namespace indexer {
 			}
 		};
 
+		bool storage_equal(const link_record &a) const {
+			return m_target_hash == a.m_target_hash;
+		}
+
 	};
 
 	class domain_link_record : public generic_record {
@@ -83,12 +87,18 @@ namespace indexer {
 		domain_link_record() : generic_record() {};
 		domain_link_record(uint64_t value) : generic_record(value) {};
 		domain_link_record(uint64_t value, float score) : generic_record(value, score) {};
+		domain_link_record(uint64_t value, float score, uint64_t source_domain, uint64_t target_domain)
+				: generic_record(value, score), m_source_domain(source_domain), m_target_domain(target_domain) {};
 
 		struct storage_order {
 			inline bool operator() (const domain_link_record &a, const domain_link_record &b) {
 				return a.m_target_domain < b.m_target_domain;
 			}
 		};
+
+		bool storage_equal(const domain_link_record &a) const {
+			return m_target_domain == a.m_target_domain;
+		}
 
 	};
 

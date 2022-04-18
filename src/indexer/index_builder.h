@@ -215,9 +215,11 @@ namespace indexer {
 
 		// Apply transforms.
 		for (auto &iter : m_bitmaps) {
+
 			::roaring::Roaring rr;
 			for (uint32_t v : iter.second) {
-				rr.add(transform(v));
+				const uint32_t v_trans = transform(v);
+				rr.add(v_trans);
 			}
 			m_bitmaps[iter.first] = rr;
 		}

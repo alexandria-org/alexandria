@@ -205,7 +205,7 @@ namespace indexer {
 		std::vector<uint64_t> tokens(words.size());
 		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
-		std::vector<domain_record> res = m_search_index->find(tokens);
+		std::vector<domain_record> res = m_search_index->find_intersection(tokens);
 		std::vector<return_record> intersected;
 		for (const auto r : res) {
 			intersected.emplace_back(return_record(r.m_value));

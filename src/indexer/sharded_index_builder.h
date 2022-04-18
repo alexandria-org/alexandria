@@ -245,14 +245,22 @@ namespace indexer {
 		std::sort(permutation.begin(), permutation.end(), [this, &ordered](const size_t &a, const size_t &b) {
 			return ordered(m_records[a], m_records[b]);
 		});
+		// permutation now points from new position -> old position of record.
+
+		std::vector<uint32_t> inverse(permutation.size());
+		for (uint32_t i = 0; i < permutation.size(); i++) {
+			inverse[permutation[i]] = i;
+		}
+
+		// inverse now points from old position -> new position of record.
 
 		for (auto &shard : m_shards) {
-			shard->transform([&permutation](uint32_t v) {
-				return permutation[v];
+			shard->transform([&inverse](uint32_t v) {
+				return inverse[v];
 			});
 		}
 
-		// Reorder the records and save...
+		// Reorder the records. Will be saved in meta file upon destruction.
 		sort(m_records.begin(), m_records.end(), ordered);
 	}
 

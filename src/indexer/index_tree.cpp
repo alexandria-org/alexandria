@@ -197,8 +197,8 @@ namespace indexer {
 
 	std::vector<return_record> index_tree::find(const string &query) {
 
-		vector<link_record> links = m_link_index->find(text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
+		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
+		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
 
 		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
 

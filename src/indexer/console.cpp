@@ -208,7 +208,7 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			size_t limit = 0;
+			size_t limit = 100;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");

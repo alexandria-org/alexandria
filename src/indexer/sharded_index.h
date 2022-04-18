@@ -41,8 +41,33 @@ namespace indexer {
 		sharded_index(const std::string &db_name, size_t num_shards, size_t hash_table_size);
 		~sharded_index();
 
+		/* 
+		 * Find single key
+		 * Returns vector with records in storage_order.
+		 * */
 		std::vector<data_record> find(uint64_t key) const;
-		std::vector<data_record> find(const std::vector<uint64_t> &keys) const;
+
+		/*
+		 * Find intersection of multiple keys
+		 * Returns vector with records in storage order.
+		 * */
+		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys) const;
+
+		/*
+		 * Find intersection of multiple keys applying lambda function score_mod to the scores before.
+		 * Returns n records with highest score.
+		 * score_mod is applied in storage_order of data_record.
+		 * */
+		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys, 
+				std::function<float(uint64_t)> score_mod, size_t n) const;
+
+		/*
+		 * Find intersection of multiple keys and run group by with custom plus_equal function (+=), the groups will be determined by the
+		 * data_record::storage_equal predicate
+		 * Returns vector with grouped records.
+		 * */
+		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys, std::function<void(data_record &a,
+				const data_record &b)> plus_equal) const;
 
 	private:
 
@@ -97,7 +122,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> sharded_index<data_record>::find(const std::vector<uint64_t> &keys) const {
+	std::vector<data_record> sharded_index<data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
 
 		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
@@ -118,6 +143,63 @@ namespace indexer {
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : rr) {
 			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
+	}
+
+	template<typename data_record>
+	std::vector<data_record> sharded_index<data_record>::find_intersection(const std::vector<uint64_t> &keys,
+			std::function<float(uint64_t)> score_mod, size_t n) const {
+
+		std::vector<roaring::Roaring> results;
+		for (uint64_t key : keys) {
+
+			const size_t shard_id = key % m_num_shards;
+			index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+			
+			roaring::Roaring res = idx.find_bitmap(key);
+			results.emplace_back(std::move(res));
+		}
+
+		roaring::Roaring rr = ::algorithm::intersection(results);
+
+		std::function<data_record(uint32_t id)> id_to_rec = [this](uint32_t id) {
+			return m_records[id];
+		};
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
+	}
+
+
+	template<typename data_record>
+	std::vector<data_record> sharded_index<data_record>::find_group_by(const std::vector<uint64_t> &keys,
+			std::function<void(data_record &a, const data_record &b)> plus_equal) const {
+
+		std::vector<roaring::Roaring> results;
+		for (uint64_t key : keys) {
+
+			const size_t shard_id = key % m_num_shards;
+			index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+			
+			roaring::Roaring res = idx.find_bitmap(key);
+			results.emplace_back(std::move(res));
+		}
+
+		roaring::Roaring rr = ::algorithm::intersection(results);
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			if (ret.size() && ret.back().storage_equal(m_records[internal_id])) {
+				plus_equal(ret.back(), m_records[internal_id]);
+			} else {
+				ret.emplace_back(m_records[internal_id]);
+			}
 		}
 
 		return ret;

@@ -60,6 +60,63 @@ BOOST_AUTO_TEST_CASE(test_sharded_index_builder) {
 
 }
 
+BOOST_AUTO_TEST_CASE(test_group_by) {
+
+	using indexer::domain_link_record;
+
+	{
+		indexer::sharded_index_builder<domain_link_record> idx("test_index", 1);
+
+		idx.truncate();
+
+		idx.add(101, domain_link_record(1000, 1.0f, 100, 200));
+		idx.add(101, domain_link_record(1004, 1.0f, 120, 300));
+		idx.add(101, domain_link_record(1001, 1.0f, 110, 200));
+		idx.add(101, domain_link_record(1003, 1.0f, 120, 300));
+		idx.add(101, domain_link_record(1002, 1.0f, 120, 200));
+
+		idx.add(102, domain_link_record(1000, 1.0f, 100, 200));
+		idx.add(102, domain_link_record(1001, 1.0f, 110, 200));
+		idx.add(102, domain_link_record(1005, 1.0f, 120, 300));
+		idx.add(102, domain_link_record(1002, 1.0f, 120, 200));
+
+		idx.add(103, domain_link_record(1000, 1.0f, 100, 200));
+		idx.add(103, domain_link_record(1001, 1.0f, 110, 200));
+		idx.add(103, domain_link_record(1004, 1.0f, 120, 300));
+		idx.add(103, domain_link_record(1002, 1.0f, 120, 200));
+
+		idx.append();
+		idx.merge();
+		idx.optimize();
+	}
+
+	{
+		indexer::sharded_index<domain_link_record> idx("test_index", 1);
+		vector<domain_link_record> res = idx.find_group_by({101, 102},
+				[](domain_link_record &a, const domain_link_record &b) {
+					a.m_score += b.m_score;
+				});
+
+		BOOST_REQUIRE(res.size() == 1);
+		BOOST_CHECK(res[0].m_score == 3.0f);
+	}
+
+	{
+		indexer::sharded_index<domain_link_record> idx("test_index", 1);
+		auto add_scores = [](domain_link_record &a, const domain_link_record &b) {
+			a.m_score += b.m_score;
+		};
+		vector<domain_link_record> res = idx.find_group_by({101, 103}, add_scores);
+
+		BOOST_REQUIRE(res.size() == 2);
+
+		sort(res.begin(), res.end(), domain_link_record::storage_order());
+		BOOST_CHECK(res[0].m_score == 3.0f);
+		BOOST_CHECK(res[1].m_score == 1.0f);
+	}
+
+}
+
 BOOST_AUTO_TEST_CASE(test_with_real_data) {
 
 	const size_t mem_before = memory::allocated_memory();

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <iostream>
+
 namespace indexer {
 	/*
 	This is the base class for the record stored on disk. Needs to be small!
@@ -57,6 +59,10 @@ namespace indexer {
 				return a.m_value < b.m_value;
 			}
 		};
+
+		bool storage_equal(const generic_record &a) const {
+			return m_value == a.m_value;
+		}
 
 		generic_record operator+(const generic_record &b) const {
 			generic_record sum;

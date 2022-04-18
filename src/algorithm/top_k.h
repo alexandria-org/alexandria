@@ -27,10 +27,9 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 
 namespace algorithm {
-
-
 
 	/*
 	 * Returns top k elements in unsorted const vector in linear time using a 2k memory buffer.
