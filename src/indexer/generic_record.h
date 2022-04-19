@@ -29,9 +29,56 @@
 #include <iostream>
 
 namespace indexer {
+	/*
+	This is the base class for the record stored on disk. Needs to be small!
+	*/
+	#pragma pack(4)
+	class generic_record {
 
-	void console();
-	void index_urls(const std::string &batch);
-	void index_links(const std::string &batch);
+		public:
+		uint64_t m_value;
+		float m_score;
+		mutable float m_modified_score;
 
+		generic_record() : m_value(0), m_score(0.0f) {};
+		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
+		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
+
+		bool operator==(const generic_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const generic_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		struct storage_order {
+			inline bool operator() (const generic_record &a, const generic_record &b) {
+				return a.m_value < b.m_value;
+			}
+		};
+
+		struct score_order {
+			inline bool operator() (const generic_record &a, const generic_record &b) {
+				return a.m_score > b.m_score;
+			}
+		};
+
+		bool storage_equal(const generic_record &a) const {
+			return m_value == a.m_value;
+		}
+
+		generic_record operator+(const generic_record &b) const {
+			generic_record sum;
+			sum.m_value = m_value;
+			sum.m_score = m_score + b.m_score;
+			return sum;
+		}
+
+		generic_record &operator+=(const generic_record &b) {
+			m_score += b.m_score;
+			return *this;
+		}
+
+	};
 }

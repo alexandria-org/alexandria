@@ -275,9 +275,7 @@ BOOST_AUTO_TEST_CASE(html_parser_encodings) {
 
 BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 
-	config::html_parser_long_text_len = 100000;
-
-	parser::html_parser parser;
+	parser::html_parser parser(100000);
 	string html = file::read_test_file("zlib_manual.html");
 
 	parser.parse(html, "https://zlib.net/manual.html");
@@ -293,8 +291,6 @@ BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 	}
 
 	BOOST_CHECK(has_word);
-
-	config::html_parser_long_text_len = 1000;
 }
 
 /*

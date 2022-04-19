@@ -48,7 +48,7 @@ namespace scraper {
 			scraper(const std::string &domain, scraper_store *store);
 			~scraper();
 
-			void set_timeout(size_t timeout) { m_timeout = timeout; }
+			void set_timeout(size_t timeout_in_seconds) { m_timeout = timeout_in_seconds; }
 			void push_url(const URL &url);
 			void run();
 			void start_thread();

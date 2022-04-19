@@ -83,7 +83,7 @@ namespace indexer {
 				iter_index++;
 			}
 			if (all_equal) {
-				intersection.emplace_back(generic_record(
+				intersection.emplace_back(return_record(
 					input[shortest_vector_position][positions[shortest_vector_position]].m_value,
 					score_sum / input.size()
 					));
@@ -170,6 +170,8 @@ namespace indexer {
 			add_url(url.hash(), domain_hash);
 			add_data(url.host_hash(), url.host());
 
+			const string h = url.host();
+
 			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
 			for (size_t col : cols) {
@@ -184,6 +186,7 @@ namespace indexer {
 	void domain_level::merge() {
 		m_builder->append();
 		m_builder->merge();
+		m_builder->optimize();
 	}
 
 	void domain_level::calculate_scores() {
@@ -191,24 +194,34 @@ namespace indexer {
 	}
 
 	void domain_level::clean_up() {
-		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 8192);
+		m_builder = std::make_unique<sharded_index_builder<domain_record>>("domain", 1024);
+		m_search_index = std::make_unique<sharded_index<domain_record>>("domain", 1024);
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
 		std::vector<std::string> words = text::get_full_text_words(query);
-		
-		sharded_index<domain_record> idx("domain", 1024);
+		std::vector<uint64_t> tokens(words.size());
+		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
-		std::vector<std::vector<domain_record>> results;
-		for (const string &word : words) {
-			size_t token = ::algorithm::hash(word);
-			results.push_back(idx.find(token));
+		size_t score_incr = 0;
+		auto score_mod = [&score_incr, &domain_links](uint64_t value) {
+			if (score_incr >= domain_links.size()) return 0.0f;
+			while (domain_links[score_incr].m_target_domain < value) {
+				score_incr++;
+			}
+			if (domain_links[score_incr].m_target_domain == value) {
+				return domain_links[score_incr].m_score;
+			}
+			return 0.0f;
+		};
+
+		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 10);
+		std::vector<return_record> intersected;
+		for (const auto r : res) {
+			intersected.emplace_back(return_record(r.m_value, r.m_score));
 		}
-		std::vector<return_record> intersected = intersection(results);
-		apply_domain_links(domain_links, intersected);
-		sort_and_get_top_results(intersected, 100); // Pick top 100 domains.
 		return intersected;
 	}
 
@@ -295,7 +308,6 @@ namespace indexer {
 	void url_level::merge() {
 		m_builder->append();
 		m_builder->merge();
-		//m_builder->calculate_scores(algorithm::bm25);
 	}
 
 	void url_level::clean_up() {

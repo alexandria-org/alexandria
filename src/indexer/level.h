@@ -34,7 +34,10 @@
 #include "index_builder.h"
 #include "composite_index_builder.h"
 #include "sharded_index_builder.h"
+#include "sharded_index.h"
 #include "index.h"
+#include "generic_record.h"
+#include "roaring/roaring.hh"
 
 namespace indexer {
 
@@ -42,51 +45,6 @@ namespace indexer {
 	enum class level_type { domain = 101, url = 102, snippet = 103};
 
 	std::string level_to_str(level_type lvl);
-
-	/*
-	This is the base class for the record stored on disk. Needs to be small!
-	*/
-	#pragma pack(4)
-	class generic_record {
-
-		public:
-		uint64_t m_value;
-		float m_score;
-		uint32_t m_count = 1;
-
-		generic_record() : m_value(0), m_score(0.0f) {};
-		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
-		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
-
-		size_t count() const { return (size_t)m_count; }
-
-		bool operator==(const generic_record &b) const {
-			return m_value == b.m_value;
-		}
-
-		bool operator<(const generic_record &b) const {
-			return m_value < b.m_value;
-		}
-
-		struct storage_order {
-			inline bool operator() (const generic_record &a, const generic_record &b) {
-				return a.m_value < b.m_value;
-			}
-		};
-
-		generic_record operator+(const generic_record &b) const {
-			generic_record sum;
-			sum.m_value = m_value;
-			sum.m_count = m_count + b.m_count;
-			return sum;
-		}
-
-		generic_record &operator+=(const generic_record &b) {
-			m_count += b.m_count;
-			return *this;
-		}
-
-	};
 
 	/*
 	This is the returned record from the index_tree. It contains more data than the stored record.
@@ -97,6 +55,10 @@ namespace indexer {
 		uint64_t m_url_hash;
 		size_t m_num_url_links = 0;
 		size_t m_num_domain_links = 0;
+
+		return_record() : generic_record() {};
+		return_record(uint64_t value) : generic_record(value) {};
+		return_record(uint64_t value, float score) : generic_record(value, score) {};
 
 	};
 
@@ -115,6 +77,10 @@ namespace indexer {
 			}
 		};
 
+		bool storage_equal(const link_record &a) const {
+			return m_target_hash == a.m_target_hash;
+		}
+
 	};
 
 	class domain_link_record : public generic_record {
@@ -125,12 +91,18 @@ namespace indexer {
 		domain_link_record() : generic_record() {};
 		domain_link_record(uint64_t value) : generic_record(value) {};
 		domain_link_record(uint64_t value, float score) : generic_record(value, score) {};
+		domain_link_record(uint64_t value, float score, uint64_t source_domain, uint64_t target_domain)
+				: generic_record(value, score), m_source_domain(source_domain), m_target_domain(target_domain) {};
 
 		struct storage_order {
 			inline bool operator() (const domain_link_record &a, const domain_link_record &b) {
 				return a.m_target_domain < b.m_target_domain;
 			}
 		};
+
+		bool storage_equal(const domain_link_record &a) const {
+			return m_target_domain == a.m_target_domain;
+		}
 
 	};
 
@@ -149,6 +121,8 @@ namespace indexer {
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links) = 0;
 
 		protected:
+		template<typename data_record>
+		roaring::Roaring intersection(const std::vector<roaring::Roaring> &input) const;
 		template<typename data_record>
 		std::vector<return_record> intersection(const std::vector<std::vector<data_record>> &input) const;
 
@@ -173,6 +147,7 @@ namespace indexer {
 	class domain_level: public level {
 		private:
 		std::unique_ptr<sharded_index_builder<domain_record>> m_builder;
+		std::unique_ptr<sharded_index<domain_record>> m_search_index;
 		public:
 		domain_level();
 		level_type get_type() const;

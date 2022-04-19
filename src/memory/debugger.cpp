@@ -90,30 +90,6 @@ namespace memory {
 		return global_usage_peak;
 	}
 
-	mutex panic_lock;
-
-	bool panic() {
-		if (total_memory_on_host == 0) {
-			memory::update();
-			total_memory_on_host = memory::get_total_memory();
-		}
-		if (total_memory_on_host * 0.80 < allocated_memory()) {
-			return true;
-		}
-
-		return false;
-	}
-
-	void start_panic_cleanup() {
-		panic_lock.lock();
-
-		LOG_INFO("PANIC, starting cleanup, allocated_memory: " + to_string(allocated_memory()));
-	}
-
-	void stop_panic_cleanup() {
-		LOG_INFO("PANIC, stopping cleanup, allocated_memory: " + to_string(allocated_memory()));
-		panic_lock.unlock();
-	}
 }
 
 /*

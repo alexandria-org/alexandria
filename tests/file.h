@@ -159,13 +159,6 @@ BOOST_AUTO_TEST_CASE(head_content_len) {
 
 	{
 		int error;
-		size_t content_len = transfer::head_content_length("http://localhost/test-data/10272145489625484395-1002.gz", error);
-		BOOST_CHECK_EQUAL(error, transfer::OK);
-		BOOST_CHECK_EQUAL(content_len, 59535774);
-	}
-
-	{
-		int error;
 		size_t content_len = transfer::head_content_length("http://127.0.0.1/test-data/automobileszone.com-not-here", error);
 		BOOST_CHECK_EQUAL(error, transfer::ERROR);
 		BOOST_CHECK_EQUAL(content_len, 0);

@@ -245,6 +245,30 @@ namespace file {
 		return rows_read;
 	}
 
+	size_t tsv_file::read_column_into(int column, set<string> &container, size_t limit, size_t offset) {
+		m_file.clear();
+		m_file.seekg(0, m_file.beg);
+
+		if (!m_file.is_open()) {
+			throw runtime_error("File is not open any more: " + m_file_name);
+		}
+
+		string line;
+		size_t rows_read = 0;
+		while (getline(m_file, line)) {
+			stringstream ss(line);
+			string col;
+			ss >> col;
+			if (rows_read >= offset) {
+				container.insert(col);
+			}
+			rows_read++;
+			if (rows_read >= limit) break;
+		}
+
+		return rows_read;
+	}
+
 	size_t tsv_file::size() const {
 		return m_file_size;
 	}
@@ -291,6 +315,26 @@ namespace file {
 			string col;
 			ss >> col;
 			container.push_back(col);
+			rows_read++;
+			if (rows_read >= limit) break;
+		}
+
+		return rows_read;
+	}
+
+	size_t tsv_file::read_column_into(int column, vector<string> &container, size_t limit, size_t offset) {
+		m_file.clear();
+		m_file.seekg(0, m_file.beg);
+
+		string line;
+		size_t rows_read = 0;
+		while (getline(m_file, line)) {
+			stringstream ss(line);
+			string col;
+			ss >> col;
+			if (rows_read >= offset) {
+				container.push_back(col);
+			}
 			rows_read++;
 			if (rows_read >= limit) break;
 		}

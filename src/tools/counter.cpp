@@ -41,12 +41,33 @@
 #include "algorithm/algorithm.h"
 #include "url_store/url_store.h"
 #include "file/tsv_file_remote.h"
+#include "common/system.h"
 
 using namespace std;
 
 namespace tools {
 
 	map<string, size_t> count_urls_per_domain(const vector<string> &warc_paths) {
+
+		const set<string> domains = {
+			"theinstantpottable.com",
+			"thehighlineboutique.com",
+			"harveyspet.com",
+			"finertech.com",
+			"canadiantiresucks.net",
+			"thecounter.org",
+			"learningworksforkids.com",
+			"doodlecraftblog.com",
+			"heroes.thelazy.net",
+			"stedmansonline.com",
+			"restaurantbusinessonline.com",
+			"gotohomerepair.com",
+			"aboutbail.com",
+			"spacefuture.com",
+			"personaltelco.net",
+			"helis.com"
+		};
+		vector<string> saved_rows;
 
 		map<string, size_t> counts;
 
@@ -60,6 +81,9 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
+				if (domains.find(url.host()) != domains.end()) {
+					saved_rows.push_back(line);
+				}
 				counts[url.host()]++;
 			}
 
@@ -68,6 +92,18 @@ namespace tools {
 			} 
 
 			idx++;
+		}
+
+		// Save rows.
+		if (saved_rows.size() > 0) {
+			boost::filesystem::create_directories("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
+			ofstream outfile("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
+			boost::iostreams::filtering_ostream compress_stream;
+			compress_stream.push(boost::iostreams::gzip_compressor());
+			compress_stream.push(outfile);
+			for (const string row : saved_rows) {
+				compress_stream << row << "\n";
+			}
 		}
 
 		return counts;

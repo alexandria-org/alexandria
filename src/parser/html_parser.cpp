@@ -39,7 +39,13 @@ namespace parser {
 		"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 
 	html_parser::html_parser()
-	: m_long_str_buf_len(config::html_parser_long_text_len)
+	: m_long_text_len(1000), m_long_str_buf_len(m_long_text_len)
+	{
+		m_long_str_buf = new char[m_long_str_buf_len];
+	}
+
+	html_parser::html_parser(size_t long_text_len)
+	: m_long_text_len(long_text_len), m_long_str_buf_len(long_text_len)
 	{
 		m_long_str_buf = new char[m_long_str_buf_len];
 	}

@@ -96,10 +96,15 @@ namespace indexer {
 		ifstream infile(local_path, ios::in);
 		string line;
 		while (getline(infile, line)) {
+
+
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 			URL target_url(col_values[2], col_values[3]);
+
+			if (!m_url_to_domain->has_domain(target_url.host_hash())) continue;
+
 			URL source_url(col_values[0], col_values[1]);
 
 			float target_harmonic = domain_stats::harmonic_centrality(target_url);
@@ -111,26 +116,30 @@ namespace indexer {
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
 			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-
 			const bool has_url = m_url_to_domain->has_url(target_url.hash());
 
+
 			vector<string> words = text::get_expanded_full_text_words(link_text);
-			for (const string &word : words) {
 
-				const uint64_t word_hash = ::algorithm::hash(word);
-
-				domain_link_record rec(domain_link_hash, source_harmonic);
-				rec.m_source_domain = source_url.host_hash();
-				rec.m_target_domain = target_url.host_hash();
-				m_domain_link_index_builder->add(word_hash, rec);
-
+			if (has_url) {
 				// Add the url link.
-				if (has_url) {
-					link_record rec(link_hash, source_harmonic);
-					rec.m_source_domain = source_url.host_hash();
-					rec.m_target_hash = target_url.hash();
-					m_link_index_builder->add(word_hash, rec);
+				link_record link_rec(link_hash, source_harmonic);
+				link_rec.m_source_domain = source_url.host_hash();
+				link_rec.m_target_hash = target_url.hash();
+
+				for (const string &word : words) {
+					const uint64_t word_hash = ::algorithm::hash(word);
+					m_link_index_builder->add(word_hash, link_rec);
 				}
+			}
+
+			domain_link_record rec(domain_link_hash, source_harmonic);
+			rec.m_source_domain = source_url.host_hash();
+			rec.m_target_domain = target_url.host_hash();
+
+			for (const string &word : words) {
+				const uint64_t word_hash = ::algorithm::hash(word);
+				m_domain_link_index_builder->add(word_hash, rec);
 			}
 		}
 	}
@@ -158,8 +167,10 @@ namespace indexer {
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
+		m_link_index_builder->optimize();
 		m_domain_link_index_builder->append();
 		m_domain_link_index_builder->merge();
+		m_domain_link_index_builder->optimize();
 	}
 
 	void index_tree::truncate() {
@@ -168,6 +179,10 @@ namespace indexer {
 			create_directories(lvl->get_type());
 		}
 
+		truncate_links();
+	}
+
+	void index_tree::truncate_links() {
 		m_link_index_builder->truncate();
 		m_domain_link_index_builder->truncate();
 	}
@@ -184,10 +199,17 @@ namespace indexer {
 
 	std::vector<return_record> index_tree::find(const string &query) {
 
-		vector<link_record> links = m_link_index->find(text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find(text::get_tokens(query));
+		auto domain_formula = [](float score) {
+			return expm1(25.0f * score) / 50.0f;
+		};
 
-		std::vector<return_record> res = find_recursive(query, 0, {0}, links, domain_links);
+		std::vector<size_t> counts;
+
+		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
+		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
+				domain_formula, counts);
+
+		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
 
 		// Sort by score.
 		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {
@@ -201,7 +223,7 @@ namespace indexer {
 		const std::vector<size_t> &keys, const vector<link_record> &links,
 		const vector<domain_link_record> &domain_links) {
 
-		std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
+		/*std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
 		
 		if (level_num == m_levels.size() - 1) {
 			// This is the last level, return the results instead of going deeper.
@@ -212,7 +234,8 @@ namespace indexer {
 		for (const return_record &rec : all_results) {
 			next_level_keys.push_back(rec.m_value);
 		}
-		return find_recursive(query, level_num + 1, next_level_keys, links, domain_links);
+		return find_recursive(query, level_num + 1, next_level_keys, links, domain_links);*/
+		return {};
 	}
 
 	void index_tree::create_directories(level_type lvl) {

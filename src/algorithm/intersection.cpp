@@ -24,17 +24,21 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "intersection.h"
 
-#include <iostream>
+namespace algorithm {
 
-namespace memory {
-	size_t allocated_memory(); // Returns number of allocated bytes.
-	size_t num_allocated(); // Returns number of allocated pointers.
+	roaring::Roaring intersection(const std::vector<roaring::Roaring> &input) {
 
-	void reset_usage();
-	void record_usage();
-	size_t get_usage();
-	size_t get_usage_peak();
+		if (input.size() == 0) return roaring::Roaring();
+
+		roaring::Roaring intersection = input[0];
+
+		for (size_t i = 1; i < input.size(); i++) {
+			intersection &= input[i];
+		}
+
+		return intersection;
+	}
 
 }

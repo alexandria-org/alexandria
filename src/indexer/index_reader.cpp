@@ -24,17 +24,58 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "index_reader.h"
+#include <string.h>
 
-#include <iostream>
+using namespace std;
 
-namespace memory {
-	size_t allocated_memory(); // Returns number of allocated bytes.
-	size_t num_allocated(); // Returns number of allocated pointers.
+namespace indexer {
 
-	void reset_usage();
-	void record_usage();
-	size_t get_usage();
-	size_t get_usage_peak();
+	index_reader_file::index_reader_file(const std::string &filename) {
+		m_reader = make_unique<ifstream>();
+		m_reader->open(filename, ios::binary);
+	}
+
+	index_reader_file::index_reader_file(index_reader_file &&other) {
+		m_reader = move(other.m_reader);
+	}
+
+	void index_reader_file::seek(size_t position) {
+		m_reader->seekg(position, ios::beg);
+	}
+
+	void index_reader_file::read(char *buffer, size_t length) {
+		m_reader->read(buffer, length);
+	}
+
+	size_t index_reader_file::size() {
+		m_reader->seekg(0, ios::end);
+		return m_reader->tellg();
+	}
+
+	index_reader_ram::index_reader_ram(char *buffer, size_t length) {
+		m_buffer = buffer;
+		m_len = length;
+	}
+
+	index_reader_ram::index_reader_ram(index_reader_ram &&other) {
+		m_buffer = other.m_buffer;
+		m_len = other.m_len;
+
+		other.m_buffer = nullptr;
+		other.m_len = 0;
+	}
+
+
+	void index_reader_ram::seek(size_t position) {
+		if (position < m_len) m_pos = position;
+	}
+
+	void index_reader_ram::read(char *buffer, size_t length) {
+		if (m_pos + length <= m_len) {
+			memcpy(buffer, &m_buffer[m_pos], length);
+			m_pos += length;
+		}
+	}
 
 }

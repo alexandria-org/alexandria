@@ -100,6 +100,7 @@ set(SRC_CLASSES
 	"src/key_value_store.cpp"
 
 	"src/algorithm/algorithm.cpp"
+	"src/algorithm/intersection.cpp"
 	"src/algorithm/sort.cpp"
 	"src/algorithm/hyper_ball.cpp"
 	"src/algorithm/hash.cpp"
@@ -122,6 +123,7 @@ set(SRC_CLASSES
 	"src/indexer/console.cpp"
 	"src/indexer/merger.cpp"
 	"src/indexer/score_builder.cpp"
+	"src/indexer/index_reader.cpp"
 
 	"src/domain_stats/domain_stats.cpp"
 
@@ -140,7 +142,10 @@ set(SRC_COMMON
 
 set(SRC_TESTS
 	"tests/test_sharded_index_builder.cpp"
+	"tests/test_index_reader.cpp"
+	"tests/test_top_k.cpp"
 	"tests/hyper_log_log.cpp"
+	"tests/memory.cpp"
 )
 
 add_executable(run_tests

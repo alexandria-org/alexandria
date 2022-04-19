@@ -26,6 +26,9 @@
 
 #pragma once
 
+#include "index_reader.h"
+#include "roaring/roaring.hh"
+
 namespace indexer {
 
 	template<typename data_record>
@@ -33,12 +36,14 @@ namespace indexer {
 
 	public:
 
+		index(const std::string &file_name);
 		index(const std::string &db_name, size_t id);
 		index(const std::string &db_name, size_t id, size_t hash_table_size);
+		index(index_reader *ram_reader, size_t hash_table_size);
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
-		std::vector<data_record> find(uint64_t key, size_t &total_found) const;
+		roaring::Roaring find_bitmap(uint64_t key) const;
 
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
@@ -46,8 +51,16 @@ namespace indexer {
 		float get_idf(size_t documents_with_term) const;
 		size_t get_document_count() const { return m_unique_count; }
 
+		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
+
+		void print_stats();
+
 	private:
 
+		mutable index_reader *m_reader;
+		std::unique_ptr<index_reader_file> m_default_reader;
+		
+		std::string m_file_name;
 		std::string m_db_name;
 		size_t m_id;
 		const size_t m_hash_table_size;
@@ -57,21 +70,35 @@ namespace indexer {
 		void read_meta();
 		std::string mountpoint() const;
 		std::string filename() const;
-		std::string key_filename() const;
 		std::string meta_filename() const;
 		
 	};
 
 	template<typename data_record>
+	index<data_record>::index(const std::string &file_name)
+	: m_file_name(file_name), m_hash_table_size(config::shard_hash_table_size) {
+		m_default_reader = make_unique<index_reader_file>(filename());
+		m_reader = (index_reader *)m_default_reader.get();
+	}
+
+	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size) {
-		read_meta();
+		m_default_reader = make_unique<index_reader_file>(filename());
+		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
-		read_meta();
+		m_default_reader = make_unique<index_reader_file>(filename());
+		m_reader = (index_reader *)m_default_reader.get();
+	}
+
+	template<typename data_record>
+	index<data_record>::index(index_reader *ram_reader, size_t hash_table_size)
+	: m_hash_table_size(hash_table_size) {
+		m_reader = ram_reader;
 	}
 
 	template<typename data_record>
@@ -80,28 +107,40 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find(uint64_t key) const {
-		size_t total;
-		return find(key, total);
+
+		roaring::Roaring rr = find_bitmap(key);
+
+		std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
+			data_record rec;
+			m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
+			m_reader->read((char *)&rec, sizeof(data_record));
+			return rec;
+		};
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : rr) {
+			ret.emplace_back(id_to_rec(internal_id));
+		}
+
+		return ret;
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find(uint64_t key, size_t &total_found) const {
-
+	roaring::Roaring index<data_record>::find_bitmap(uint64_t key) const {
 		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {
-			return {};
+			return roaring::Roaring();
 		}
 
 		// Read page.
-		std::ifstream reader(filename(), std::ios::binary);
-		reader.seekg(key_pos);
+		m_reader->seek(key_pos);
 		size_t num_keys;
-		reader.read((char *)&num_keys, sizeof(size_t));
+		m_reader->read((char *)&num_keys, sizeof(size_t));
 
 		std::unique_ptr<uint64_t[]> keys_allocator = std::make_unique<uint64_t[]>(num_keys);
 		uint64_t *keys = keys_allocator.get();
-		reader.read((char *)keys, num_keys * sizeof(uint64_t));
+		m_reader->read((char *)keys, num_keys * sizeof(uint64_t));
 
 		size_t key_data_pos = SIZE_MAX;
 		for (size_t i = 0; i < num_keys; i++) {
@@ -111,32 +150,28 @@ namespace indexer {
 		}
 
 		if (key_data_pos == SIZE_MAX) {
-			return {};
+			return roaring::Roaring();
 		}
 
 		char buffer[64];
 
 		// Read position and length.
-		reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
+		m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+		m_reader->read(buffer, 8);
 		size_t pos = *((size_t *)(&buffer[0]));
 
-		reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
+		m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+		m_reader->read(buffer, 8);
 		size_t len = *((size_t *)(&buffer[0]));
 
-		reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
-		total_found = *((size_t *)(&buffer[0]));
+		m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
 
-		reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, std::ios::beg);
+		std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
+		char *data = data_allocator.get();
 
-		size_t num_records = len / sizeof(data_record);
+		m_reader->read(data, len);
 
-		std::vector<data_record> ret(num_records);
-		reader.read((char *)ret.data(), sizeof(data_record) * num_records);
-
-		return ret;
+		return roaring::Roaring::readSafe(data, len);
 	}
 
 	template<typename data_record>
@@ -160,12 +195,10 @@ namespace indexer {
 
 		const size_t hash_pos = key % m_hash_table_size;
 
-		std::ifstream key_reader(key_filename(), std::ios::binary);
-
-		key_reader.seekg(hash_pos * sizeof(size_t));
+		m_reader->seek(hash_pos * sizeof(size_t));
 
 		size_t pos;
-		key_reader.read((char *)&pos, sizeof(size_t));
+		m_reader->read((char *)&pos, sizeof(size_t));
 
 		return pos;
 	}
@@ -197,17 +230,86 @@ namespace indexer {
 
 	template<typename data_record>
 	std::string index<data_record>::filename() const {
+		if (m_file_name != "") return m_file_name + ".data";
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
 	}
 
 	template<typename data_record>
-	std::string index<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".keys";
+	std::string index<data_record>::meta_filename() const {
+		if (m_file_name != "") return m_file_name + ".meta";
+		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
 	}
 
 	template<typename data_record>
-	std::string index<data_record>::meta_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
+	void index<data_record>::print_stats() {
+
+		size_t total_num_keys = 0;
+		size_t total_num_records = 0;
+		size_t total_roaring_size = 0;
+		size_t total_record_size = 0;
+		size_t total_file_size = m_reader->size();
+		size_t total_cardinality = 0;
+		size_t total_page_header_size = 0;
+
+		m_reader->seek(m_hash_table_size * 8);
+		m_reader->read((char *)&total_num_records, sizeof(size_t));
+
+		total_record_size = total_num_records * sizeof(data_record);
+
+		for (size_t page = 0; page < m_hash_table_size; page++) {
+			size_t key_pos = read_key_pos(page);
+
+			if (key_pos == SIZE_MAX) {
+				continue;
+			}
+
+			// Read page.
+			m_reader->seek(key_pos);
+			size_t num_keys;
+			m_reader->read((char *)&num_keys, sizeof(size_t));
+
+			total_num_keys += num_keys;
+
+			std::unique_ptr<uint64_t[]> keys_allocator = std::make_unique<uint64_t[]>(num_keys);
+			uint64_t *keys = keys_allocator.get();
+			m_reader->read((char *)keys, num_keys * sizeof(uint64_t));
+			total_page_header_size += num_keys * sizeof(uint64_t) * 3;
+
+			for (size_t i = 0; i < num_keys; i++) {
+				size_t key_data_pos = i;
+				
+				char buffer[64];
+
+				// Read position and length.
+				m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+				m_reader->read(buffer, 8);
+				size_t pos = *((size_t *)(&buffer[0]));
+
+				m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+				m_reader->read(buffer, 8);
+				size_t len = *((size_t *)(&buffer[0]));
+
+				m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+
+				std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
+				char *data = data_allocator.get();
+
+				m_reader->read(data, len);
+
+				roaring::Roaring rr = roaring::Roaring::readSafe(data, len);
+
+				total_cardinality += rr.cardinality();
+				total_roaring_size += len;
+			}
+		}
+
+		cout << "total_num_keys: " << total_num_keys << endl;
+		cout << "total_num_records: " << total_num_records << endl;
+		cout << "record size: " << total_record_size << " (" << 100*((float)total_record_size / total_file_size) << "%)" << endl;
+		cout << "page header size: " << total_page_header_size << " (" << 100*((float)total_page_header_size / total_file_size) << "%)" << endl;
+		cout << "roaring size: " << total_roaring_size << " (" << 100*((float)total_roaring_size / total_file_size) << "%)" << endl;
+		cout << "mean length for key: " << total_roaring_size / total_num_keys << endl;
+		cout << "mean cardinality for key: " << total_cardinality / total_num_keys << endl;
 	}
 
 }

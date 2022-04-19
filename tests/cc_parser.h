@@ -161,10 +161,6 @@ BOOST_AUTO_TEST_CASE(parse_cc_batch_multistream) {
 
 BOOST_AUTO_TEST_CASE(parse_cc_batch_301) {
 
-	warc::parser pp;
-	ifstream infile(config::test_data_path + "long_warc.gz", std::ios::binary);
-	pp.parse_stream(infile);
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()
