@@ -100,7 +100,12 @@ namespace indexer {
 	}
 
 	void cmd_search(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
+
+		profiler::instance prof("domain search");
 		std::vector<indexer::return_record> res = idx_tree.find(query);
+		prof.stop();
+
+		cout << "took " << prof.get() << "ms" << endl;
 
 		if (res.size() > 10) res.resize(10);
 
@@ -208,7 +213,7 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			size_t limit = 100;
+			size_t limit = 0;
 			//size_t limit = 1;
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
@@ -232,10 +237,18 @@ namespace indexer {
 			merger::stop_merge_thread();
 		}
 
+		indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
+		dom_index.optimize();
+
 		profiler::print_report();
 	}
 
 	void index_links(const string &batch) {
+
+		/*indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
+		dom_index.optimize();
+
+		return;
 
 		indexer::sharded_index_builder<link_record> link_index_builder("link_index", 2001);
 		indexer::sharded_index_builder<domain_link_record> domain_link_index_builder("domain_link_index", 2001);
@@ -243,7 +256,7 @@ namespace indexer {
 		link_index_builder.optimize();
 		domain_link_index_builder.optimize();
 
-		return;
+		return;*/
 
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
@@ -255,7 +268,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 1000, 0);
+			warc_paths_file.read_column_into(0, warc_paths, 10000, 0);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;

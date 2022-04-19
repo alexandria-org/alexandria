@@ -56,6 +56,10 @@ namespace indexer {
 		size_t m_num_url_links = 0;
 		size_t m_num_domain_links = 0;
 
+		return_record() : generic_record() {};
+		return_record(uint64_t value) : generic_record(value) {};
+		return_record(uint64_t value, float score) : generic_record(value, score) {};
+
 	};
 
 	class link_record : public generic_record {

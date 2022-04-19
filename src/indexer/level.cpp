@@ -83,7 +83,7 @@ namespace indexer {
 				iter_index++;
 			}
 			if (all_equal) {
-				intersection.emplace_back(generic_record(
+				intersection.emplace_back(return_record(
 					input[shortest_vector_position][positions[shortest_vector_position]].m_value,
 					score_sum / input.size()
 					));
