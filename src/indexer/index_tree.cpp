@@ -201,9 +201,11 @@ namespace indexer {
 			return expm1(25.0f * score) / 50.0f;
 		};
 
+		std::vector<size_t> counts;
+
 		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
-				domain_formula);
+				domain_formula, counts);
 
 		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
 

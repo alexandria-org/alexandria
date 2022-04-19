@@ -68,7 +68,7 @@ namespace indexer {
 		 * Returns vector with grouped records.
 		 * */
 		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys,
-				std::function<float(float)> score_formula) const;
+				std::function<float(float)> score_formula, std::vector<size_t> &counts) const;
 
 	private:
 
@@ -193,7 +193,7 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find_group_by(const std::vector<uint64_t> &keys,
-			std::function<float(float)> score_formula) const {
+			std::function<float(float)> score_formula, std::vector<size_t> &counts) const {
 
 		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
@@ -211,9 +211,11 @@ namespace indexer {
 		for (uint32_t internal_id : rr) {
 			if (ret.size() && ret.back().storage_equal(m_records[internal_id])) {
 				ret.back().m_score += score_formula(m_records[internal_id].m_score);
+				counts.back()++;
 			} else {
 				ret.emplace_back(m_records[internal_id]);
 				ret.back().m_score = score_formula(ret.back().m_score);
+				counts.push_back(1);
 			}
 		}
 

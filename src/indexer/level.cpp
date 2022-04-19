@@ -207,11 +207,12 @@ namespace indexer {
 
 		size_t score_incr = 0;
 		auto score_mod = [&score_incr, &domain_links](uint64_t value) {
+			if (score_incr >= domain_links.size()) return 0.0f;
 			while (domain_links[score_incr].m_target_domain < value) {
 				score_incr++;
 			}
 			if (domain_links[score_incr].m_target_domain == value) {
-				return expm1(25.0f * domain_links[score_incr].m_score) / 50.0f;
+				return domain_links[score_incr].m_score;
 			}
 			return 0.0f;
 		};
