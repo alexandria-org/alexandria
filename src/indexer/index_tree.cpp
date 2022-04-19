@@ -167,8 +167,10 @@ namespace indexer {
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
+		m_link_index_builder->optimize();
 		m_domain_link_index_builder->append();
 		m_domain_link_index_builder->merge();
+		m_domain_link_index_builder->optimize();
 	}
 
 	void index_tree::truncate() {
