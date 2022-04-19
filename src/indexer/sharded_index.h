@@ -28,6 +28,7 @@
 
 #include "index.h"
 #include "algorithm/intersection.h"
+#include "algorithm/top_k.h"
 #include "config.h"
 
 namespace indexer {
@@ -58,7 +59,7 @@ namespace indexer {
 		 * Returns n records with highest score.
 		 * score_mod is applied in storage_order of data_record.
 		 * */
-		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys, 
+		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
 				std::function<float(uint64_t)> score_mod, size_t n) const;
 
 		/*
@@ -149,7 +150,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> sharded_index<data_record>::find_intersection(const std::vector<uint64_t> &keys,
+	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys,
 			std::function<float(uint64_t)> score_mod, size_t n) const {
 
 		std::vector<roaring::Roaring> results;
@@ -164,14 +165,27 @@ namespace indexer {
 
 		roaring::Roaring rr = ::algorithm::intersection(results);
 
-		std::function<data_record(uint32_t id)> id_to_rec = [this](uint32_t id) {
-			return m_records[id];
+		// Apply score modifications.
+		std::vector<uint32_t> ids;
+		for (uint32_t internal_id : rr) {
+			ids.push_back(internal_id);
+			m_records[internal_id].m_modified_score = m_records[internal_id].m_score +
+					score_mod(m_records[internal_id].m_value);
+		}
+
+		auto ordered = [this](const uint32_t &a, const uint32_t &b) {
+			return m_records[a].m_modified_score < m_records[b].m_modified_score;
 		};
 
+		std::vector<uint32_t> top_ids = ::algorithm::top_k<uint32_t>(ids, n, ordered);
+
 		std::vector<data_record> ret;
-		for (uint32_t internal_id : rr) {
-			ret.emplace_back(id_to_rec(internal_id));
+		for (uint32_t internal_id : top_ids) {
+			ret.push_back(m_records[internal_id]);
+			ret.back().m_score = ret.back().m_modified_score;
 		}
+
+		sort(ret.begin(), ret.end(), typename data_record::score_order());
 
 		return ret;
 	}

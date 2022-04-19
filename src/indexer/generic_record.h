@@ -38,13 +38,11 @@ namespace indexer {
 		public:
 		uint64_t m_value;
 		float m_score;
-		uint32_t m_count = 1;
+		mutable float m_modified_score;
 
 		generic_record() : m_value(0), m_score(0.0f) {};
 		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
 		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
-
-		size_t count() const { return (size_t)m_count; }
 
 		bool operator==(const generic_record &b) const {
 			return m_value == b.m_value;
@@ -60,6 +58,12 @@ namespace indexer {
 			}
 		};
 
+		struct score_order {
+			inline bool operator() (const generic_record &a, const generic_record &b) {
+				return a.m_score > b.m_score;
+			}
+		};
+
 		bool storage_equal(const generic_record &a) const {
 			return m_value == a.m_value;
 		}
@@ -67,12 +71,12 @@ namespace indexer {
 		generic_record operator+(const generic_record &b) const {
 			generic_record sum;
 			sum.m_value = m_value;
-			sum.m_count = m_count + b.m_count;
+			sum.m_score = m_score + b.m_score;
 			return sum;
 		}
 
 		generic_record &operator+=(const generic_record &b) {
-			m_count += b.m_count;
+			m_score += b.m_score;
 			return *this;
 		}
 

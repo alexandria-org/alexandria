@@ -117,6 +117,48 @@ BOOST_AUTO_TEST_CASE(test_group_by) {
 
 }
 
+BOOST_AUTO_TEST_CASE(test_score_mod) {
+
+	using indexer::domain_record;
+
+	{
+		indexer::sharded_index_builder<domain_record> idx("test_index", 1);
+
+		idx.truncate();
+
+		idx.add(101, domain_record(1000, 1.0f));
+		idx.add(101, domain_record(1004, 1.0f));
+		idx.add(101, domain_record(1001, 1.0f));
+		idx.add(101, domain_record(1003, 1.0f));
+		idx.add(101, domain_record(1002, 1.0f));
+
+		idx.add(102, domain_record(1000, 1.0f));
+		idx.add(102, domain_record(1001, 1.0f));
+		idx.add(102, domain_record(1005, 1.0f));
+		idx.add(102, domain_record(1002, 1.0f));
+
+		idx.append();
+		idx.merge();
+		idx.optimize();
+	}
+
+	{
+		indexer::sharded_index<domain_record> idx("test_index", 1);
+		uint64_t sum_id = 0;
+		vector<domain_record> res = idx.find_top({101, 102},
+				[&sum_id](uint64_t val) -> float {
+					return (float)(sum_id++);
+				}, 2);
+
+		BOOST_REQUIRE(res.size() == 2);
+		BOOST_CHECK(res[0].m_score == 3.0f);
+		BOOST_CHECK(res[0].m_value == 1002);
+		BOOST_CHECK(res[1].m_score == 2.0f);
+		BOOST_CHECK(res[1].m_value == 1001);
+	}
+
+}
+
 BOOST_AUTO_TEST_CASE(test_with_real_data) {
 
 	const size_t mem_before = memory::allocated_memory();

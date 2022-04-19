@@ -205,13 +205,22 @@ namespace indexer {
 		std::vector<uint64_t> tokens(words.size());
 		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
-		std::vector<domain_record> res = m_search_index->find_intersection(tokens);
+		size_t score_incr = 0;
+		auto score_mod = [&score_incr, &domain_links](uint64_t value) {
+			while (domain_links[score_incr].m_target_domain < value) {
+				score_incr++;
+			}
+			if (domain_links[score_incr].m_target_domain == value) {
+				return expm1(25.0f * domain_links[score_incr].m_score) / 50.0f;
+			}
+			return 0.0f;
+		};
+
+		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 10);
 		std::vector<return_record> intersected;
 		for (const auto r : res) {
-			intersected.emplace_back(return_record(r.m_value));
+			intersected.emplace_back(return_record(r.m_value, r.m_score));
 		}
-		apply_domain_links(domain_links, intersected);
-		sort_and_get_top_results(intersected, 100); // Pick top 100 domains.
 		return intersected;
 	}
 
