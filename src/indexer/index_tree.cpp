@@ -197,8 +197,13 @@ namespace indexer {
 
 	std::vector<return_record> index_tree::find(const string &query) {
 
+		auto domain_formula = [](float score) {
+			return expm1(25.0f * score) / 50.0f;
+		};
+
 		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
+		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
+				domain_formula);
 
 		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
 

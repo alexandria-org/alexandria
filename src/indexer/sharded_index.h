@@ -63,12 +63,12 @@ namespace indexer {
 				std::function<float(uint64_t)> score_mod, size_t n) const;
 
 		/*
-		 * Find intersection of multiple keys and run group by with custom plus_equal function (+=), the groups will be determined by the
-		 * data_record::storage_equal predicate
+		 * Find intersection of multiple keys and run group by, the groups will be determined by the
+		 * data_record::storage_equal predicate and 'score_formula' will be applied to m_score before summing.
 		 * Returns vector with grouped records.
 		 * */
-		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys, std::function<void(data_record &a,
-				const data_record &b)> plus_equal) const;
+		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys,
+				std::function<float(float)> score_formula) const;
 
 	private:
 
@@ -193,7 +193,7 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find_group_by(const std::vector<uint64_t> &keys,
-			std::function<void(data_record &a, const data_record &b)> plus_equal) const {
+			std::function<float(float)> score_formula) const {
 
 		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
@@ -210,9 +210,10 @@ namespace indexer {
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : rr) {
 			if (ret.size() && ret.back().storage_equal(m_records[internal_id])) {
-				plus_equal(ret.back(), m_records[internal_id]);
+				ret.back().m_score += score_formula(m_records[internal_id].m_score);
 			} else {
 				ret.emplace_back(m_records[internal_id]);
+				ret.back().m_score = score_formula(ret.back().m_score);
 			}
 		}
 

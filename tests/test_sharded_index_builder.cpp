@@ -92,10 +92,11 @@ BOOST_AUTO_TEST_CASE(test_group_by) {
 
 	{
 		indexer::sharded_index<domain_link_record> idx("test_index", 1);
-		vector<domain_link_record> res = idx.find_group_by({101, 102},
-				[](domain_link_record &a, const domain_link_record &b) {
-					a.m_score += b.m_score;
-				});
+
+		auto identity = [](float score) {
+			return score;
+		};
+		vector<domain_link_record> res = idx.find_group_by({101, 102}, identity);
 
 		BOOST_REQUIRE(res.size() == 1);
 		BOOST_CHECK(res[0].m_score == 3.0f);
@@ -103,16 +104,16 @@ BOOST_AUTO_TEST_CASE(test_group_by) {
 
 	{
 		indexer::sharded_index<domain_link_record> idx("test_index", 1);
-		auto add_scores = [](domain_link_record &a, const domain_link_record &b) {
-			a.m_score += b.m_score;
+		auto times_two = [](float score) {
+			return 2.0f * score;
 		};
-		vector<domain_link_record> res = idx.find_group_by({101, 103}, add_scores);
+		vector<domain_link_record> res = idx.find_group_by({101, 103}, times_two);
 
 		BOOST_REQUIRE(res.size() == 2);
 
 		sort(res.begin(), res.end(), domain_link_record::storage_order());
-		BOOST_CHECK(res[0].m_score == 3.0f);
-		BOOST_CHECK(res[1].m_score == 1.0f);
+		BOOST_CHECK(res[0].m_score == 2.0f * (3.0f));
+		BOOST_CHECK(res[1].m_score == 2.0f * (1.0f));
 	}
 
 }
