@@ -28,6 +28,7 @@
 
 #include "index_builder.h"
 #include "algorithm/hyper_log_log.h"
+#include "utils/thread_pool.hpp"
 
 #include <numeric>
 
@@ -254,11 +255,15 @@ namespace indexer {
 
 		// inverse now points from old position -> new position of record.
 
-		for (auto &shard : m_shards) {
-			shard->transform([&inverse](uint32_t v) {
-				return inverse[v];
+		utils::thread_pool pool(32);
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			pool.enqueue([this, i, &inverse]() {
+				m_shards[i]->transform([&inverse](uint32_t v) {
+					return inverse[v];
+				});
 			});
 		}
+		pool.run_all();
 
 		// Reorder the records. Will be saved in meta file upon destruction.
 		sort(m_records.begin(), m_records.end(), ordered);

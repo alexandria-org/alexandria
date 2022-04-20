@@ -237,8 +237,8 @@ namespace indexer {
 			merger::stop_merge_thread();
 		}
 
-		indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
-		dom_index.optimize();
+		//indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
+		//dom_index.optimize();
 
 		profiler::print_report();
 	}
