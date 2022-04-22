@@ -110,6 +110,8 @@ int main(int argc, const char **argv) {
 		indexer::index_urls(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
+	} else if (arg == "--print-info") {
+		indexer::print_info();
 	} else {
 		help();
 	}

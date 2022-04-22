@@ -268,7 +268,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 10000, 0);
+			warc_paths_file.read_column_into(0, warc_paths, 20000, 10000);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
@@ -281,6 +281,25 @@ namespace indexer {
 			idx_tree.merge();
 		}
 		profiler::print_report();
+	}
+
+	void print_info() {
+		indexer::sharded_index<domain_record> dom_index("domain", 1024);
+
+		cout << "num domains: " << dom_index.num_records() << endl;
+
+		{
+			indexer::index<indexer::domain_record> idx("domain", 123);
+			idx.print_stats();
+		}
+		{
+			indexer::index<indexer::domain_record> idx("domain", 842);
+			idx.print_stats();
+		}
+		{
+			indexer::index<indexer::domain_record> idx("domain", 1);
+			idx.print_stats();
+		}
 	}
 
 }

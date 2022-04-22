@@ -70,6 +70,8 @@ namespace indexer {
 		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys,
 				std::function<float(float)> score_formula, std::vector<size_t> &counts) const;
 
+		size_t num_records() const { return m_records.size(); }
+
 	private:
 
 		std::string m_db_name;
