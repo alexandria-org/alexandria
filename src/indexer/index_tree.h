@@ -35,6 +35,9 @@
 #include "snippet.h"
 #include "hash_table/builder.h"
 #include "full_text/url_to_domain.h"
+#include "sharded_builder.h"
+#include "counted_index_builder.h"
+#include "counted_record.h"
 
 namespace indexer {
 
@@ -52,6 +55,8 @@ namespace indexer {
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
 		void add_link_file(const std::string &local_path);
 		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
+		void add_word_file(const std::string &local_path);
+		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void merge();
 		void truncate();
 		void truncate_links();
@@ -66,6 +71,7 @@ namespace indexer {
 		std::unique_ptr<sharded_index<link_record>> m_link_index;
 		std::unique_ptr<sharded_index_builder<domain_link_record>> m_domain_link_index_builder;
 		std::unique_ptr<sharded_index<domain_link_record>> m_domain_link_index;
+		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index;
 
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;

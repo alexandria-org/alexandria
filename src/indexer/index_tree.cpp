@@ -41,7 +41,9 @@ namespace indexer {
 		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
 		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
 		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
-		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_tree"); 
+		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_tree");
+
+		m_word_index = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 	}
 
 	index_tree::~index_tree() {
@@ -159,6 +161,45 @@ namespace indexer {
 		pool.run_all();
 	}
 
+	void index_tree::add_word_file(const string &local_path) {
+
+		const vector<size_t> cols = {1, 2, 3, 4};
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		while (getline(infile, line)) {
+
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+			const uint64_t domain_hash = url.host_hash();
+
+			for (size_t col : cols) {
+				vector<string> words = text::get_full_text_words(col_values[col]);
+
+				for (const string &word : words) {
+					m_word_index->add(::algorithm::hash(word), counted_record(domain_hash));
+				}
+			}
+
+		}
+	}
+
+	void index_tree::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		utils::thread_pool pool(num_threads);
+
+		for (const string &local_path : local_paths) {
+			pool.enqueue([this, local_path]() -> void {
+				add_word_file(local_path);
+			});
+		}
+
+		pool.run_all();
+
+	}
+
 	void index_tree::merge() {
 		for (level *lvl : m_levels) {
 			lvl->merge();
@@ -171,6 +212,9 @@ namespace indexer {
 		m_domain_link_index_builder->append();
 		m_domain_link_index_builder->merge();
 		m_domain_link_index_builder->optimize();
+
+		m_word_index->append();
+		m_word_index->merge();
 	}
 
 	void index_tree::truncate() {
