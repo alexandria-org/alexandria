@@ -244,6 +244,8 @@ namespace indexer {
 	void index<data_record>::print_stats() {
 
 		size_t total_num_keys = 0;
+		size_t total_num_larger_100 = 0;
+		size_t total_num_larger_10 = 0;
 		size_t total_num_records = 0;
 		size_t total_roaring_size = 0;
 		size_t total_record_size = 0;
@@ -298,12 +300,21 @@ namespace indexer {
 
 				roaring::Roaring rr = roaring::Roaring::readSafe(data, len);
 
-				total_cardinality += rr.cardinality();
+				const size_t card = rr.cardinality();
+				if (card > 100) {
+					total_num_larger_100++;
+				}
+				if (card > 10) {
+					total_num_larger_10++;
+				}
+				total_cardinality += card;
 				total_roaring_size += len;
 			}
 		}
 
 		cout << "total_num_keys: " << total_num_keys << endl;
+		cout << "total_num_larger_10: " << total_num_larger_10 << endl;
+		cout << "total_num_larger_100: " << total_num_larger_100 << endl;
 		cout << "total_num_records: " << total_num_records << endl;
 		cout << "record size: " << total_record_size << " (" << 100*((float)total_record_size / total_file_size) << "%)" << endl;
 		cout << "page header size: " << total_page_header_size << " (" << 100*((float)total_page_header_size / total_file_size) << "%)" << endl;
