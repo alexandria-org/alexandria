@@ -36,7 +36,9 @@
 #include "hash_table/builder.h"
 #include "full_text/url_to_domain.h"
 #include "sharded_builder.h"
+#include "sharded.h"
 #include "counted_index_builder.h"
+#include "counted_index.h"
 #include "counted_record.h"
 
 namespace indexer {
@@ -73,7 +75,9 @@ namespace indexer {
 		std::unique_ptr<sharded_index<link_record>> m_link_index;
 		std::unique_ptr<sharded_index_builder<domain_link_record>> m_domain_link_index_builder;
 		std::unique_ptr<sharded_index<domain_link_record>> m_domain_link_index;
-		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index;
+		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index_builder;
+		std::unique_ptr<sharded<counted_index, counted_record>> m_word_index;
+
 
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;

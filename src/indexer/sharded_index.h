@@ -221,6 +221,7 @@ namespace indexer {
 
 		roaring::Roaring rr = ::algorithm::intersection(results);
 
+		// Group by.
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : rr) {
 			if (ret.size() && ret.back().storage_equal(m_records[internal_id])) {

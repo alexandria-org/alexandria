@@ -146,6 +146,7 @@ set(SRC_TESTS
 	"tests/test_counted_index_builder.cpp"
 	"tests/test_index_reader.cpp"
 	"tests/test_top_k.cpp"
+	"tests/test_sum_sorted.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 )

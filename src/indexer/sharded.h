@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <vector>
+#include "algorithm/sum_sorted.h"
 
 namespace indexer {
 
@@ -46,6 +47,12 @@ namespace indexer {
 		 * */
 		std::vector<data_record> find(uint64_t key) const;
 		std::vector<data_record> find(uint64_t key, size_t limit) const;
+
+		/*
+		 * Find each key in keys and records with same m_value each key only returns top 'limit' number of results.
+		 * Returns vector with summed records.
+		 * */
+		std::vector<data_record> find_sum(const std::vector<uint64_t> &keys, size_t limit) const;
 
 	private:
 
@@ -92,6 +99,29 @@ namespace indexer {
 		index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
 
 		return idx.find(key, limit);
+	}
+
+	template<template<typename> typename index_type, typename data_record>
+	std::vector<data_record> sharded<index_type, data_record>::find_sum(const std::vector<uint64_t> &keys,
+			size_t limit) const {
+
+		std::vector<std::vector<data_record>> results;
+		for (uint64_t key : keys) {
+			const size_t shard_id = key % m_num_shards;
+			index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+
+			std::vector<data_record> res = idx.find(key, limit);
+
+			sort(res.begin(), res.end());
+
+			results.emplace_back(std::move(res));
+		}
+
+		// Sum equal elements.
+		return ::algorithm::sum_sorted<data_record>(results, [](data_record &a, const data_record &b) {
+			a.m_score += b.m_score;
+		});
+
 	}
 
 	template<template<typename> typename index_type, typename data_record>

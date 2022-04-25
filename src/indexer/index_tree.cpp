@@ -43,7 +43,8 @@ namespace indexer {
 		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
 		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_tree");
 
-		m_word_index = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
+		m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
+		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
 	}
 
 	index_tree::~index_tree() {
@@ -186,7 +187,7 @@ namespace indexer {
 				for (const string &word : words) {
 					const uint64_t word_hash = ::algorithm::hash(word);
 					if (common_words.find(word_hash) != common_words.end()) {
-						m_word_index->add(word_hash, counted_record(domain_hash));
+						m_word_index_builder->add(word_hash, counted_record(domain_hash));
 					}
 				}
 			}
@@ -231,8 +232,8 @@ namespace indexer {
 	}
 
 	void index_tree::merge_word() {
-		m_word_index->append();
-		m_word_index->merge();
+		m_word_index_builder->append();
+		m_word_index_builder->merge();
 	}
 
 	void index_tree::truncate() {
@@ -250,7 +251,7 @@ namespace indexer {
 	}
 
 	void index_tree::truncate_words() {
-		m_word_index->truncate();
+		m_word_index_builder->truncate();
 	}
 
 	void index_tree::clean_up() {
@@ -271,6 +272,7 @@ namespace indexer {
 
 		std::vector<size_t> counts;
 
+		vector<counted_record> bm25_scores = m_word_index->find_sum(text::get_tokens(query), 1000);
 		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
 				domain_formula, counts);
