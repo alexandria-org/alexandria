@@ -29,6 +29,7 @@
 #include <iostream>
 #include <map>
 #include "algorithm/hyper_log_log.h"
+#include "utils/thread_pool.hpp"
 
 namespace indexer {
 
@@ -55,6 +56,9 @@ namespace indexer {
 
 		size_t document_count() const { return m_document_counter.count(); }
 
+		void calculate_scores();
+		void sort_by_scores();
+
 	private:
 
 		std::mutex m_lock;
@@ -64,6 +68,7 @@ namespace indexer {
 		::algorithm::hyper_log_log m_document_counter;
 		std::map<uint64_t, size_t> m_document_sizes;
 		float m_avg_document_size = 0.0f;
+		size_t m_num_added_keys = 0;
 
 		void read_meta();
 		void write_meta();
@@ -91,6 +96,7 @@ namespace indexer {
 	void sharded_builder<index_type, data_record>::add(uint64_t key, const data_record &record) {
 		m_shards[key % m_shards.size()]->add(key, record);
 
+		m_num_added_keys++;
 		m_document_counter.insert(record.m_value);
 		m_document_sizes[record.m_value]++; // Raw non unique document size.
 	}
@@ -115,6 +121,10 @@ namespace indexer {
 			shard->truncate();
 		}
 		std::ofstream meta_file(filename(), std::ios::trunc);
+
+		m_document_counter.reset();
+		m_document_sizes.clear();
+		m_num_added_keys = 0;
 	}
 
 	template<template<typename> typename index_type, typename data_record>
@@ -132,10 +142,76 @@ namespace indexer {
 	}
 
 	template<template<typename> typename index_type, typename data_record>
+	void sharded_builder<index_type, data_record>::calculate_scores() {
+
+		const size_t total_records = m_document_counter.count();
+		double average_document_size = 0.0f;
+		for (const auto &iter : m_document_sizes) {
+			average_document_size += iter.second;
+		}
+		average_document_size /= m_document_sizes.size();
+
+		const auto tf_idf = [this, total_records](const data_record &rec, size_t count_sum, size_t num_records) {
+			data_record ret = rec;
+			float tf = (float)rec.m_count/m_document_sizes[rec.m_value];
+			float idf = (float)total_records/num_records;
+			ret.m_score = tf*log(idf);
+			return ret;
+		};
+
+		const auto bm25 = [this, total_records, average_document_size](const data_record &rec, size_t count_sum, size_t num_records) {
+			// https://en.wikipedia.org/wiki/Okapi_BM25
+			const size_t N = total_records; 
+			const size_t n_q = num_records;
+			const double idf = log(((double)N - n_q + 0.5)/((double)n_q + 0.5) + 1.0);
+
+			const double f_q = (double)rec.m_count/m_document_sizes[rec.m_value];
+			const double k1 = 1.2;
+			const double b = 0.75;
+			const double d_card = m_document_sizes[rec.m_value];
+
+			const double score = idf * (f_q * (k1 + 1.0)) / (f_q + k1 * (1.0 - b + b * (d_card / average_document_size)));
+
+			data_record ret = rec;
+			ret.m_score = score;
+			return ret;
+		};
+
+		(void)tf_idf;
+
+		const auto algo = bm25;
+
+		utils::thread_pool pool(32);
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			pool.enqueue([this, i, algo](){
+				m_shards[i]->transform(algo);
+			});
+		}
+		pool.run_all();
+	}
+
+	template<template<typename> typename index_type, typename data_record>
+	void sharded_builder<index_type, data_record>::sort_by_scores() {
+
+		utils::thread_pool pool(32);
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			pool.enqueue([this, i](){
+				m_shards[i]->sort_by([](const data_record &a, const data_record &b) {
+					return a.m_score > b.m_score;
+				});
+			});
+		}
+		pool.run_all();
+	}
+
+	template<template<typename> typename index_type, typename data_record>
 	void sharded_builder<index_type, data_record>::read_meta() {
 		std::ifstream meta_file(filename(), std::ios::binary);
 
 		if (meta_file.is_open()) {
+
+			meta_file.read((char *)&m_num_added_keys, sizeof(size_t));
+
 			char *data = m_document_counter.data();
 			meta_file.read(data, m_document_counter.data_size());
 
@@ -156,6 +232,8 @@ namespace indexer {
 		std::ofstream meta_file(filename(), std::ios::binary | std::ios::trunc);
 
 		if (meta_file.is_open()) {
+
+			meta_file.write((char *)&m_num_added_keys, sizeof(size_t));
 
 			char *data = m_document_counter.data();
 			meta_file.write(data, m_document_counter.data_size());

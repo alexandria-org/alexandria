@@ -161,12 +161,13 @@ namespace indexer {
 		pool.run_all();
 	}
 
-	void index_tree::add_word_file(const string &local_path) {
+	void index_tree::add_word_file(const string &local_path, const std::set<uint64_t> &common_words) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 
 		ifstream infile(local_path, ios::in);
 		string line;
+		const uint64_t klart_se_domain_hash = URL("https://klart.se/").host_hash();
 		while (getline(infile, line)) {
 
 			vector<string> col_values;
@@ -175,11 +176,18 @@ namespace indexer {
 			URL url(col_values[0]);
 			const uint64_t domain_hash = url.host_hash();
 
+			if (domain_hash == klart_se_domain_hash) {
+				cout << "i am here: " << domain_hash << endl;
+			}
+
 			for (size_t col : cols) {
 				vector<string> words = text::get_full_text_words(col_values[col]);
 
 				for (const string &word : words) {
-					m_word_index->add(::algorithm::hash(word), counted_record(domain_hash));
+					const uint64_t word_hash = ::algorithm::hash(word);
+					if (common_words.find(word_hash) != common_words.end()) {
+						m_word_index->add(word_hash, counted_record(domain_hash));
+					}
 				}
 			}
 
@@ -188,11 +196,18 @@ namespace indexer {
 
 	void index_tree::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
+		LOG_INFO("gathering words with more than 100 domains");
+		sharded_index<domain_record> dom_index("domain", 1024);
+		std::set<uint64_t> common_words = dom_index.get_keys(100);
+
+		LOG_INFO("done... found " + to_string(common_words.size()) + " words");
+		LOG_INFO("running add_word_files on " + to_string(local_paths.size()) + " files");
+
 		utils::thread_pool pool(num_threads);
 
 		for (const string &local_path : local_paths) {
-			pool.enqueue([this, local_path]() -> void {
-				add_word_file(local_path);
+			pool.enqueue([this, local_path, &common_words]() -> void {
+				add_word_file(local_path, common_words);
 			});
 		}
 
@@ -213,6 +228,9 @@ namespace indexer {
 		m_domain_link_index_builder->merge();
 		m_domain_link_index_builder->optimize();
 
+	}
+
+	void index_tree::merge_word() {
 		m_word_index->append();
 		m_word_index->merge();
 	}
@@ -229,6 +247,10 @@ namespace indexer {
 	void index_tree::truncate_links() {
 		m_link_index_builder->truncate();
 		m_domain_link_index_builder->truncate();
+	}
+
+	void index_tree::truncate_words() {
+		m_word_index->truncate();
 	}
 
 	void index_tree::clean_up() {
@@ -266,6 +288,12 @@ namespace indexer {
 	std::vector<return_record> index_tree::find_recursive(const string &query, size_t level_num,
 		const std::vector<size_t> &keys, const vector<link_record> &links,
 		const vector<domain_link_record> &domain_links) {
+
+		(void) query;
+		(void) level_num;
+		(void) keys;
+		(void) links;
+		(void) domain_links;
 
 		/*std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
 		

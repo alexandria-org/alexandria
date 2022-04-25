@@ -56,6 +56,8 @@ namespace domain_link {
 
 	void indexer::add_stream(vector<hash_table::hash_table_shard_builder *> &shard_builders, basic_istream<char> &stream) {
 
+		(void)shard_builders;
+
 		string line;
 		while (getline(stream, line)) {
 			vector<string> col_values;

@@ -70,6 +70,7 @@ public:
 
 	float harmonic(const common::sub_system *sub_system) const;
 
+	URL &operator=(const URL &other);
 	friend std::istream &operator >>(std::istream &ss, URL &url);
 	friend std::ostream &operator <<(std::ostream& os, const URL& url);
 

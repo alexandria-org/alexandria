@@ -201,6 +201,9 @@ namespace indexer {
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
 
+		(void)keys;
+		(void)links;
+
 		std::vector<std::string> words = text::get_full_text_words(query);
 		std::vector<uint64_t> tokens(words.size());
 		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
@@ -275,12 +278,16 @@ namespace indexer {
 	}
 
 	void url_level::add_document(size_t id, const string &doc) {
-		
+		(void)id;
+		(void)doc;
 	}
 
 	void url_level::add_index_file(const std::string &local_path,
 		std::function<void(uint64_t, const std::string &)> add_data,
 		std::function<void(uint64_t, uint64_t)> add_url) {
+
+		(void)add_url;
+
 		const vector<size_t> cols = {1, 2, 3, 4};
 
 		ifstream infile(local_path, ios::in);
@@ -316,6 +323,8 @@ namespace indexer {
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+
+		(void)domain_links;
 
 		std::vector<std::string> words = text::get_full_text_words(query);
 		std::vector<return_record> all_results;
@@ -385,11 +394,15 @@ namespace indexer {
 	}
 
 	void snippet_level::add_document(size_t id, const string &doc) {
+		(void)id;
+		(void)doc;
 	}
 
 	void snippet_level::add_index_file(const std::string &local_path,
 		std::function<void(uint64_t, const std::string &)> add_data,
 		std::function<void(uint64_t, uint64_t)> add_url) {
+
+		(void)add_url;
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -428,6 +441,9 @@ namespace indexer {
 
 	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+
+		(void)links;
+		(void)domain_links;
 
 		std::vector<std::string> words = text::get_full_text_words(query);
 		std::vector<return_record> all_results;

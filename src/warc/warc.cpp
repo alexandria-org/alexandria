@@ -104,6 +104,9 @@ namespace warc {
 					break;
 				case Z_NEED_DICT:
 					ret = Z_DATA_ERROR;	 /* and fall through */
+					cout << "Z_MEM_ERROR" << endl;
+					(void)inflateEnd(&m_zstream);
+					return -1;
 				case Z_DATA_ERROR:
 				case Z_MEM_ERROR:
 					cout << "Z_MEM_ERROR" << endl;

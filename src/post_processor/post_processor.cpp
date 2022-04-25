@@ -31,7 +31,7 @@ using namespace std;
 namespace post_processor {
 
 	post_processor::post_processor(const string &query) {
-
+		(void)query;
 	}
 
 	post_processor::~post_processor() {
@@ -39,6 +39,6 @@ namespace post_processor {
 	}
 
 	void post_processor::run(vector<api::result_with_snippet> &results) {
-
+		(void)results;
 	}
 }

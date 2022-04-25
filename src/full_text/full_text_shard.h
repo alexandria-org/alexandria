@@ -172,6 +172,8 @@ namespace full_text {
 	template<typename data_record>
 	size_t full_text_shard<data_record>::read_key_pos(std::ifstream &reader, uint64_t key) const {
 
+		(void)reader;
+
 		profiler::instance prof1("read_key_pos " + key_filename());
 
 		const size_t hash_pos = key % config::shard_hash_table_size;

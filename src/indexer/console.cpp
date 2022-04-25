@@ -29,6 +29,9 @@
 #include <iomanip>
 #include "text/text.h"
 #include "indexer/index_tree.h"
+#include "indexer/sharded.h"
+#include "indexer/counted_index.h"
+#include "indexer/counted_record.h"
 #include "URL.h"
 #include "transfer/transfer.h"
 #include "domain_stats/domain_stats.h"
@@ -126,6 +129,20 @@ namespace indexer {
 		}
 	}
 
+	void cmd_word(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
+
+		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+
+		const uint64_t word_hash = ::algorithm::hash(query);
+		std::vector<indexer::counted_record> res = word_index.find(word_hash, 25);
+
+		for (auto &rec : res) {
+			const string host = ht.find(rec.m_value);
+			cout << host << ": " << rec.m_count << " score: " << rec.m_score << endl;
+		}
+
+	}
+
 	void cmd_harmonic(const vector<string> &args) {
 		if (args.size() < 2) return;
 		float harmonic = domain_stats::harmonic_centrality(URL(args[1]));
@@ -186,6 +203,10 @@ namespace indexer {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
 				cmd_search(idx_tree, ht, query);
+			} else if (cmd == "word") {
+				vector<string> query_words(args.begin() + 1, args.end());
+				const string query = boost::algorithm::join(query_words, " ");
+				cmd_word(idx_tree, ht, query);
 			} else if (cmd == "quit") {
 				break;
 			}
@@ -283,7 +304,62 @@ namespace indexer {
 		profiler::print_report();
 	}
 
+	void index_words(const string &batch) {
+		{
+			indexer::index_tree idx_tree;
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, 300);
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_tree.add_word_files_threaded(local_files, 32);
+			cout << "done with indexer" << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			idx_tree.merge_word();
+		}
+		{
+			indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index("word_index", 256);
+			word_index.calculate_scores();
+			word_index.sort_by_scores();
+		}
+	}
+
+	void truncate_words() {
+		{
+			indexer::index_tree idx_tree;
+			idx_tree.truncate_words();
+		}
+	}
+
 	void print_info() {
+
+		{
+			indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+
+			const uint64_t word_hash = ::algorithm::hash("väder");
+			std::vector<indexer::counted_record> res = word_index.find(word_hash);
+			std::sort(res.begin(), res.end(), [](const indexer::counted_record &a, const indexer::counted_record &b) {
+				return a.m_score > b.m_score;	
+			});
+
+			hash_table::hash_table ht("index_tree");
+
+			for (auto &rec : res) {
+
+				const string host = ht.find(rec.m_value);
+
+				cout << host << ": " << rec.m_count << " score: " << rec.m_score << endl;
+			}
+
+			return;
+		}
 		indexer::sharded_index<domain_record> dom_index("domain", 1024);
 
 		cout << "num domains: " << dom_index.num_records() << endl;
@@ -299,6 +375,14 @@ namespace indexer {
 		{
 			indexer::index<indexer::domain_record> idx("domain", 1);
 			idx.print_stats();
+		}
+	}
+
+	void calc_scores() {
+		{
+			indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index("word_index", 256);
+			word_index.calculate_scores();
+			word_index.sort_by_scores();
 		}
 	}
 

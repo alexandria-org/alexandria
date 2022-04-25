@@ -55,11 +55,13 @@ namespace indexer {
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
 		void add_link_file(const std::string &local_path);
 		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
-		void add_word_file(const std::string &local_path);
+		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);
 		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void merge();
+		void merge_word();
 		void truncate();
 		void truncate_links();
+		void truncate_words();
 		void clean_up();
 		void calculate_scores_for_level(size_t level_num);
 

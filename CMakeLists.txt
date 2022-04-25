@@ -9,6 +9,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(alexandria LANGUAGES CXX)
 
 add_definitions(-Wfatal-errors)
+add_compile_options(-Wall -Werror)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 

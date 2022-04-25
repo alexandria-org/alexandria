@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <set>
 #include "index_reader.h"
 #include "roaring/roaring.hh"
 
@@ -54,6 +55,8 @@ namespace indexer {
 		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
 
 		void print_stats();
+
+		std::set<uint64_t> get_keys(size_t with_more_than_records) const;
 
 	private:
 
@@ -321,6 +324,60 @@ namespace indexer {
 		cout << "roaring size: " << total_roaring_size << " (" << 100*((float)total_roaring_size / total_file_size) << "%)" << endl;
 		cout << "mean length for key: " << total_roaring_size / total_num_keys << endl;
 		cout << "mean cardinality for key: " << total_cardinality / total_num_keys << endl;
+	}
+
+	template<typename data_record>
+	std::set<uint64_t> index<data_record>::get_keys(size_t with_more_than_records) const {
+
+		std::set<uint64_t> all_keys;
+
+		for (size_t page = 0; page < m_hash_table_size; page++) {
+			size_t key_pos = read_key_pos(page);
+
+			if (key_pos == SIZE_MAX) {
+				continue;
+			}
+
+			// Read page.
+			m_reader->seek(key_pos);
+			size_t num_keys;
+			m_reader->read((char *)&num_keys, sizeof(size_t));
+
+			std::unique_ptr<uint64_t[]> keys_allocator = std::make_unique<uint64_t[]>(num_keys);
+			uint64_t *keys = keys_allocator.get();
+			m_reader->read((char *)keys, num_keys * sizeof(uint64_t));
+
+			for (size_t i = 0; i < num_keys; i++) {
+				size_t key_data_pos = i;
+				
+				char buffer[64];
+
+				// Read position and length.
+				m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+				m_reader->read(buffer, 8);
+				size_t pos = *((size_t *)(&buffer[0]));
+
+				m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+				m_reader->read(buffer, 8);
+				size_t len = *((size_t *)(&buffer[0]));
+
+				m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+
+				std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
+				char *data = data_allocator.get();
+
+				m_reader->read(data, len);
+
+				roaring::Roaring rr = roaring::Roaring::readSafe(data, len);
+
+				const size_t card = rr.cardinality();
+				if (card > with_more_than_records) {
+					all_keys.insert(keys[i]);
+				}
+			}
+		}
+
+		return all_keys;
 	}
 
 }

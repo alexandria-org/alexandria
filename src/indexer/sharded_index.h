@@ -29,7 +29,9 @@
 #include "index.h"
 #include "algorithm/intersection.h"
 #include "algorithm/top_k.h"
+#include "utils/thread_pool.hpp"
 #include "config.h"
+#include <mutex>
 
 namespace indexer {
 
@@ -70,6 +72,16 @@ namespace indexer {
 		std::vector<data_record> find_group_by(const std::vector<uint64_t> &keys,
 				std::function<float(float)> score_formula, std::vector<size_t> &counts) const;
 
+		/*
+		 * Calculates a set of keys that has more than the given number of records.
+		 * Returns a std::set<uint64_t> with the keys.
+		 * This function is slow. Needs to open each shard to retrieve the keys.
+		 * */
+		std::set<uint64_t> get_keys(size_t with_more_than_records) const;
+
+		/*
+		 * Returns the total number of records.
+		 * */
 		size_t num_records() const { return m_records.size(); }
 
 	private:
@@ -222,6 +234,30 @@ namespace indexer {
 		}
 
 		return ret;
+	}
+
+	template<typename data_record>
+	std::set<uint64_t> sharded_index<data_record>::get_keys(size_t with_more_than_records) const {
+
+		utils::thread_pool pool(32);
+		mutex lock;
+		std::set<uint64_t> all_keys;
+		for (size_t shard_id = 0; shard_id < m_num_shards; shard_id++) {
+
+			pool.enqueue([this, shard_id, with_more_than_records, &all_keys, &lock]() {
+				index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+				std::set<uint64_t> keys_for_shard = idx.get_keys(with_more_than_records);
+
+				lock.lock();
+				all_keys.insert(keys_for_shard.begin(), keys_for_shard.end());
+				lock.unlock();
+			});
+		}
+
+		pool.run_all();
+
+		return all_keys;
+
 	}
 
 	template<typename data_record>

@@ -97,7 +97,8 @@ namespace profiler {
 	}
 
 	void tick(const string &name, const string &section) {
-
+		(void)name;
+		(void)section;
 	}
 	void report_reset();
 	void report_print();

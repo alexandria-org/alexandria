@@ -260,6 +260,7 @@ namespace scraper {
 	}
 
 	void scraper::handle_200_response(const string &data, size_t response_code, const string &ip, const URL &url) {
+		(void)response_code;
 		m_num_200++;
 		parser::html_parser html_parser(100000);
 		html_parser.parse(data, url.str());

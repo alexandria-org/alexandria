@@ -631,6 +631,8 @@ namespace search_engine {
 	vector<data_record> search_ids(search_allocation::storage<data_record> *storage, const full_text_index<data_record> &index,
 		const string &query, size_t limit) {
 
+		(void)limit;
+
 		vector<string> words = text::get_expanded_full_text_words(query);
 
 		uint64_t key = algorithm::hash(boost::algorithm::join(words, " "));

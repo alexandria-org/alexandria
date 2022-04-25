@@ -187,6 +187,8 @@ namespace url_store {
 	template <typename store_data>
 	void handle_put_request(url_store<store_data> &store, const std::string &write_data, std::stringstream &response_stream) {
 
+		(void)response_stream;
+
 		const char *cstr = write_data.c_str();
 		const size_t len = write_data.size();
 		if (len < 2*sizeof(size_t)) return;

@@ -43,6 +43,7 @@ namespace indexer {
 		~counted_index();
 
 		std::vector<data_record> find(uint64_t key) const;
+		std::vector<data_record> find(uint64_t key, size_t limit) const;
 
 	private:
 
@@ -96,6 +97,11 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> counted_index<data_record>::find(uint64_t key) const {
+		return find(key, 0);
+	}
+
+	template<typename data_record>
+	std::vector<data_record> counted_index<data_record>::find(uint64_t key, size_t limit) const {
 
 		size_t key_pos = read_key_pos(key);
 
@@ -139,10 +145,16 @@ namespace indexer {
 		std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
 		char *data = data_allocator.get();
 
+		size_t num_records = len / sizeof(data_record);
+
+		if (limit && num_records > limit) {
+			num_records = limit;
+			len = num_records * sizeof(data_record);
+		}
+
 		m_reader->read(data, len);
 
 		const data_record *records = (data_record *)data;
-		const size_t num_records = len / sizeof(data_record);
 
 		std::vector<data_record> ret;
 		for (size_t i = 0; i < num_records; i++) {

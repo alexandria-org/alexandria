@@ -203,6 +203,7 @@ namespace file {
 	}
 
 	size_t tsv_file::read_column_into(int column, set<string> &container) {
+		(void)column;
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
@@ -224,6 +225,7 @@ namespace file {
 	}
 
 	size_t tsv_file::read_column_into(int column, set<string> &container, size_t limit) {
+		(void)limit;
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 

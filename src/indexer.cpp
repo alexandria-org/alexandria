@@ -110,8 +110,14 @@ int main(int argc, const char **argv) {
 		indexer::index_urls(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
+	} else if (arg == "--index-words") {
+		indexer::index_words(argv[2]);
 	} else if (arg == "--print-info") {
 		indexer::print_info();
+	} else if (arg == "--calc-scores") {
+		indexer::calc_scores();
+	} else if (arg == "--truncate-words") {
+		indexer::truncate_words();
 	} else {
 		help();
 	}

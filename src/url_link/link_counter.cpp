@@ -48,6 +48,8 @@ namespace url_link {
 	void count_links_in_stream(const common::sub_system *sub_system, size_t sub_batch, key_value_store &kv_store, basic_istream<char> &stream,
 			map<string, map<size_t, float>> &counter) {
 
+		(void)kv_store;
+
 		string line;
 		//map<size_t, string> small_cache;
 		while (getline(stream, line)) {
@@ -116,6 +118,8 @@ namespace url_link {
 
 	void run_link_counter(const common::sub_system *sub_system, const string &batch, size_t sub_batch, const vector<string> &local_files,
 			map<string, map<size_t, float>> &counter) {
+
+		(void)batch;
 
 		ThreadPool pool(config::ft_num_threads_indexing);
 		std::vector<std::future<map<string, map<size_t, float>>>> results;

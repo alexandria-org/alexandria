@@ -45,6 +45,7 @@ namespace indexer {
 		 * Returns vector with records in storage_order.
 		 * */
 		std::vector<data_record> find(uint64_t key) const;
+		std::vector<data_record> find(uint64_t key, size_t limit) const;
 
 	private:
 
@@ -82,6 +83,15 @@ namespace indexer {
 		index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
 
 		return idx.find(key);
+	}
+
+	template<template<typename> typename index_type, typename data_record>
+	std::vector<data_record> sharded<index_type, data_record>::find(uint64_t key, size_t limit) const {
+
+		const size_t shard_id = key % m_num_shards;
+		index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+
+		return idx.find(key, limit);
 	}
 
 	template<template<typename> typename index_type, typename data_record>

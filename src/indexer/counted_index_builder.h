@@ -62,6 +62,8 @@ namespace indexer {
 		
 		void append();
 		void merge();
+		void transform(const std::function<data_record(const data_record &, size_t, size_t)> &transform);
+		void sort_by(const std::function<bool(const data_record &a, const data_record &b)> sort_by);
 
 		void truncate();
 		void truncate_cache_files();
@@ -196,6 +198,43 @@ namespace indexer {
 			truncate_cache_files();
 		}
 
+	}
+
+	/*
+		Transforms all the bitmaps in the index. Basically generating new bitmaps with the transform applied.
+	*/
+	template<typename data_record>
+	void counted_index_builder<data_record>::transform(const std::function<data_record(const data_record &, size_t, size_t)> &transform) {
+
+		read_data_to_cache();
+
+		// Apply transforms.
+		for (auto &iter : m_cache) {
+
+			size_t count_sum = 0;
+			for (const data_record &rec : iter.second) {
+				count_sum += rec.m_count;
+			}
+
+			for (size_t i = 0; i < iter.second.size(); i++) {
+				iter.second[i] = transform(iter.second[i], count_sum, iter.second.size());
+			}
+		}
+
+		save_file();
+		truncate_cache_files();
+	}
+
+	template<typename data_record>
+	void counted_index_builder<data_record>::sort_by(const std::function<bool(const data_record &a, const data_record &b)> comp) {
+		read_data_to_cache();
+
+		for (auto &iter : m_cache) {
+			sort(iter.second.begin(), iter.second.end(), comp);
+		}
+
+		save_file();
+		truncate_cache_files();
 	}
 
 	/*
@@ -385,8 +424,8 @@ namespace indexer {
 			const data_record *records = (data_record *)buffer;
 			const size_t num_records = len / sizeof(data_record);
 
-			for (size_t i = 0; i < num_records; i++) {
-				m_cache[keys[i]].push_back(records[i]);
+			for (size_t j = 0; j < num_records; j++) {
+				m_cache[keys[i]].push_back(records[j]);
 			}
 		}
 
@@ -402,6 +441,8 @@ namespace indexer {
 
 	template<typename data_record>
 	void counted_index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
+
+		(void)key;
 		// Sort records.
 		std::sort(records.begin(), records.end());
 

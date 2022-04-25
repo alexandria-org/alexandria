@@ -148,6 +148,8 @@ namespace indexer {
 	template<typename data_record>
 	void sharded_index_builder<data_record>::calculate_scores(algorithm algo) {
 
+		(void)algo;
+
 		/*const size_t num_docs = num_documents();
 		score_builder score(num_docs, &m_document_sizes);
 		

@@ -228,6 +228,19 @@ void URL::set_www(bool has_www) {
 	rebuild_url_str();
 }
 
+URL &URL::operator=(const URL &other) {
+	m_url_string = other.m_url_string;
+	m_host = other.m_host;
+	m_host_reverse = other.m_host_reverse;
+	m_scheme = other.m_scheme;
+	m_path = other.m_path;
+	m_query = other.m_query;
+	m_status = other.m_status;
+	m_has_www = other.m_has_www;
+
+	return *this;
+}
+
 istream &operator >>(istream &ss, URL &url) {
 	ss >> (url.m_url_string);
 	url.m_status = url.parse();
