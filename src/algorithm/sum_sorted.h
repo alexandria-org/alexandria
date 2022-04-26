@@ -67,7 +67,7 @@ namespace algorithm {
 				while (pos[i] < input[i].size() && input[i][pos[i]] < el) {
 					pos[i]++;
 				}
-				if (input[i][pos[i]] == el) {
+				if (pos[i] < input[i].size() && input[i][pos[i]] == el) {
 					plus_eq(sum, input[i][pos[i]]);
 					pos[i]++;
 				}

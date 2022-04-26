@@ -115,4 +115,20 @@ BOOST_AUTO_TEST_CASE(test_sum_sorted4) {
 	BOOST_CHECK_EQUAL(res[6].m_value, 40);
 }
 
+BOOST_AUTO_TEST_CASE(test_sum_sorted5) {
+
+	vector<vector<int>> sorted = {
+		{1, 2, 3},
+		{}
+	};
+	vector<int> res = ::algorithm::sum_sorted<int>(sorted, [](int &a, const int &b) {
+		a += b;
+	});
+
+	BOOST_REQUIRE(res.size() == 3);
+	BOOST_CHECK(res[0] == 1);
+	BOOST_CHECK(res[1] == 2);
+	BOOST_CHECK(res[2] == 3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
