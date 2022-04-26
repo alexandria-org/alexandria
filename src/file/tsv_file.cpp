@@ -263,9 +263,11 @@ namespace file {
 			ss >> col;
 			if (rows_read >= offset) {
 				container.insert(col);
+				rows_read++;
+				if ((rows_read - offset) >= limit) break;
+			} else {
+				rows_read++;
 			}
-			rows_read++;
-			if (rows_read >= limit) break;
 		}
 
 		return rows_read;
@@ -336,9 +338,11 @@ namespace file {
 			ss >> col;
 			if (rows_read >= offset) {
 				container.push_back(col);
+				rows_read++;
+				if ((rows_read - offset) >= limit) break;
+			} else {
+				rows_read++;
 			}
-			rows_read++;
-			if (rows_read >= limit) break;
 		}
 
 		return rows_read;

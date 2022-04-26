@@ -205,16 +205,73 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 	}
 }
 
+/*
+ * Test the tsv_file::read_column_into function that is used a lot.
+ * */
 BOOST_AUTO_TEST_CASE(test_tsv_file) {
 
 	{
-		file::tsv_file tsv(config::test_data_path + "tsvtest2.tsv");
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
 		vector<string> vec;
 		tsv.read_column_into(0, vec, 2, 3);
 
 		BOOST_CHECK(vec.size() == 2);
 		BOOST_CHECK(vec[0] == "line4");
 		BOOST_CHECK(vec[1] == "line5");
+	}
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
+		set<string> data;
+		tsv.read_column_into(0, data, 2, 3);
+
+		BOOST_CHECK(data.size() == 2);
+		BOOST_CHECK(data.count("line4") == 1);
+		BOOST_CHECK(data.count("line5") == 1);
+	}
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
+		vector<string> vec;
+		tsv.read_column_into(0, vec, 100, 3);
+
+		BOOST_CHECK(vec.size() == 3);
+		BOOST_CHECK(vec[0] == "line4");
+		BOOST_CHECK(vec[1] == "line5");
+		BOOST_CHECK(vec[2] == "line6");
+	}
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
+		set<string> data;
+		tsv.read_column_into(0, data, 100, 3);
+
+		BOOST_CHECK(data.size() == 3);
+		BOOST_CHECK(data.count("line4") == 1);
+		BOOST_CHECK(data.count("line5") == 1);
+		BOOST_CHECK(data.count("line6") == 1);
+	}
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
+		vector<string> vec;
+		tsv.read_column_into(0, vec, 3, 0);
+
+		BOOST_CHECK(vec.size() == 3);
+		BOOST_CHECK(vec[0] == "line1");
+		BOOST_CHECK(vec[1] == "line2");
+		BOOST_CHECK(vec[2] == "line3");
+	}
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest3.tsv");
+		set<string> data;
+		tsv.read_column_into(0, data, 3, 0);
+
+		BOOST_CHECK(data.size() == 3);
+		BOOST_CHECK(data.count("line1") == 1);
+		BOOST_CHECK(data.count("line2") == 1);
+		BOOST_CHECK(data.count("line3") == 1);
 	}
 }
 
