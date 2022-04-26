@@ -174,7 +174,7 @@ namespace indexer {
 
 		const size_t hash_pos = key % m_hash_table_size;
 
-		m_reader->seek(hash_pos * sizeof(size_t));
+		if (!m_reader->seek(hash_pos * sizeof(size_t))) return SIZE_MAX;
 
 		size_t pos;
 		m_reader->read((char *)&pos, sizeof(size_t));

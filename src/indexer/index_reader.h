@@ -45,7 +45,7 @@ namespace indexer {
 
 		public:
 
-			virtual void seek(size_t position) = 0;
+			virtual bool seek(size_t position) = 0;
 			virtual void read(char *buffer, size_t length) = 0;
 			virtual size_t size() = 0;
 		
@@ -62,7 +62,7 @@ namespace indexer {
 			index_reader_file(const std::string &filename);
 			index_reader_file(index_reader_file &&other);
 
-			void seek(size_t position);
+			bool seek(size_t position);
 			void read(char *buffer, size_t length);
 			size_t size();
 		
@@ -83,7 +83,7 @@ namespace indexer {
 			index_reader_ram(char *buffer, size_t length);
 			index_reader_ram(index_reader_ram &&other);
 
-			void seek(size_t position);
+			bool seek(size_t position);
 			void read(char *buffer, size_t length);
 			size_t size() {return m_len; };
 		

@@ -199,7 +199,7 @@ namespace indexer {
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
 
 		(void)keys;
 		(void)links;
@@ -208,16 +208,25 @@ namespace indexer {
 		std::vector<uint64_t> tokens(words.size());
 		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
+		size_t dom_incr = 0;
 		size_t score_incr = 0;
-		auto score_mod = [&score_incr, &domain_links](uint64_t value) {
-			if (score_incr >= domain_links.size()) return 0.0f;
-			while (domain_links[score_incr].m_target_domain < value) {
+		auto score_mod = [&dom_incr, &domain_links, &score_incr, &scores](uint64_t value) {
+
+			float score = 0.0f;
+			while (score_incr < scores.size() && scores[score_incr].m_value < value) {
 				score_incr++;
 			}
-			if (domain_links[score_incr].m_target_domain == value) {
-				return domain_links[score_incr].m_score;
+			if (score_incr < scores.size() && scores[score_incr].m_value == value) {
+				score += scores[score_incr].m_score;
 			}
-			return 0.0f;
+
+			while (dom_incr < domain_links.size() && domain_links[dom_incr].m_target_domain < value) {
+				dom_incr++;
+			}
+			if (dom_incr < domain_links.size() && domain_links[dom_incr].m_target_domain == value) {
+				score += domain_links[dom_incr].m_score;
+			}
+			return score;
 		};
 
 		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 10);
@@ -322,7 +331,7 @@ namespace indexer {
 	}
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
 
 		(void)domain_links;
 
@@ -440,7 +449,7 @@ namespace indexer {
 	}
 
 	std::vector<return_record> snippet_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links) {
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
 
 		(void)links;
 		(void)domain_links;

@@ -38,6 +38,7 @@
 #include "index.h"
 #include "generic_record.h"
 #include "roaring/roaring.hh"
+#include "counted_record.h"
 
 namespace indexer {
 
@@ -118,7 +119,7 @@ namespace indexer {
 		virtual void calculate_scores() = 0;
 		virtual void clean_up() = 0;
 		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links) = 0;
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) = 0;
 
 		protected:
 		template<typename data_record>
@@ -160,7 +161,7 @@ namespace indexer {
 		void calculate_scores();
 		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores);
 		size_t apply_domain_links(const std::vector<domain_link_record> &links, std::vector<return_record> &results);
 	};
 
@@ -189,7 +190,7 @@ namespace indexer {
 		void calculate_scores() {};
 		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores);
 		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
 	};
 
@@ -217,6 +218,6 @@ namespace indexer {
 		void calculate_scores() {};
 		void clean_up();
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links);
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores);
 	};
 }

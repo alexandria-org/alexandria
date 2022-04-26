@@ -277,7 +277,18 @@ namespace indexer {
 		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
 				domain_formula, counts);
 
-		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links);
+		/*
+		if (!std::is_sorted(bm25_scores.begin(), bm25_scores.end())) {
+			throw new runtime_error("bm25 are not sorted");
+		}
+		if (!std::is_sorted(links.begin(), links.end(), link_record::storage_order())) {
+			throw new runtime_error("links are not sorted");
+		}
+		if (!std::is_sorted(domain_links.begin(), domain_links.end(), domain_link_record::storage_order())) {
+			throw new runtime_error("doain_links are not sorted");
+		}*/
+
+		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links, bm25_scores);
 
 		// Sort by score.
 		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {

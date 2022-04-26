@@ -118,6 +118,8 @@ int main(int argc, const char **argv) {
 		indexer::calc_scores();
 	} else if (arg == "--truncate-words") {
 		indexer::truncate_words();
+	} else if (arg == "--truncate-links") {
+		indexer::truncate_links();
 	} else {
 		help();
 	}

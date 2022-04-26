@@ -24,12 +24,17 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "transfer/transfer.h"
 #include "text/text.h"
 #include "file/tsv_file_remote.h"
+#include "file/tsv_file.h"
 #include "algorithm/hash.h"
+#include "config.h"
 
-BOOST_AUTO_TEST_SUITE(file)
+using namespace std;
+
+BOOST_AUTO_TEST_SUITE(test_file)
 
 BOOST_AUTO_TEST_CASE(transfer_test) {
 	int error;
@@ -197,6 +202,19 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 
 		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
 		BOOST_CHECK_EQUAL(algorithm::hash(result_back), algorithm::hash(buffer));
+	}
+}
+
+BOOST_AUTO_TEST_CASE(test_tsv_file) {
+
+	{
+		file::tsv_file tsv(config::test_data_path + "tsvtest2.tsv");
+		vector<string> vec;
+		tsv.read_column_into(0, vec, 2, 3);
+
+		BOOST_CHECK(vec.size() == 2);
+		BOOST_CHECK(vec[0] == "line4");
+		BOOST_CHECK(vec[1] == "line5");
 	}
 }
 

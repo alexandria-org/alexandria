@@ -289,7 +289,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 20000, 10000);
+			warc_paths_file.read_column_into(0, warc_paths, 1000);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
@@ -335,6 +335,13 @@ namespace indexer {
 		{
 			indexer::index_tree idx_tree;
 			idx_tree.truncate_words();
+		}
+	}
+
+	void truncate_links() {
+		{
+			indexer::index_tree idx_tree;
+			idx_tree.truncate_links();
 		}
 	}
 

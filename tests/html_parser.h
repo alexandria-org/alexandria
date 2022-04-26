@@ -25,6 +25,7 @@
  */
 
 #include "parser/html_parser.h"
+#include "text/text.h"
 #include "file/file.h"
 
 BOOST_AUTO_TEST_SUITE(html_parser)

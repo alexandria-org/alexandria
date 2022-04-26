@@ -40,8 +40,10 @@ namespace indexer {
 		m_reader = move(other.m_reader);
 	}
 
-	void index_reader_file::seek(size_t position) {
+	bool index_reader_file::seek(size_t position) {
+		if (!m_reader->is_open()) return false;
 		m_reader->seekg(position, ios::beg);
+		return true;
 	}
 
 	void index_reader_file::read(char *buffer, size_t length) {
@@ -67,8 +69,12 @@ namespace indexer {
 	}
 
 
-	void index_reader_ram::seek(size_t position) {
-		if (position < m_len) m_pos = position;
+	bool index_reader_ram::seek(size_t position) {
+		if (position < m_len) {
+			m_pos = position;
+			return true;
+		}
+		return false;
 	}
 
 	void index_reader_ram::read(char *buffer, size_t length) {

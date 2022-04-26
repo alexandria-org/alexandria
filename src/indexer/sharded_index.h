@@ -224,6 +224,10 @@ namespace indexer {
 		// Group by.
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : rr) {
+			if (internal_id >= m_records.size()) {
+				std::cout << "internal_id: " << internal_id << " >= " << m_records.size() << std::endl;
+				continue;
+			}
 			if (ret.size() && ret.back().storage_equal(m_records[internal_id])) {
 				ret.back().m_score += score_formula(m_records[internal_id].m_score);
 				counts.back()++;
