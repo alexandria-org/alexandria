@@ -229,7 +229,7 @@ namespace indexer {
 			return score;
 		};
 
-		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 10);
+		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 20);
 		std::vector<return_record> intersected;
 		for (const auto r : res) {
 			intersected.emplace_back(return_record(r.m_value, r.m_score));

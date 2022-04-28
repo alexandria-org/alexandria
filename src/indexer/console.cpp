@@ -110,12 +110,8 @@ namespace indexer {
 
 		cout << "took " << prof.get() << "ms" << endl;
 
-		if (res.size() > 10) res.resize(10);
-
 		cout << setw(50) << "domain";
 		cout << setw(20) << "score";
-		cout << setw(20) << "url_links";
-		cout << setw(20) << "domain_links";
 		cout << endl;
 
 		for (indexer::return_record &rec : res) {
@@ -123,8 +119,6 @@ namespace indexer {
 
 			cout << setw(50) << host;
 			cout << setw(20) << rec.m_score;
-			cout << setw(20) << rec.m_num_url_links;
-			cout << setw(20) << rec.m_num_domain_links;
 			cout << endl;
 		}
 	}
@@ -289,7 +283,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 1000);
+			warc_paths_file.read_column_into(0, warc_paths, 8000, 12000);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
