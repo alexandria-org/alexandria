@@ -245,7 +245,7 @@ namespace indexer {
 	std::set<uint64_t> sharded_index<data_record>::get_keys(size_t with_more_than_records) const {
 
 		utils::thread_pool pool(32);
-		mutex lock;
+		std::mutex lock;
 		std::set<uint64_t> all_keys;
 		for (size_t shard_id = 0; shard_id < m_num_shards; shard_id++) {
 

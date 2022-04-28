@@ -315,15 +315,15 @@ namespace indexer {
 			}
 		}
 
-		cout << "total_num_keys: " << total_num_keys << endl;
-		cout << "total_num_larger_10: " << total_num_larger_10 << endl;
-		cout << "total_num_larger_100: " << total_num_larger_100 << endl;
-		cout << "total_num_records: " << total_num_records << endl;
-		cout << "record size: " << total_record_size << " (" << 100*((float)total_record_size / total_file_size) << "%)" << endl;
-		cout << "page header size: " << total_page_header_size << " (" << 100*((float)total_page_header_size / total_file_size) << "%)" << endl;
-		cout << "roaring size: " << total_roaring_size << " (" << 100*((float)total_roaring_size / total_file_size) << "%)" << endl;
-		cout << "mean length for key: " << total_roaring_size / total_num_keys << endl;
-		cout << "mean cardinality for key: " << total_cardinality / total_num_keys << endl;
+		std::cout << "total_num_keys: " << total_num_keys << std::endl;
+		std::cout << "total_num_larger_10: " << total_num_larger_10 << std::endl;
+		std::cout << "total_num_larger_100: " << total_num_larger_100 << std::endl;
+		std::cout << "total_num_records: " << total_num_records << std::endl;
+		std::cout << "record size: " << total_record_size << " (" << 100*((float)total_record_size / total_file_size) << "%)" << std::endl;
+		std::cout << "page header size: " << total_page_header_size << " (" << 100*((float)total_page_header_size / total_file_size) << "%)" << std::endl;
+		std::cout << "roaring size: " << total_roaring_size << " (" << 100*((float)total_roaring_size / total_file_size) << "%)" << std::endl;
+		std::cout << "mean length for key: " << total_roaring_size / total_num_keys << std::endl;
+		std::cout << "mean cardinality for key: " << total_cardinality / total_num_keys << std::endl;
 	}
 
 	template<typename data_record>

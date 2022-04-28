@@ -40,6 +40,8 @@
 #include <iostream>
 #include <set>
 #include "url_store/url_store.h"
+#include "indexer/sharded_index.h"
+#include "indexer/level.h"
 
 using namespace std;
 
@@ -62,10 +64,23 @@ int main(int argc, const char **argv) {
 		config::read_config("/etc/alexandria.conf");
 	}
 
+	/*
+	// Debug code.
+	auto domain_formula = [](float score) {
+		return expm1(25.0f * score) / 50.0f;
+	};
+	std::vector<size_t> counts;
+
+	indexer::sharded_index<indexer::domain_link_record> idx("domain_link_index", 2001);
+	vector<indexer::domain_link_record> domain_links = idx.find_group_by(text::get_tokens("svt"), domain_formula, counts);
+
+	return 0;*/
+
 	if (argc < 2) {
 		help();
 		return 0;
 	}
+
 
 	const string arg(argc > 1 ? argv[1] : "");
 
