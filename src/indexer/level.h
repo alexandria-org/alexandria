@@ -48,7 +48,7 @@ namespace indexer {
 	std::string level_to_str(level_type lvl);
 
 	/*
-	This is the returned record from the index_tree. It contains more data than the stored record.
+	This is the returned record from the index_manager. It contains more data than the stored record.
 	*/
 	class return_record : public generic_record {
 

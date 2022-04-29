@@ -25,7 +25,7 @@
  */
 
 #include <boost/test/unit_test.hpp>
-#include "indexer/index_tree.h"
+#include "indexer/index_manager.h"
 #include "indexer/sharded_index_builder.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
@@ -172,15 +172,15 @@ BOOST_AUTO_TEST_CASE(test_with_real_data) {
 		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz"};
 		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 
-		indexer::index_tree idx_tree;
+		indexer::index_manager idx_manager;
 
 		indexer::domain_level domain_level;
-		idx_tree.add_level(&domain_level);
+		idx_manager.add_level(&domain_level);
 
-		idx_tree.truncate();
+		idx_manager.truncate();
 
 		indexer::merger::start_merge_thread();
-		idx_tree.add_index_files_threaded(local_files, 1);
+		idx_manager.add_index_files_threaded(local_files, 1);
 		indexer::merger::stop_merge_thread();
 	
 		transfer::delete_downloaded_files(local_files);
@@ -190,12 +190,12 @@ BOOST_AUTO_TEST_CASE(test_with_real_data) {
 	cout << "diff: " << mem_after - mem_before << endl;
 
 	{
-		hash_table::hash_table ht("index_tree");
-		indexer::index_tree idx_tree;
+		hash_table::hash_table ht("index_manager");
+		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
-		idx_tree.add_level(&domain_level);
+		idx_manager.add_level(&domain_level);
 
-		std::vector<indexer::return_record> res = idx_tree.find("microsoft corporation main site");
+		std::vector<indexer::return_record> res = idx_manager.find("microsoft corporation main site");
 
 		BOOST_REQUIRE(res.size() == 1);
 		const string host = ht.find(res[0].m_value);
@@ -208,29 +208,29 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/50_top_domains.txt.gz"};
 		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 
-		indexer::index_tree idx_tree;
+		indexer::index_manager idx_manager;
 
 		indexer::domain_level domain_level;
-		idx_tree.add_level(&domain_level);
+		idx_manager.add_level(&domain_level);
 
-		idx_tree.truncate();
+		idx_manager.truncate();
 
 		indexer::merger::start_merge_thread();
-		idx_tree.add_index_files_threaded(local_files, 1);
+		idx_manager.add_index_files_threaded(local_files, 1);
 		indexer::merger::stop_merge_thread();
 	
 		transfer::delete_downloaded_files(local_files);
 
-		idx_tree.merge();
+		idx_manager.merge();
 	}
 
 	{
-		hash_table::hash_table ht("index_tree");
-		indexer::index_tree idx_tree;
+		hash_table::hash_table ht("index_manager");
+		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
-		idx_tree.add_level(&domain_level);
+		idx_manager.add_level(&domain_level);
 
-		std::vector<indexer::return_record> res = idx_tree.find("the");
+		std::vector<indexer::return_record> res = idx_manager.find("the");
 
 		BOOST_REQUIRE(res.size() > 0);
 
@@ -243,12 +243,12 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 	}
 
 	{
-		hash_table::hash_table ht("index_tree");
-		indexer::index_tree idx_tree;
+		hash_table::hash_table ht("index_manager");
+		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
-		idx_tree.add_level(&domain_level);
+		idx_manager.add_level(&domain_level);
 
-		std::vector<indexer::return_record> res = idx_tree.find("the people");
+		std::vector<indexer::return_record> res = idx_manager.find("the people");
 
 		BOOST_REQUIRE(res.size() == 3);
 
@@ -259,6 +259,65 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 			prev_value = record.m_value;
 		}
 	}
+}
+
+BOOST_AUTO_TEST_CASE(test_optimization_with_save) {
+	{
+
+		indexer::sharded_index_builder<indexer::domain_link_record> idx("test_index", 10);
+
+		idx.truncate();
+
+		idx.add(1, indexer::domain_link_record(100, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(101, 0.1, 1000, 1002));
+		idx.add(1, indexer::domain_link_record(102, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(103, 0.1, 1000, 1004));
+		idx.add(1, indexer::domain_link_record(104, 0.1, 1000, 1001));
+
+		idx.add(2, indexer::domain_link_record(100, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(101, 0.1, 1000, 1002));
+		idx.add(2, indexer::domain_link_record(102, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(103, 0.1, 1000, 1004));
+		idx.add(2, indexer::domain_link_record(104, 0.1, 1000, 1001));
+
+		idx.append();
+		idx.merge();
+		idx.optimize();
+	}
+
+	{
+
+		indexer::sharded_index_builder<indexer::domain_link_record> idx("test_index", 10);
+
+		idx.add(1, indexer::domain_link_record(105, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(106, 0.1, 1000, 1002));
+		idx.add(1, indexer::domain_link_record(107, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(108, 0.1, 1000, 1004));
+		idx.add(1, indexer::domain_link_record(109, 0.1, 1000, 1001));
+
+		idx.add(2, indexer::domain_link_record(100, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(101, 0.1, 1000, 1002));
+		idx.add(2, indexer::domain_link_record(102, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(103, 0.1, 1000, 1004));
+		idx.add(2, indexer::domain_link_record(104, 0.1, 1000, 1001));
+
+		idx.append();
+		idx.merge();
+		idx.optimize();
+	}
+
+
+	{
+
+		indexer::sharded_index<indexer::domain_link_record> idx("test_index", 10);
+
+		vector<indexer::domain_link_record> res = idx.find(1);
+		BOOST_CHECK(res.size() == 10);
+
+		vector<indexer::domain_link_record> res2 = idx.find(2);
+		BOOST_CHECK(res2.size() == 5);
+	}
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

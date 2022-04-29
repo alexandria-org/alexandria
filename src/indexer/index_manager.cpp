@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include "index_tree.h"
+#include "index_manager.h"
 #include "merger.h"
 #include "domain_stats/domain_stats.h"
 #include "url_link/link.h"
@@ -35,39 +35,39 @@ using namespace std;
 
 namespace indexer {
 
-	index_tree::index_tree() {
+	index_manager::index_manager() {
 		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 2001);
 		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 2001);
 		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
 		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
-		m_hash_table = std::make_unique<hash_table::builder>("index_tree");
-		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_tree");
+		m_hash_table = std::make_unique<hash_table::builder>("index_manager");
+		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
 
 		m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
 	}
 
-	index_tree::~index_tree() {
+	index_manager::~index_manager() {
 	}
 
-	void index_tree::add_level(level *lvl) {
+	void index_manager::add_level(level *lvl) {
 		create_directories(lvl->get_type());
 		m_levels.push_back(lvl);
 	}
 
-	void index_tree::add_snippet(const snippet &s) {
+	void index_manager::add_snippet(const snippet &s) {
 		for (level *lvl : m_levels) {
 			lvl->add_snippet(s);
 		}
 	}
 
-	void index_tree::add_document(size_t id, const string &doc) {
+	void index_manager::add_document(size_t id, const string &doc) {
 		for (level *lvl : m_levels) {
 			lvl->add_document(id, doc);
 		}
 	}
 
-	void index_tree::add_index_file(const string &local_path) {
+	void index_manager::add_index_file(const string &local_path) {
 		for (level *lvl : m_levels) {
 			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
 				m_hash_table->add(key, value);
@@ -77,7 +77,7 @@ namespace indexer {
 		}
 	}
 
-	void index_tree::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+	void index_manager::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
 		utils::thread_pool pool(num_threads);
 
@@ -94,7 +94,7 @@ namespace indexer {
 
 	}
 
-	void index_tree::add_link_file(const string &local_path) {
+	void index_manager::add_link_file(const string &local_path) {
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -147,7 +147,7 @@ namespace indexer {
 		}
 	}
 
-	void index_tree::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
 		m_url_to_domain->read();
 
@@ -162,7 +162,7 @@ namespace indexer {
 		pool.run_all();
 	}
 
-	void index_tree::add_word_file(const string &local_path, const std::set<uint64_t> &common_words) {
+	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &common_words) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 
@@ -195,7 +195,7 @@ namespace indexer {
 		}
 	}
 
-	void index_tree::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+	void index_manager::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
 		LOG_INFO("gathering words with more than 100 domains");
 		sharded_index<domain_record> dom_index("domain", 1024);
@@ -216,7 +216,7 @@ namespace indexer {
 
 	}
 
-	void index_tree::merge() {
+	void index_manager::merge() {
 		for (level *lvl : m_levels) {
 			lvl->merge();
 		}
@@ -231,12 +231,12 @@ namespace indexer {
 
 	}
 
-	void index_tree::merge_word() {
+	void index_manager::merge_word() {
 		m_word_index_builder->append();
 		m_word_index_builder->merge();
 	}
 
-	void index_tree::truncate() {
+	void index_manager::truncate() {
 		for (level *lvl : m_levels) {
 			delete_directories(lvl->get_type());
 			create_directories(lvl->get_type());
@@ -245,26 +245,26 @@ namespace indexer {
 		truncate_links();
 	}
 
-	void index_tree::truncate_links() {
+	void index_manager::truncate_links() {
 		m_link_index_builder->truncate();
 		m_domain_link_index_builder->truncate();
 	}
 
-	void index_tree::truncate_words() {
+	void index_manager::truncate_words() {
 		m_word_index_builder->truncate();
 	}
 
-	void index_tree::clean_up() {
+	void index_manager::clean_up() {
 		for (level *lvl : m_levels) {
 			lvl->clean_up();
 		}
 	}
 
-	void index_tree::calculate_scores_for_level(size_t level_num) {
+	void index_manager::calculate_scores_for_level(size_t level_num) {
 		m_levels[level_num]->calculate_scores();
 	}
 
-	std::vector<return_record> index_tree::find(const string &query) {
+	std::vector<return_record> index_manager::find(const string &query) {
 
 		auto domain_formula = [](float score) {
 			return expm1(25.0f * score) / 50.0f;
@@ -298,38 +298,13 @@ namespace indexer {
 		return res;
 	}
 
-	std::vector<return_record> index_tree::find_recursive(const string &query, size_t level_num,
-		const std::vector<size_t> &keys, const vector<link_record> &links,
-		const vector<domain_link_record> &domain_links) {
-
-		(void) query;
-		(void) level_num;
-		(void) keys;
-		(void) links;
-		(void) domain_links;
-
-		/*std::vector<return_record> all_results = m_levels[level_num]->find(query, keys, links, domain_links);
-		
-		if (level_num == m_levels.size() - 1) {
-			// This is the last level, return the results instead of going deeper.
-			return all_results;
-		}
-		// Go deeper. The m_value of results are keys for the next level...
-		std::vector<size_t> next_level_keys;
-		for (const return_record &rec : all_results) {
-			next_level_keys.push_back(rec.m_value);
-		}
-		return find_recursive(query, level_num + 1, next_level_keys, links, domain_links);*/
-		return {};
-	}
-
-	void index_tree::create_directories(level_type lvl) {
+	void index_manager::create_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
 			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}
 	}
 
-	void index_tree::delete_directories(level_type lvl) {
+	void index_manager::delete_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
 			boost::filesystem::remove_all("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}

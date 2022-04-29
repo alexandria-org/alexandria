@@ -28,7 +28,7 @@
 #include <vector>
 #include <iomanip>
 #include "text/text.h"
-#include "indexer/index_tree.h"
+#include "indexer/index_manager.h"
 #include "indexer/sharded.h"
 #include "indexer/counted_index.h"
 #include "indexer/counted_record.h"
@@ -42,7 +42,7 @@ using namespace std;
 
 namespace indexer {
 
-	void cmd_index(index_tree &idx_tree, const vector<string> &args) {
+	void cmd_index(index_manager &idx_manager, const vector<string> &args) {
 		if (args.size() < 2) return;
 
 		merger::start_merge_thread();
@@ -65,14 +65,14 @@ namespace indexer {
 		}
 		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
-		idx_tree.add_index_files_threaded(local_files, 24);
+		idx_manager.add_index_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
 		transfer::delete_downloaded_files(local_files);
 
 		merger::stop_merge_thread();
 	}
 
-	void cmd_index_link(index_tree &idx_tree, const vector<string> &args) {
+	void cmd_index_link(index_manager &idx_manager, const vector<string> &args) {
 		if (args.size() < 2) return;
 
 		merger::start_merge_thread();
@@ -95,17 +95,17 @@ namespace indexer {
 		}
 		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
-		idx_tree.add_link_files_threaded(local_files, 24);
+		idx_manager.add_link_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
 		transfer::delete_downloaded_files(local_files);
 
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
+	void cmd_search(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
 
 		profiler::instance prof("domain search");
-		std::vector<indexer::return_record> res = idx_tree.find(query);
+		std::vector<indexer::return_record> res = idx_manager.find(query);
 		prof.stop();
 
 		cout << "took " << prof.get() << "ms" << endl;
@@ -123,7 +123,7 @@ namespace indexer {
 		}
 	}
 
-	void cmd_word(index_tree &idx_tree, hash_table::hash_table &ht, const string &query) {
+	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
 
 		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
 
@@ -165,19 +165,19 @@ namespace indexer {
 
 		//LOG_INFO("Done download_domain_stats");
 		
-		indexer::index_tree idx_tree;
+		indexer::index_manager idx_manager;
 
 		indexer::domain_level domain_level;
 		//indexer::url_level url_level;
 		//indexer::snippet_level snippet_level;
 
-		idx_tree.add_level(&domain_level);
-		//idx_tree.add_level(&url_level);
-		//idx_tree.add_level(&snippet_level);
+		idx_manager.add_level(&domain_level);
+		//idx_manager.add_level(&url_level);
+		//idx_manager.add_level(&snippet_level);
 
-		//idx_tree.truncate();
+		//idx_manager.truncate();
 		
-		hash_table::hash_table ht("index_tree");
+		hash_table::hash_table ht("index_manager");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -188,19 +188,19 @@ namespace indexer {
 
 			const string cmd = args[0];
 			if (cmd == "index") {
-				cmd_index(idx_tree, args);
+				cmd_index(idx_manager, args);
 			} else if (cmd == "index_link") {
-				cmd_index_link(idx_tree, args);
+				cmd_index_link(idx_manager, args);
 			} else if (cmd == "harmonic") {
 				cmd_harmonic(args);
 			} else if (cmd == "search") {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
-				cmd_search(idx_tree, ht, query);
+				cmd_search(idx_manager, ht, query);
 			} else if (cmd == "word") {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
-				cmd_word(idx_tree, ht, query);
+				cmd_word(idx_manager, ht, query);
 			} else if (cmd == "quit") {
 				break;
 			}
@@ -214,17 +214,17 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		{
-			indexer::index_tree idx_tree;
+			indexer::index_manager idx_manager;
 
 			indexer::domain_level domain_level;
 			//indexer::url_level url_level;
 			//indexer::snippet_level snippet_level;
 
-			idx_tree.add_level(&domain_level);
-			//idx_tree.add_level(&url_level);
-			//idx_tree.add_level(&snippet_level);
+			idx_manager.add_level(&domain_level);
+			//idx_manager.add_level(&url_level);
+			//idx_manager.add_level(&snippet_level);
 
-			//idx_tree.truncate();
+			//idx_manager.truncate();
 
 			merger::start_merge_thread();
 
@@ -245,7 +245,7 @@ namespace indexer {
 			}
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer, allocated_memory: " << memory::allocated_memory() << endl;
-			idx_tree.add_index_files_threaded(local_files, 32);
+			idx_manager.add_index_files_threaded(local_files, 32);
 			cout << "done with indexer, allocated_memory: " << memory::allocated_memory() << endl;
 			transfer::delete_downloaded_files(local_files);
 
@@ -277,7 +277,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		{
-			indexer::index_tree idx_tree;
+			indexer::index_manager idx_manager;
 
 			merger::start_merge_thread();
 
@@ -287,20 +287,20 @@ namespace indexer {
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_tree.add_link_files_threaded(local_files, 32);
+			idx_manager.add_link_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 
-			idx_tree.merge();
+			idx_manager.merge();
 		}
 		profiler::print_report();
 	}
 
 	void index_words(const string &batch) {
 		{
-			indexer::index_tree idx_tree;
+			indexer::index_manager idx_manager;
 
 			merger::start_merge_thread();
 
@@ -310,13 +310,13 @@ namespace indexer {
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_tree.add_word_files_threaded(local_files, 32);
+			idx_manager.add_word_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 
-			idx_tree.merge_word();
+			idx_manager.merge_word();
 		}
 		{
 			indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index("word_index", 256);
@@ -327,15 +327,15 @@ namespace indexer {
 
 	void truncate_words() {
 		{
-			indexer::index_tree idx_tree;
-			idx_tree.truncate_words();
+			indexer::index_manager idx_manager;
+			idx_manager.truncate_words();
 		}
 	}
 
 	void truncate_links() {
 		{
-			indexer::index_tree idx_tree;
-			idx_tree.truncate_links();
+			indexer::index_manager idx_manager;
+			idx_manager.truncate_links();
 		}
 	}
 
@@ -350,7 +350,7 @@ namespace indexer {
 				return a.m_score > b.m_score;	
 			});
 
-			hash_table::hash_table ht("index_tree");
+			hash_table::hash_table ht("index_manager");
 
 			for (auto &rec : res) {
 

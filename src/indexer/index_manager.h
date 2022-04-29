@@ -43,12 +43,12 @@
 
 namespace indexer {
 
-	class index_tree {
+	class index_manager {
 
 	public:
 
-		index_tree();
-		~index_tree();
+		index_manager();
+		~index_manager();
 
 		void add_level(level *lvl);
 		void add_snippet(const snippet &s);
@@ -82,10 +82,6 @@ namespace indexer {
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;
 		std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
-
-		std::vector<return_record> find_recursive(const std::string &query, size_t level_num,
-			const std::vector<size_t> &keys, const std::vector<link_record> &links,
-			const std::vector<domain_link_record> &domain_links);
 
 		void create_directories(level_type lvl);
 		void delete_directories(level_type lvl);
