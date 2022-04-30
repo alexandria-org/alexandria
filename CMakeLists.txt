@@ -9,7 +9,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(alexandria LANGUAGES CXX)
 
 add_definitions(-Wfatal-errors)
-add_compile_options(-Wall -Werror)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -119,6 +118,8 @@ set(SRC_CLASSES
 	"src/scraper/scraper_store.cpp"
 
 	"src/indexer/level.cpp"
+	"src/indexer/domain_level.cpp"
+	"src/indexer/url_level.cpp"
 	"src/indexer/snippet.cpp"
 	"src/indexer/index_manager.cpp"
 	"src/indexer/console.cpp"

@@ -28,7 +28,7 @@
 #include "indexer/index_manager.h"
 #include "indexer/sharded_index_builder.h"
 #include "indexer/sharded_index.h"
-#include "indexer/level.h"
+#include "indexer/domain_level.h"
 #include "indexer/merger.h"
 #include "text/text.h"
 #include "algorithm/hash.h"

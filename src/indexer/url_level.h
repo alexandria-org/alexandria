@@ -26,15 +26,35 @@
 
 #include "level.h"
 
-using namespace std;
-
 namespace indexer {
 
-	std::string level_to_str(level_type lvl) {
-		if (lvl == level_type::domain) return "domain";
-		if (lvl == level_type::url) return "url";
-		if (lvl == level_type::snippet) return "snippet";
-		return "unknown";
-	}
+	class url_record : public generic_record {
+
+		public:
+
+		url_record() : generic_record() {};
+		url_record(uint64_t value) : generic_record(value) {};
+		url_record(uint64_t value, float score) : generic_record(value, score) {};
+
+	};
+
+	class url_level: public level {
+		private:
+		std::shared_ptr<composite_index_builder<url_record>> m_builder;
+		public:
+		url_level();
+		level_type get_type() const;
+		void add_snippet(const snippet &s);
+		void add_document(size_t id, const std::string &doc);
+		void add_index_file(const std::string &local_path,
+			std::function<void(uint64_t, const std::string &)> add_data,
+			std::function<void(uint64_t, uint64_t)> add_url);
+		void merge();
+		void calculate_scores() {};
+		void clean_up();
+		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores);
+		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
+	};
 
 }

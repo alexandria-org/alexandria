@@ -30,6 +30,8 @@
 #include "url_link/link.h"
 #include "algorithm/algorithm.h"
 #include "utils/thread_pool.hpp"
+#include "domain_level.h"
+#include "url_level.h"
 
 using namespace std;
 
@@ -150,6 +152,31 @@ namespace indexer {
 	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
 		m_url_to_domain->read();
+
+		utils::thread_pool pool(num_threads);
+
+		for (auto &local_path : local_paths) {
+			pool.enqueue([this, local_path]() -> void {
+				add_link_file(local_path);
+			});
+		}
+
+		pool.run_all();
+	}
+
+	/*
+	 * Add each url to its own domains index.
+	 */
+	void index_manager::add_url_file(const string &local_path) {
+
+		for (level *lvl : m_levels) {
+			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
+			}, [this](uint64_t url_hash, uint64_t domain_hash) {
+			});
+		}
+	}
+
+	void index_manager::add_url_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
 		utils::thread_pool pool(num_threads);
 

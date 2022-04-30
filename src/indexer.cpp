@@ -121,10 +121,12 @@ int main(int argc, const char **argv) {
 		tools::find_links();
 	} else if (arg == "--console") {
 		indexer::console();
-	} else if (arg == "--index-urls") {
-		indexer::index_urls(argv[2]);
+	} else if (arg == "--index-domains") {
+		indexer::index_domains(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
+	} else if (arg == "--index-urls") {
+		indexer::index_urls(argv[2]);
 	} else if (arg == "--index-words") {
 		indexer::index_words(argv[2]);
 	} else if (arg == "--print-info") {

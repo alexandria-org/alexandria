@@ -29,6 +29,8 @@
 #include <iomanip>
 #include "text/text.h"
 #include "indexer/index_manager.h"
+#include "indexer/domain_level.h"
+#include "indexer/url_level.h"
 #include "indexer/sharded.h"
 #include "indexer/counted_index.h"
 #include "indexer/counted_record.h"
@@ -208,7 +210,7 @@ namespace indexer {
 	}
 
 	
-	void index_urls(const string &batch) {
+	void index_domains(const string &batch) {
 
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
@@ -217,12 +219,7 @@ namespace indexer {
 			indexer::index_manager idx_manager;
 
 			indexer::domain_level domain_level;
-			//indexer::url_level url_level;
-			//indexer::snippet_level snippet_level;
-
 			idx_manager.add_level(&domain_level);
-			//idx_manager.add_level(&url_level);
-			//idx_manager.add_level(&snippet_level);
 
 			//idx_manager.truncate();
 
@@ -260,19 +257,6 @@ namespace indexer {
 
 	void index_links(const string &batch) {
 
-		/*indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
-		dom_index.optimize();
-
-		return;
-
-		indexer::sharded_index_builder<link_record> link_index_builder("link_index", 2001);
-		indexer::sharded_index_builder<domain_link_record> domain_link_index_builder("domain_link_index", 2001);
-
-		link_index_builder.optimize();
-		domain_link_index_builder.optimize();
-
-		return;*/
-
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
@@ -288,6 +272,33 @@ namespace indexer {
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
 			idx_manager.add_link_files_threaded(local_files, 32);
+			cout << "done with indexer" << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			idx_manager.merge();
+		}
+		profiler::print_report();
+	}
+
+	void index_urls(const string &batch) {
+
+		{
+			indexer::index_manager idx_manager;
+
+			indexer::url_level url_level;
+			idx_manager.add_level(&url_level);
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, 100, 0);
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_manager.add_url_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
