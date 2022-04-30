@@ -94,6 +94,7 @@ namespace indexer {
 			const data_record &record);*/
 
 		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
+		size_t get_max_id();
 
 	private:
 
@@ -306,6 +307,22 @@ namespace indexer {
 		for (size_t i = 0; i < 8; i++) {
 			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
 		}
+	}
+
+	template<typename data_record>
+	size_t index_builder<data_record>::get_max_id() {
+
+		read_data_to_cache();
+
+		uint32_t max_internal_id = 0;
+		for (const auto &iter : m_bitmaps) {
+			uint32_t internal_id = iter.second.maximum();
+			if (internal_id > max_internal_id) {
+				max_internal_id = internal_id;
+			}
+		}
+
+		return (size_t)max_internal_id;
 	}
 
 	template<typename data_record>

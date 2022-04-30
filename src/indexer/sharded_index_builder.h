@@ -65,6 +65,8 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
+		void check();
+
 	private:
 
 		std::mutex m_lock;
@@ -269,6 +271,23 @@ namespace indexer {
 
 		// Reorder the records. Will be saved in meta file upon destruction.
 		sort(m_records.begin(), m_records.end(), ordered);
+	}
+
+	template<typename data_record>
+	void sharded_index_builder<data_record>::check() {
+		const size_t num_records = m_records.size();
+
+		std::cout << "num_records: " << num_records << std::endl;
+
+		size_t total_max = 0;
+		for (auto shard : m_shards) {
+			size_t max_id = shard->get_max_id();
+			if (max_id >= num_records) {
+				std::cout << "found max id: " << max_id << " but only has " << num_records << " records" << std::endl;
+			}
+			if (max_id > total_max) total_max = max_id;
+		}
+		std::cout << "done, max_id was: " << total_max << std::endl;
 	}
 
 }

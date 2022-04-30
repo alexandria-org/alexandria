@@ -267,7 +267,7 @@ namespace indexer {
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 8000, 12000);
+			warc_paths_file.read_column_into(0, warc_paths, 1000, 1200);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
@@ -351,6 +351,11 @@ namespace indexer {
 	}
 
 	void print_info() {
+
+		indexer::sharded_index_builder<domain_link_record> domain_link_index_builder("domain_link_index", 2001);
+		domain_link_index_builder.check();
+
+		return;
 
 		{
 			indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
