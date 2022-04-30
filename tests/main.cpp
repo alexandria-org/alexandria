@@ -79,7 +79,6 @@ using std::pair;
 #include "robot_parser.h"
 #include "test_scraper.h"
 #include "test_datetime.h"
-//#include "index_array.h"
 #include "memory.h"
 #include "thread_pool.h"
 

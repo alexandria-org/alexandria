@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE(head_content_len) {
 }
 
 BOOST_AUTO_TEST_CASE(test_upload) {
-
-	{
+	// This amazon bucket is gone.
+	/*{
 		int error;
 		string buffer;
 		transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
@@ -181,12 +181,12 @@ BOOST_AUTO_TEST_CASE(test_upload) {
 
 		error = transfer::upload_file("multipart_test", buffer);
 		BOOST_CHECK_EQUAL(error, transfer::OK);
-	}
+	}*/
 }
 
 BOOST_AUTO_TEST_CASE(test_upload_gz) {
-
-	{
+	// This amazon bucket is gone.
+	/*{
 		int error;
 		string buffer;
 		transfer::url_to_string("http://alexandria-test-data.s3.amazonaws.com/multipart_test", buffer, error);
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(test_upload_gz) {
 
 		BOOST_CHECK_EQUAL(result_back.size(), buffer.size());
 		BOOST_CHECK_EQUAL(algorithm::hash(result_back), algorithm::hash(buffer));
-	}
+	}*/
 }
 
 /*
