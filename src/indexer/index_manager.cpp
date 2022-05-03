@@ -96,7 +96,7 @@ namespace indexer {
 
 	}
 
-	void index_manager::add_link_file(const string &local_path) {
+	void index_manager::add_link_file(const string &local_path, const std::set<uint64_t> &domains_to_index) {
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -121,7 +121,7 @@ namespace indexer {
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
 			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-			const bool has_url = m_url_to_domain->has_url(target_url.hash());
+			const bool has_url = domains_to_index.count(target_url.hash());
 
 
 			vector<string> words = text::get_expanded_full_text_words(link_text);
@@ -149,15 +149,13 @@ namespace indexer {
 		}
 	}
 
-	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads) {
-
-		m_url_to_domain->read();
+	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const std::set<uint64_t> &domains_to_index) {
 
 		utils::thread_pool pool(num_threads);
 
 		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path]() -> void {
-				add_link_file(local_path);
+			pool.enqueue([this, local_path, &domains_to_index]() -> void {
+				add_link_file(local_path, domains_to_index);
 			});
 		}
 
@@ -182,7 +180,7 @@ namespace indexer {
 
 		for (auto &local_path : local_paths) {
 			pool.enqueue([this, local_path]() -> void {
-				add_link_file(local_path);
+				add_url_file(local_path);
 			});
 		}
 

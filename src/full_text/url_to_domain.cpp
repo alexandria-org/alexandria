@@ -109,4 +109,12 @@ namespace full_text {
 			ofstream outfile(file_name, ios::trunc);
 		}
 	}
+
+	set<uint64_t> url_to_domain::domain_set() const {
+		set<uint64_t> domain_set;
+		for (auto &iter : m_domains) {
+			domain_set.insert(iter.first);
+		}
+		return domain_set;
+	}
 }

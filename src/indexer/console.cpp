@@ -74,36 +74,6 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_index_link(index_manager &idx_manager, const vector<string> &args) {
-		if (args.size() < 2) return;
-
-		merger::start_merge_thread();
-
-		const string batch = args[1];
-		size_t limit = 0;
-		if (args.size() > 2) limit = stoull(args[2]);
-
-		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-		vector<string> warc_paths;
-		warc_paths_file.read_column_into(0, warc_paths);
-
-		if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
-
-		for (string &path : warc_paths) {
-			const size_t pos = path.find(".warc.gz");
-			if (pos != string::npos) {
-				path.replace(pos, 8, ".gz");
-			}
-		}
-		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
-		cout << "starting indexer" << endl;
-		idx_manager.add_link_files_threaded(local_files, 24);
-		cout << "done with indexer" << endl;
-		transfer::delete_downloaded_files(local_files);
-
-		merger::stop_merge_thread();
-	}
-
 	void cmd_search(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
 
 		profiler::instance prof("domain search");
@@ -191,8 +161,6 @@ namespace indexer {
 			const string cmd = args[0];
 			if (cmd == "index") {
 				cmd_index(idx_manager, args);
-			} else if (cmd == "index_link") {
-				cmd_index_link(idx_manager, args);
 			} else if (cmd == "harmonic") {
 				cmd_harmonic(args);
 			} else if (cmd == "search") {
@@ -263,24 +231,32 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		{
+		full_text::url_to_domain to_domain = full_text::url_to_domain("index_manager");
+		to_domain.read();
+		std::set<uint64_t> domains_to_index = to_domain.domain_set();
+
+		size_t limit = 5000;
+		size_t offset = 0;
+		while (true) {
 			indexer::index_manager idx_manager;
 
 			merger::start_merge_thread();
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 1000, 1200);
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_link_files_threaded(local_files, 32);
+			idx_manager.add_link_files_threaded(local_files, 32, domains_to_index);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 
 			idx_manager.merge();
+
+			offset += limit;
 		}
 		profiler::print_report();
 	}
