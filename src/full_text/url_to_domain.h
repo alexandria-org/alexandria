@@ -62,6 +62,7 @@ namespace full_text {
 			const std::unordered_map<uint64_t, uint64_t> &get_url_to_domain() const { return m_url_to_domain; };
 			const std::unordered_map<uint64_t, size_t> &domains() const { return m_domains; };
 			std::set<uint64_t> domain_set() const;
+			std::set<uint64_t> url_set() const;
 
 		private:
 			const std::string m_db_name;

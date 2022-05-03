@@ -96,7 +96,8 @@ namespace indexer {
 
 	}
 
-	void index_manager::add_link_file(const string &local_path, const std::set<uint64_t> &domains_to_index) {
+	void index_manager::add_link_file(const string &local_path, const std::set<uint64_t> &domains_to_index,
+		const std::set<uint64_t> &urls_to_index) {
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -108,7 +109,8 @@ namespace indexer {
 
 			URL target_url(col_values[2], col_values[3]);
 
-			if (!m_url_to_domain->has_domain(target_url.host_hash())) continue;
+			// Check if we have the domain
+			if (domains_to_index.count(target_url.host_hash()) == 0) continue;
 
 			URL source_url(col_values[0], col_values[1]);
 
@@ -121,8 +123,7 @@ namespace indexer {
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
 			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-			const bool has_url = domains_to_index.count(target_url.hash());
-
+			const bool has_url = urls_to_index.count(target_url.hash());
 
 			vector<string> words = text::get_expanded_full_text_words(link_text);
 
@@ -149,13 +150,14 @@ namespace indexer {
 		}
 	}
 
-	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const std::set<uint64_t> &domains_to_index) {
+	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads,
+			const std::set<uint64_t> &domains_to_index, const std::set<uint64_t> &urls_to_index) {
 
 		utils::thread_pool pool(num_threads);
 
 		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path, &domains_to_index]() -> void {
-				add_link_file(local_path, domains_to_index);
+			pool.enqueue([this, local_path, &domains_to_index, &urls_to_index]() -> void {
+				add_link_file(local_path, domains_to_index, urls_to_index);
 			});
 		}
 

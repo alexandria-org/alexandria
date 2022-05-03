@@ -117,4 +117,12 @@ namespace full_text {
 		}
 		return domain_set;
 	}
+
+	set<uint64_t> url_to_domain::url_set() const {
+		set<uint64_t> url_set;
+		for (auto &iter : m_url_to_domain) {
+			url_set.insert(iter.first);
+		}
+		return url_set;
+	}
 }
