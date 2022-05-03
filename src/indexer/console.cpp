@@ -215,7 +215,9 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		{
+		size_t limit = 5000;
+		size_t offset = 0;
+		while (true) {
 			indexer::index_manager idx_manager;
 
 			indexer::domain_level domain_level;
@@ -225,14 +227,11 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			size_t limit = 0;
-			//size_t limit = 1;
-
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths);
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
-			if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
+			if (warc_paths.size() == 0) break;
 
 			for (string &path : warc_paths) {
 				const size_t pos = path.find(".warc.gz");
@@ -246,11 +245,15 @@ namespace indexer {
 			cout << "done with indexer, allocated_memory: " << memory::allocated_memory() << endl;
 			transfer::delete_downloaded_files(local_files);
 
-			merger::stop_merge_thread();
+			merger::stop_merge_thread_only_append();
+
+			domain_level.merge();
+
+			offset += limit;
 		}
 
-		//indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
-		//dom_index.optimize();
+		indexer::sharded_index_builder<domain_record> dom_index("domain", 1024);
+		dom_index.optimize();
 
 		profiler::print_report();
 	}
@@ -310,24 +313,31 @@ namespace indexer {
 	}
 
 	void index_words(const string &batch) {
-		{
+
+		LOG_INFO("gathering words with more than 100 domains");
+		sharded_index<domain_record> dom_index("domain", 1024);
+		std::set<uint64_t> common_words = dom_index.get_keys(100);
+
+		size_t limit = 2500;
+		size_t offset = 0;
+		while (true) {
 			indexer::index_manager idx_manager;
 
 			merger::start_merge_thread();
 
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
-			warc_paths_file.read_column_into(0, warc_paths, 300);
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_word_files_threaded(local_files, 32);
+			idx_manager.add_word_files_threaded(local_files, 32, common_words);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
 
-			idx_manager.merge_word();
+			offset += limit;
 		}
 		{
 			indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index("word_index", 256);

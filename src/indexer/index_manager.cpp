@@ -189,7 +189,7 @@ namespace indexer {
 		pool.run_all();
 	}
 
-	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &common_words) {
+	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &words_to_index) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 
@@ -213,7 +213,7 @@ namespace indexer {
 
 				for (const string &word : words) {
 					const uint64_t word_hash = ::algorithm::hash(word);
-					if (common_words.find(word_hash) != common_words.end()) {
+					if (words_to_index.find(word_hash) != words_to_index.end()) {
 						m_word_index_builder->add(word_hash, counted_record(domain_hash));
 					}
 				}
@@ -222,20 +222,17 @@ namespace indexer {
 		}
 	}
 
-	void index_manager::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+	void index_manager::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads, const std::set<uint64_t> &words_to_index) {
 
-		LOG_INFO("gathering words with more than 100 domains");
-		sharded_index<domain_record> dom_index("domain", 1024);
-		std::set<uint64_t> common_words = dom_index.get_keys(100);
 
-		LOG_INFO("done... found " + to_string(common_words.size()) + " words");
+		LOG_INFO("done... found " + to_string(words_to_index.size()) + " words");
 		LOG_INFO("running add_word_files on " + to_string(local_paths.size()) + " files");
 
 		utils::thread_pool pool(num_threads);
 
 		for (const string &local_path : local_paths) {
-			pool.enqueue([this, local_path, &common_words]() -> void {
-				add_word_file(local_path, common_words);
+			pool.enqueue([this, local_path, &words_to_index]() -> void {
+				add_word_file(local_path, words_to_index);
 			});
 		}
 

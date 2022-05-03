@@ -29,6 +29,7 @@
 #include "index_builder.h"
 #include "algorithm/hyper_log_log.h"
 #include "utils/thread_pool.hpp"
+#include "utils/thread_pool_arg.h"
 
 #include <numeric>
 
@@ -130,9 +131,18 @@ namespace indexer {
 
 	template<typename data_record>
 	void sharded_index_builder<data_record>::merge() {
-		for (auto &shard : m_shards) {
-			shard->merge();
+
+		utils::thread_pool_arg<std::unordered_map<uint64_t, uint32_t>> pool(32);
+
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			pool.enqueue([this, i](std::unordered_map<uint64_t, uint32_t> &internal_id_map) {
+				try {
+					m_shards[i]->merge(internal_id_map);
+				} catch (...) {
+				}
+			});
 		}
+		pool.run_all();
 	}
 
 	template<typename data_record>

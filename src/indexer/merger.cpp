@@ -160,6 +160,12 @@ namespace indexer {
 			merge_all();
 		}
 
+		void stop_merge_thread_only_append() {
+			merge_thread_is_running = false;
+			merge_thread_obj.join();
+			append_all();
+		}
+
 		void terminate_merge_thread() {
 			merge_thread_is_running = false;
 			merge_thread_obj.join();

@@ -81,6 +81,7 @@ namespace indexer {
 		
 		void append();
 		void merge();
+		void merge(std::unordered_map<uint64_t, uint32_t> &internal_id_map);
 
 		void truncate();
 		void truncate_cache_files();
@@ -127,6 +128,7 @@ namespace indexer {
 		};
 
 		void read_append_cache();
+		void read_append_cache(std::unordered_map<uint64_t, uint32_t> &internal_id_map);
 		void read_data_to_cache();
 		bool read_page(std::ifstream &reader);
 		void reset_cache_variables();
@@ -257,11 +259,17 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::merge() {
+		std::unordered_map<uint64_t, uint32_t> internal_id_map;
+		merge(internal_id_map);
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::merge(std::unordered_map<uint64_t, uint32_t> &internal_id_map) {
 
 		//const size_t mem_before = memory::allocated_memory();
 
 		{
-			read_append_cache();
+			read_append_cache(internal_id_map);
 			save_file();
 			truncate_cache_files();
 		}
@@ -327,6 +335,12 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::read_append_cache() {
+		std::unordered_map<uint64_t, uint32_t> internal_id_map;
+		read_append_cache(internal_id_map);
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::read_append_cache(std::unordered_map<uint64_t, uint32_t> &internal_id_map) {
 
 		// Read the current file.
 		read_data_to_cache();
@@ -369,8 +383,7 @@ namespace indexer {
 
 		reader.seekg(0, std::ios::beg);
 
-		unordered_map<uint64_t, uint32_t> internal_id_map; 
-		unordered_map<uint64_t, vector<uint32_t>> bitmap_data;
+		std::unordered_map<uint64_t, vector<uint32_t>> bitmap_data;
 
 		while (!reader.eof()) {
 

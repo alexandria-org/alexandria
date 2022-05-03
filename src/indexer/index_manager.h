@@ -60,7 +60,7 @@ namespace indexer {
 		void add_url_file(const std::string &local_path);
 		void add_url_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);
-		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
+		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const std::set<uint64_t> &words_to_index);
 		void merge();
 		void merge_word();
 		void truncate();
