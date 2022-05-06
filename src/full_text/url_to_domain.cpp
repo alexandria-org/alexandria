@@ -68,12 +68,12 @@ namespace full_text {
 					infile.read(buffer, sizeof(uint64_t));
 					if (infile.eof()) break;
 
-					uint64_t url_hash = *((uint64_t *)buffer);
+					//uint64_t url_hash = *((uint64_t *)buffer);
 
 					infile.read(buffer, sizeof(uint64_t));
 					uint64_t domain_hash = *((uint64_t *)buffer);
 
-					m_url_to_domain[url_hash] = domain_hash;
+					//m_url_to_domain[url_hash] = domain_hash;
 					m_domains[domain_hash]++;
 
 				} while (!infile.eof());

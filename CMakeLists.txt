@@ -105,6 +105,7 @@ set(SRC_CLASSES
 	"src/algorithm/hyper_ball.cpp"
 	"src/algorithm/hash.cpp"
 	"src/algorithm/hyper_log_log.cpp"
+	"src/algorithm/bloom_filter.cpp"
 
 	"src/tools/splitter.cpp"
 	"src/tools/find_links.cpp"
@@ -144,6 +145,7 @@ set(SRC_COMMON
 
 set(SRC_TESTS
 	"tests/test_sharded_index_builder.cpp"
+	"tests/test_bloom_filter.cpp"
 	"tests/test_counted_index_builder.cpp"
 	"tests/test_index_reader.cpp"
 	"tests/test_top_k.cpp"

@@ -247,6 +247,8 @@ namespace indexer {
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
+			if (warc_paths.size() == 0) break;
+
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
 			idx_manager.add_link_files_threaded(local_files, 32, domains_to_index, urls_to_index);
@@ -257,7 +259,9 @@ namespace indexer {
 
 			offset += limit;
 		}
-		profiler::print_report();
+
+		indexer::index_manager idx_manager;
+		idx_manager.merge();
 	}
 
 	void index_urls(const string &batch) {
