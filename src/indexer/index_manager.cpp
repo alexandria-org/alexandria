@@ -123,7 +123,7 @@ namespace indexer {
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
 			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-			const bool has_url = urls_to_index.count(target_url.hash());
+			const bool has_url = true; //urls_to_index.count(target_url.hash());
 
 			vector<string> words = text::get_expanded_full_text_words(link_text);
 
