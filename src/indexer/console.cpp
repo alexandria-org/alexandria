@@ -255,8 +255,6 @@ namespace indexer {
 
 			merger::stop_merge_thread();
 
-			idx_manager.merge();
-
 			offset += limit;
 		}
 		profiler::print_report();
@@ -280,13 +278,11 @@ namespace indexer {
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_url_files_threaded(local_files, 32);
+			idx_manager.add_url_files_threaded(local_files, 1);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
 			merger::stop_merge_thread();
-
-			idx_manager.merge();
 
 			offset += limit;
 		}

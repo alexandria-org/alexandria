@@ -27,7 +27,6 @@
 #include "domain_level.h"
 #include "snippet.h"
 #include "domain_stats/domain_stats.h"
-#include "composite_index.h"
 #include "sharded_index.h"
 
 using namespace std;

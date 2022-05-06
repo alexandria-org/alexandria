@@ -32,7 +32,6 @@
 #include <vector>
 #include "snippet.h"
 #include "index_builder.h"
-#include "composite_index_builder.h"
 #include "sharded_index_builder.h"
 #include "sharded_index.h"
 #include "index.h"

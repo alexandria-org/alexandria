@@ -25,7 +25,6 @@
  */
 
 #include "url_level.h"
-#include "composite_index.h"
 
 using namespace std;
 
@@ -39,10 +38,7 @@ namespace indexer {
 	}
 
 	void url_level::add_snippet(const snippet &s) {
-		size_t dom_hash = s.domain_hash();
-		for (size_t token : s.tokens()) {
-			m_builder->add(dom_hash, token, url_record(s.url_hash()));
-		}
+		(void)s;
 	}
 
 	void url_level::add_document(size_t id, const string &doc) {
@@ -69,47 +65,35 @@ namespace indexer {
 			uint64_t domain_hash = url.host_hash();
 			uint64_t url_hash = url.hash();
 
-			add_data(url_hash, col_values[0] + "\t" + col_values[1]);
+			make_sure_builder_is_present(domain_hash);
 
 			for (size_t col : cols) {
 				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builder->add(domain_hash, ::algorithm::hash(word), url_record(url_hash));
+					m_builders[domain_hash]->add(::algorithm::hash(word), url_record(url_hash));
 				}
 			}
 		}
 	}
 
+	void url_level::make_sure_builder_is_present(uint64_t domain_hash) {
+		std::lock_guard guard(m_lock);
+		if (m_builders.count(domain_hash) == 0) {
+			auto ptr = std::make_unique<index_builder<url_record>>("urls", domain_hash, 1000);
+			m_builders.emplace(domain_hash, std::move(ptr));
+		}
+	}
+
 	void url_level::merge() {
-		m_builder->append();
-		m_builder->merge();
 	}
 
 	void url_level::clean_up() {
-		m_builder = make_shared<composite_index_builder<url_record>>("url", 10007);
 	}
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
 		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
 
-		(void)domain_links;
-
-		std::vector<std::string> words = text::get_full_text_words(query);
-		std::vector<return_record> all_results;
-		for (size_t key : keys) {
-			composite_index<url_record> idx("url", 10007);
-
-			std::vector<std::vector<url_record>> results;
-			for (const string &word : words) {
-				size_t token = ::algorithm::hash(word);
-				results.push_back(idx.find(key, token));
-			}
-			std::vector<return_record> intersected = intersection(results);
-			apply_url_links(links, intersected);
-			sort_and_get_top_results(intersected, 5); // Pick top 5 urls on each domain.
-			all_results.insert(all_results.end(), intersected.begin(), intersected.end());
-		}
-		return all_results;
+		return {};
 	}
 
 	size_t url_level::apply_url_links(const vector<link_record> &links, vector<return_record> &results) {

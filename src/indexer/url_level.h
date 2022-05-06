@@ -25,6 +25,9 @@
  */
 
 #include "level.h"
+#include "index_builder.h"
+
+#include <unordered_map>
 
 namespace indexer {
 
@@ -40,7 +43,8 @@ namespace indexer {
 
 	class url_level: public level {
 		private:
-		std::shared_ptr<composite_index_builder<url_record>> m_builder;
+		std::unordered_map<uint64_t, std::unique_ptr<index_builder<url_record>>> m_builders;
+
 		public:
 		url_level();
 		level_type get_type() const;
@@ -55,6 +59,9 @@ namespace indexer {
 		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
 			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores);
 		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
+
+		private:
+			void make_sure_builder_is_present(uint64_t);
 	};
 
 }
