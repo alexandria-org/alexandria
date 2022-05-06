@@ -83,6 +83,14 @@ namespace full_text {
 		}
 	}
 
+	void url_to_domain::convert() {
+		ifstream infile("/all-urls.txt");
+		string line;
+		while (getline(infile, line)) {
+			m_url_filter.insert(line);
+		}
+	}
+
 	void url_to_domain::write(size_t indexer_id) {\
 		lock_guard lock(m_lock);
 		const string file_name = "/mnt/"+(to_string(indexer_id % 8))+"/full_text/url_to_domain_"+m_db_name+".fti";

@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <set>
 #include <mutex>
+#include "algorithm/bloom_filter.h"
 
 namespace full_text {
 
@@ -42,6 +43,7 @@ namespace full_text {
 
 			void add_url(uint64_t url_hash, uint64_t domain_hash);
 			void read();
+			void convert();
 			void write(size_t indexer_id);
 			void truncate();
 
@@ -69,6 +71,9 @@ namespace full_text {
 			std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
 			std::unordered_map<uint64_t, size_t> m_domains;
 			std::mutex m_lock;
+
+			algorithm::bloom_filter m_url_filter;
+			algorithm::bloom_filter m_domain_filter;
 
 	};
 }

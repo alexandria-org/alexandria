@@ -232,6 +232,8 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		full_text::url_to_domain to_domain = full_text::url_to_domain("index_manager");
+		to_domain.convert();
+		return;
 		to_domain.read();
 		std::set<uint64_t> domains_to_index = to_domain.domain_set();
 		std::set<uint64_t> urls_to_index = to_domain.url_set();
