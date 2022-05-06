@@ -29,5 +29,6 @@
 namespace algorithm {
 
 	size_t hash(const std::string &str);
+	size_t hash_with_seed(const std::string &str, size_t seed);
 
 }

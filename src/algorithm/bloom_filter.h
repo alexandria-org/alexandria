@@ -31,21 +31,31 @@
 
 namespace algorithm {
 
+	/*
+	 * 2D bloom filter inspired by robustBF
+	 *
+	 * https://github.com/patgiri/robustBF/
+	 * https://arxiv.org/abs/2106.04365
+	 */
 	class bloom_filter {
 		public:
-			bloom_filter(size_t expected_num_elements, float p);
+			bloom_filter();
 
-			void insert(uint64_t item);
-			bool exists(uint64_t item) const;
+			void insert(const std::string &item);
+			bool exists(const std::string &item) const;
+			size_t size() const { return m_dim_x * m_dim_y * sizeof(uint64_t); }
+			const char *data() const { return (char *)m_bitmap.get(); }
+			void read(char *data);
 
 		private:
 
-			std::unique_ptr<char[]> m_bitmap;
-			size_t m_num_bytes;
-			size_t m_num_bits;
-			size_t m_n;
-			size_t m_k;
-			float m_p;
+			std::unique_ptr<uint64_t[]> m_bitmap;
+
+			size_t m_dim_x = 2551;
+			size_t m_dim_y = 2617;
+
+			std::array<uint64_t, 3> m_seeds = {7689571, 15485863, 98899};
+			std::array<uint64_t, 3> m_hashes;
 
 			void set_bit(size_t bit);
 			bool get_bit(size_t bit) const;

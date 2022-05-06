@@ -25,6 +25,7 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include <fstream>
 #include "algorithm/bloom_filter.h"
 #include "algorithm/hash.h"
 
@@ -33,14 +34,48 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(test_bloom_filter)
 
 BOOST_AUTO_TEST_CASE(test_bloom_filter) {
-	algorithm::bloom_filter bf(1000000, 0.001);
+	algorithm::bloom_filter bf;
 
-	bf.insert(algorithm::hash("test"));
-	BOOST_CHECK(bf.exists(algorithm::hash("test")));
-	BOOST_CHECK(!bf.exists(algorithm::hash("test2")));
+	bf.insert("test");
+	BOOST_CHECK(bf.exists("test"));
+	BOOST_CHECK(!bf.exists("test2"));
 
-	bf.insert(algorithm::hash("test2"));
-	BOOST_CHECK(bf.exists(algorithm::hash("test2")));
+	bf.insert("test2");
+	BOOST_CHECK(bf.exists("test2"));
+}
+
+BOOST_AUTO_TEST_CASE(test_bloom_filter_stress) {
+	/*algorithm::bloom_filter bf;
+	// Insert 10 billion strings. Measure false positive rate.
+	std::cout << "inserting... size is: " << bf.size() << std::endl;
+	for (size_t i = 0; i < 10000000000; i++) {
+		if (i % 100000000 == 0) std::cout << "." << std::flush;
+		bf.insert(std::to_string(i));
+	}
+
+	// save to file.
+	ofstream outfile("/tmp/bloom", ios::binary | ios::trunc);
+	outfile.write(bf.data(), bf.size());*/
+
+	/*algorithm::bloom_filter bf;
+
+	ifstream infile("/tmp/bloom", ios::binary);
+	char *buf = new char[bf.size()];
+	infile.read(buf, bf.size());
+	bf.read(buf);
+	delete buf;
+
+	size_t num_test = 1000000;
+	size_t num_false_positive = 0;
+	for (size_t i = 0; i < num_test; i++) {
+		if (bf.exists("test_" + to_string(i) + "_test")) {
+			num_false_positive++;
+		}
+	}
+
+	std::cout << "num_false_positive: " << num_false_positive << std::endl;
+
+	std::cout << "false positive rate: " << ((double)num_false_positive / num_test) << "%" << std::endl;*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()

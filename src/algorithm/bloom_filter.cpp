@@ -25,39 +25,50 @@
  */
 
 #include "bloom_filter.h"
+#include "algorithm/hash.h"
 #include <cmath>
+#include <cstring>
 
 namespace algorithm {
 
-	bloom_filter::bloom_filter(size_t expected_num_elements, float p)
-	: m_n(expected_num_elements), m_p(p)
+	bloom_filter::bloom_filter()
 	{
-		m_num_bits = std::ceil((m_n * log(m_p)) / log(1.0 / pow(2.0, log(2.0))));
-		m_num_bytes = std::ceil(m_num_bits / 8);
-		m_k = std::round((m_num_bits / m_n) * log(2));
-
-		m_bitmap = std::make_unique<char[]>(m_num_bytes);
+		m_bitmap = std::make_unique<uint64_t[]>(m_dim_x * m_dim_y);
 	}
 
-	void bloom_filter::insert(uint64_t item) {
-		for (size_t i = 0; i < m_k; i++) {
-			set_bit((item % (m_num_bits + i)) % m_num_bits);
+	void bloom_filter::insert(const std::string &item) {
+		for (size_t i = 0; i < m_seeds.size(); i++) {
+			uint64_t h = algorithm::hash_with_seed(item, m_seeds[i]);
+			set_bit(h);
 		}
 	}
 
-	bool bloom_filter::exists(uint64_t item) const {
-		for (size_t i = 0; i < m_k; i++) {
-			if (!get_bit((item % (m_num_bits + i)) % m_num_bits)) return false;
+	bool bloom_filter::exists(const std::string &item) const {
+		for (size_t i = 0; i < m_seeds.size(); i++) {
+			uint64_t h = algorithm::hash_with_seed(item, m_seeds[i]);
+			if (!get_bit(h)) return false;
 		}
 		return true;
 	}
 
+	void bloom_filter::read(char *data) {
+		memcpy((char *)m_bitmap.get(), data, size());
+	}
+
 	void bloom_filter::set_bit(size_t bit) {
-		m_bitmap[bit / 8] |= 0x1 << (bit % 8);
+		const size_t x = bit % m_dim_x;
+		const size_t y = bit % m_dim_y;
+		const size_t pos = bit % 61;
+		const size_t bitpos = y * m_dim_x + x;
+		m_bitmap[bitpos] |= 0x1 << pos;
 	}
 
 	bool bloom_filter::get_bit(size_t bit) const {
-		return m_bitmap[bit / 8] & (0x1 << (bit % 8));
+		const size_t x = bit % m_dim_x;
+		const size_t y = bit % m_dim_y;
+		const size_t pos = bit % 61;
+		const size_t bitpos = y * m_dim_x + x;
+		return m_bitmap[bitpos] & (0x1 << pos);
 	}
 
 }
