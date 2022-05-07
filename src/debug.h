@@ -27,43 +27,6 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 
-namespace indexer {
-	/*
-	This is a record type for counting things.
-	*/
-	#pragma pack(4)
-	class counted_record {
-
-		public:
-		uint64_t m_value;
-		uint64_t m_count;
-		float m_score;
-
-		counted_record() : m_value(0), m_count(1), m_score(0.0f) {};
-		counted_record(uint64_t value) : m_value(value), m_count(1), m_score(0.0f) {};
-		counted_record(uint64_t value, float score) : m_value(value), m_count(1), m_score(score) {};
-		counted_record(uint64_t value, float score, size_t count) : m_value(value), m_count(count), m_score(score) {};
-
-		bool operator==(const counted_record &b) const {
-			return m_value == b.m_value;
-		}
-
-		bool operator<(const counted_record &b) const {
-			return m_value < b.m_value;
-		}
-
-		counted_record operator+(const counted_record &b) const {
-			counted_record sum;
-			sum.m_value = m_value;
-			sum.m_count = m_count + b.m_count;
-			return sum;
-		}
-
-		counted_record &operator+=(const counted_record &b) {
-			m_count += b.m_count;
-			return *this;
-		}
-
-	};
-}
+void print_elem(std::map<size_t, size_t> &m, size_t elem);

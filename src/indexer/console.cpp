@@ -39,6 +39,7 @@
 #include "domain_stats/domain_stats.h"
 #include "merger.h"
 #include "file/tsv_file_remote.h"
+#include "algorithm/bloom_filter.h"
 
 using namespace std;
 
@@ -97,15 +98,48 @@ namespace indexer {
 
 	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
 
+		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
 
 		const uint64_t word_hash = ::algorithm::hash(query);
-		std::vector<indexer::counted_record> res = word_index.find(word_hash, 25);
+		std::vector<indexer::counted_record> res = word_index.find(word_hash, 100000);
 
+		size_t pos = 0;
 		for (auto &rec : res) {
 			const string host = ht.find(rec.m_value);
-			cout << host << ": " << rec.m_count << " score: " << rec.m_score << endl;
+			cout << host << ": " << rec.m_count << " score: " << rec.m_score << " pos: " << pos << " m_value: " << rec.m_value << " doc_size: " << word_index_builder.document_size(rec.m_value) << endl;
+			pos++;
 		}
+
+	}
+
+	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query, const string &domain) {
+
+		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
+		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+
+		const uint64_t word_hash = ::algorithm::hash(query);
+		std::vector<indexer::counted_record> res = word_index.find(word_hash);
+
+		size_t pos = 0;
+		for (auto &rec : res) {
+			const string host = ht.find(rec.m_value);
+			if (host == domain) {
+				cout << host << ": " << rec.m_count << " score: " << rec.m_score << " pos: " << pos << " m_value: " << rec.m_value << " doc_size: " << word_index_builder.document_size(rec.m_value) << endl;
+			}
+			pos++;
+		}
+
+	}
+
+	void cmd_word_num(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
+
+		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+
+		const uint64_t word_hash = ::algorithm::hash(query);
+		std::vector<indexer::counted_record> res = word_index.find(word_hash);
+
+		cout << "num_records: " << res.size() << endl;
 
 	}
 
@@ -122,7 +156,6 @@ namespace indexer {
 		boost::split(raw_words, input, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			text::trim(word);
 			if (word.size()) {
 				words.push_back(word);
 			}
@@ -148,7 +181,14 @@ namespace indexer {
 		//idx_manager.add_level(&snippet_level);
 
 		//idx_manager.truncate();
-		
+
+		::algorithm::bloom_filter urls_to_index;
+		ifstream infile("/mnt/0/url_filter.bloom", ios::binary);
+		char *buf = new char[urls_to_index.size()];
+		infile.read(buf, urls_to_index.size());
+		urls_to_index.read(buf);
+		delete buf;
+
 		hash_table::hash_table ht("index_manager");
 
 		string input;
@@ -171,6 +211,23 @@ namespace indexer {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
 				cmd_word(idx_manager, ht, query);
+			} else if (cmd == "word_domain") {
+				string domain = args[1];
+				vector<string> query_words(args.begin() + 2, args.end());
+				const string query = boost::algorithm::join(query_words, " ");
+				cmd_word(idx_manager, ht, query, domain);
+			} else if (cmd == "word_num") {
+				const string query = args[1];
+				cmd_word_num(idx_manager, ht, query);
+			} else if (cmd == "bloom") {
+				const string host = args[1];
+				const string path = args[2];
+				const URL url(host, path);
+				if (urls_to_index.exists(url.hash_input())) {
+					cout << url.str() << " exists" << endl;
+				} else {
+					cout << url.str() << " not exists" << endl;
+				}
 			} else if (cmd == "quit") {
 				break;
 			}
@@ -231,12 +288,17 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
+		::algorithm::bloom_filter urls_to_index;
+		ifstream infile("/mnt/0/url_filter.bloom", ios::binary);
+		char *buf = new char[urls_to_index.size()];
+		infile.read(buf, urls_to_index.size());
+		urls_to_index.read(buf);
+		delete buf;
+
 		full_text::url_to_domain to_domain = full_text::url_to_domain("index_manager");
+		//to_domain.read();
 		to_domain.convert();
 		return;
-		to_domain.read();
-		std::set<uint64_t> domains_to_index = to_domain.domain_set();
-		std::set<uint64_t> urls_to_index = to_domain.url_set();
 
 		size_t limit = 5000;
 		size_t offset = 0;
@@ -253,7 +315,7 @@ namespace indexer {
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_link_files_threaded(local_files, 32, domains_to_index, urls_to_index);
+			idx_manager.add_link_files_threaded(local_files, 32, urls_to_index);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
@@ -311,6 +373,9 @@ namespace indexer {
 			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
+
+			if (warc_paths.size() == 0) break;
+			if (offset >= 20000) break;
 
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;

@@ -96,8 +96,7 @@ namespace indexer {
 
 	}
 
-	void index_manager::add_link_file(const string &local_path, const std::set<uint64_t> &domains_to_index,
-		const std::set<uint64_t> &urls_to_index) {
+	void index_manager::add_link_file(const string &local_path, const ::algorithm::bloom_filter &urls_to_index) {
 
 		ifstream infile(local_path, ios::in);
 		string line;
@@ -109,8 +108,8 @@ namespace indexer {
 
 			URL target_url(col_values[2], col_values[3]);
 
-			// Check if we have the domain
-			if (domains_to_index.count(target_url.host_hash()) == 0) continue;
+			// Check if we have the url
+			if (!urls_to_index.exists(target_url.hash_input())) continue;
 
 			URL source_url(col_values[0], col_values[1]);
 
@@ -150,14 +149,13 @@ namespace indexer {
 		}
 	}
 
-	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads,
-			const std::set<uint64_t> &domains_to_index, const std::set<uint64_t> &urls_to_index) {
+	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index) {
 
 		utils::thread_pool pool(num_threads);
 
 		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path, &domains_to_index, &urls_to_index]() -> void {
-				add_link_file(local_path, domains_to_index, urls_to_index);
+			pool.enqueue([this, local_path, &urls_to_index]() -> void {
+				add_link_file(local_path, urls_to_index);
 			});
 		}
 
@@ -192,10 +190,12 @@ namespace indexer {
 	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &words_to_index) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
+		const vector<size_t> field_multipliers = {10, 3, 2, 1};
+
+		map<uint64_t, size_t> counts;
 
 		ifstream infile(local_path, ios::in);
 		string line;
-		const uint64_t klart_se_domain_hash = URL("https://klart.se/").host_hash();
 		while (getline(infile, line)) {
 
 			vector<string> col_values;
@@ -204,19 +204,21 @@ namespace indexer {
 			URL url(col_values[0]);
 			const uint64_t domain_hash = url.host_hash();
 
-			if (domain_hash == klart_se_domain_hash) {
-				cout << "i am here: " << domain_hash << endl;
-			}
-
-			for (size_t col : cols) {
+			for (size_t ii = 0; ii < cols.size(); ii++) {
+				size_t col = cols[ii];
 				vector<string> words = text::get_full_text_words(col_values[col]);
 
 				for (const string &word : words) {
 					const uint64_t word_hash = ::algorithm::hash(word);
 					if (words_to_index.find(word_hash) != words_to_index.end()) {
-						m_word_index_builder->add(word_hash, counted_record(domain_hash));
+						counts[word_hash] = field_multipliers[ii];
 					}
 				}
+
+				for (const auto &iter : counts) {
+					m_word_index_builder->add(iter.first, counted_record(domain_hash, 0.0f, iter.second));
+				}
+				counts.clear();
 			}
 
 		}

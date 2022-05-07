@@ -40,6 +40,7 @@
 #include "counted_index_builder.h"
 #include "counted_index.h"
 #include "counted_record.h"
+#include "algorithm/bloom_filter.h"
 
 namespace indexer {
 
@@ -55,10 +56,8 @@ namespace indexer {
 		void add_document(size_t id, const std::string &doc);
 		void add_index_file(const std::string &local_path);
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
-		void add_link_file(const std::string &local_path, const std::set<uint64_t> &domain_to_index,
-				const std::set<uint64_t> &urls_to_index);
-		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads,
-				const std::set<uint64_t> &domain_to_index, const std::set<uint64_t> &urls_to_index);
+		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &urls_to_index);
+		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index);
 		void add_url_file(const std::string &local_path);
 		void add_url_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);

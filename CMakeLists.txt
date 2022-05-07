@@ -129,6 +129,7 @@ set(SRC_CLASSES
 	"src/indexer/index_reader.cpp"
 
 	"src/domain_stats/domain_stats.cpp"
+	"src/debug.cpp"
 
 	"deps/robots.cc"
 )

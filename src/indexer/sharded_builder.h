@@ -30,6 +30,7 @@
 #include <map>
 #include "algorithm/hyper_log_log.h"
 #include "utils/thread_pool.hpp"
+#include "debug.h"
 
 namespace indexer {
 
@@ -55,6 +56,7 @@ namespace indexer {
 		void create_directories();
 
 		size_t document_count() const { return m_document_counter.count(); }
+		size_t document_size(uint64_t value) { return m_document_sizes[value]; }
 
 		void calculate_scores();
 		void sort_by_scores();
@@ -160,12 +162,22 @@ namespace indexer {
 		};
 
 		const auto bm25 = [this, total_records, average_document_size](const data_record &rec, size_t count_sum, size_t num_records) {
-			// https://en.wikipedia.org/wiki/Okapi_BM25
-			const size_t N = total_records; 
-			const size_t n_q = num_records;
-			const double idf = log(((double)N - n_q + 0.5)/((double)n_q + 0.5) + 1.0);
 
-			const double f_q = (double)rec.m_count/m_document_sizes[rec.m_value];
+			if (m_document_sizes[rec.m_value] < 1000) {
+				data_record ret = rec;
+				ret.m_score = 0.0f;
+				return ret;
+			}
+
+			// https://en.wikipedia.org/wiki/Okapi_BM25
+			const double N = total_records; 
+			const double n_q = num_records;
+			const double idf = log((N - n_q + 0.5)/(n_q + 0.5) + 1.0);
+
+			const double count_d = rec.m_count;
+			const double doc_size_d = m_document_sizes[rec.m_value];
+
+			const double f_q = count_d/doc_size_d;
 			const double k1 = 1.2;
 			const double b = 0.75;
 			const double d_card = m_document_sizes[rec.m_value];
