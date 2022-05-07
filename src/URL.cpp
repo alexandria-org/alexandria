@@ -83,8 +83,12 @@ string URL::key() const {
 	return m_host + m_path + m_query;
 }
 
+string URL::hash_input() const {
+	return m_host + path_with_query();
+}
+
 uint64_t URL::hash() const {
-	return ::algorithm::hash(m_host + m_path + m_query);
+	return ::algorithm::hash(hash_input());
 }
 
 uint64_t URL::host_hash() const {

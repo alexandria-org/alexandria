@@ -47,6 +47,7 @@ public:
 	std::string str() const;
 	std::string key() const;
 
+	std::string hash_input() const;
 	uint64_t hash() const;
 	uint64_t host_hash() const;
 	uint64_t link_hash(const URL &target_url, const std::string &link_text) const;
