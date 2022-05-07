@@ -51,8 +51,8 @@ namespace algorithm {
 
 			std::unique_ptr<uint64_t[]> m_bitmap;
 
-			size_t m_dim_x = 2551;
-			size_t m_dim_y = 2617;
+			size_t m_dim_x = 14009;
+			size_t m_dim_y = 14071;
 
 			std::array<uint64_t, 3> m_seeds = {7689571, 15485863, 98899};
 			std::array<uint64_t, 3> m_hashes;
