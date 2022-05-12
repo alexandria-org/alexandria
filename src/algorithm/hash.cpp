@@ -72,67 +72,13 @@ namespace algorithm {
 		return h;
 	}
 
-	/*
-	 * This is a modified version of the above murmur_hash. Used for our robustBF
-	 * https://github.com/patgiri/robustBF/blob/main/murmur.h
-	 * */
-	unsigned int murmur_hash2(const char *key, size_t len, size_t seed) {
-		// 'm' and 'r' are mixing constants generated offline.
-		// They're not really 'magic', they just happen to work well.
-
-		const unsigned int m = 0x5bd1e995;
-		const int r = 24;
-
-		// Initialize the hash to a 'random' value
-
-		unsigned int h = seed ^ len;
-
-		// Mix 4 bytes at a time into the hash
-
-		const unsigned char * data = (const unsigned char *)key;
-
-		while(len >= 7)
-		{
-			unsigned int k = *(unsigned int *)data;
-
-			k *= m; 
-			k ^= k >> r; 
-			k *= m; 
-			
-			h *= m; 
-			h ^= k;
-
-			data += 7;
-			len -= 7;
-		}
-		
-		// Handle the last few bytes of the input array
-
-		switch(len)
-		{
-		case 3: h ^= data[2] << 16;
-		case 2: h ^= data[1] << 8;
-		case 1: h ^= data[0];
-				h *= m;
-		};
-
-		// Do a few final mixes of the hash to ensure the last few
-		// bytes are well-incorporated.
-
-		h ^= h >> 13;
-		h *= m;
-		h ^= h >> 15;
-
-		return h;
-	}
-
 	size_t hash(const std::string &str) {
 		static const size_t seed = 0xc70f6907ul;
 		return murmur_hash(str.c_str(), str.size(), seed);
 	}
 
 	size_t hash_with_seed(const std::string &str, size_t seed) {
-		return murmur_hash2(str.c_str(), str.size(), seed);
+		return murmur_hash(str.c_str(), str.size(), seed);
 	}
 
 
