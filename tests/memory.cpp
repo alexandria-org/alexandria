@@ -46,10 +46,14 @@ BOOST_AUTO_TEST_CASE(test_memory) {
 	memory::update();
 
 	const size_t used2 = memory::allocated_memory();
-
-	BOOST_CHECK(used1 + 1000000 == used2);
-
 	delete some_mem;
+	const size_t used3 = memory::allocated_memory();
+
+	std::cout << "used1: " << used1 << std::endl;
+	std::cout << "used2: " << used2 << std::endl;
+	std::cout << "used3: " << used3 << std::endl;
+	BOOST_CHECK(used1 + 1000000 == used2);
+	BOOST_CHECK(used1 == used3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

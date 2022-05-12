@@ -59,10 +59,11 @@ namespace indexer {
 		~counted_index_builder();
 
 		void add(uint64_t key, const data_record &record);
+		size_t cache_size() const;
 		
 		void append();
 		void merge();
-		void transform(const std::function<data_record(const data_record &, size_t, size_t)> &transform);
+		void transform(const std::function<data_record(const data_record &, size_t)> &transform);
 		void sort_by(const std::function<bool(const data_record &a, const data_record &b)> sort_by);
 
 		void truncate();
@@ -116,28 +117,28 @@ namespace indexer {
 		m_max_results(config::ft_max_results_per_section)
 	{
 		merger::register_merger((size_t)this, [this]() {merge();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {merge();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {append();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
 		merger::register_merger((size_t)this, [this]() {append();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
@@ -160,6 +161,14 @@ namespace indexer {
 
 		m_lock.unlock();
 
+	}
+
+	/*
+	 * Returns the allocated size of the cache (m_key_cache and m_record_cache).
+	 * */
+	template<typename data_record>
+	size_t counted_index_builder<data_record>::cache_size() const {
+		return m_key_cache.capacity() * sizeof(uint64_t) + m_record_cache.capacity() * sizeof(data_record);
 	}
 
 	template<typename data_record>
@@ -204,20 +213,14 @@ namespace indexer {
 		Transforms all the bitmaps in the index. Basically generating new bitmaps with the transform applied.
 	*/
 	template<typename data_record>
-	void counted_index_builder<data_record>::transform(const std::function<data_record(const data_record &, size_t, size_t)> &transform) {
+	void counted_index_builder<data_record>::transform(const std::function<data_record(const data_record &, size_t)> &transform) {
 
 		read_data_to_cache();
 
 		// Apply transforms.
 		for (auto &iter : m_cache) {
-
-			size_t count_sum = 0;
-			for (const data_record &rec : iter.second) {
-				count_sum += rec.m_count;
-			}
-
 			for (size_t i = 0; i < iter.second.size(); i++) {
-				iter.second[i] = transform(iter.second[i], count_sum, iter.second.size());
+				iter.second[i] = transform(iter.second[i], iter.second.size());
 			}
 		}
 
@@ -459,6 +462,14 @@ namespace indexer {
 
 		auto last = std::unique(records.begin(), records.end());
 		records.erase(last, records.end());
+
+		std::sort(records.begin(), records.end(), typename data_record::truncate_order());
+
+		if (records.size() > 1000000) {
+			records.resize(1000000);
+		}
+
+		std::sort(records.begin(), records.end(), typename data_record::storage_order());
 	}
 
 	template<typename data_record>

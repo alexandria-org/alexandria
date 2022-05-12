@@ -77,6 +77,7 @@ namespace indexer {
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
+		size_t cache_size() const;
 		void transform(const std::function<uint32_t(uint32_t)> &transform);
 		
 		void append();
@@ -154,28 +155,28 @@ namespace indexer {
 		m_max_results(config::ft_max_results_per_section)
 	{
 		merger::register_merger((size_t)this, [this]() {merge();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {merge();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {append();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
 		merger::register_merger((size_t)this, [this]() {append();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
@@ -184,7 +185,7 @@ namespace indexer {
 	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
 		m_record_id_to_internal_id = rec_to_id;
 		merger::register_merger((size_t)this, [this]() {merge();});
-		merger::register_appender((size_t)this, [this]() {append();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
@@ -207,6 +208,14 @@ namespace indexer {
 
 		m_lock.unlock();
 
+	}
+
+	/*
+	 * Returns the allocated size of the cache (m_key_cache and m_record_cache).
+	 * */
+	template<typename data_record>
+	size_t index_builder<data_record>::cache_size() const {
+		return m_key_cache.capacity() * sizeof(uint64_t) + m_record_cache.capacity() * sizeof(data_record);
 	}
 
 	/*

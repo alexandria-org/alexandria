@@ -38,14 +38,17 @@ using namespace std;
 namespace indexer {
 
 	index_manager::index_manager() {
-		m_link_index_builder = std::make_unique<sharded_index_builder<link_record>>("link_index", 2001);
-		m_domain_link_index_builder = std::make_unique<sharded_index_builder<domain_link_record>>("domain_link_index", 2001);
-		m_link_index = std::make_unique<sharded_index<link_record>>("link_index", 2001);
-		m_domain_link_index = std::make_unique<sharded_index<domain_link_record>>("domain_link_index", 2001);
+
+		m_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, link_record>>("link_index", 2001);
+		m_link_index = std::make_unique<sharded<counted_index, link_record>>("link_index", 2001);
+
+		m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 2001);
+		m_domain_link_index = std::make_unique<sharded<counted_index, domain_link_record>>("domain_link_index", 2001);
+
 		m_hash_table = std::make_unique<hash_table::builder>("index_manager");
 		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
 
-		m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
+		//m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
 	}
 
@@ -98,18 +101,25 @@ namespace indexer {
 
 	void index_manager::add_link_file(const string &local_path, const ::algorithm::bloom_filter &urls_to_index) {
 
+		profiler::instance prof("add " + local_path);
 		ifstream infile(local_path, ios::in);
 		string line;
+		size_t added = 0;
+		size_t parsed = 0;
+		vector<string> col_values;
 		while (getline(infile, line)) {
 
-
-			vector<string> col_values;
+			col_values.clear();
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 			URL target_url(col_values[2], col_values[3]);
 
+			parsed++;
+
 			// Check if we have the url
 			if (!urls_to_index.exists(target_url.hash_input())) continue;
+
+			added++;
 
 			URL source_url(col_values[0], col_values[1]);
 
@@ -129,7 +139,7 @@ namespace indexer {
 			if (has_url) {
 				// Add the url link.
 				link_record link_rec(link_hash, source_harmonic);
-				link_rec.m_source_domain = source_url.host_hash();
+				link_rec.m_source_domain = source_url.hash();
 				link_rec.m_target_hash = target_url.hash();
 
 				for (const string &word : words) {
@@ -147,6 +157,8 @@ namespace indexer {
 				m_domain_link_index_builder->add(word_hash, rec);
 			}
 		}
+
+		cout << "Done with " << local_path << " added " << added << " total " << parsed << " took: " << prof.get() << "ms" << endl;
 	}
 
 	void index_manager::add_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index) {
@@ -250,11 +262,12 @@ namespace indexer {
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
-		m_link_index_builder->optimize();
 		m_domain_link_index_builder->append();
 		m_domain_link_index_builder->merge();
-		m_domain_link_index_builder->optimize();
 
+	}
+
+	void index_manager::optimize() {
 	}
 
 	void index_manager::merge_word() {
@@ -292,16 +305,16 @@ namespace indexer {
 
 	std::vector<return_record> index_manager::find(const string &query) {
 
-		auto domain_formula = [](float score) {
+		/*auto domain_formula = [](float score) {
 			return expm1(25.0f * score) / 50.0f;
-		};
+		};*/
 
 		std::vector<size_t> counts;
 
 		vector<counted_record> bm25_scores = m_word_index->find_sum(text::get_tokens(query), 1000);
 		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find_group_by(text::get_tokens(query),
-				domain_formula, counts);
+		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
+		cout << "found: " << links.size() << " links" << endl;
 
 		/*
 		if (!std::is_sorted(bm25_scores.begin(), bm25_scores.end())) {
@@ -314,7 +327,9 @@ namespace indexer {
 			throw new runtime_error("doain_links are not sorted");
 		}*/
 
+		profiler::instance inst("m_levels[0]->find");
 		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links, bm25_scores);
+		inst.stop();
 
 		// Sort by score.
 		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {

@@ -186,7 +186,7 @@ namespace indexer {
 		ifstream infile("/mnt/0/url_filter.bloom", ios::binary);
 		char *buf = new char[urls_to_index.size()];
 		infile.read(buf, urls_to_index.size());
-		urls_to_index.read(buf);
+		//urls_to_index.read(buf);
 		delete buf;
 
 		hash_table::hash_table ht("index_manager");
@@ -289,19 +289,10 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		::algorithm::bloom_filter urls_to_index;
-		ifstream infile("/mnt/0/url_filter.bloom", ios::binary);
-		char *buf = new char[urls_to_index.size()];
-		infile.read(buf, urls_to_index.size());
-		urls_to_index.read(buf);
-		delete buf;
-
-		full_text::url_to_domain to_domain = full_text::url_to_domain("index_manager");
-		//to_domain.read();
-		to_domain.convert();
-		return;
+		urls_to_index.read_file("/mnt/0/url_filter.bloom");
 
 		size_t limit = 5000;
-		size_t offset = 0;
+		size_t offset = 5000;
 		while (true) {
 			indexer::index_manager idx_manager;
 
@@ -319,13 +310,15 @@ namespace indexer {
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
-			merger::stop_merge_thread();
+			merger::stop_merge_thread_only_append();
+
+			idx_manager.merge();
 
 			offset += limit;
 		}
 
 		indexer::index_manager idx_manager;
-		idx_manager.merge();
+		idx_manager.optimize();
 	}
 
 	void index_urls(const string &batch) {

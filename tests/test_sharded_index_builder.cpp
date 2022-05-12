@@ -69,21 +69,21 @@ BOOST_AUTO_TEST_CASE(test_group_by) {
 
 		idx.truncate();
 
-		idx.add(101, domain_link_record(1000, 1.0f, 100, 200));
-		idx.add(101, domain_link_record(1004, 1.0f, 120, 300));
-		idx.add(101, domain_link_record(1001, 1.0f, 110, 200));
-		idx.add(101, domain_link_record(1003, 1.0f, 120, 300));
-		idx.add(101, domain_link_record(1002, 1.0f, 120, 200));
+		idx.add(101, domain_link_record(1000, 1.0f, 200));
+		idx.add(101, domain_link_record(1004, 1.0f, 300));
+		idx.add(101, domain_link_record(1001, 1.0f, 200));
+		idx.add(101, domain_link_record(1003, 1.0f, 300));
+		idx.add(101, domain_link_record(1002, 1.0f, 200));
 
-		idx.add(102, domain_link_record(1000, 1.0f, 100, 200));
-		idx.add(102, domain_link_record(1001, 1.0f, 110, 200));
-		idx.add(102, domain_link_record(1005, 1.0f, 120, 300));
-		idx.add(102, domain_link_record(1002, 1.0f, 120, 200));
+		idx.add(102, domain_link_record(1000, 1.0f, 200));
+		idx.add(102, domain_link_record(1001, 1.0f, 200));
+		idx.add(102, domain_link_record(1005, 1.0f, 300));
+		idx.add(102, domain_link_record(1002, 1.0f, 200));
 
-		idx.add(103, domain_link_record(1000, 1.0f, 100, 200));
-		idx.add(103, domain_link_record(1001, 1.0f, 110, 200));
-		idx.add(103, domain_link_record(1004, 1.0f, 120, 300));
-		idx.add(103, domain_link_record(1002, 1.0f, 120, 200));
+		idx.add(103, domain_link_record(1000, 1.0f, 200));
+		idx.add(103, domain_link_record(1001, 1.0f, 200));
+		idx.add(103, domain_link_record(1004, 1.0f, 300));
+		idx.add(103, domain_link_record(1002, 1.0f, 200));
 
 		idx.append();
 		idx.merge();
@@ -268,17 +268,17 @@ BOOST_AUTO_TEST_CASE(test_optimization_with_save) {
 
 		idx.truncate();
 
-		idx.add(1, indexer::domain_link_record(100, 0.1, 1000, 1001));
-		idx.add(1, indexer::domain_link_record(101, 0.1, 1000, 1002));
-		idx.add(1, indexer::domain_link_record(102, 0.1, 1000, 1001));
-		idx.add(1, indexer::domain_link_record(103, 0.1, 1000, 1004));
-		idx.add(1, indexer::domain_link_record(104, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(100, 0.1, 1001));
+		idx.add(1, indexer::domain_link_record(101, 0.1, 1002));
+		idx.add(1, indexer::domain_link_record(102, 0.1, 1001));
+		idx.add(1, indexer::domain_link_record(103, 0.1, 1004));
+		idx.add(1, indexer::domain_link_record(104, 0.1, 1001));
 
-		idx.add(2, indexer::domain_link_record(100, 0.1, 1000, 1001));
-		idx.add(2, indexer::domain_link_record(101, 0.1, 1000, 1002));
-		idx.add(2, indexer::domain_link_record(102, 0.1, 1000, 1001));
-		idx.add(2, indexer::domain_link_record(103, 0.1, 1000, 1004));
-		idx.add(2, indexer::domain_link_record(104, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(100, 0.1, 1001));
+		idx.add(2, indexer::domain_link_record(101, 0.1, 1002));
+		idx.add(2, indexer::domain_link_record(102, 0.1, 1001));
+		idx.add(2, indexer::domain_link_record(103, 0.1, 1004));
+		idx.add(2, indexer::domain_link_record(104, 0.1, 1001));
 
 		idx.append();
 		idx.merge();
@@ -289,17 +289,17 @@ BOOST_AUTO_TEST_CASE(test_optimization_with_save) {
 
 		indexer::sharded_index_builder<indexer::domain_link_record> idx("test_index", 10);
 
-		idx.add(1, indexer::domain_link_record(105, 0.1, 1000, 1001));
-		idx.add(1, indexer::domain_link_record(106, 0.1, 1000, 1002));
-		idx.add(1, indexer::domain_link_record(107, 0.1, 1000, 1001));
-		idx.add(1, indexer::domain_link_record(108, 0.1, 1000, 1004));
-		idx.add(1, indexer::domain_link_record(109, 0.1, 1000, 1001));
+		idx.add(1, indexer::domain_link_record(105, 0.1, 1001));
+		idx.add(1, indexer::domain_link_record(106, 0.1, 1002));
+		idx.add(1, indexer::domain_link_record(107, 0.1, 1001));
+		idx.add(1, indexer::domain_link_record(108, 0.1, 1004));
+		idx.add(1, indexer::domain_link_record(109, 0.1, 1001));
 
-		idx.add(2, indexer::domain_link_record(100, 0.1, 1000, 1001));
-		idx.add(2, indexer::domain_link_record(101, 0.1, 1000, 1002));
-		idx.add(2, indexer::domain_link_record(102, 0.1, 1000, 1001));
-		idx.add(2, indexer::domain_link_record(103, 0.1, 1000, 1004));
-		idx.add(2, indexer::domain_link_record(104, 0.1, 1000, 1001));
+		idx.add(2, indexer::domain_link_record(100, 0.1, 1001));
+		idx.add(2, indexer::domain_link_record(101, 0.1, 1002));
+		idx.add(2, indexer::domain_link_record(102, 0.1, 1001));
+		idx.add(2, indexer::domain_link_record(103, 0.1, 1004));
+		idx.add(2, indexer::domain_link_record(104, 0.1, 1001));
 
 		idx.append();
 		idx.merge();

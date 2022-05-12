@@ -43,6 +43,7 @@ namespace indexer {
 		bool is_merging = false;
 		map<size_t, std::function<void()>> mergers;
 		map<size_t, std::function<void()>> appenders;
+		map<size_t, std::function<size_t()>> sizes;
 		mutex merger_lock;
 
 		void wait_for_merges() {
@@ -57,9 +58,10 @@ namespace indexer {
 			}
 		}
 
-		void register_appender(size_t id, std::function<void()> append) {
+		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size) {
 			merger_lock.lock();
 			appenders[id] = append;
+			sizes[id] = size;
 			merger_lock.unlock();
 		}
 
@@ -73,6 +75,7 @@ namespace indexer {
 			merger_lock.lock();
 			appenders.erase(id);
 			mergers.erase(id);
+			sizes.erase(id);
 			merger_lock.unlock();
 		}
 
@@ -137,14 +140,22 @@ namespace indexer {
 			is_merging = false;
 		}
 
+		size_t total_sizes() {
+			size_t sum = 0;
+			for (const auto &iter : sizes) {
+				sum += iter.second();
+			}
+			return sum;
+		}
+
 		void merge_thread() {
 			memory::update();
 			size_t available_memory = memory::get_total_memory();
 			while (merge_thread_is_running) {
-				if (memory::allocated_memory() > available_memory * mem_limit) {
+				if (total_sizes() > available_memory * mem_limit) {
 					append_all();
 				}
-				this_thread::sleep_for(100ms);
+				this_thread::sleep_for(200ms);
 			}
 		}
 

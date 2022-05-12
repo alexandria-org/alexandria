@@ -63,6 +63,7 @@ namespace indexer {
 		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);
 		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const std::set<uint64_t> &words_to_index);
 		void merge();
+		void optimize();
 		void merge_word();
 		void truncate();
 		void truncate_links();
@@ -74,10 +75,12 @@ namespace indexer {
 
 	private:
 
-		std::unique_ptr<sharded_index_builder<link_record>> m_link_index_builder;
-		std::unique_ptr<sharded_index<link_record>> m_link_index;
-		std::unique_ptr<sharded_index_builder<domain_link_record>> m_domain_link_index_builder;
-		std::unique_ptr<sharded_index<domain_link_record>> m_domain_link_index;
+		std::unique_ptr<sharded_builder<counted_index_builder, link_record>> m_link_index_builder;
+		std::unique_ptr<sharded<counted_index, link_record>> m_link_index;
+
+		std::unique_ptr<sharded_builder<counted_index_builder, domain_link_record>> m_domain_link_index_builder;
+		std::unique_ptr<sharded<counted_index, domain_link_record>> m_domain_link_index;
+
 		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index_builder;
 		std::unique_ptr<sharded<counted_index, counted_record>> m_word_index;
 

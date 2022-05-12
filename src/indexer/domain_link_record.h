@@ -29,32 +29,30 @@
 #include <iostream>
 
 namespace indexer {
-	/*
-	This is a record type for counting things.
-	*/
-	#pragma pack(4)
-	class counted_record {
 
+	#pragma pack(4)
+	class domain_link_record {
 		public:
 		uint64_t m_value;
-		uint64_t m_count;
 		float m_score;
+		uint64_t m_source_domain;
+		uint64_t m_target_domain;
 
-		counted_record() : m_value(0), m_count(1), m_score(0.0f) {};
-		counted_record(uint64_t value) : m_value(value), m_count(1), m_score(0.0f) {};
-		counted_record(uint64_t value, float score) : m_value(value), m_count(1), m_score(score) {};
-		counted_record(uint64_t value, float score, size_t count) : m_value(value), m_count(count), m_score(score) {};
+		domain_link_record() : m_value(0), m_score(0.0f) {};
+		domain_link_record(uint64_t value) : m_value(value), m_score(0.0f) {};
+		domain_link_record(uint64_t value, float score) : m_value(value), m_score(score) {};
+		domain_link_record(uint64_t value, float score, uint64_t target_domain)
+				: m_value(value), m_score(score), m_target_domain(target_domain) {};
 
-		bool operator==(const counted_record &b) const {
+		bool operator==(const domain_link_record &b) const {
 			return m_value == b.m_value;
 		}
 
-		bool operator<(const counted_record &b) const {
+		bool operator<(const domain_link_record &b) const {
 			return m_value < b.m_value;
 		}
 
-		counted_record &operator+=(const counted_record &b) {
-			m_count += b.m_count;
+		domain_link_record &operator+=(const domain_link_record &b) {
 			return *this;
 		}
 
@@ -62,8 +60,8 @@ namespace indexer {
 		 * Will be applied to records before truncating. Top records will be kept.
 		 * */
 		struct truncate_order {
-			inline bool operator() (const counted_record &a, const counted_record &b) {
-				return a.m_count > b.m_count;
+			inline bool operator() (const domain_link_record &a, const domain_link_record &b) {
+				return a.m_score > b.m_score;
 			}
 		};
 
@@ -71,13 +69,13 @@ namespace indexer {
 		 * Will be applied before storing on disk. This is the order the records will be returned in.
 		 * */
 		struct storage_order {
-			inline bool operator() (const counted_record &a, const counted_record &b) {
-				return a.m_value < b.m_value;
+			inline bool operator() (const domain_link_record &a, const domain_link_record &b) {
+				return a.m_target_domain < b.m_target_domain;
 			}
 		};
 
-		bool storage_equal(const counted_record &a) const {
-			return m_value == a.m_value;
+		bool storage_equal(const domain_link_record &a) const {
+			return m_target_domain == a.m_target_domain;
 		}
 
 	};

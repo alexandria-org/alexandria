@@ -27,53 +27,54 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <set>
-#include <mutex>
-#include "algorithm/bloom_filter.h"
 
-namespace full_text {
+namespace indexer {
 
-	class url_to_domain {
-
+	#pragma pack(4)
+	class link_record {
 		public:
-			explicit url_to_domain(const std::string &db_name);
-			~url_to_domain();
+		uint64_t m_value;
+		float m_score;
+		uint64_t m_source_domain;
+		uint64_t m_target_hash;
 
-			void add_url(uint64_t url_hash, uint64_t domain_hash);
-			void read();
-			void convert();
-			void write(size_t indexer_id);
-			void truncate();
+		link_record() : m_value(0), m_score(0.0f) {};
+		link_record(uint64_t value) : m_value(value), m_score(0.0f) {};
+		link_record(uint64_t value, float score) : m_value(value), m_score(score) {};
 
-			size_t size() const {
-				return m_url_to_domain.size();
+		bool operator==(const link_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const link_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		link_record &operator+=(const link_record &b) {
+			return *this;
+		}
+
+		/*
+		 * Will be applied to records before truncating. Top records will be kept.
+		 * */
+		struct truncate_order {
+			inline bool operator() (const link_record &a, const link_record &b) {
+				return a.m_score > b.m_score;
 			}
+		};
 
-			bool has_url(uint64_t url_hash) {
-				std::lock_guard guard(m_lock); 
-				return m_url_to_domain.count(url_hash) > 0;
+		/*
+		 * Will be applied before storing on disk. This is the order the records will be returned in.
+		 * */
+		struct storage_order {
+			inline bool operator() (const link_record &a, const link_record &b) {
+				return a.m_target_hash < b.m_target_hash;
 			}
+		};
 
-			bool has_domain(uint64_t domain_hash) {
-				return m_domains.count(domain_hash) > 0;
-			}
-
-
-			const std::unordered_map<uint64_t, uint64_t> &get_url_to_domain() const { return m_url_to_domain; };
-			const std::unordered_map<uint64_t, size_t> &domains() const { return m_domains; };
-			std::set<uint64_t> domain_set() const;
-			std::set<uint64_t> url_set() const;
-
-		private:
-			const std::string m_db_name;
-			std::unordered_map<uint64_t, uint64_t> m_url_to_domain;
-			std::unordered_map<uint64_t, size_t> m_domains;
-			std::mutex m_lock;
-
-			//algorithm::bloom_filter m_url_filter;
-		//	algorithm::bloom_filter m_domain_filter;
+		bool storage_equal(const link_record &a) const {
+			return m_target_hash == a.m_target_hash;
+		}
 
 	};
 }

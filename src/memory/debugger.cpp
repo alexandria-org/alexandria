@@ -31,7 +31,7 @@
 #include <new>
 #include <cstdlib>
 #include <array>
-#include <mutex>
+#include <atomic>
 
 using namespace std;
 
@@ -49,11 +49,13 @@ using namespace std;
 	This seems like absolute madness at first but I don't have any other solution.
 */
 
+#include "sys/types.h"
+#include "sys/sysinfo.h"
+
 namespace memory {
 
-	mutex lock;
-	size_t mem_counter;
-	size_t ptr_counter;
+	atomic_size_t mem_counter = 0;
+	size_t ptr_counter = 0;
 	size_t total_memory_on_host = 0;
 
 	size_t allocated_memory() {
@@ -96,15 +98,15 @@ namespace memory {
 	Overload the global new, new[], delete and delete[] operators.
 */
 // https://en.cppreference.com/w/cpp/memory/new/operator_new
+/*
 void *operator new(size_t n) {
 
 	void *m = malloc(n + sizeof(size_t));
 
 	if (m) {
-		memory::lock.lock();
 		memory::mem_counter += n;
 		memory::ptr_counter++;
-		memory::lock.unlock();
+
 		static_cast<size_t *>(m)[0] = n;
 		return &(static_cast<size_t *>(m)[1]);
 	}
@@ -117,10 +119,9 @@ void *operator new[](size_t n) {
 	void *m = malloc(n + sizeof(size_t));
 
 	if (m) {
-		memory::lock.lock();
 		memory::mem_counter += n;
-		memory::ptr_counter++;
-		memory::lock.unlock();
+		//memory::ptr_counter++;
+
 		static_cast<size_t *>(m)[0] = n;
 		return &(static_cast<size_t *>(m)[1]);
 	}
@@ -133,10 +134,8 @@ void operator delete(void *p) noexcept {
 	void *realp = &(static_cast<size_t *>(p)[-1]);
 	const size_t n = static_cast<size_t *>(p)[-1];
 
-	memory::lock.lock();
 	memory::mem_counter -= n;
-	memory::ptr_counter--;
-	memory::lock.unlock();
+	//memory::ptr_counter--;
 
 	free(realp);
 }
@@ -146,10 +145,9 @@ void operator delete[](void *p) noexcept {
 	void *realp = &(static_cast<size_t *>(p)[-1]);
 	const size_t n = static_cast<size_t *>(p)[-1];
 
-	memory::lock.lock();
 	memory::mem_counter -= n;
-	memory::ptr_counter--;
-	memory::lock.unlock();
+	//memory::ptr_counter--;
 
 	free(realp);
 }
+*/

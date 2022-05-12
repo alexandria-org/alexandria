@@ -27,6 +27,8 @@
 #include "url_to_domain.h"
 #include "logger/logger.h"
 #include "indexer/merger.h"
+#include "profiler/profiler.h"
+#include "utils/thread_pool.hpp"
 #include "URL.h"
 
 using namespace std;
@@ -36,11 +38,7 @@ namespace full_text {
 	url_to_domain::url_to_domain(const string &db_name)
 	: m_db_name(db_name)
 	{
-		indexer::merger::register_appender((size_t)this, [this]() {
-			for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-				write(bucket_id);
-			}
-		});
+
 	}
 
 	url_to_domain::~url_to_domain() {
@@ -87,17 +85,71 @@ namespace full_text {
 	}
 
 	void url_to_domain::convert() {
-		ifstream infile("/all-urls.txt");
-		string line;
-		size_t i = 0;
-		while (getline(infile, line)) {
-			i++;
-			if (i % 10000000 == 0) std::cout << "done " << i << std::endl;
-			URL url(line);
-			m_url_filter.insert(url.hash_input());
+
+		/*algorithm::bloom_filter bf;
+		bf.read_file("/mnt/0/url_filter.bloom");
+		int fp = 0;
+		for (size_t i = 0; i < 100000; i++) {
+			if (bf.exists(to_string(rand()))) {
+				fp++;
+			}
 		}
-		ofstream outfile("/mnt/0/url_filter.bloom", ios::binary | ios::trunc);
-		outfile.write(m_url_filter.data(), m_url_filter.size());
+
+		cout << "fp: " << fp << "/" << 100000 << endl;
+		return;
+		*/
+
+		algorithm::bloom_filter bf;
+		bf.read_file("/mnt/0/url_filter_0.bloom");
+
+		for (size_t i = 1; i < 24; i++) {
+			algorithm::bloom_filter bf2;
+			const string file_name = "/mnt/0/url_filter_"+to_string(i)+".bloom";
+			cout << "reading_file: " << file_name << endl;
+			bf2.read_file(file_name);
+
+			bf.merge(bf2);
+		}
+
+		bf.write_file("/mnt/0/url_filter.bloom");
+
+		int fp = 0;
+		for (size_t i = 0; i < 100000; i++) {
+			if (bf.exists(to_string(rand()))) {
+				fp++;
+			}
+		}
+
+		cout << "fp: " << fp << "/" << 100000 << endl;
+
+		return;
+
+		profiler::instance prof("run 1 million on each");
+		utils::thread_pool pool(5);
+		for (size_t i = 0; i < 24; i++) {
+			pool.enqueue([i](){
+
+				algorithm::bloom_filter bf;
+
+				const string filename = "/root/urls/all-urls-" + to_string(i) + ".txt";
+				ifstream infile(filename);
+				string line;
+				size_t idx = 0;
+				while (getline(infile, line)) {
+					URL url(line);
+					bf.insert(url.hash_input());
+					idx++;
+					//if (idx > 10000000) break;
+				}
+				bf.commit();
+				cout << "done with " << idx << ": " << filename << endl;
+
+				bf.write_file("/mnt/0/url_filter_"+to_string(i)+".bloom");
+			});
+		}
+
+		pool.run_all();
+		prof.print();
 	}
 
 	void url_to_domain::write(size_t indexer_id) {\

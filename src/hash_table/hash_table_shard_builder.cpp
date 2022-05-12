@@ -37,7 +37,7 @@ namespace hash_table {
 	hash_table_shard_builder::hash_table_shard_builder(const string &db_name, size_t shard_id)
 	: m_db_name(db_name), m_shard_id(shard_id), m_cache_limit(25 + rand() % 10)
 	{
-		indexer::merger::register_appender((size_t)this, [this]() {write();});
+		indexer::merger::register_appender((size_t)this, [this]() {write();}, [this]() { return cache_size(); });
 	}
 
 	hash_table_shard_builder::~hash_table_shard_builder() {
@@ -174,6 +174,10 @@ namespace hash_table {
 	void hash_table_shard_builder::add(uint64_t key, const string &value) {
 		std::lock_guard guard(m_lock);
 		m_cache[key] = value;
+	}
+
+	size_t hash_table_shard_builder::cache_size() const {
+		return m_cache.size() * sizeof(uint64_t); // this is just wrong...
 	}
 
 	string hash_table_shard_builder::filename_data() const {

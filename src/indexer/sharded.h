@@ -29,6 +29,7 @@
 #include <iostream>
 #include <vector>
 #include "algorithm/sum_sorted.h"
+#include "algorithm/intersection.h"
 
 namespace indexer {
 
@@ -47,6 +48,12 @@ namespace indexer {
 		 * */
 		std::vector<data_record> find(uint64_t key) const;
 		std::vector<data_record> find(uint64_t key, size_t limit) const;
+
+		/*
+		 * Find intersection of multiple keys
+		 * Returns vector with records in storage order.
+		 * */
+		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys) const;
 
 		/*
 		 * Find each key in keys and records with same m_value each key only returns top 'limit' number of results.
@@ -99,6 +106,27 @@ namespace indexer {
 		index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
 
 		return idx.find(key, limit);
+	}
+
+	template<template<typename> typename index_type, typename data_record>
+	std::vector<data_record> sharded<index_type, data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
+
+		std::vector<unique_ptr<data_record[]>> results;
+		std::vector<size_t> num_results;
+		for (uint64_t key : keys) {
+
+			const size_t shard_id = key % m_num_shards;
+			index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+			
+			size_t num_records;
+			unique_ptr<data_record[]> res = idx.find_ptr(key, num_records);
+			results.emplace_back(std::move(res));
+			num_results.push_back(num_records);
+		}
+
+		std::vector<data_record> ret = ::algorithm::intersection(results, num_results);
+
+		return ret;
 	}
 
 	template<template<typename> typename index_type, typename data_record>

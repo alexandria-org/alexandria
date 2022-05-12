@@ -48,6 +48,7 @@ namespace hash_table {
 			void sort();
 
 			void add(uint64_t key, const std::string &value);
+			size_t cache_size() const;
 
 			std::string filename_data() const;
 			std::string filename_pos() const;

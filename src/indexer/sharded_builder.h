@@ -98,9 +98,9 @@ namespace indexer {
 	void sharded_builder<index_type, data_record>::add(uint64_t key, const data_record &record) {
 		m_shards[key % m_shards.size()]->add(key, record);
 
-		m_num_added_keys++;
+		/*m_num_added_keys++;
 		m_document_counter.insert(record.m_value);
-		m_document_sizes[record.m_value]++; // Raw non unique document size.
+		m_document_sizes[record.m_value]++;*/ // Raw non unique document size.
 	}
 
 	template<template<typename> typename index_type, typename data_record>
@@ -112,9 +112,17 @@ namespace indexer {
 
 	template<template<typename> typename index_type, typename data_record>
 	void sharded_builder<index_type, data_record>::merge() {
-		for (auto &shard : m_shards) {
-			shard->merge();
+		utils::thread_pool pool(32);
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			pool.enqueue([this, i]() {
+				try {
+					m_shards[i]->merge();
+				} catch (...) {
+				}
+			});
 		}
+
+		pool.run_all();
 	}
 
 	template<template<typename> typename index_type, typename data_record>
@@ -153,7 +161,7 @@ namespace indexer {
 		}
 		average_document_size /= m_document_sizes.size();
 
-		const auto tf_idf = [this, total_records](const data_record &rec, size_t count_sum, size_t num_records) {
+		const auto tf_idf = [this, total_records](const data_record &rec, size_t num_records) {
 			data_record ret = rec;
 			float tf = (float)rec.m_count/m_document_sizes[rec.m_value];
 			float idf = (float)total_records/num_records;
@@ -161,7 +169,7 @@ namespace indexer {
 			return ret;
 		};
 
-		const auto bm25 = [this, total_records, average_document_size](const data_record &rec, size_t count_sum, size_t num_records) {
+		const auto bm25 = [this, total_records, average_document_size](const data_record &rec, size_t num_records) {
 
 			if (m_document_sizes[rec.m_value] < 1000) {
 				data_record ret = rec;

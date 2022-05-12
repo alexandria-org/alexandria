@@ -45,6 +45,9 @@ namespace indexer {
 		std::vector<data_record> find(uint64_t key) const;
 		std::vector<data_record> find(uint64_t key, size_t limit) const;
 
+		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t &num_records) const;
+		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t limit, size_t &num_records) const;
+
 	private:
 
 		mutable index_reader *m_reader;
@@ -103,6 +106,26 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> counted_index<data_record>::find(uint64_t key, size_t limit) const {
 
+		size_t num_records;
+		unique_ptr<data_record[]> ptr = find_ptr(key, limit, num_records);
+
+		std::vector<data_record> ret;
+		for (size_t i = 0; i < num_records; i++) {
+			ret.push_back(ptr[i]);
+		}
+
+		return ret;
+		
+	}
+
+	template<typename data_record>
+	std::unique_ptr<data_record[]> counted_index<data_record>::find_ptr(uint64_t key, size_t &num_records) const {
+		return find_ptr(key, 0, num_records);
+	}
+
+	template<typename data_record>
+	std::unique_ptr<data_record[]> counted_index<data_record>::find_ptr(uint64_t key, size_t limit, size_t &num_records) const {
+
 		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {
@@ -142,24 +165,16 @@ namespace indexer {
 
 		m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
 
-		std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
-		char *data = data_allocator.get();
-
-		size_t num_records = len / sizeof(data_record);
+		num_records = len / sizeof(data_record);
 
 		if (limit && num_records > limit) {
 			num_records = limit;
 			len = num_records * sizeof(data_record);
 		}
 
-		m_reader->read(data, len);
+		std::unique_ptr<data_record[]> ret = std::make_unique<data_record[]>(num_records);
 
-		const data_record *records = (data_record *)data;
-
-		std::vector<data_record> ret;
-		for (size_t i = 0; i < num_records; i++) {
-			ret.push_back(records[i]);
-		}
+		m_reader->read((char *)ret.get(), len);
 
 		return ret;
 	}
