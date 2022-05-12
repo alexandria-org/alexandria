@@ -58,10 +58,15 @@ namespace algorithm {
 
 			std::unique_ptr<uint64_t[]> m_bitmap;
 
+			#ifdef IS_TEST
+			const size_t m_dim = 2695797;
+			#else
 			const size_t m_dim = 2695797707;
+			#endif
 
 			// some random prime numbers
-			std::array<uint64_t, 10> m_seeds = {3339675911, 2695798769, 2695831867, 2695857877, 2695879891, 2695879891, 2695922687, 2695935521, 3339689791, 3339703163};
+			std::array<uint64_t, 10> m_seeds = {3339675911, 2695798769, 2695831867, 2695857877, 2695879891, 2695879891, 2695922687, 2695935521,
+					3339689791, 3339703163};
 
 			void set_bit(size_t bit);
 			bool get_bit(size_t bit) const;
