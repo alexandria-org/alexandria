@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <memory>
+#include "roaring/roaring64map.hh"
 
 namespace algorithm {
 
@@ -42,20 +43,25 @@ namespace algorithm {
 			bloom_filter();
 
 			void insert(const std::string &item);
+			void commit();
 			bool exists(const std::string &item) const;
-			size_t size() const { return m_dim_x * m_dim_y * sizeof(uint64_t); }
-			const char *data() const { return (char *)m_bitmap.get(); }
-			void read(char *data);
+			size_t size() const { return m_dim * sizeof(uint64_t); }
+			const char *data() const;
+			void read(char *data, size_t len);
+			void merge(const bloom_filter &other);
+			double saturation();
+
+			void read_file(const std::string &file_name);
+			void write_file(const std::string &file_name) const;
 
 		private:
 
 			std::unique_ptr<uint64_t[]> m_bitmap;
 
-			size_t m_dim_x = 14009;
-			size_t m_dim_y = 14071;
+			const size_t m_dim = 2695797707;
 
-			std::array<uint64_t, 3> m_seeds = {7689571, 15485863, 98899};
-			std::array<uint64_t, 3> m_hashes;
+			// some random prime numbers
+			std::array<uint64_t, 10> m_seeds = {3339675911, 2695798769, 2695831867, 2695857877, 2695879891, 2695879891, 2695922687, 2695935521, 3339689791, 3339703163};
 
 			void set_bit(size_t bit);
 			bool get_bit(size_t bit) const;

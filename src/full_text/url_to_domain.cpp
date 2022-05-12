@@ -27,6 +27,7 @@
 #include "url_to_domain.h"
 #include "logger/logger.h"
 #include "indexer/merger.h"
+#include "URL.h"
 
 using namespace std;
 
@@ -68,12 +69,12 @@ namespace full_text {
 					infile.read(buffer, sizeof(uint64_t));
 					if (infile.eof()) break;
 
-					//uint64_t url_hash = *((uint64_t *)buffer);
+					uint64_t url_hash = *((uint64_t *)buffer);
 
 					infile.read(buffer, sizeof(uint64_t));
 					uint64_t domain_hash = *((uint64_t *)buffer);
 
-					//m_url_to_domain[url_hash] = domain_hash;
+					m_url_to_domain[url_hash] = domain_hash;
 					m_domains[domain_hash]++;
 
 				} while (!infile.eof());
@@ -81,14 +82,22 @@ namespace full_text {
 				infile.close();
 			}
 		}
+
+		std::cout << "num_urls: " << m_url_to_domain.size() << std::endl;
 	}
 
 	void url_to_domain::convert() {
 		ifstream infile("/all-urls.txt");
 		string line;
+		size_t i = 0;
 		while (getline(infile, line)) {
-			m_url_filter.insert(line);
+			i++;
+			if (i % 10000000 == 0) std::cout << "done " << i << std::endl;
+			URL url(line);
+			m_url_filter.insert(url.hash_input());
 		}
+		ofstream outfile("/mnt/0/url_filter.bloom", ios::binary | ios::trunc);
+		outfile.write(m_url_filter.data(), m_url_filter.size());
 	}
 
 	void url_to_domain::write(size_t indexer_id) {\
