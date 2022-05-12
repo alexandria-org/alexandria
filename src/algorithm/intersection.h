@@ -26,6 +26,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "roaring/roaring.hh"
 
 namespace algorithm {
@@ -71,6 +72,58 @@ namespace algorithm {
 				} else {
 					if (iter_index != shortest_vector_position) {
 						sum_fun(value, vec[*pos]);
+					}
+				}
+				iter_index++;
+			}
+			if (all_equal) {
+				intersection.push_back(value);
+			}
+
+			positions[shortest_vector_position]++;
+		}
+
+		return intersection;
+	}
+
+	template<typename item>
+	std::vector<item> intersection(const std::vector<std::unique_ptr<item[]>> &input, const std::vector<size_t> lengths) {
+
+		if (input.size() == 0) return {};
+
+		size_t shortest_vector_position = 0;
+		size_t shortest_len = SIZE_MAX;
+		size_t iter_index = 0;
+		for (size_t len : lengths) {
+			if (shortest_len > len) {
+				shortest_len = len;
+				shortest_vector_position = iter_index;
+			}
+			iter_index++;
+		}
+
+		std::vector<size_t> positions(input.size(), 0);
+		std::vector<item> intersection;
+
+		while (positions[shortest_vector_position] < shortest_len) {
+
+			bool all_equal = true;
+			item value = input[shortest_vector_position][positions[shortest_vector_position]];
+
+			size_t iter_index = 0;
+			for (const std::unique_ptr<item[]> &ptr : input) {
+				const size_t len = lengths[iter_index];
+
+				size_t *pos = &(positions[iter_index]);
+				while (*pos < len && ptr[*pos] < value) {
+					(*pos)++;
+				}
+				if (((*pos < len) && (value < ptr[*pos])) || *pos >= len) {
+					all_equal = false;
+					break;
+				} else {
+					if (iter_index != shortest_vector_position) {
+						//sum_fun(value, ptr[*pos]);
 					}
 				}
 				iter_index++;
