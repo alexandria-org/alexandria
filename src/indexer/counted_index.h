@@ -126,6 +126,8 @@ namespace indexer {
 	template<typename data_record>
 	std::unique_ptr<data_record[]> counted_index<data_record>::find_ptr(uint64_t key, size_t limit, size_t &num_records) const {
 
+		num_records = 0;
+
 		size_t key_pos = read_key_pos(key);
 
 		if (key_pos == SIZE_MAX) {

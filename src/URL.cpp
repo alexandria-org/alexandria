@@ -96,11 +96,11 @@ uint64_t URL::host_hash() const {
 }
 
 uint64_t URL::link_hash(const URL &target_url, const string &link_text) const {
-	return ::algorithm::hash(host_top_domain() + target_url.str() + link_text);
+	return ::algorithm::hash(host() + target_url.str());
 }
 
 uint64_t URL::domain_link_hash(const URL &target_url, const string &link_text) const {
-	return ::algorithm::hash(host_top_domain() + target_url.host() + link_text);
+	return ::algorithm::hash(host() + target_url.host());
 }
 
 bool URL::canonically_different(const URL &url) const {

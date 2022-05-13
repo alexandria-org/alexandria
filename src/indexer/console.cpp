@@ -182,13 +182,6 @@ namespace indexer {
 
 		//idx_manager.truncate();
 
-		::algorithm::bloom_filter urls_to_index;
-		ifstream infile("/mnt/0/url_filter.bloom", ios::binary);
-		char *buf = new char[urls_to_index.size()];
-		infile.read(buf, urls_to_index.size());
-		//urls_to_index.read(buf);
-		delete buf;
-
 		hash_table::hash_table ht("index_manager");
 
 		string input;
@@ -219,15 +212,6 @@ namespace indexer {
 			} else if (cmd == "word_num") {
 				const string query = args[1];
 				cmd_word_num(idx_manager, ht, query);
-			} else if (cmd == "bloom") {
-				const string host = args[1];
-				const string path = args[2];
-				const URL url(host, path);
-				if (urls_to_index.exists(url.hash_input())) {
-					cout << url.str() << " exists" << endl;
-				} else {
-					cout << url.str() << " not exists" << endl;
-				}
 			} else if (cmd == "quit") {
 				break;
 			}
@@ -292,7 +276,7 @@ namespace indexer {
 		urls_to_index.read_file("/mnt/0/url_filter.bloom");
 
 		size_t limit = 5000;
-		size_t offset = 5000;
+		size_t offset = 0;
 		while (true) {
 			indexer::index_manager idx_manager;
 
@@ -316,9 +300,6 @@ namespace indexer {
 
 			offset += limit;
 		}
-
-		indexer::index_manager idx_manager;
-		idx_manager.optimize();
 	}
 
 	void index_urls(const string &batch) {

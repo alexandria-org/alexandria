@@ -183,7 +183,7 @@ namespace indexer {
 		std::vector<uint32_t> ids;
 		for (uint32_t internal_id : rr) {
 			ids.push_back(internal_id);
-			m_records[internal_id].m_modified_score = m_records[internal_id].m_score +
+			m_records[internal_id].m_modified_score = m_records[internal_id].m_score *
 					score_mod(m_records[internal_id].m_value);
 		}
 

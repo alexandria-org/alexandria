@@ -117,7 +117,7 @@ namespace indexer {
 			parsed++;
 
 			// Check if we have the url
-			if (!urls_to_index.exists(target_url.hash_input())) continue;
+			//if (!urls_to_index.exists(target_url.hash_input())) continue;
 
 			added++;
 
@@ -305,30 +305,45 @@ namespace indexer {
 
 	std::vector<return_record> index_manager::find(const string &query) {
 
-		/*auto domain_formula = [](float score) {
+		auto domain_formula = [](float score) {
 			return expm1(25.0f * score) / 50.0f;
-		};*/
+		};
 
 		std::vector<size_t> counts;
 
-		vector<counted_record> bm25_scores = m_word_index->find_sum(text::get_tokens(query), 1000);
+		vector<counted_record> bm25_scores = m_word_index->find_sum(text::get_tokens(query), 100000);
 		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
 		cout << "found: " << links.size() << " links" << endl;
+		cout << "found: " << domain_links.size() << " domain links" << endl;
 
-		/*
+		std::sort(links.begin(), links.end(), link_record::storage_order());
+		std::sort(domain_links.begin(), domain_links.end(), domain_link_record::storage_order());
+
+		// group by target domain.
+		std::vector<domain_link_record> grouped;
+		for (auto rec : domain_links) {
+			if (grouped.size() && grouped.back().storage_equal(rec)) {
+				grouped.back().m_score += domain_formula(rec.m_score);
+			} else {
+				grouped.emplace_back(rec);
+				grouped.back().m_score = domain_formula(rec.m_score);
+			}
+		}
+
+
 		if (!std::is_sorted(bm25_scores.begin(), bm25_scores.end())) {
 			throw new runtime_error("bm25 are not sorted");
 		}
 		if (!std::is_sorted(links.begin(), links.end(), link_record::storage_order())) {
 			throw new runtime_error("links are not sorted");
 		}
-		if (!std::is_sorted(domain_links.begin(), domain_links.end(), domain_link_record::storage_order())) {
+		if (!std::is_sorted(grouped.begin(), grouped.end(), domain_link_record::storage_order())) {
 			throw new runtime_error("doain_links are not sorted");
-		}*/
+		}
 
 		profiler::instance inst("m_levels[0]->find");
-		std::vector<return_record> res = m_levels[0]->find(query, {}, links, domain_links, bm25_scores);
+		std::vector<return_record> res = m_levels[0]->find(query, {}, links, grouped, bm25_scores);
 		inst.stop();
 
 		// Sort by score.

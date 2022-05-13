@@ -469,7 +469,7 @@ namespace indexer {
 			records.resize(1000000);
 		}
 
-		std::sort(records.begin(), records.end(), typename data_record::storage_order());
+		std::sort(records.begin(), records.end());
 	}
 
 	template<typename data_record>
