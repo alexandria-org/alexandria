@@ -47,12 +47,6 @@ BOOST_AUTO_TEST_CASE(test_bloom_filter) {
 }
 
 BOOST_AUTO_TEST_CASE(test_bloom_filter_merge) {
-	cout << "test0: " << algorithm::hash_with_seed("test0", 7689571) << endl;
-	cout << "test1: " << algorithm::hash_with_seed("test1", 7689571) << endl;
-	cout << "test2: " << algorithm::hash_with_seed("test2", 7689571) << endl;
-	cout << "test3: " << algorithm::hash_with_seed("test3", 7689571) << endl;
-	cout << "test4: " << algorithm::hash_with_seed("test4", 7689571) << endl;
-	cout << "test5: " << algorithm::hash_with_seed("test5", 7689571) << endl;
 
 	algorithm::bloom_filter bf1;
 	bf1.insert("test1");
@@ -93,30 +87,6 @@ BOOST_AUTO_TEST_CASE(test_bloom_filter_save) {
 		BOOST_CHECK(bf.exists("test2"));
 		BOOST_CHECK(!bf.exists("test3"));
 	}
-}
-
-BOOST_AUTO_TEST_CASE(test_bloom_filter_stress) {
-	algorithm::bloom_filter bf;
-	// Insert 10 billion strings. Measure false positive rate.
-	std::cout << "inserting... size is: " << bf.size() << std::endl;
-	for (size_t i = 0; i < 200000000; i++) {
-		if (i % 1000000 == 0) std::cout << "." << std::flush;
-		bf.insert("testing_" + std::to_string(i));
-	}
-
-	bf.write_file("/tmp/bloom");
-
-	size_t num_test = 1000000;
-	size_t num_false_positive = 0;
-	for (size_t i = 0; i < num_test; i++) {
-		if (bf.exists(to_string(rand()))) {
-			num_false_positive++;
-		}
-	}
-
-	std::cout << "saturation: " << bf.saturation() << std::endl;
-	std::cout << "num_false_positive: " << num_false_positive << std::endl;
-	std::cout << "false positive rate: " << ((double)num_false_positive / num_test) << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

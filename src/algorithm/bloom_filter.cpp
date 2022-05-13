@@ -35,7 +35,6 @@ namespace algorithm {
 	bloom_filter::bloom_filter()
 	{
 		m_bitmap = std::make_unique<uint64_t[]>(m_dim);
-		std::cout << "allocated: " << m_dim * sizeof(uint64_t) << std::endl;
 		for (size_t i = 0; i < m_dim; i++) {
 			m_bitmap[i] = 0x0ull;
 		}
