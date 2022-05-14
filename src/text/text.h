@@ -134,21 +134,7 @@ namespace text {
 	std::vector<std::string> get_words_without_stopwords(const std::string &str, size_t limit);
 	std::vector<std::string> get_words_without_stopwords(const std::string &str);
 
-	template<typename T>
-	void words_to_ngram_hash(const std::vector<std::string> &words, size_t n_grams, T fun) {
-		
-		const size_t word_iter_max = words.size();
-
-		for (size_t i = 0; i < word_iter_max; i++) {
-			for (size_t j = 0; j < n_grams && (j + i) < word_iter_max; j++) {
-				std::string n_gram = words[i];
-				for (size_t k = i + 1; k <= i + j; k++) {
-					n_gram += " " + words[k];
-				}
-				fun(algorithm::hash(n_gram));
-			}
-		}
-	}
+	void words_to_ngram_hash(const std::vector<std::string> &words, size_t n_grams, const std::function<void(uint64_t)> &ins);
 
 	std::map<std::string, size_t> get_word_counts(const std::string &text);
 	std::map<std::string, float> get_word_frequency(const std::string &text);

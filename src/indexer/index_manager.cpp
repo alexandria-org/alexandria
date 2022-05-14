@@ -107,6 +107,7 @@ namespace indexer {
 		size_t added = 0;
 		size_t parsed = 0;
 		vector<string> col_values;
+		set<uint64_t> tokens;
 		while (getline(infile, line)) {
 
 			col_values.clear();
@@ -136,15 +137,18 @@ namespace indexer {
 
 			vector<string> words = text::get_expanded_full_text_words(link_text);
 
+			text::words_to_ngram_hash(words, 3, [&tokens](const uint64_t hash) {
+				tokens.insert(hash);
+			});
+
 			if (has_url) {
 				// Add the url link.
 				link_record link_rec(link_hash, source_harmonic);
 				link_rec.m_source_domain = source_url.hash();
 				link_rec.m_target_hash = target_url.hash();
 
-				for (const string &word : words) {
-					const uint64_t word_hash = ::algorithm::hash(word);
-					m_link_index_builder->add(word_hash, link_rec);
+				for (auto token : tokens) {
+					m_link_index_builder->add(token, link_rec);
 				}
 			}
 
@@ -152,10 +156,11 @@ namespace indexer {
 			rec.m_source_domain = source_url.host_hash();
 			rec.m_target_domain = target_url.host_hash();
 
-			for (const string &word : words) {
-				const uint64_t word_hash = ::algorithm::hash(word);
-				m_domain_link_index_builder->add(word_hash, rec);
+			for (auto token : tokens) {
+				m_domain_link_index_builder->add(token, rec);
 			}
+
+			tokens.clear();
 		}
 
 		cout << "Done with " << local_path << " added " << added << " total " << parsed << " took: " << prof.get() << "ms" << endl;

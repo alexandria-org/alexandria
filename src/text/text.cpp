@@ -281,6 +281,21 @@ namespace text {
 		return get_words_without_stopwords(str, 0);
 	}
 
+	void words_to_ngram_hash(const std::vector<std::string> &words, size_t n_grams, const std::function<void(uint64_t)> &ins) {
+		
+		const size_t word_iter_max = words.size();
+
+		for (size_t i = 0; i < word_iter_max; i++) {
+			for (size_t j = 0; j < n_grams && (j + i) < word_iter_max; j++) {
+				std::string n_gram = words[i];
+				for (size_t k = i + 1; k <= i + j; k++) {
+					n_gram += " " + words[k];
+				}
+				ins(algorithm::hash(n_gram));
+			}
+		}
+	}
+
 	std::map<std::string, size_t> get_word_counts(const string &text) {
 		vector<string> words = get_full_text_words(text);
 		map<string, size_t> counts;

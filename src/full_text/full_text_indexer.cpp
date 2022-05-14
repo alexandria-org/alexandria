@@ -161,7 +161,7 @@ namespace full_text {
 		map<uint64_t, uint64_t> uniq;
 
 		if (config::n_grams > 1) {
-			text::words_to_ngram_hash(words, config::n_grams, [&word_map, &uniq, score](const uint64_t hash) {
+			text::words_to_ngram_hash(words, config::n_grams, [&word_map, &uniq, score](uint64_t hash) {
 				if (uniq.find(hash) == uniq.end()) {
 					word_map[hash] += score;
 					uniq[hash] = hash;
