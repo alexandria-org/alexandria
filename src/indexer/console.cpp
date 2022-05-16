@@ -304,7 +304,7 @@ namespace indexer {
 
 	void index_urls(const string &batch) {
 
-		size_t limit = 5000;
+		size_t limit = 1000;
 		size_t offset = 0;
 		while (true) {
 			indexer::index_manager idx_manager;
@@ -318,9 +318,11 @@ namespace indexer {
 			vector<string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
+			if (warc_paths.size() == 0) break;
+
 			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_url_files_threaded(local_files, 1);
+			idx_manager.add_url_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 

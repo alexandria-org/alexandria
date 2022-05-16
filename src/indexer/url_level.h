@@ -61,7 +61,7 @@ namespace indexer {
 		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
 
 		private:
-			void make_sure_builder_is_present(uint64_t);
+			index_builder<url_record> *make_sure_builder_is_present(uint64_t);
 	};
 
 }

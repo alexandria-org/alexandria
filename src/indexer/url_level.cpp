@@ -50,12 +50,14 @@ namespace indexer {
 		std::function<void(uint64_t, const std::string &)> add_data,
 		std::function<void(uint64_t, uint64_t)> add_url) {
 
+		(void)add_data;
 		(void)add_url;
 
 		const vector<size_t> cols = {1, 2, 3, 4};
 
 		ifstream infile(local_path, ios::in);
 		string line;
+		unordered_map<uint64_t, index_builder<url_record> *> builders;
 		while (getline(infile, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -65,23 +67,34 @@ namespace indexer {
 			uint64_t domain_hash = url.host_hash();
 			uint64_t url_hash = url.hash();
 
-			make_sure_builder_is_present(domain_hash);
+			if (builders.find(domain_hash) == builders.end()) {
+				builders[domain_hash] = make_sure_builder_is_present(domain_hash);
+			}
+			index_builder<url_record> *builder = builders[domain_hash];
+
+			(void)url_hash;
+			(void)builder;
 
 			for (size_t col : cols) {
 				vector<string> words = text::get_full_text_words(col_values[col]);
 				for (const string &word : words) {
-					m_builders[domain_hash]->add(::algorithm::hash(word), url_record(url_hash));
+					builder->add(::algorithm::hash(word), url_record(url_hash));
 				}
 			}
 		}
 	}
 
-	void url_level::make_sure_builder_is_present(uint64_t domain_hash) {
-		std::lock_guard guard(m_lock);
+	index_builder<url_record> *url_level::make_sure_builder_is_present(uint64_t domain_hash) {
+		m_lock.lock();
 		if (m_builders.count(domain_hash) == 0) {
-			auto ptr = std::make_unique<index_builder<url_record>>("urls", domain_hash, 1000);
-			m_builders.emplace(domain_hash, std::move(ptr));
+			m_builders[domain_hash] = std::make_unique<index_builder<url_record>>("url", domain_hash, 1000);
 		}
+
+		auto ptr = m_builders[domain_hash].get();
+
+		m_lock.unlock();
+
+		return ptr;
 	}
 
 	void url_level::merge() {

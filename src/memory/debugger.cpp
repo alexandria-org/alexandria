@@ -28,10 +28,8 @@
 #include "memory.h"
 #include "logger/logger.h"
 #include <iostream>
-#include <new>
 #include <cstdlib>
 #include <array>
-#include <atomic>
 
 using namespace std;
 
@@ -54,9 +52,17 @@ using namespace std;
 
 namespace memory {
 
-	atomic_size_t mem_counter = 0;
-	size_t ptr_counter = 0;
-	size_t total_memory_on_host = 0;
+	atomic_size_t mem_counter;
+	size_t ptr_counter;
+	size_t total_memory_on_host;
+
+	void incr_mem_counter(size_t n) {
+		mem_counter += n;
+	}
+
+	void decr_mem_counter(size_t n) {
+		mem_counter -= n;
+	}
 
 	size_t allocated_memory() {
 		return mem_counter;
@@ -94,60 +100,3 @@ namespace memory {
 
 }
 
-/*
-	Overload the global new, new[], delete and delete[] operators.
-*/
-// https://en.cppreference.com/w/cpp/memory/new/operator_new
-/*
-void *operator new(size_t n) {
-
-	void *m = malloc(n + sizeof(size_t));
-
-	if (m) {
-		memory::mem_counter += n;
-		memory::ptr_counter++;
-
-		static_cast<size_t *>(m)[0] = n;
-		return &(static_cast<size_t *>(m)[1]);
-	}
-
-	throw bad_alloc();
-}
-
-void *operator new[](size_t n) {
-
-	void *m = malloc(n + sizeof(size_t));
-
-	if (m) {
-		memory::mem_counter += n;
-		//memory::ptr_counter++;
-
-		static_cast<size_t *>(m)[0] = n;
-		return &(static_cast<size_t *>(m)[1]);
-	}
-
-	throw bad_alloc();
-}
-
-void operator delete(void *p) noexcept {
-
-	void *realp = &(static_cast<size_t *>(p)[-1]);
-	const size_t n = static_cast<size_t *>(p)[-1];
-
-	memory::mem_counter -= n;
-	//memory::ptr_counter--;
-
-	free(realp);
-}
-
-void operator delete[](void *p) noexcept {
-
-	void *realp = &(static_cast<size_t *>(p)[-1]);
-	const size_t n = static_cast<size_t *>(p)[-1];
-
-	memory::mem_counter -= n;
-	//memory::ptr_counter--;
-
-	free(realp);
-}
-*/

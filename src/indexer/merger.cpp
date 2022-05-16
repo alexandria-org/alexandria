@@ -59,24 +59,24 @@ namespace indexer {
 		}
 
 		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size) {
-			merger_lock.lock();
+			std::lock_guard lock(merger_lock);
+
 			appenders[id] = append;
 			sizes[id] = size;
-			merger_lock.unlock();
 		}
 
 		void register_merger(size_t id, std::function<void()> merge) {
-			merger_lock.lock();
+			std::lock_guard lock(merger_lock);
+
 			mergers[id] = merge;
-			merger_lock.unlock();
 		}
 
 		void deregister_merger(size_t id) {
-			merger_lock.lock();
+			std::lock_guard lock(merger_lock);
+
 			appenders.erase(id);
 			mergers.erase(id);
 			sizes.erase(id);
-			merger_lock.unlock();
 		}
 
 		bool merge_thread_is_running = true;
@@ -126,9 +126,9 @@ namespace indexer {
 			for (auto &iter : mergers) {
 				pool.enqueue([iter]() {
 					try {
-						iter.second();
+					      iter.second();
 					} catch (...) {
-						
+					      
 					}
 				});
 			}
@@ -141,6 +141,7 @@ namespace indexer {
 		}
 
 		size_t total_sizes() {
+			std::lock_guard lock(merger_lock);
 			size_t sum = 0;
 			for (const auto &iter : sizes) {
 				sum += iter.second();

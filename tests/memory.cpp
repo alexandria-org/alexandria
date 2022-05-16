@@ -27,6 +27,8 @@
 #include <boost/test/unit_test.hpp>
 #include "memory/memory.h"
 #include "memory/debugger.h"
+#include "indexer/index_builder.h"
+#include "indexer/url_level.h"
 
 BOOST_AUTO_TEST_SUITE(test_memory)
 
@@ -54,6 +56,38 @@ BOOST_AUTO_TEST_CASE(test_memory) {
 	std::cout << "used3: " << used3 << std::endl;
 	BOOST_CHECK(used1 + 1000000 == used2);
 	BOOST_CHECK(used1 == used3);
+}
+
+/*
+ * Test memory consumtion during merge, should end with same amount.
+ * */
+BOOST_AUTO_TEST_CASE(test_indexer_memory) {
+	memory::update();
+
+	BOOST_CHECK(memory::get_available_memory() > 0);
+	BOOST_CHECK(memory::get_total_memory() > 0);
+
+	size_t memuse1, memuse2, memuse3, memuse4;
+	memuse1 = memory::allocated_memory();
+
+	{
+		indexer::index_builder<indexer::url_record> idx("url", 4539569153552585710ull, 1000);
+
+		memuse2 = memory::allocated_memory();
+		idx.merge();
+		memuse3 = memory::allocated_memory();
+	}
+
+	memuse4 = memory::allocated_memory();
+
+	std::cout << "memuse1: " << memuse1 << std::endl;
+	std::cout << "memuse2: " << memuse2 << std::endl;
+	std::cout << "memuse3: " << memuse3 << std::endl;
+	std::cout << "memuse4: " << memuse4 << std::endl;
+
+	BOOST_CHECK(memuse1 == memuse4);
+	BOOST_CHECK(memuse2 == memuse3);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

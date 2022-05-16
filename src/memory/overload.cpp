@@ -24,21 +24,61 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "debugger.h"
+#include <new>
 
-#include <iostream>
-#include <atomic>
+using namespace std;
 
-namespace memory {
+/*
+	Overload the global new, new[], delete and delete[] operators.
+*/
+// https://en.cppreference.com/w/cpp/memory/new/operator_new
 
-	void incr_mem_counter(size_t n);
-	void decr_mem_counter(size_t n);
-	size_t allocated_memory(); // Returns number of allocated bytes.
-	size_t num_allocated(); // Returns number of allocated pointers.
+void *operator new(size_t n) {
 
-	void reset_usage();
-	void record_usage();
-	size_t get_usage();
-	size_t get_usage_peak();
+	void *m = malloc(n + sizeof(size_t));
 
+	if (m) {
+		memory::incr_mem_counter(n);
+
+		static_cast<size_t *>(m)[0] = n;
+		return &(static_cast<size_t *>(m)[1]);
+	}
+
+	throw bad_alloc();
 }
+
+void *operator new[](size_t n) {
+
+	void *m = malloc(n + sizeof(size_t));
+
+	if (m) {
+		memory::incr_mem_counter(n);
+
+		static_cast<size_t *>(m)[0] = n;
+		return &(static_cast<size_t *>(m)[1]);
+	}
+
+	throw bad_alloc();
+}
+
+void operator delete(void *p) noexcept {
+
+	void *realp = &(static_cast<size_t *>(p)[-1]);
+	const size_t n = static_cast<size_t *>(p)[-1];
+
+	memory::decr_mem_counter(n);
+
+	free(realp);
+}
+
+void operator delete[](void *p) noexcept {
+
+	void *realp = &(static_cast<size_t *>(p)[-1]);
+	const size_t n = static_cast<size_t *>(p)[-1];
+
+	memory::decr_mem_counter(n);
+
+	free(realp);
+}
+

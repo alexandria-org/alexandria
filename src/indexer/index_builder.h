@@ -107,8 +107,6 @@ namespace indexer {
 		size_t m_hash_table_size;
 		const size_t m_max_results;
 
-		const size_t m_buffer_len = config::ft_shard_builder_buffer_len;
-		char *m_buffer;
 		std::mutex m_lock;
 
 		// Caches
@@ -168,14 +166,14 @@ namespace indexer {
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(config::ft_max_results_per_section) {
-		merger::register_merger((size_t)this, [this]() {append();});
+		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
-		merger::register_merger((size_t)this, [this]() {append();});
+		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
@@ -195,7 +193,6 @@ namespace indexer {
 
 	template<typename data_record>
 	void index_builder<data_record>::add(uint64_t key, const data_record &record) {
-
 		indexer::merger::lock();
 
 		m_lock.lock();
@@ -204,10 +201,9 @@ namespace indexer {
 		m_key_cache.push_back(key);
 		m_record_cache.push_back(record);
 
-		assert(m_record_cache.size() == m_key_cache.size());
+		//assert(m_record_cache.size() == m_key_cache.size());
 
 		m_lock.unlock();
-
 	}
 
 	/*
@@ -456,6 +452,8 @@ namespace indexer {
 				m_record_id_map[record_buffer[i].m_value] = m_records.size();
 				m_records.push_back(record_buffer[i]);
 			}
+
+			records_read += records_to_read;
 		}
 
 		while (read_page(reader)) {

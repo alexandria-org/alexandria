@@ -154,6 +154,9 @@ set(SRC_TESTS
 	"tests/test_file.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
+
+	# This overloads the new/delete operators to keep track of memory, slows things down a lot.
+	"src/memory/overload.cpp"
 )
 
 add_executable(run_tests
