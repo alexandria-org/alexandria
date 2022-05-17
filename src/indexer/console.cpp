@@ -40,6 +40,7 @@
 #include "merger.h"
 #include "file/tsv_file_remote.h"
 #include "algorithm/bloom_filter.h"
+#include "http/server.h"
 
 using namespace std;
 
@@ -539,6 +540,67 @@ namespace indexer {
 			word_index.calculate_scores();
 			word_index.sort_by_scores();
 		}
+	}
+
+	void domain_info_server() {
+
+		indexer::index_manager idx_manager;
+		hash_table::hash_table ht("word_hash_table");
+
+		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
+		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 997);
+
+		cout << "starting server..." << endl;
+
+		::http::server srv([&ht, &title_counter, &link_counter](const http::request &req) {
+			http::response res;
+
+			URL url = req.url();
+
+			auto query = url.query();
+
+			size_t limit = 1000;
+			if (query.count("limit")) limit = std::stoi(query["limit"]);
+
+			size_t offset = 0;
+			if (query.count("offset")) offset = std::stoi(query["offset"]);
+
+			if (url.path() == "/favicon.ico") {
+				res.code(404);
+				res.body("404");
+				return res;
+			}
+
+			stringstream body;
+
+			string domain = url.path();
+			domain.erase(0, 1);
+
+			body << "<h1>" << domain << "</h1>" << endl;
+
+			body << "<pre>";
+
+			/*const uint64_t domain_hash = ::algorithm::hash(domain);
+			std::vector<indexer::counted_record> res = idx.find(domain_hash);
+
+			sort(res.begin(), res.end(), indexer::counted_record::truncate_order());
+
+			size_t pos = 0;
+			for (auto &rec : res) {
+				const string word = ht.find(rec.m_value);
+				cout << word << ": " << rec.m_count << endl;
+				if (pos >= limit) break;
+				pos++;
+			}*/
+
+			res.code(200);
+			body << "Limit: " + std::to_string(limit) << endl;
+			body << "Offset: " + std::to_string(offset) << endl;
+
+			res.body(body.str());
+
+			return res;
+		});
 	}
 
 }

@@ -37,6 +37,7 @@
 #include "full_text/full_text_record.h"
 #include "profiler/profiler.h"
 #include "full_text/full_text.h"
+#include "indexer/console.h"
 
 #include <fstream>
 
@@ -75,7 +76,13 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (argc == 1 && full_text::is_indexed()) {
+	if (argc == 2 && arg == "domain_info") {
+
+		indexer::domain_info_server();
+
+	}
+
+	/*if (argc == 1 && full_text::is_indexed()) {
 
 		//worker::start_urlstore_server();
 
@@ -133,7 +140,7 @@ int main(int argc, const char **argv) {
 		hash_table_helper::truncate("main_index");
 		hash_table_helper::truncate("link_index");
 		hash_table_helper::truncate("domain_link_index");
-	}
+	}*/
 
 	logger::join_logger_thread();
 

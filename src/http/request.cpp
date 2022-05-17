@@ -24,23 +24,13 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "request.h"
 
-#include <iostream>
+namespace http {
 
-namespace indexer {
-
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
+	request::request(const URL &url)
+	: m_url(url) {
+	
+	}
 
 }

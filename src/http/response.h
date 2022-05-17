@@ -28,19 +28,25 @@
 
 #include <iostream>
 
-namespace indexer {
+namespace http {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
+	class response {
+		public:
+
+			void code(size_t code) { m_code = code; }
+			size_t code() const { return m_code; }
+
+			void body(const std::string &body) { m_body = body; }
+			const std::string &body() const { return m_body; }
+
+			void content_type(const std::string &content_type) { m_content_type = content_type; }
+			const std::string &content_type() const { return m_content_type; }
+
+		private:
+			size_t m_code = 200;
+			std::string m_body = "";
+			std::string m_content_type = "text/html";
+
+	};
 
 }

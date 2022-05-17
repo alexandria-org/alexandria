@@ -27,20 +27,25 @@
 #pragma once
 
 #include <iostream>
+#include <mutex>
+#include <functional>
+#include "request.h"
+#include "response.h"
 
-namespace indexer {
+namespace http {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
+	class server {
+		public:
+			server(std::function<::http::response(const ::http::request &)> handler);
+
+		private:
+			std::function<::http::response(const ::http::request &)> m_handler;
+			size_t m_port = 8080;
+			size_t m_workers = 8;
+			std::mutex m_lock;
+
+			void run_worker(int socket_id);
+			void start();
+	};
 
 }
