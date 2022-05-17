@@ -64,4 +64,11 @@ namespace hash_table {
 
 		cout << "...done" << endl;
 	}
+
+	void builder::truncate() {
+		cout << "Truncating hash table" << endl;
+		for (hash_table_shard_builder *shard : m_shards) {
+			shard->truncate();
+		}
+	}
 }

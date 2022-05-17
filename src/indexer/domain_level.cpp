@@ -129,7 +129,7 @@ namespace indexer {
 				dom_incr++;
 			}
 			if (dom_incr < domain_links.size() && domain_links[dom_incr].m_target_domain == value) {
-				score *= domain_links[dom_incr].m_score;
+				score += domain_links[dom_incr].m_score;
 			}
 			return score;
 		};

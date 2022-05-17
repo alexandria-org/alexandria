@@ -58,6 +58,10 @@ namespace indexer {
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
 		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &urls_to_index);
 		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index);
+		void add_title_file(const std::string &local_path);
+		void add_title_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
+		void add_link_count_file(const std::string &local_path);
+		void add_link_count_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_url_file(const std::string &local_path);
 		void add_url_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);
@@ -84,8 +88,15 @@ namespace indexer {
 		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index_builder;
 		std::unique_ptr<sharded<counted_index, counted_record>> m_word_index;
 
+		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_title_word_builder;
+		std::unique_ptr<sharded<counted_index, counted_record>> m_title_word_counter;
+
+		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_link_word_builder;
+		std::unique_ptr<sharded<counted_index, counted_record>> m_link_word_counter;
+
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;
+		std::unique_ptr<hash_table::builder> m_hash_table_words;
 		std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
 
 		void create_directories(level_type lvl);

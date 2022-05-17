@@ -71,7 +71,7 @@ int main(int argc, const char **argv) {
 	};
 	std::vector<size_t> counts;
 
-	indexer::sharded_index<indexer::domain_link_record> idx("domain_link_index", 2001);
+	indexer::sharded_index<indexer::domain_link_record> idx("domain_link_index", 4001);
 	vector<indexer::domain_link_record> domain_links = idx.find_group_by(text::get_tokens("svt"), domain_formula, counts);
 
 	return 0;*/
@@ -123,6 +123,10 @@ int main(int argc, const char **argv) {
 		indexer::console();
 	} else if (arg == "--index-domains") {
 		indexer::index_domains(argv[2]);
+	} else if (arg == "--index-titles") {
+		indexer::index_title_counter(argv[2]);
+	} else if (arg == "--index-link-counter") {
+		indexer::index_link_counter(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
 	} else if (arg == "--index-urls") {

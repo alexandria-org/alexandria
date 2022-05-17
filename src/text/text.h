@@ -135,6 +135,7 @@ namespace text {
 	std::vector<std::string> get_words_without_stopwords(const std::string &str);
 
 	void words_to_ngram_hash(const std::vector<std::string> &words, size_t n_grams, const std::function<void(uint64_t)> &ins);
+	void words_to_ngram_hash(const std::vector<std::string> &words, size_t n_grams, const std::function<void(uint64_t, const std::string &)> &ins);
 
 	std::map<std::string, size_t> get_word_counts(const std::string &text);
 	std::map<std::string, float> get_word_frequency(const std::string &text);

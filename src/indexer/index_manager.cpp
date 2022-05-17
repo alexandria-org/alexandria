@@ -39,14 +39,21 @@ namespace indexer {
 
 	index_manager::index_manager() {
 
-		m_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, link_record>>("link_index", 2001);
-		m_link_index = std::make_unique<sharded<counted_index, link_record>>("link_index", 2001);
+		m_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, link_record>>("link_index", 4001);
+		m_link_index = std::make_unique<sharded<counted_index, link_record>>("link_index", 4001);
 
-		m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 2001);
-		m_domain_link_index = std::make_unique<sharded<counted_index, domain_link_record>>("domain_link_index", 2001);
+		m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
+		m_domain_link_index = std::make_unique<sharded<counted_index, domain_link_record>>("domain_link_index", 4001);
 
 		m_hash_table = std::make_unique<hash_table::builder>("index_manager");
+		m_hash_table_words = std::make_unique<hash_table::builder>("word_hash_table");
 		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
+
+		m_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("title_word_counter", 997);
+		m_title_word_counter = std::make_unique<sharded<counted_index, counted_record>>("title_word_counter", 997);
+
+		m_link_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("link_word_counter", 997);
+		m_link_word_counter = std::make_unique<sharded<counted_index, counted_record>>("link_word_counter", 997);
 
 		//m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
@@ -173,6 +180,105 @@ namespace indexer {
 		for (auto &local_path : local_paths) {
 			pool.enqueue([this, local_path, &urls_to_index]() -> void {
 				add_link_file(local_path, urls_to_index);
+			});
+		}
+
+		pool.run_all();
+	}
+
+	void index_manager::add_title_file(const string &local_path) {
+		const size_t title_col = 1;
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		std::map<uint64_t, std::string> word_index;
+		set<uint64_t> tokens;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+
+			uint64_t domain_hash = url.host_hash();
+
+			vector<string> words = text::get_full_text_words(col_values[title_col]);
+
+			text::words_to_ngram_hash(words, 3, [&tokens](const uint64_t hash) {
+				tokens.insert(hash);
+			});
+			text::words_to_ngram_hash(words, 3, [&tokens, &word_index](const uint64_t hash, const string &ngram) {
+				tokens.insert(hash);
+
+				if (word_index.count(hash) == 0) {
+					word_index[hash] = ngram;
+				}
+			});
+			for (auto word_hash : tokens) {
+				m_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
+			}
+			tokens.clear();
+		}
+
+		for (const auto &iter : word_index) {
+			m_hash_table_words->add(iter.first, iter.second);
+		}
+	}
+
+	void index_manager::add_title_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		utils::thread_pool pool(num_threads);
+
+		for (auto &local_path : local_paths) {
+			pool.enqueue([this, local_path]() -> void {
+				add_title_file(local_path);
+			});
+		}
+
+		pool.run_all();
+	}
+
+	void index_manager::add_link_count_file(const string &local_path) {
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		std::map<uint64_t, std::string> word_index;
+		set<uint64_t> tokens;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL target_url(col_values[2], col_values[3]);
+			const uint64_t domain_hash = target_url.host_hash();
+
+			const string link_text = col_values[4].substr(0, 1000);
+
+			vector<string> words = text::get_full_text_words(link_text);
+
+			text::words_to_ngram_hash(words, 3, [&tokens, &word_index](const uint64_t hash, const string &ngram) {
+				tokens.insert(hash);
+
+				if (word_index.count(hash) == 0) {
+					word_index[hash] = ngram;
+				}
+			});
+			for (auto word_hash : tokens) {
+				m_link_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
+			}
+			tokens.clear();
+		}
+
+		for (const auto &iter : word_index) {
+			m_hash_table_words->add(iter.first, iter.second);
+		}
+	}
+
+	void index_manager::add_link_count_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		utils::thread_pool pool(num_threads);
+
+		for (auto &local_path : local_paths) {
+			pool.enqueue([this, local_path]() -> void {
+				add_title_file(local_path);
 			});
 		}
 

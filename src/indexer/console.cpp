@@ -113,6 +113,25 @@ namespace indexer {
 
 	}
 
+	void cmd_domain_info(index_manager &idx_manager, hash_table::hash_table &ht, const string &domain, size_t limit, size_t offset) {
+
+		indexer::sharded<indexer::counted_index, indexer::counted_record> idx("title_word_counter", 997);
+
+		const uint64_t domain_hash = ::algorithm::hash(domain);
+		std::vector<indexer::counted_record> res = idx.find(domain_hash);
+
+		sort(res.begin(), res.end(), indexer::counted_record::truncate_order());
+
+		size_t pos = 0;
+		for (auto &rec : res) {
+			const string word = ht.find(rec.m_value);
+			cout << word << ": " << rec.m_count << endl;
+			if (pos >= limit) break;
+			pos++;
+		}
+
+	}
+
 	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query, const string &domain) {
 
 		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
@@ -183,6 +202,7 @@ namespace indexer {
 		//idx_manager.truncate();
 
 		hash_table::hash_table ht("index_manager");
+		hash_table::hash_table ht_words("word_hash_table");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -204,6 +224,12 @@ namespace indexer {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
 				cmd_word(idx_manager, ht, query);
+			} else if (cmd == "domain_info") {
+				vector<string> query_words(args.begin() + 1, args.end());
+				const string domain = query_words[0];
+				const size_t limit = std::stoi(query_words[1]);
+				const size_t offset = std::stoi(query_words[2]);
+				cmd_domain_info(idx_manager, ht_words, domain, limit, offset);
 			} else if (cmd == "word_domain") {
 				string domain = args[1];
 				vector<string> query_words(args.begin() + 2, args.end());
@@ -265,6 +291,84 @@ namespace indexer {
 		dom_index.optimize();
 
 		profiler::print_report();
+	}
+
+	void index_title_counter(const string &batch) {
+
+		hash_table::builder ht("word_hash_table");
+		ht.truncate();
+
+		size_t limit = 5000;
+		size_t offset = 0;
+		while (true) {
+			indexer::index_manager idx_manager;
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
+
+			if (warc_paths.size() == 0) break;
+
+			for (string &path : warc_paths) {
+				const size_t pos = path.find(".warc.gz");
+				if (pos != string::npos) {
+					path.replace(pos, 8, ".gz");
+				}
+			}
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer, allocated_memory: " << memory::allocated_memory() << endl;
+			idx_manager.add_title_files_threaded(local_files, 32);
+			cout << "done with indexer, allocated_memory: " << memory::allocated_memory() << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			offset += limit;
+		}
+
+		ht.merge();
+	}
+
+	void index_link_counter(const string &batch) {
+
+		hash_table::builder ht("word_hash_table");
+
+		size_t limit = 5000;
+		size_t offset = 0;
+		while (true) {
+			indexer::index_manager idx_manager;
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
+
+			if (warc_paths.size() == 0) break;
+
+			for (string &path : warc_paths) {
+				const size_t pos = path.find(".warc.gz");
+				if (pos != string::npos) {
+					path.replace(pos, 8, ".gz");
+				}
+			}
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer, allocated_memory: " << memory::allocated_memory() << endl;
+			idx_manager.add_link_count_files_threaded(local_files, 32);
+			cout << "done with indexer, allocated_memory: " << memory::allocated_memory() << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			offset += limit;
+			break;
+		}
+
+		ht.merge();
 	}
 
 	void index_links(const string &batch) {
@@ -386,7 +490,7 @@ namespace indexer {
 
 	void print_info() {
 
-		indexer::sharded_index_builder<domain_link_record> domain_link_index_builder("domain_link_index", 2001);
+		indexer::sharded_index_builder<domain_link_record> domain_link_index_builder("domain_link_index", 4001);
 		domain_link_index_builder.check();
 
 		return;

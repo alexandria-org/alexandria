@@ -40,6 +40,7 @@ namespace hash_table {
 
 		void add(uint64_t key, const std::string &value);
 		void merge();
+		void truncate();
 
 	private:
 
