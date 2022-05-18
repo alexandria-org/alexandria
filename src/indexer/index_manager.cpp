@@ -52,8 +52,8 @@ namespace indexer {
 		m_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("title_word_counter", 997);
 		m_title_word_counter = std::make_unique<sharded<counted_index, counted_record>>("title_word_counter", 997);
 
-		m_link_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("link_word_counter", 997);
-		m_link_word_counter = std::make_unique<sharded<counted_index, counted_record>>("link_word_counter", 997);
+		m_link_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("link_word_counter", 4001);
+		m_link_word_counter = std::make_unique<sharded<counted_index, counted_record>>("link_word_counter", 4001);
 
 		//m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
@@ -278,7 +278,7 @@ namespace indexer {
 
 		for (auto &local_path : local_paths) {
 			pool.enqueue([this, local_path]() -> void {
-				add_title_file(local_path);
+				add_link_count_file(local_path);
 			});
 		}
 

@@ -63,6 +63,7 @@ namespace hash_table {
 			const size_t m_cache_limit;
 			std::map<uint64_t, size_t> m_sort_pos;
 			std::mutex m_lock;
+			size_t m_data_size = 0;
 
 			void read_keys();
 

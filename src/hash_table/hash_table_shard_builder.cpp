@@ -83,6 +83,7 @@ namespace hash_table {
 		}
 
 		m_cache = std::map<uint64_t, std::string>{}; // to free memory.
+		m_data_size = 0;
 	}
 
 	void hash_table_shard_builder::truncate() {
@@ -173,11 +174,12 @@ namespace hash_table {
 
 	void hash_table_shard_builder::add(uint64_t key, const string &value) {
 		std::lock_guard guard(m_lock);
+		m_data_size += value.capacity();
 		m_cache[key] = value;
 	}
 
 	size_t hash_table_shard_builder::cache_size() const {
-		return m_cache.size() * sizeof(uint64_t); // this is just wrong...
+		return m_cache.size() * sizeof(uint64_t) + m_data_size; // this is just wrong...
 	}
 
 	string hash_table_shard_builder::filename_data() const {

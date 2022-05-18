@@ -548,7 +548,7 @@ namespace indexer {
 		hash_table::hash_table ht("word_hash_table");
 
 		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 997);
+		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
 
 		cout << "starting server..." << endl;
 
@@ -576,26 +576,49 @@ namespace indexer {
 			string domain = url.path();
 			domain.erase(0, 1);
 
+			body << "<html><head><meta http-equiv='Content-type' content='text/html; charset=utf-8'></head><body>";
+
 			body << "<h1>" << domain << "</h1>" << endl;
 
 			body << "<pre>";
 
-			/*const uint64_t domain_hash = ::algorithm::hash(domain);
-			std::vector<indexer::counted_record> res = idx.find(domain_hash);
+			const uint64_t domain_hash = ::algorithm::hash(domain);
+			std::vector<indexer::counted_record> results = title_counter.find(domain_hash);
+			std::vector<indexer::counted_record> link_results = link_counter.find(domain_hash);
 
-			sort(res.begin(), res.end(), indexer::counted_record::truncate_order());
+			sort(results.begin(), results.end(), indexer::counted_record::truncate_order());
+			sort(link_results.begin(), link_results.end(), indexer::counted_record::truncate_order());
+
+			body << "Limit: " + std::to_string(limit) << endl;
+			body << "Offset: " + std::to_string(offset) << endl << endl;
+			body << "</pre>";
+			body << "<pre class=lefter>";
 
 			size_t pos = 0;
-			for (auto &rec : res) {
-				const string word = ht.find(rec.m_value);
-				cout << word << ": " << rec.m_count << endl;
-				if (pos >= limit) break;
+			for (auto &rec : results) {
+				if (pos >= offset) {
+					const string word = ht.find(rec.m_value);
+					body << word << ": " << rec.m_count << endl;
+				}
+				if (pos >= limit + offset) break;
 				pos++;
-			}*/
+			}
+
+			body << "</pre><pre class=righter>";
+
+			pos = 0;
+			for (auto &rec : link_results) {
+				if (pos >= offset) {
+					const string word = ht.find(rec.m_value);
+					body << word << ": " << rec.m_count << endl;
+				}
+				if (pos >= limit + offset) break;
+				pos++;
+			}
+
+			body << "</pre><style>.lefter {width: 50%; float: left; }";
 
 			res.code(200);
-			body << "Limit: " + std::to_string(limit) << endl;
-			body << "Offset: " + std::to_string(offset) << endl;
 
 			res.body(body.str());
 
