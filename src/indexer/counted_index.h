@@ -27,12 +27,13 @@
 #pragma once
 
 #include "index_reader.h"
+#include "index_base.h"
 #include <vector>
 
 namespace indexer {
 
 	template<typename data_record>
-	class counted_index {
+	class counted_index : public index_base<data_record> {
 
 	public:
 
@@ -48,6 +49,11 @@ namespace indexer {
 		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t &num_records) const;
 		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t limit, size_t &num_records) const;
 
+		/*
+		 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
+		 * */
+		void for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const;
+
 	private:
 
 		mutable index_reader *m_reader;
@@ -56,7 +62,6 @@ namespace indexer {
 		std::string m_file_name;
 		std::string m_db_name;
 		size_t m_id;
-		const size_t m_hash_table_size;
 		size_t m_unique_count = 0;
 
 		size_t read_key_pos(uint64_t key) const;
@@ -69,28 +74,28 @@ namespace indexer {
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &file_name)
-	: m_file_name(file_name), m_hash_table_size(config::shard_hash_table_size) {
+	: index_base<data_record>(), m_file_name(file_name) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size) {
+	: index_base<data_record>(), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &db_name, size_t id, size_t hash_table_size)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
+	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(index_reader *ram_reader, size_t hash_table_size)
-	: m_hash_table_size(hash_table_size) {
+	: index_base<data_record>(hash_table_size) {
 		m_reader = ram_reader;
 	}
 
@@ -182,14 +187,33 @@ namespace indexer {
 	}
 
 	/*
+	 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
+	 * */
+	template<typename data_record>
+	void counted_index<data_record>::for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const {
+
+		std::ifstream reader(filename(), std::ios::binary);
+		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
+
+		std::map<uint64_t, std::vector<data_record>> page;
+		while (this->read_page_into(reader, page)) {
+			for (const auto &iter : page) {
+				on_each_key(iter.first, iter.second);
+			}
+			page.clear();
+		}
+		
+	}
+
+	/*
 	 * Reads the exact position of the key, returns SIZE_MAX if the key was not found.
 	 * */
 	template<typename data_record>
 	size_t counted_index<data_record>::read_key_pos(uint64_t key) const {
 
-		if (m_hash_table_size == 0) return 0;
+		if (this->m_hash_table_size == 0) return 0;
 
-		const size_t hash_pos = key % m_hash_table_size;
+		const size_t hash_pos = key % this->m_hash_table_size;
 
 		if (!m_reader->seek(hash_pos * sizeof(size_t))) return SIZE_MAX;
 

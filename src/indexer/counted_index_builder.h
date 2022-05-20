@@ -41,11 +41,12 @@
 #include "profiler/profiler.h"
 #include "logger/logger.h"
 #include "memory/debugger.h"
+#include "index_base.h"
 
 namespace indexer {
 
 	template<typename data_record>
-	class counted_index_builder {
+	class counted_index_builder : public index_base<data_record>{
 	private:
 		// Non copyable
 		counted_index_builder(const counted_index_builder &);
@@ -70,15 +71,12 @@ namespace indexer {
 		void truncate_cache_files();
 		void create_directories();
 
-		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
-
 	private:
 
 		std::string m_file_name;
 		std::string m_db_name;
 		const size_t m_id;
 
-		size_t m_hash_table_size;
 		const size_t m_max_results;
 
 		const size_t m_buffer_len = config::ft_shard_builder_buffer_len;
@@ -93,7 +91,6 @@ namespace indexer {
 
 		void read_append_cache();
 		void read_data_to_cache();
-		bool read_page(std::ifstream &reader);
 		void sort_cache();
 		void sort_record_list(uint64_t key, std::vector<data_record> &records);
 		void reset_cache_variables();
@@ -101,7 +98,6 @@ namespace indexer {
 		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
 		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
 		void reset_key_map(std::ofstream &key_writer);
-		size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 
 		std::string mountpoint() const;
 		std::string cache_filename() const;
@@ -113,7 +109,7 @@ namespace indexer {
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &file_name)
-	: m_file_name(file_name), m_id(0), m_hash_table_size(config::shard_hash_table_size),
+	: index_base<data_record>(), m_file_name(file_name), m_id(0),
 		m_max_results(config::ft_max_results_per_section)
 	{
 		merger::register_merger((size_t)this, [this]() {merge();});
@@ -122,21 +118,21 @@ namespace indexer {
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size), m_max_results(config::ft_max_results_per_section) {
+	: index_base<data_record>(), m_db_name(db_name), m_id(id), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(config::ft_max_results_per_section) {
+	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {append();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
 	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size), m_max_results(max_results) {
+	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id), m_max_results(max_results) {
 		merger::register_merger((size_t)this, [this]() {append();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
@@ -341,8 +337,6 @@ namespace indexer {
 	template<typename data_record>
 	void counted_index_builder<data_record>::read_data_to_cache() {
 
-		//profiler::instance prof("index_builder::read_data_to_cache");
-
 		reset_cache_variables();
 
 		std::ifstream reader(target_filename(), std::ios::binary);
@@ -350,89 +344,11 @@ namespace indexer {
 
 		reader.seekg(0, std::ios::end);
 		const size_t file_size = reader.tellg();
-		if (file_size <= hash_table_byte_size()) return;
-		reader.seekg(hash_table_byte_size(), std::ios::beg);
+		if (file_size <= this->hash_table_byte_size()) return;
+		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
 
-		while (read_page(reader)) {
+		while (this->read_page_into(reader, m_cache)) {
 		}
-	}
-
-	template<typename data_record>
-	bool counted_index_builder<data_record>::read_page(std::ifstream &reader) {
-
-		uint64_t num_keys;
-		reader.read((char *)&num_keys, sizeof(uint64_t));
-		if (reader.eof()) return false;
-
-		std::unique_ptr<char[]> vector_buffer_allocator;
-		try {
-			vector_buffer_allocator = std::make_unique<char[]>(num_keys * sizeof(uint64_t));
-		} catch (std::bad_alloc &exception) {
-			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << num_keys << " keys" << std::endl;
-			return false;
-		}
-
-		char *vector_buffer = vector_buffer_allocator.get();
-
-		// Read the keys.
-		reader.read(vector_buffer, num_keys * sizeof(uint64_t));
-		std::vector<uint64_t> keys;
-		for (size_t i = 0; i < num_keys; i++) {
-			keys.push_back(*((uint64_t *)(&vector_buffer[i*8])));
-		}
-
-		// Read the positions.
-		reader.read(vector_buffer, num_keys * 8);
-		std::vector<size_t> positions;
-		for (size_t i = 0; i < num_keys; i++) {
-			positions.push_back(*((size_t *)(&vector_buffer[i*8])));
-		}
-
-		// Read the lengths.
-		reader.read(vector_buffer, num_keys * 8);
-		std::vector<size_t> lens;
-		size_t max_len = 0;
-		size_t data_size = 0;
-		for (size_t i = 0; i < num_keys; i++) {
-			size_t len = *((size_t *)(&vector_buffer[i*8]));
-			if (len > max_len) max_len = len;
-			lens.push_back(len);
-			data_size += len;
-		}
-
-		if (data_size == 0) return true;
-
-		std::unique_ptr<char[]> buffer_allocator;
-		try {
-			buffer_allocator = std::make_unique<char[]>(max_len);
-		} catch (std::bad_alloc &exception) {
-			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << max_len << " bytes" << std::endl;
-			return false;
-		}
-		char *buffer = buffer_allocator.get();
-
-		// Read the records.
-		for (size_t i = 0; i < num_keys; i++) {
-			const size_t len = lens[i];
-			reader.read(buffer, len);
-			const size_t read_len = reader.gcount();
-			if (read_len != len) {
-				LOG_INFO("Data stopped before end. Ignoring shard " + m_id);
-				reset_cache_variables();
-				break;
-			}
-
-			const data_record *records = (data_record *)buffer;
-			const size_t num_records = len / sizeof(data_record);
-
-			for (size_t j = 0; j < num_records; j++) {
-				m_cache[keys[i]].push_back(records[j]);
-			}
-		}
-
-		return true;
 	}
 
 	template<typename data_record>
@@ -491,8 +407,8 @@ namespace indexer {
 
 		std::map<uint64_t, std::vector<uint64_t>> pages;
 		for (auto &iter : m_cache) {
-			if (m_hash_table_size) {
-				pages[iter.first % m_hash_table_size].push_back(iter.first);
+			if (this->m_hash_table_size) {
+				pages[iter.first % this->m_hash_table_size].push_back(iter.first);
 			} else {
 				pages[0].push_back(iter.first);
 			}
@@ -507,8 +423,8 @@ namespace indexer {
 
 	template<typename data_record>
 	void counted_index_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
-		if (m_hash_table_size > 0) {
-			assert(key < m_hash_table_size);
+		if (this->m_hash_table_size > 0) {
+			assert(key < this->m_hash_table_size);
 			key_writer.seekp(key * sizeof(uint64_t));
 			key_writer.write((char *)&page_pos, sizeof(size_t));
 		}
@@ -562,7 +478,7 @@ namespace indexer {
 	void counted_index_builder<data_record>::reset_key_map(std::ofstream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
-		for (size_t i = 0; i < m_hash_table_size; i++) {
+		for (size_t i = 0; i < this->m_hash_table_size; i++) {
 			key_writer.write((char *)&data, sizeof(uint64_t));
 		}
 	}
