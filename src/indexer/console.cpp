@@ -297,7 +297,7 @@ namespace indexer {
 	void index_title_counter(const string &batch) {
 
 		hash_table::builder ht("word_hash_table");
-		ht.truncate();
+		//ht.truncate();
 
 		size_t limit = 5000;
 		size_t offset = 0;
@@ -338,7 +338,7 @@ namespace indexer {
 		hash_table::builder ht("word_hash_table");
 
 		size_t limit = 5000;
-		size_t offset = 0;
+		size_t offset = 5000;
 		while (true) {
 			indexer::index_manager idx_manager;
 
@@ -366,7 +366,6 @@ namespace indexer {
 			merger::stop_merge_thread();
 
 			offset += limit;
-			break;
 		}
 
 		ht.merge();
@@ -547,12 +546,13 @@ namespace indexer {
 		indexer::index_manager idx_manager;
 		hash_table::hash_table ht("word_hash_table");
 
+		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
 
 		cout << "starting server..." << endl;
 
-		::http::server srv([&ht, &title_counter, &link_counter](const http::request &req) {
+		::http::server srv([&ht, &fp_title_counter, &title_counter, &link_counter](const http::request &req) {
 			http::response res;
 
 			URL url = req.url();
@@ -583,16 +583,40 @@ namespace indexer {
 			body << "<pre>";
 
 			const uint64_t domain_hash = ::algorithm::hash(domain);
+			std::vector<indexer::counted_record> fp_results = fp_title_counter.find(domain_hash);
 			std::vector<indexer::counted_record> results = title_counter.find(domain_hash);
 			std::vector<indexer::counted_record> link_results = link_counter.find(domain_hash);
 
+			sort(fp_results.begin(), fp_results.end(), indexer::counted_record::truncate_order());
 			sort(results.begin(), results.end(), indexer::counted_record::truncate_order());
 			sort(link_results.begin(), link_results.end(), indexer::counted_record::truncate_order());
 
 			body << "Limit: " + std::to_string(limit) << endl;
 			body << "Offset: " + std::to_string(offset) << endl << endl;
 			body << "</pre>";
-			body << "<pre class=lefter>";
+			body << "<div class=lefter>";
+			body << "<pre class=green>";
+			for (auto &rec : fp_results) {
+				const string word = ht.find(rec.m_value);
+				body << word << ": " << rec.m_count << endl;
+			}
+			body << "</pre>";
+			body << "<pre class=green>";
+			double threshold = results.size() ? results[0].m_count : 0.0;
+			size_t offset_start = 0;
+			for (auto &rec : results) {
+				if (rec.m_count >= threshold * 0.8) {
+					const string word = ht.find(rec.m_value);
+					body << word << ": " << rec.m_count << endl;
+					offset_start++;
+				} else {
+					break;
+				}
+			}
+			if (offset < offset_start) offset = offset_start;
+			body << "</pre>";
+
+			body << "<pre>";
 
 			size_t pos = 0;
 			for (auto &rec : results) {
@@ -604,7 +628,7 @@ namespace indexer {
 				pos++;
 			}
 
-			body << "</pre><pre class=righter>";
+			body << "</pre></div><pre class=righter>";
 
 			pos = 0;
 			for (auto &rec : link_results) {

@@ -24,7 +24,10 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "URL.h"
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_url)
 
@@ -68,6 +71,15 @@ BOOST_AUTO_TEST_CASE(url_parsing) {
 		URL url("http://example.com/");
 		BOOST_CHECK_EQUAL(url.has_https(), false);
 		BOOST_CHECK_EQUAL(url.has_www(), false);
+	}
+
+	{
+		URL url("http://example.com/");
+		BOOST_CHECK_EQUAL(url.path(), "/");
+	}
+	{
+		URL url("http://example.com");
+		BOOST_CHECK_EQUAL(url.path(), "/");
 	}
 }
 
@@ -142,6 +154,51 @@ BOOST_AUTO_TEST_CASE(unescape) {
 		map<string, string> query = url.query();
 
 		BOOST_CHECK_EQUAL(query["q"], "%josef%0");
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(host_top_domain) {
+
+	{
+		URL url("https://test.uk");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "test.uk");
+	}
+	{
+		URL url("https://testing.com.au");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "testing.com.au");
+	}
+	{
+		URL url("https://subdomain.testing.com.au");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "testing.com.au");
+	}
+	{
+		URL url("https://github.com/");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "github.com");
+	}
+	{
+		URL url("https://test.github.com/");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "github.com");
+	}
+
+	{
+		URL url("https://bbc.co.uk/");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "bbc.co.uk");
+	}
+
+	{
+		URL url("https://testing.bbc.co.uk/");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "bbc.co.uk");
+	}
+
+	{
+		URL url(".");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "");
+	}
+
+	{
+		URL url("");
+		BOOST_CHECK_EQUAL(url.host_top_domain(), "");
 	}
 
 }

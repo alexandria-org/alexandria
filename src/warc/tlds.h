@@ -5,6 +5,11 @@
 #include <unordered_set>
 
 namespace warc {
+
+	const std::unordered_set<std::string> double_tlds({
+		"co.uk"
+	});
+
 	const std::unordered_set<std::string> tlds({
 		"se",
 		"com",

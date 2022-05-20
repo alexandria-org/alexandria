@@ -29,6 +29,7 @@
 #include "parser/parser.h"
 #include <curl/curl.h>
 #include "text/text.h"
+#include "warc/tlds.h"
 
 using namespace std;
 
@@ -120,16 +121,23 @@ string URL::host() const {
 }
 
 string URL::host_top_domain() const {
-	/*
-	 * This algorithm is OK since we only run on these tlds:
-	 * {"se", "com", "nu", "net", "org", "gov", "edu", "info"}
-	 * */
 	vector<string> parts;
-	boost::split(parts, m_host, boost::is_any_of("."));
-	if (parts.size() > 2) {
-		parts = {parts[parts.size() - 2], parts[parts.size() - 1]};
+	std::string_view host(m_host);
+
+	size_t pos1 = host.find_last_of(".");
+	if (host.substr(pos1 + 1) == "uk") {
+		pos1 = host.find_last_of(".", pos1 - 1);
+		if (host.substr(pos1 + 1) != "co.uk") {
+			return m_host;
+		}
+	} else if (host.substr(pos1 + 1) == "au") {
+		pos1 = host.find_last_of(".", pos1 - 1);
 	}
-	return boost::algorithm::join(parts, ".");
+	size_t pos2 = host.find_last_of(".", pos1 - 1);
+	if (pos2 == string::npos) {
+		return m_host;
+	}
+	return m_host.substr(pos2 + 1);
 }
 
 string URL::scheme() const {

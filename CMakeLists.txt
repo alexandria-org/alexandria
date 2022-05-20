@@ -155,6 +155,7 @@ set(SRC_TESTS
 	"tests/test_top_k.cpp"
 	"tests/test_sum_sorted.cpp"
 	"tests/test_file.cpp"
+	"tests/test_url.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 

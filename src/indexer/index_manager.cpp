@@ -49,6 +49,8 @@ namespace indexer {
 		m_hash_table_words = std::make_unique<hash_table::builder>("word_hash_table");
 		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
 
+		m_fp_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("first_page_title_word_counter", 101);
+
 		m_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("title_word_counter", 997);
 		m_title_word_counter = std::make_unique<sharded<counted_index, counted_record>>("title_word_counter", 997);
 
@@ -199,6 +201,8 @@ namespace indexer {
 
 			URL url(col_values[0]);
 
+			if (url.path() != "/") continue;
+
 			uint64_t domain_hash = url.host_hash();
 
 			vector<string> words = text::get_full_text_words(col_values[title_col]);
@@ -214,7 +218,8 @@ namespace indexer {
 				}
 			});
 			for (auto word_hash : tokens) {
-				m_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
+				m_fp_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
+				//m_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
 			}
 			tokens.clear();
 		}
@@ -247,7 +252,11 @@ namespace indexer {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
+			URL source_url(col_values[0], col_values[1]);
 			URL target_url(col_values[2], col_values[3]);
+
+			if (source_url.host_top_domain() == target_url.host_top_domain()) continue;
+
 			const uint64_t domain_hash = target_url.host_hash();
 
 			const string link_text = col_values[4].substr(0, 1000);

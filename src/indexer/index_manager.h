@@ -88,6 +88,8 @@ namespace indexer {
 		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_word_index_builder;
 		std::unique_ptr<sharded<counted_index, counted_record>> m_word_index;
 
+		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_fp_title_word_builder;
+
 		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_title_word_builder;
 		std::unique_ptr<sharded<counted_index, counted_record>> m_title_word_counter;
 
