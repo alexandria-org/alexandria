@@ -60,4 +60,17 @@ namespace domain_stats {
 
 		return harmonic;
 	}
+
+	float harmonic_centrality(uint64_t domain_hash) {
+
+		const auto iter = domain_data.find(domain_hash);
+
+		float harmonic = 0.0f;
+		if (iter != domain_data.end()) {
+			const common::dictionary_row row = iter->second;
+			harmonic = row.get_float(1);
+		}
+
+		return harmonic;
+	}
 }

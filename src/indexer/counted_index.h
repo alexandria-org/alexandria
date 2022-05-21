@@ -52,7 +52,7 @@ namespace indexer {
 		/*
 		 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
 		 * */
-		void for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const;
+		void for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const;
 
 	private:
 
@@ -190,14 +190,14 @@ namespace indexer {
 	 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
 	 * */
 	template<typename data_record>
-	void counted_index<data_record>::for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const {
+	void counted_index<data_record>::for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const {
 
 		std::ifstream reader(filename(), std::ios::binary);
 		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
 
 		std::map<uint64_t, std::vector<data_record>> page;
 		while (this->read_page_into(reader, page)) {
-			for (const auto &iter : page) {
+			for (auto &iter : page) {
 				on_each_key(iter.first, iter.second);
 			}
 			page.clear();

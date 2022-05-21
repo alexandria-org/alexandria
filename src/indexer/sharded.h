@@ -67,7 +67,7 @@ namespace indexer {
 		/*
 		 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
 		 * */
-		void for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const;
+		void for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const;
 
 	private:
 
@@ -161,7 +161,7 @@ namespace indexer {
 	}
 
 	template<template<typename> typename index_type, typename data_record>
-	void sharded<index_type, data_record>::for_each(std::function<void(uint64_t key, const std::vector<data_record> &recs)> on_each_key) const {
+	void sharded<index_type, data_record>::for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const {
 		utils::thread_pool pool(32);
 
 		for (size_t shard_id = 0; shard_id < m_num_shards; shard_id++) {
