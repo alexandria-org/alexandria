@@ -28,8 +28,11 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
+#include "config.h"
 #include "algorithm/sum_sorted.h"
 #include "algorithm/intersection.h"
+#include "utils/thread_pool.hpp"
 
 namespace indexer {
 
@@ -60,6 +63,11 @@ namespace indexer {
 		 * Returns vector with summed records.
 		 * */
 		std::vector<data_record> find_sum(const std::vector<uint64_t> &keys, size_t limit) const;
+
+		/*
+		 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
+		 * */
+		void for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const;
 
 	private:
 
@@ -111,7 +119,7 @@ namespace indexer {
 	template<template<typename> typename index_type, typename data_record>
 	std::vector<data_record> sharded<index_type, data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
 
-		std::vector<unique_ptr<data_record[]>> results;
+		std::vector<std::unique_ptr<data_record[]>> results;
 		std::vector<size_t> num_results;
 		for (uint64_t key : keys) {
 
@@ -119,7 +127,7 @@ namespace indexer {
 			index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
 			
 			size_t num_records;
-			unique_ptr<data_record[]> res = idx.find_ptr(key, num_records);
+			std::unique_ptr<data_record[]> res = idx.find_ptr(key, num_records);
 			results.emplace_back(std::move(res));
 			num_results.push_back(num_records);
 		}
@@ -150,6 +158,20 @@ namespace indexer {
 			a.m_score += b.m_score;
 		});
 
+	}
+
+	template<template<typename> typename index_type, typename data_record>
+	void sharded<index_type, data_record>::for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const {
+		utils::thread_pool pool(32);
+
+		for (size_t shard_id = 0; shard_id < m_num_shards; shard_id++) {
+			pool.enqueue([this, shard_id, &on_each_key]() {
+				index_type<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+				idx.for_each(on_each_key);
+			});
+		}
+
+		pool.run_all();
 	}
 
 	template<template<typename> typename index_type, typename data_record>

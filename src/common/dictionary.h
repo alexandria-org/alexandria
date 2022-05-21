@@ -47,6 +47,7 @@ namespace common {
 			void load_tsv(file::tsv_file &tsv_file);
 
 			std::unordered_map<size_t, dictionary_row>::const_iterator find(const std::string &key) const;
+			std::unordered_map<size_t, dictionary_row>::const_iterator find(size_t hash) const;
 
 			std::unordered_map<size_t, dictionary_row>::const_iterator begin() const;
 			std::unordered_map<size_t, dictionary_row>::const_iterator end() const;

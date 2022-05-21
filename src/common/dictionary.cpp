@@ -28,6 +28,7 @@
 #include "logger/logger.h"
 #include "file/tsv_file.h"
 #include "dictionary_row.h"
+#include "algorithm/hash.h"
 
 using namespace std;
 
@@ -53,7 +54,7 @@ namespace common {
 			getline(ss, col, '\t');
 
 			if (col.size()) {
-				size_t key = hash<string>{}(col);
+				size_t key = ::algorithm::hash(col);
 
 				if (m_rows.find(key) != m_rows.end()) {
 					handle_collision(key, col);
@@ -65,7 +66,11 @@ namespace common {
 	}
 
 	unordered_map<size_t, dictionary_row>::const_iterator dictionary::find(const string &key) const {
-		return m_rows.find(hash<string>{}(key));
+		return m_rows.find(::algorithm::hash(key));
+	}
+
+	unordered_map<size_t, dictionary_row>::const_iterator dictionary::find(size_t hash) const {
+		return m_rows.find(hash);
 	}
 
 	unordered_map<size_t, dictionary_row>::const_iterator dictionary::begin() const {

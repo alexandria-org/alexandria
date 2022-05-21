@@ -651,4 +651,56 @@ namespace indexer {
 		});
 	}
 
+	void make_domain_index() {
+
+		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
+		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
+		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
+
+		merger::start_merge_thread();
+
+		sharded_index_builder<domain_record> idx("domain_info", 997);
+
+		fp_title_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
+			float harmonic = domain_stats::harmonic_centrality(domain_hash);
+			for (const auto &record : records) {
+				idx.add(record.m_value, domain_record(domain_hash, harmonic));
+			}
+		});
+
+		merger::stop_merge_thread_only_append();
+		idx.merge();
+
+		title_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
+
+			// Sort by score.
+			sort(records.begin(), records.end(), counted_record::truncate_order());
+			float harmonic = domain_stats::harmonic_centrality(domain_hash);
+			float threshold = records.size() > 0 ? records[0].m_count * 0.8f : 0.0f;
+			for (const auto &record : records) {
+				if (record.m_count < threshold) break;
+				idx.add(record.m_value, domain_record(domain_hash, harmonic));
+			}
+		});
+
+		merger::stop_merge_thread_only_append();
+		idx.merge();
+
+		link_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
+
+			// Sort by score.
+			sort(records.begin(), records.end(), counted_record::truncate_order());
+			float harmonic = domain_stats::harmonic_centrality(domain_hash);
+			for (size_t i = 0; i < records.size() && i < 100; i++) {
+				idx.add(records[i].m_value, domain_record(domain_hash, harmonic));
+			}
+		});
+
+		merger::stop_merge_thread_only_append();
+		idx.merge();
+
+		idx.optimize();
+
+	}
+
 }

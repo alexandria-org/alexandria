@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <map>
+#include <fstream>
 #include "algorithm/hyper_log_log.h"
 #include "utils/thread_pool.hpp"
 #include "debug.h"
