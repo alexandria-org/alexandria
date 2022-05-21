@@ -593,6 +593,7 @@ namespace indexer {
 
 			body << "Limit: " + std::to_string(limit) << endl;
 			body << "Offset: " + std::to_string(offset) << endl << endl;
+			const size_t original_offset = offset;
 			body << "</pre>";
 			body << "<div class=lefter>";
 			body << "<pre class=green>";
@@ -632,11 +633,11 @@ namespace indexer {
 
 			pos = 0;
 			for (auto &rec : link_results) {
-				if (pos >= offset) {
+				if (pos >= original_offset) {
 					const string word = ht.find(rec.m_value);
 					body << word << ": " << rec.m_count << endl;
 				}
-				if (pos >= limit + offset) break;
+				if (pos >= limit + original_offset) break;
 				pos++;
 			}
 

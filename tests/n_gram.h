@@ -104,4 +104,22 @@ BOOST_AUTO_TEST_CASE(n_gram) {
 	config::ft_max_results_per_section = initial_results_per_section;
 }
 
+BOOST_AUTO_TEST_CASE(n_gram2) {
+
+	vector<uint64_t> ngrams;
+	text::words_to_ngram_hash({"i", "liberoklubben", "här"}, 3, [&ngrams](const uint64_t hash, const std::string &word) {
+		ngrams.push_back(hash);
+	});
+
+	BOOST_CHECK_EQUAL(ngrams[0], algorithm::hash("i"));
+	BOOST_CHECK_EQUAL(ngrams[1], algorithm::hash("i liberoklubben"));
+	BOOST_CHECK_EQUAL(ngrams[2], algorithm::hash("i liberoklubben här"));
+
+	BOOST_CHECK_EQUAL(ngrams[3], algorithm::hash("liberoklubben"));
+	BOOST_CHECK_EQUAL(ngrams[4], algorithm::hash("liberoklubben här"));
+	BOOST_CHECK_EQUAL(ngrams[5], algorithm::hash("här"));
+
+	BOOST_CHECK_EQUAL(ngrams.size(), 6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
