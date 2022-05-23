@@ -203,7 +203,7 @@ namespace indexer {
 		//idx_manager.truncate();
 
 		hash_table::hash_table ht("index_manager");
-		hash_table::hash_table ht_words("word_hash_table");
+		//hash_table::hash_table ht_words("word_hash_table");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -226,11 +226,11 @@ namespace indexer {
 				const string query = boost::algorithm::join(query_words, " ");
 				cmd_word(idx_manager, ht, query);
 			} else if (cmd == "domain_info") {
-				vector<string> query_words(args.begin() + 1, args.end());
-				const string domain = query_words[0];
-				const size_t limit = std::stoi(query_words[1]);
-				const size_t offset = std::stoi(query_words[2]);
-				cmd_domain_info(idx_manager, ht_words, domain, limit, offset);
+				//vector<string> query_words(args.begin() + 1, args.end());
+				//const string domain = query_words[0];
+				//const size_t limit = std::stoi(query_words[1]);
+				//const size_t offset = std::stoi(query_words[2]);
+				//cmd_domain_info(idx_manager, ht_words, domain, limit, offset);
 			} else if (cmd == "word_domain") {
 				string domain = args[1];
 				vector<string> query_words(args.begin() + 2, args.end());
@@ -379,10 +379,10 @@ namespace indexer {
 		::algorithm::bloom_filter urls_to_index;
 		urls_to_index.read_file("/mnt/0/url_filter.bloom");
 
-		size_t limit = 5000;
-		size_t offset = 0;
+		size_t limit = 1000;
+		size_t offset = 15000;
 		while (true) {
-			indexer::index_manager idx_manager;
+			indexer::index_manager idx_manager(true);
 
 			merger::start_merge_thread();
 
@@ -398,9 +398,7 @@ namespace indexer {
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
-			merger::stop_merge_thread_only_append();
-
-			idx_manager.merge();
+			merger::stop_merge_thread();
 
 			offset += limit;
 		}
@@ -543,6 +541,9 @@ namespace indexer {
 
 	void domain_info_server() {
 
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+
 		indexer::index_manager idx_manager;
 		hash_table::hash_table ht("word_hash_table");
 
@@ -576,9 +577,13 @@ namespace indexer {
 			string domain = url.path();
 			domain.erase(0, 1);
 
+			const string reverse_domain = url.host_reverse(domain);
+
 			body << "<html><head><meta http-equiv='Content-type' content='text/html; charset=utf-8'></head><body>";
 
 			body << "<h1>" << domain << "</h1>" << endl;
+			body << "<h3>harmonic: " << domain_stats::harmonic_centrality(reverse_domain) << "</h3>" << endl;
+			body << "<h3>hash: " << ::algorithm::hash(domain) << "</h3>" << endl;
 
 			body << "<pre>";
 
@@ -653,6 +658,20 @@ namespace indexer {
 
 	void make_domain_index() {
 
+		/*sharded_index<domain_record> idx("domain_info", 997);
+
+		size_t count = 0;
+		idx.for_each([&count](uint64_t key, roaring::Roaring &recs) {
+			count++;
+		});
+
+		cout << "num_words: " << count << endl;
+
+		return;*/
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+
 		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
@@ -660,47 +679,66 @@ namespace indexer {
 		merger::start_merge_thread();
 
 		sharded_index_builder<domain_record> idx("domain_info", 997);
+		idx.truncate();
 
 		fp_title_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
-			float harmonic = domain_stats::harmonic_centrality(domain_hash);
 			for (const auto &record : records) {
-				idx.add(record.m_value, domain_record(domain_hash, harmonic));
+				idx.add(record.m_value, domain_record(domain_hash, 0.0f));
 			}
 		});
 
 		merger::stop_merge_thread_only_append();
 		idx.merge();
+		merger::start_merge_thread();
 
 		title_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
 
 			// Sort by score.
 			sort(records.begin(), records.end(), counted_record::truncate_order());
-			float harmonic = domain_stats::harmonic_centrality(domain_hash);
 			float threshold = records.size() > 0 ? records[0].m_count * 0.8f : 0.0f;
 			for (const auto &record : records) {
 				if (record.m_count < threshold) break;
-				idx.add(record.m_value, domain_record(domain_hash, harmonic));
+				idx.add(record.m_value, domain_record(domain_hash, 0.0f));
 			}
 		});
 
 		merger::stop_merge_thread_only_append();
 		idx.merge();
+		merger::start_merge_thread();
 
 		link_counter.for_each([&idx](uint64_t domain_hash, std::vector<counted_record> &records) {
 
 			// Sort by score.
 			sort(records.begin(), records.end(), counted_record::truncate_order());
-			float harmonic = domain_stats::harmonic_centrality(domain_hash);
 			for (size_t i = 0; i < records.size() && i < 100; i++) {
-				idx.add(records[i].m_value, domain_record(domain_hash, harmonic));
+				idx.add(records[i].m_value, domain_record(domain_hash, 0.0f));
 			}
 		});
 
 		merger::stop_merge_thread_only_append();
 		idx.merge();
-
 		idx.optimize();
+	}
 
+	void make_domain_index_scores() {
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+
+		hash_table::hash_table ht("index_manager");
+
+		sharded_index_builder<domain_record> idx("domain_info", 997);
+
+		idx.for_each_record([&ht](domain_record &rec) {
+			URL u;
+			const string domain = ht.find(rec.m_value);
+			const string domain_reverse = u.host_reverse(domain);
+
+			float harmonic = domain_stats::harmonic_centrality(domain_reverse);
+
+			rec.m_score = harmonic;
+		});
+		
 	}
 
 }

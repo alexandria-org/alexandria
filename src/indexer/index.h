@@ -28,12 +28,13 @@
 
 #include <set>
 #include "index_reader.h"
+#include "index_base.h"
 #include "roaring/roaring.hh"
 
 namespace indexer {
 
 	template<typename data_record>
-	class index {
+	class index : public index_base<data_record> {
 
 	public:
 
@@ -52,11 +53,11 @@ namespace indexer {
 		float get_idf(size_t documents_with_term) const;
 		size_t get_document_count() const { return m_unique_count; }
 
-		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
-
 		void print_stats();
 
 		std::set<uint64_t> get_keys(size_t with_more_than_records) const;
+
+		void for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const;
 
 	private:
 
@@ -66,7 +67,6 @@ namespace indexer {
 		std::string m_file_name;
 		std::string m_db_name;
 		size_t m_id;
-		const size_t m_hash_table_size;
 		size_t m_unique_count = 0;
 
 		size_t read_key_pos(uint64_t key) const;
@@ -79,28 +79,28 @@ namespace indexer {
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &file_name)
-	: m_file_name(file_name), m_hash_table_size(config::shard_hash_table_size) {
+	: index_base<data_record>(), m_file_name(file_name) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(config::shard_hash_table_size) {
+	: index_base<data_record>(), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id, size_t hash_table_size)
-	: m_db_name(db_name), m_id(id), m_hash_table_size(hash_table_size) {
+	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(index_reader *ram_reader, size_t hash_table_size)
-	: m_hash_table_size(hash_table_size) {
+	: index_base<data_record>(hash_table_size) {
 		m_reader = ram_reader;
 	}
 
@@ -115,7 +115,7 @@ namespace indexer {
 
 		std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
 			data_record rec;
-			m_reader->seek((m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
+			m_reader->seek((this->m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
 			m_reader->read((char *)&rec, sizeof(data_record));
 			return rec;
 		};
@@ -194,9 +194,9 @@ namespace indexer {
 	template<typename data_record>
 	size_t index<data_record>::read_key_pos(uint64_t key) const {
 
-		if (m_hash_table_size == 0) return 0;
+		if (this->m_hash_table_size == 0) return 0;
 
-		const size_t hash_pos = key % m_hash_table_size;
+		const size_t hash_pos = key % this->m_hash_table_size;
 
 		m_reader->seek(hash_pos * sizeof(size_t));
 
@@ -256,12 +256,12 @@ namespace indexer {
 		size_t total_cardinality = 0;
 		size_t total_page_header_size = 0;
 
-		m_reader->seek(m_hash_table_size * 8);
+		m_reader->seek(this->hash_table_byte_size());
 		m_reader->read((char *)&total_num_records, sizeof(size_t));
 
 		total_record_size = total_num_records * sizeof(data_record);
 
-		for (size_t page = 0; page < m_hash_table_size; page++) {
+		for (size_t page = 0; page < this->m_hash_table_size; page++) {
 			size_t key_pos = read_key_pos(page);
 
 			if (key_pos == SIZE_MAX) {
@@ -331,7 +331,7 @@ namespace indexer {
 
 		std::set<uint64_t> all_keys;
 
-		for (size_t page = 0; page < m_hash_table_size; page++) {
+		for (size_t page = 0; page < this->m_hash_table_size; page++) {
 			size_t key_pos = read_key_pos(page);
 
 			if (key_pos == SIZE_MAX) {
@@ -378,6 +378,20 @@ namespace indexer {
 		}
 
 		return all_keys;
+	}
+
+	template<typename data_record>
+	void index<data_record>::for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const {
+		std::ifstream reader(filename(), std::ios::binary);
+		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
+
+		std::map<uint64_t, roaring::Roaring> page;
+		while (this->read_bitmap_page_into(reader, page)) {
+			for (auto &iter : page) {
+				on_each_key(iter.first, iter.second);
+			}
+			page.clear();
+		}
 	}
 
 }

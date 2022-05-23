@@ -40,6 +40,7 @@
 #include "counted_index_builder.h"
 #include "counted_index.h"
 #include "counted_record.h"
+#include "domain_record.h"
 #include "algorithm/bloom_filter.h"
 
 namespace indexer {
@@ -49,6 +50,7 @@ namespace indexer {
 	public:
 
 		index_manager();
+		index_manager(bool only_links);
 		~index_manager();
 
 		void add_level(level *lvl);
@@ -95,6 +97,8 @@ namespace indexer {
 
 		std::unique_ptr<sharded_builder<counted_index_builder, counted_record>> m_link_word_builder;
 		std::unique_ptr<sharded<counted_index, counted_record>> m_link_word_counter;
+
+		std::unique_ptr<sharded_index<domain_record>> m_domain_info;
 
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;

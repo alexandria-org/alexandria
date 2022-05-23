@@ -68,6 +68,11 @@ namespace indexer {
 
 		void check();
 
+		/*
+		 * Loops over the records and applies transform.
+		 * */
+		void for_each_record(std::function<void(data_record &)> transform);
+
 	private:
 
 		std::mutex m_lock;
@@ -298,6 +303,16 @@ namespace indexer {
 			if (max_id > total_max) total_max = max_id;
 		}
 		std::cout << "done, max_id was: " << total_max << std::endl;
+	}
+
+	/*
+	 * Loops over the records and applies transform.
+	 * */
+	template<typename data_record>
+	void sharded_index_builder<data_record>::for_each_record(std::function<void(data_record &)> transform) {
+		for (auto &rec : m_records) {
+			transform(rec);
+		}
 	}
 
 }

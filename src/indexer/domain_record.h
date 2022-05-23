@@ -26,33 +26,15 @@
 
 #pragma once
 
-#include "level.h"
-#include <iostream>
-#include <memory>
-#include "sharded_index_builder.h"
-#include "sharded_index.h"
-#include "domain_record.h"
+#include "generic_record.h"
 
 namespace indexer {
+	class domain_record: public generic_record {
 
-	class domain_level: public level {
-		private:
-		std::unique_ptr<sharded_index_builder<domain_record>> m_builder;
-		std::unique_ptr<sharded_index<domain_record>> m_search_index;
 		public:
-		domain_level();
-		level_type get_type() const;
-		void add_snippet(const snippet &s);
-		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path,
-			std::function<void(uint64_t, const std::string &)> add_data,
-			std::function<void(uint64_t, uint64_t)> add_url);
-		void merge();
-		void calculate_scores();
-		void clean_up();
-		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers);
-		size_t apply_domain_links(const std::vector<domain_link_record> &links, std::vector<return_record> &results);
-	};
+		domain_record() : generic_record() {};
+		domain_record(uint64_t value) : generic_record(value) {};
+		domain_record(uint64_t value, float score) : generic_record(value, score) {};
 
+	};
 }

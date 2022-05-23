@@ -104,7 +104,7 @@ namespace indexer {
 	}
 
 	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers) {
 
 		(void)keys;
 		(void)links;
@@ -115,22 +115,34 @@ namespace indexer {
 
 		size_t dom_incr = 0;
 		size_t score_incr = 0;
-		auto score_mod = [&dom_incr, &domain_links, &score_incr, &scores](uint64_t value) {
+		size_t mod_incr = 0;
+		auto score_mod = [&dom_incr, &domain_links, &score_incr, &scores, &mod_incr, &domain_modifiers](uint64_t value) {
 
 			float score = 0.0f;
+			while (mod_incr < domain_modifiers.size() && domain_modifiers[mod_incr].m_value < value) {
+				mod_incr++;
+			}
+			float mod_score = 0.0f;
+			if (mod_incr < domain_modifiers.size() && domain_modifiers[mod_incr].m_value == value) {
+				mod_score += domain_modifiers[mod_incr].m_score;
+			}
+
 			while (score_incr < scores.size() && scores[score_incr].m_value < value) {
 				score_incr++;
 			}
+			float score_score = 0.0f;
 			if (score_incr < scores.size() && scores[score_incr].m_value == value) {
-				score += scores[score_incr].m_score;
+				score_score += scores[score_incr].m_score;
 			}
 
 			while (dom_incr < domain_links.size() && domain_links[dom_incr].m_target_domain < value) {
 				dom_incr++;
 			}
+			float dom_score = 0.0f;
 			if (dom_incr < domain_links.size() && domain_links[dom_incr].m_target_domain == value) {
-				score += domain_links[dom_incr].m_score;
+				dom_score += domain_links[dom_incr].m_score;
 			}
+			score = mod_score + score_score + dom_score;
 			return score;
 		};
 

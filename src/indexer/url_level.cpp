@@ -104,7 +104,7 @@ namespace indexer {
 	}
 
 	std::vector<return_record> url_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores) {
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers) {
 
 		return {};
 	}

@@ -59,6 +59,15 @@ namespace indexer {
 
 		//m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
 		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
+
+		m_domain_info = std::make_unique<sharded_index<domain_record>>("domain_info", 997);
+	}
+
+	index_manager::index_manager(bool only_links) {
+
+		if (only_links) {
+			m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
+		}
 	}
 
 	index_manager::~index_manager() {
@@ -141,8 +150,8 @@ namespace indexer {
 			const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
-			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-			const bool has_url = true; //urls_to_index.count(target_url.hash());
+			//const uint64_t link_hash = source_url.link_hash(target_url, link_text);
+			//const bool has_url = true; //urls_to_index.count(target_url.hash());
 
 			vector<string> words = text::get_expanded_full_text_words(link_text);
 
@@ -150,7 +159,7 @@ namespace indexer {
 				tokens.insert(hash);
 			});
 
-			if (has_url) {
+			/*if (has_url) {
 				// Add the url link.
 				link_record link_rec(link_hash, source_harmonic);
 				link_rec.m_source_domain = source_url.hash();
@@ -159,7 +168,7 @@ namespace indexer {
 				for (auto token : tokens) {
 					m_link_index_builder->add(token, link_rec);
 				}
-			}
+			}*/
 
 			domain_link_record rec(domain_link_hash, source_harmonic);
 			rec.m_source_domain = source_url.host_hash();
@@ -429,16 +438,55 @@ namespace indexer {
 			return expm1(25.0f * score) / 50.0f;
 		};
 
+		auto domain_formula2 = [](float score) {
+			return 1000*score;
+		};
+
+		std::vector<size_t> tokens;
 		std::vector<size_t> counts;
 
-		vector<counted_record> bm25_scores = m_word_index->find_sum(text::get_tokens(query), 100000);
-		vector<link_record> links = m_link_index->find_intersection(text::get_tokens(query));
+		vector<string> words = text::get_expanded_full_text_words(query);
+
+		std::map<uint64_t, std::string> token_to_word;
+		std::map<uint64_t, size_t> ngram_len;
+		text::words_to_ngram_hash(words, 3, [&tokens, &token_to_word, &ngram_len](const uint64_t hash, const string &word, size_t len) {
+			tokens.push_back(hash);
+			token_to_word[hash] = word;
+			ngram_len[hash] = len;
+		});
+
+		std::sort(tokens.begin(), tokens.end());
+		auto last = std::unique(tokens.begin(), tokens.end());
+		tokens.erase(last, tokens.end());
+
+		std::vector<roaring::Roaring> bitmaps;
+		{
+			profiler::instance profile_domain_info("fetch token info");
+			for (auto token : tokens) {
+				bitmaps.emplace_back(std::move(m_domain_info->find_bitmap(token)));
+				counts.push_back(bitmaps.back().cardinality());
+			}
+		}
+
+		vector<domain_record> domain_modifiers;
+		for (size_t i = 0; i < counts.size(); i++) {
+			uint64_t token = tokens[i];
+			std::cout << token_to_word[token] << ": " << counts[i] << ", ngram_len = " << ngram_len[token] << std::endl;
+			if (counts[i] < 100000) {
+				m_domain_info->get_records_for_bitmap(bitmaps[i], domain_modifiers);
+			}
+		}
+
+		vector<counted_record> bm25_scores;// = m_word_index->find_sum(text::get_tokens(query), 100000);
+		vector<link_record> links;// = m_link_index->find_intersection(text::get_tokens(query));
 		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
+
 		cout << "found: " << links.size() << " links" << endl;
 		cout << "found: " << domain_links.size() << " domain links" << endl;
 
-		std::sort(links.begin(), links.end(), link_record::storage_order());
+		//std::sort(links.begin(), links.end(), link_record::storage_order());
 		std::sort(domain_links.begin(), domain_links.end(), domain_link_record::storage_order());
+		std::sort(domain_modifiers.begin(), domain_modifiers.end());
 
 		// group by target domain.
 		std::vector<domain_link_record> grouped;
@@ -451,6 +499,15 @@ namespace indexer {
 			}
 		}
 
+		std::vector<domain_record> grouped2;
+		for (auto rec : domain_modifiers) {
+			if (grouped2.size() && grouped2.back().storage_equal(rec)) {
+				grouped2.back().m_score += domain_formula2(rec.m_score);
+			} else {
+				grouped2.emplace_back(rec);
+				grouped2.back().m_score = domain_formula2(rec.m_score);
+			}
+		}
 
 		if (!std::is_sorted(bm25_scores.begin(), bm25_scores.end())) {
 			throw new runtime_error("bm25 are not sorted");
@@ -458,12 +515,15 @@ namespace indexer {
 		if (!std::is_sorted(links.begin(), links.end(), link_record::storage_order())) {
 			throw new runtime_error("links are not sorted");
 		}
+		if (!std::is_sorted(domain_links.begin(), domain_links.end(), domain_link_record::storage_order())) {
+			throw new runtime_error("domain_links are not sorted");
+		}
 		if (!std::is_sorted(grouped.begin(), grouped.end(), domain_link_record::storage_order())) {
-			throw new runtime_error("doain_links are not sorted");
+			throw new runtime_error("grouped are not sorted");
 		}
 
 		profiler::instance inst("m_levels[0]->find");
-		std::vector<return_record> res = m_levels[0]->find(query, {}, links, grouped, bm25_scores);
+		std::vector<return_record> res = m_levels[0]->find(query, {}, links, grouped, bm25_scores, grouped2);
 		inst.stop();
 
 		// Sort by score.

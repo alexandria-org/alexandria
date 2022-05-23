@@ -50,6 +50,12 @@ namespace indexer {
 		 * */
 		std::vector<data_record> find(uint64_t key) const;
 
+		/* 
+		 * Find single key
+		 * Returns bitmap of internal ids.
+		 * */
+		roaring::Roaring find_bitmap(uint64_t key) const;
+
 		/*
 		 * Find intersection of multiple keys
 		 * Returns vector with records in storage order.
@@ -80,9 +86,19 @@ namespace indexer {
 		std::set<uint64_t> get_keys(size_t with_more_than_records) const;
 
 		/*
+		 * Iterates the keys of the index and calls the callback with key and the bitmap for that key.
+		 * */
+		void for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const;
+
+		/*
 		 * Returns the total number of records.
 		 * */
 		size_t num_records() const { return m_records.size(); }
+
+		/*
+		 * Copies all the records from the bitmap into the vector append_to
+		 * */
+		void get_records_for_bitmap(const roaring::Roaring &bitmap, std::vector<data_record> &append_to) const;
 
 	private:
 
@@ -134,6 +150,15 @@ namespace indexer {
 		}
 
 		return ret;
+	}
+
+	template<typename data_record>
+	roaring::Roaring sharded_index<data_record>::find_bitmap(uint64_t key) const {
+
+		const size_t shard_id = key % m_num_shards;
+		index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+
+		return idx.find_bitmap(key);
 	}
 
 	template<typename data_record>
@@ -263,6 +288,31 @@ namespace indexer {
 
 		return all_keys;
 
+	}
+
+	template<typename data_record>
+	void sharded_index<data_record>::for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const {
+	
+		utils::thread_pool pool(32);
+		for (size_t shard_id = 0; shard_id < m_num_shards; shard_id++) {
+
+			pool.enqueue([this, shard_id, &on_each_key]() {
+				index<data_record> idx(m_db_name, shard_id, m_hash_table_size);
+				idx.for_each(on_each_key);
+			});
+		}
+
+		pool.run_all();
+	}
+
+	/*
+	 * Copies all the records from the bitmap into the vector iterator "append_to"
+	 * */
+	template<typename data_record>
+	void sharded_index<data_record>::get_records_for_bitmap(const roaring::Roaring &bitmap, std::vector<data_record> &append_to) const {
+		for (uint32_t internal_id : bitmap) {
+			append_to.emplace_back(m_records[internal_id]);
+		}
 	}
 
 	template<typename data_record>
