@@ -30,6 +30,7 @@
 #include "index_reader.h"
 #include "index_base.h"
 #include "roaring/roaring.hh"
+#include "algorithm/intersection.h"
 
 namespace indexer {
 
@@ -46,6 +47,20 @@ namespace indexer {
 
 		std::vector<data_record> find(uint64_t key) const;
 		roaring::Roaring find_bitmap(uint64_t key) const;
+
+		/*
+		 * Find intersection of multiple keys
+		 * Returns vector with records in storage order.
+		 * */
+		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys) const;
+
+		/*
+		 * Find intersection of multiple keys applying lambda function score_mod to the scores before.
+		 * Returns n records with highest score.
+		 * score_mod is applied in storage_order of data_record.
+		 * */
+		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
+				std::function<float(uint64_t)> score_mod, size_t n) const;
 
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
@@ -69,11 +84,14 @@ namespace indexer {
 		size_t m_id;
 		size_t m_unique_count = 0;
 
+		std::vector<data_record> m_records;
+
 		size_t read_key_pos(uint64_t key) const;
 		void read_meta();
 		std::string mountpoint() const;
 		std::string filename() const;
 		std::string meta_filename() const;
+		void read_records();
 		
 	};
 
@@ -82,6 +100,7 @@ namespace indexer {
 	: index_base<data_record>(), m_file_name(file_name) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
+		read_records();
 	}
 
 	template<typename data_record>
@@ -89,6 +108,7 @@ namespace indexer {
 	: index_base<data_record>(), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
+		read_records();
 	}
 
 	template<typename data_record>
@@ -96,12 +116,14 @@ namespace indexer {
 	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id) {
 		m_default_reader = make_unique<index_reader_file>(filename());
 		m_reader = (index_reader *)m_default_reader.get();
+		read_records();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(index_reader *ram_reader, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size) {
 		m_reader = ram_reader;
+		read_records();
 	}
 
 	template<typename data_record>
@@ -175,6 +197,41 @@ namespace indexer {
 		m_reader->read(data, len);
 
 		return roaring::Roaring::readSafe(data, len);
+	}
+
+	template<typename data_record>
+	std::vector<data_record> index<data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
+		std::vector<roaring::Roaring> bitmaps;
+		for (auto key : keys) {
+			bitmaps.emplace_back(std::move(find_bitmap(key)));
+		}
+
+		auto intersection = ::algorithm::intersection(bitmaps);
+		std::vector<data_record> res;
+		for (auto internal_id : intersection) {
+			res.emplace_back(m_records[internal_id]);
+		}
+
+		return res;
+	}
+
+	template<typename data_record>
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(uint64_t)> score_mod, size_t num) const {
+		std::vector<roaring::Roaring> bitmaps;
+		for (auto key : keys) {
+			bitmaps.emplace_back(std::move(find_bitmap(key)));
+		}
+
+		auto intersection = ::algorithm::intersection(bitmaps);
+		std::vector<data_record> res;
+		size_t i = 0;
+		for (auto internal_id : intersection) {
+			i++;
+			if (i > num) break;
+			res.emplace_back(m_records[internal_id]);
+		}
+
+		return res;
 	}
 
 	template<typename data_record>
@@ -392,6 +449,15 @@ namespace indexer {
 			}
 			page.clear();
 		}
+	}
+
+	template<typename data_record>
+	void index<data_record>::read_records() {
+		size_t num_records = 0;
+		m_reader->seek(this->hash_table_byte_size());
+		m_reader->read((char *)&num_records, sizeof(uint64_t));
+		m_records.resize(num_records);
+		m_reader->read((char *)m_records.data(), num_records * sizeof(data_record));
 	}
 
 }

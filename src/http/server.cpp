@@ -42,6 +42,11 @@ namespace http {
 
 	void server::run_worker(int socket_id) {
 
+		const size_t max_post_len = 1024*1024*1024;
+		const size_t buffer_len = 1024*1024;
+		std::unique_ptr<char[]> buffer_allocator = std::make_unique<char[]>(buffer_len);
+		char *buffer = buffer_allocator.get();
+
 		FCGX_Request request;
 
 		FCGX_InitRequest(&request, socket_id, 0);
@@ -71,7 +76,22 @@ namespace http {
 
 			URL url("http://alexandria.org" + uri);
 
-			::http::request http_request(url);
+			std::string post_data;
+			if (request_method == "POST") {
+				while (true) {
+
+					const size_t read_bytes = FCGX_GetStr(buffer, buffer_len, request.in);
+					if (read_bytes == 0) break;
+
+					if (post_data.size() + read_bytes > max_post_len) {
+						LOG_ERROR("Posted data larger then " + std::to_string(max_post_len) + ", ignoring request");
+						break;
+					}
+					post_data.append(buffer, read_bytes);
+				}
+			}
+
+			::http::request http_request(url, request_method, post_data);
 
 			::http::response http_response = m_handler(http_request);
 

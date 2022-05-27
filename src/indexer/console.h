@@ -42,6 +42,7 @@ namespace indexer {
 	void print_info();
 	void calc_scores();
 	void domain_info_server();
+	void url_server();
 	void make_domain_index();
 	void make_domain_index_scores();
 

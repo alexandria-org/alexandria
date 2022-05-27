@@ -656,6 +656,100 @@ namespace indexer {
 		});
 	}
 
+	void url_server() {
+
+		cout << "starting server..." << endl;
+
+		::http::server srv([](const http::request &req) {
+			http::response res;
+
+			URL url = req.url();
+
+			auto query = url.query();
+
+			stringstream body;
+
+			if (req.request_method() == "POST") {
+				const string req_body = req.request_body();
+
+				const size_t num_hashes = req_body.size() / sizeof(uint64_t);
+				std::vector<uint64_t> domain_hashes(num_hashes);
+				memcpy((char *)domain_hashes.data(), req_body.c_str(), num_hashes * sizeof(uint64_t));
+
+				auto tokens = text::get_tokens(query["q"]);
+
+				std::map<uint64_t, std::vector<url_record>> results;
+
+				utils::thread_pool pool(32);
+				std::mutex result_lock;
+				cout << "received " << domain_hashes.size() << " hashes" << endl;
+				for (auto dom_hash : domain_hashes) {
+					pool.enqueue([dom_hash, tokens, &query, &result_lock, &results]() {
+						std::vector<url_record> res;
+
+						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
+						index_reader_file reader(file);
+
+						auto score_mod = [](uint64_t) {
+							return 0.0f;
+						};
+
+						if (reader.size()) {
+							if (reader.size() > 10 * 1024* 1024) {
+								index<url_record> idx("url", dom_hash, 1000);
+								res = idx.find_top(tokens, score_mod, 5);
+							} else {
+								const size_t size = reader.size();
+								std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
+								reader.seek(0);
+								reader.read(buffer.get(), size);
+								index_reader_ram ram_reader(buffer.get(), size);
+								index<url_record> idx(&ram_reader, 1000);
+								res = idx.find_top(tokens, score_mod, 5);
+							}
+							if (res.size() == 0) {
+								cout << dom_hash << " no response" << endl;
+							} else {
+								for (auto &rec : res) {
+									cout << dom_hash << ": " << rec.m_value << " on " << query["q"] << endl;
+								}
+							}
+						} else {
+							cout << dom_hash << " is empty" << endl;
+						}
+
+						std::lock_guard lock(result_lock);
+						results[dom_hash] = res;
+					});
+				}
+
+				pool.run_all();
+
+				// Output result.
+				for (auto domain_hash : domain_hashes) {
+					body.write((char *)&domain_hash, sizeof(uint64_t));
+					size_t num_records = results[domain_hash].size();
+					body.write((char *)&num_records, sizeof(size_t));
+
+					for (const auto &record : results[domain_hash]) {
+						body.write((char *)&(record.m_value), sizeof(uint64_t));
+						body.write((char *)&(record.m_score), sizeof(float));
+					}
+				}
+
+				res.content_type("application/octet-stream");
+			}
+
+			res.code(200);
+
+			const string res_str = body.str();
+			cout << "outputting: " << res_str.size() << endl;
+			res.body(res_str);
+
+			return res;
+		});
+	}
+
 	void make_domain_index() {
 
 		/*sharded_index<domain_record> idx("domain_info", 997);

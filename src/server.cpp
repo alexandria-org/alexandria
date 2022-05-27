@@ -82,6 +82,12 @@ int main(int argc, const char **argv) {
 
 	}
 
+	if (argc == 2 && arg == "url_server") {
+
+		indexer::url_server();
+
+	}
+
 	/*if (argc == 1 && full_text::is_indexed()) {
 
 		//worker::start_urlstore_server();
