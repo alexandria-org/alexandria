@@ -51,7 +51,7 @@ namespace hash_table {
 
 	void builder::merge() {
 		cout << "Merging hash table" << endl;
-		utils::thread_pool pool(24);
+		utils::thread_pool pool(32);
 		for (hash_table_shard_builder *shard : m_shards) {
 			pool.enqueue([shard]() -> void {
 				shard->write();

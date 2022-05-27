@@ -133,6 +133,8 @@ int main(int argc, const char **argv) {
 		indexer::index_urls(argv[2]);
 	} else if (arg == "--index-words") {
 		indexer::index_words(argv[2]);
+	} else if (arg == "--index-snippets") {
+		indexer::index_snippets(argv[2]);
 	} else if (arg == "--make-domain-index") {
 		indexer::make_domain_index();
 	} else if (arg == "--make-domain-index-scores") {
