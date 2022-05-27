@@ -442,14 +442,14 @@ namespace transfer {
 	/*
 	 * Perform simple GET request and return response.
 	 * */
-	Response get(const string &url) {
+	http::response get(const string &url) {
 		return get(url, vector<string>{});
 	}
 
-	Response get(const string &url, const vector<string> &headers) {
+	http::response get(const string &url, const vector<string> &headers) {
 		CURL *curl = curl_easy_init();
 		struct curl_slist *header_list = NULL;
-		Response response = {.body = "", .code = 0};
+		http::response response;
 		if (curl) {
 
 			for (const string &header : headers) {
@@ -470,8 +470,11 @@ namespace transfer {
 
 			curl_slist_free_all(header_list);
 
-			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
-			response.body = response_stream.str();
+			size_t code = 0;
+			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+
+			response.code(code);
+			response.body(response_stream.str());
 
 			curl_easy_cleanup(curl);
 		}
@@ -482,14 +485,14 @@ namespace transfer {
 	/*
 	 * Perform simple POST request and return response.
 	 * */
-	Response post(const string &url, const string &data) {
+	http::response post(const string &url, const string &data) {
 		return post(url, data, {});
 	}
 
-	Response post(const string &url, const string &data, const vector<string> &headers) {
+	http::response post(const string &url, const string &data, const vector<string> &headers) {
 		CURL *curl = curl_easy_init();
 		struct curl_slist *header_list = NULL;
-		Response response = {.body = "", .code = 0};
+		http::response response;
 		if (curl) {
 
 			for (const string &header : headers) {
@@ -516,8 +519,10 @@ namespace transfer {
 
 			curl_easy_perform(curl);
 
-			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
-			response.body = response_stream.str();
+			size_t code = 0;
+			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+			response.code(code);
+			response.body(response_stream.str());
 
 			curl_easy_cleanup(curl);
 		}
@@ -528,9 +533,9 @@ namespace transfer {
 	/*
 	 * Perform simple PUT request and return response.
 	 * */
-	Response put(const string &url, const string &data) {
+	http::response put(const string &url, const string &data) {
 		CURL *curl = curl_easy_init();
-		Response response = {.body = "", .code = 0};
+		http::response response;
 		if (curl) {
 			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
@@ -553,8 +558,11 @@ namespace transfer {
 
 			curl_easy_perform(curl);
 
-			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.code));
-			response.body = response_stream.str();
+			size_t code = 0;
+			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+
+			response.code(code);
+			response.body(response_stream.str());
 
 			curl_easy_cleanup(curl);
 		}

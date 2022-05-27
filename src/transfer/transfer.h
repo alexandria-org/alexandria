@@ -30,6 +30,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "http/response.h"
+
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
@@ -40,11 +42,6 @@ namespace transfer {
 
 	const int OK = 0;
 	const int ERROR = 1;
-
-	struct Response {
-		std::string body;
-		size_t code;
-	};
 
 	size_t curl_stringstream_writer(void *ptr, size_t size, size_t nmemb, std::stringstream *ss);
 	size_t curl_ostream_writer(void *ptr, size_t size, size_t nmemb, std::ostream *os);
@@ -71,18 +68,18 @@ namespace transfer {
 	/*
 	 * Perform simple GET request and return response.
 	 * */
-	Response get(const std::string &url);
-	Response get(const std::string &url, const std::vector<std::string> &headers);
+	http::response get(const std::string &url);
+	http::response get(const std::string &url, const std::vector<std::string> &headers);
 
 	/*
 	 * Perform simple POST request and return response.
 	 * */
-	Response post(const std::string &url, const std::string &data);
-	Response post(const std::string &url, const std::string &data, const std::vector<std::string> &headers);
+	http::response post(const std::string &url, const std::string &data);
+	http::response post(const std::string &url, const std::string &data, const std::vector<std::string> &headers);
 
 	/*
 	 * Perform simple PUT request and return response.
 	 * */
-	Response put(const std::string &url, const std::string &data);
+	http::response put(const std::string &url, const std::string &data);
 
 }

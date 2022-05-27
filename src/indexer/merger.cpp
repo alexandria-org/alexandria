@@ -38,7 +38,7 @@ namespace indexer {
 
 	namespace merger {
 
-		const double mem_limit = 0.5;
+		const double mem_limit = 0.4;
 
 		bool is_merging = false;
 		map<size_t, std::function<void()>> mergers;

@@ -40,6 +40,7 @@
 #include "merger.h"
 #include "file/tsv_file_remote.h"
 #include "algorithm/bloom_filter.h"
+#include "parser/parser.h"
 #include "http/server.h"
 
 using namespace std;
@@ -76,7 +77,7 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
+	void cmd_search(index_manager &idx_manager, hash_table::hash_table &ht, hash_table::hash_table &url_ht, const string &query) {
 
 		profiler::instance prof("domain search");
 		std::vector<indexer::return_record> res = idx_manager.find(query);
@@ -88,13 +89,61 @@ namespace indexer {
 		cout << setw(20) << "score";
 		cout << endl;
 
+		std::vector<uint64_t> domain_hashes;
+
 		for (indexer::return_record &rec : res) {
 			const string host = ht.find(rec.m_value);
+			domain_hashes.push_back(rec.m_value);
 
 			cout << setw(50) << host;
 			cout << setw(20) << rec.m_score;
 			cout << endl;
 		}
+
+		profiler::instance prof2("url searches");
+
+		cout << "sending " << domain_hashes.size() << " domain hashes" << endl;
+
+		http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(query), string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
+
+		const string url_res = http_res.body();
+
+		stringstream ss(url_res);
+
+		std::map<uint64_t, std::vector<url_record>> results;
+		while (!ss.eof()) {
+			uint64_t incoming_domain_hash;
+			ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
+			if (ss.eof()) break;
+			size_t num_records;
+			ss.read((char *)&num_records, sizeof(size_t));
+			for (size_t i = 0; i < num_records; i++) {
+				uint64_t value;
+				float score;
+				ss.read((char *)&value, sizeof(uint64_t));
+				ss.read((char *)&score, sizeof(float));
+				results[incoming_domain_hash].push_back(url_record(value, score));
+			}
+		}
+
+		for (auto domain_hash : domain_hashes) {
+			for (const auto &url_record : results[domain_hash]) {
+				const std::string &line = url_ht.find(url_record.m_value);
+				std::vector<std::string> cols;
+
+				boost::algorithm::split(cols, line, boost::is_any_of("\t"));
+				const std::string url = cols[0];
+				const std::string title = cols[1];
+				const std::string snippet = cols[4];
+
+				std::cout << url << std::endl;
+			}
+		}
+
+		cout << "took " << prof2.get() << "ms" << endl;
+
+		cout << "got " << results.size() << " responses" << endl;
+
 	}
 
 	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
@@ -203,6 +252,7 @@ namespace indexer {
 		//idx_manager.truncate();
 
 		hash_table::hash_table ht("index_manager");
+		hash_table::hash_table url_ht("snippets");
 		//hash_table::hash_table ht_words("word_hash_table");
 
 		string input;
@@ -220,7 +270,7 @@ namespace indexer {
 			} else if (cmd == "search") {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
-				cmd_search(idx_manager, ht, query);
+				cmd_search(idx_manager, ht, url_ht, query);
 			} else if (cmd == "word") {
 				vector<string> query_words(args.begin() + 1, args.end());
 				const string query = boost::algorithm::join(query_words, " ");
@@ -380,7 +430,7 @@ namespace indexer {
 		urls_to_index.read_file("/mnt/0/url_filter.bloom");
 
 		size_t limit = 1000;
-		size_t offset = 15000;
+		size_t offset = 142000;
 		while (true) {
 			indexer::index_manager idx_manager(true);
 
@@ -469,6 +519,41 @@ namespace indexer {
 			indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index("word_index", 256);
 			word_index.calculate_scores();
 			word_index.sort_by_scores();
+		}
+	}
+
+	void index_snippets(const string &batch) {
+
+		size_t limit = 5000;
+		size_t offset = 20000;
+		while (true) {
+
+			indexer::index_manager idx_manager(false, true);
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
+
+			if (warc_paths.size() == 0) break;
+
+			for (string &path : warc_paths) {
+				const size_t pos = path.find(".warc.gz");
+				if (pos != string::npos) {
+					path.replace(pos, 8, ".gz");
+				}
+			}
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_manager.add_snippet_files_threaded(local_files, 32);
+			cout << "done with indexer" << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			offset += limit;
 		}
 	}
 

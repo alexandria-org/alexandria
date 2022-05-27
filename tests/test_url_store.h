@@ -206,8 +206,8 @@ BOOST_AUTO_TEST_CASE(get_json) {
 	std::this_thread::sleep_for(200ms);
 
 	{
-		transfer::Response res = transfer::get(config::url_store_host + "/store/url/https://www.example1.com");
-		json json_obj = json::parse(res.body);
+		http::response res = transfer::get(config::url_store_host + "/store/url/https://www.example1.com");
+		json json_obj = json::parse(res.body());
 
 		BOOST_CHECK_EQUAL(json_obj["url"], "https://www.example1.com");
 		BOOST_CHECK_EQUAL(json_obj["last_visited"], 20220101);
@@ -218,9 +218,9 @@ BOOST_AUTO_TEST_CASE(get_json) {
 		for (const auto &url : urls) {
 			lines.push_back(url.str());
 		}
-		transfer::Response res = transfer::post(config::url_store_host + "/store/url", boost::algorithm::join(lines, "\n"));
+		http::response res = transfer::post(config::url_store_host + "/store/url", boost::algorithm::join(lines, "\n"));
 
-		json ret_data = json::parse(res.body);
+		json ret_data = json::parse(res.body());
 
 		BOOST_CHECK_EQUAL(ret_data.size(), 7);
 		size_t i = 0;

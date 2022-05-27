@@ -51,6 +51,7 @@ namespace indexer {
 
 		index_manager();
 		index_manager(bool only_links);
+		index_manager(bool only_links, bool only_snippets);
 		~index_manager();
 
 		void add_level(level *lvl);
@@ -66,6 +67,8 @@ namespace indexer {
 		void add_link_count_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_url_file(const std::string &local_path);
 		void add_url_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
+		void add_snippet_file(const std::string &local_path);
+		void add_snippet_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_word_file(const std::string &local_path, const std::set<uint64_t> &common_words);
 		void add_word_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const std::set<uint64_t> &words_to_index);
 		void merge();
@@ -103,6 +106,7 @@ namespace indexer {
 		std::vector<level *> m_levels;
 		std::unique_ptr<hash_table::builder> m_hash_table;
 		std::unique_ptr<hash_table::builder> m_hash_table_words;
+		std::unique_ptr<hash_table::builder> m_hash_table_snippets;
 		std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
 
 		void create_directories(level_type lvl);

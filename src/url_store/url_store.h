@@ -305,9 +305,9 @@ namespace url_store {
 
 	template <typename store_data>
 	int get(const string &url, store_data &data) {
-		transfer::Response res = transfer::get(config::url_store_host + "/store/" + store_data::uri + "/" + url, {"Accept: application/octet-stream"});
-		if (res.code == 200) {
-			data = store_data(res.body);
+		http::response res = transfer::get(config::url_store_host + "/store/" + store_data::uri + "/" + url, {"Accept: application/octet-stream"});
+		if (res.code() == 200) {
+			data = store_data(res.body());
 			return OK;
 		}
 		return ERROR;
@@ -316,11 +316,11 @@ namespace url_store {
 	template <typename store_data>
 	int get_many(const std::vector<std::string> &public_keys, std::vector<store_data> &datas) {
 		const string post_data = boost::algorithm::join(public_keys, "\n");
-		transfer::Response res = transfer::post(config::url_store_host + "/store/" + store_data::uri, post_data, {"Accept: application/octet-stream"});
-		if (res.code == 200) {
+		http::response res = transfer::post(config::url_store_host + "/store/" + store_data::uri, post_data, {"Accept: application/octet-stream"});
+		if (res.code() == 200) {
 
-			const size_t len = res.body.size();
-			const char *cstr = res.body.c_str();
+			const size_t len = res.body().size();
+			const char *cstr = res.body().c_str();
 			size_t iter = 0;
 			while (iter < len) {
 				size_t data_len = *((size_t *)&cstr[iter]);

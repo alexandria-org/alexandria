@@ -70,6 +70,16 @@ namespace indexer {
 		}
 	}
 
+	index_manager::index_manager(bool only_links, bool only_snippets) {
+
+		if (only_links) {
+			m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
+		}
+		if (only_snippets) {
+			m_hash_table_snippets = std::make_unique<hash_table::builder>("snippets");
+		}
+	}
+
 	index_manager::~index_manager() {
 	}
 
@@ -328,6 +338,37 @@ namespace indexer {
 		pool.run_all();
 	}
 
+	void index_manager::add_snippet_file(const string &local_path) {
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		vector<string> col_values;
+		while (getline(infile, line)) {
+
+			col_values.clear();
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+
+			m_hash_table_snippets->add(url.hash(), line);
+		}
+	}
+
+	void index_manager::add_snippet_files_threaded(const vector<string> &local_paths, size_t num_threads) {
+
+		utils::thread_pool pool(num_threads);
+
+		for (auto &local_path : local_paths) {
+			pool.enqueue([this, local_path]() -> void {
+				add_snippet_file(local_path);
+			});
+		}
+
+		pool.run_all();
+
+		m_hash_table_snippets->merge();
+	}
+
 	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &words_to_index) {
 
 		const vector<size_t> cols = {1, 2, 3, 4};
@@ -435,7 +476,7 @@ namespace indexer {
 	std::vector<return_record> index_manager::find(const string &query) {
 
 		auto domain_formula = [](float score) {
-			return expm1(25.0f * score) / 50.0f;
+			return expm1(20.0f * score) / 50.0f;
 		};
 
 		auto domain_formula2 = [](float score) {
@@ -472,7 +513,7 @@ namespace indexer {
 		for (size_t i = 0; i < counts.size(); i++) {
 			uint64_t token = tokens[i];
 			std::cout << token_to_word[token] << ": " << counts[i] << ", ngram_len = " << ngram_len[token] << std::endl;
-			if (counts[i] < 100000) {
+			if (counts[i] < 90000) {
 				m_domain_info->get_records_for_bitmap(bitmaps[i], domain_modifiers);
 			}
 		}
