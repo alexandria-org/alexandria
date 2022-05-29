@@ -25,6 +25,7 @@
  */
 
 #include "url_level.h"
+#include "domain_stats/domain_stats.h"
 
 using namespace std;
 
@@ -84,6 +85,62 @@ namespace indexer {
 		}
 	}
 
+	void url_level::add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter) {
+
+		profiler::instance prof("parsing " + local_path);
+		ifstream infile(local_path, ios::in);
+		string line;
+		vector<string> col_values;
+		set<uint64_t> tokens;
+		unordered_map<uint64_t, index_builder<link_record> *> builders;
+		size_t num_parsed = 0;
+		size_t num_existed = 0;
+		while (getline(infile, line)) {
+
+			col_values.clear();
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL target_url(col_values[2], col_values[3]);
+
+			num_parsed++;
+			if (!url_filter.exists(target_url.hash_input())) continue;
+			num_existed++;
+
+			URL source_url(col_values[0], col_values[1]);
+
+			float source_harmonic = domain_stats::harmonic_centrality(source_url);
+
+			const string link_text = col_values[4].substr(0, 1000);
+
+			const uint64_t domain_hash = target_url.host_hash();
+			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
+
+			if (builders.find(domain_hash) == builders.end()) {
+				builders[domain_hash] = make_sure_link_builder_is_present(domain_hash);
+			}
+			index_builder<link_record> *builder = builders[domain_hash];
+
+			vector<string> words = text::get_expanded_full_text_words(link_text);
+
+			text::words_to_ngram_hash(words, 3, [&tokens](const uint64_t hash) {
+				tokens.insert(hash);
+			});
+
+			// Add the url link.
+			link_record link_rec(link_hash, source_harmonic);
+			link_rec.m_source_domain = source_url.host_hash();
+			link_rec.m_target_hash = target_url.hash();
+
+			for (auto token : tokens) {
+				builder->add(token, link_rec);
+			}
+
+			tokens.clear();
+		}
+
+		cout << "Done with " << local_path << " added " << num_existed << " total " << num_parsed << " took: " << prof.get() << "ms" << endl;
+	}
+
 	index_builder<url_record> *url_level::make_sure_builder_is_present(uint64_t domain_hash) {
 		m_lock.lock();
 		if (m_builders.count(domain_hash) == 0) {
@@ -91,6 +148,19 @@ namespace indexer {
 		}
 
 		auto ptr = m_builders[domain_hash].get();
+
+		m_lock.unlock();
+
+		return ptr;
+	}
+
+	index_builder<link_record> *url_level::make_sure_link_builder_is_present(uint64_t domain_hash) {
+		m_lock.lock();
+		if (m_link_builders.count(domain_hash) == 0) {
+			m_link_builders[domain_hash] = std::make_unique<index_builder<link_record>>("url_links", domain_hash, 1000);
+		}
+
+		auto ptr = m_link_builders[domain_hash].get();
 
 		m_lock.unlock();
 

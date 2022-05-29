@@ -454,6 +454,42 @@ namespace indexer {
 		}
 	}
 
+	void index_url_links(const string &batch) {
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+
+		::algorithm::bloom_filter urls_to_index;
+		urls_to_index.read_file("/mnt/0/urls.bloom");
+
+		size_t limit = 1000;
+		size_t offset = 0;
+		while (true) {
+			indexer::index_manager idx_manager(false);
+
+			indexer::url_level url_level;
+			idx_manager.add_level(&url_level);
+
+			merger::start_merge_thread();
+
+			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
+			vector<string> warc_paths;
+			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
+
+			if (warc_paths.size() == 0) break;
+
+			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			cout << "starting indexer" << endl;
+			idx_manager.add_url_link_files_threaded(local_files, 32, urls_to_index);
+			cout << "done with indexer" << endl;
+			transfer::delete_downloaded_files(local_files);
+
+			merger::stop_merge_thread();
+
+			offset += limit;
+		}
+	}
+
 	void index_urls(const string &batch) {
 
 		size_t limit = 1000;

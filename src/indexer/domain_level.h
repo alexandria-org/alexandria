@@ -47,6 +47,7 @@ namespace indexer {
 		void add_index_file(const std::string &local_path,
 			std::function<void(uint64_t, const std::string &)> add_data,
 			std::function<void(uint64_t, uint64_t)> add_url);
+		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter);
 		void merge();
 		void calculate_scores();
 		void clean_up();

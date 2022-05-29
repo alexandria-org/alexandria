@@ -61,6 +61,8 @@ namespace indexer {
 		void add_index_files_threaded(const vector<string> &local_paths, size_t num_threads);
 		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &urls_to_index);
 		void add_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index);
+		void add_url_link_file(const std::string &local_path, const ::algorithm::bloom_filter &urls_to_index);
+		void add_url_link_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index);
 		void add_title_file(const std::string &local_path);
 		void add_title_files_threaded(const std::vector<std::string> &local_paths, size_t num_threads);
 		void add_link_count_file(const std::string &local_path);

@@ -207,6 +207,25 @@ namespace indexer {
 		pool.run_all();
 	}
 
+	void index_manager::add_url_link_file(const string &local_path, const ::algorithm::bloom_filter &urls_to_index) {
+		for (level *lvl : m_levels) {
+			lvl->add_link_file(local_path, urls_to_index);
+		}
+	}
+
+	void index_manager::add_url_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index) {
+
+		utils::thread_pool pool(num_threads);
+
+		for (auto &local_path : local_paths) {
+			pool.enqueue([this, local_path, &urls_to_index]() -> void {
+				add_url_link_file(local_path, urls_to_index);
+			});
+		}
+
+		pool.run_all();
+	}
+
 	void index_manager::add_title_file(const string &local_path) {
 		const size_t title_col = 1;
 

@@ -35,6 +35,7 @@ namespace indexer {
 	void index_title_counter(const std::string &batch);
 	void index_link_counter(const std::string &batch);
 	void index_links(const std::string &batch);
+	void index_url_links(const std::string &batch);
 	void index_urls(const std::string &batch);
 	void index_words(const std::string &batch);
 	void index_snippets(const std::string &batch);

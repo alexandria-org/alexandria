@@ -129,6 +129,8 @@ int main(int argc, const char **argv) {
 		indexer::index_link_counter(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
+	} else if (arg == "--index-url-links") {
+		indexer::index_url_links(argv[2]);
 	} else if (arg == "--index-urls") {
 		indexer::index_urls(argv[2]);
 	} else if (arg == "--index-words") {

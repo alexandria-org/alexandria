@@ -41,6 +41,7 @@
 #include "link_record.h"
 #include "domain_link_record.h"
 #include "domain_record.h"
+#include "algorithm/bloom_filter.h"
 
 namespace indexer {
 
@@ -74,6 +75,7 @@ namespace indexer {
 		virtual void add_index_file(const std::string &local_path,
 			std::function<void(uint64_t, const std::string &)> add_data,
 			std::function<void(uint64_t, uint64_t)> add_url) = 0;
+		virtual void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter) = 0;
 		virtual void merge() = 0;
 		virtual void calculate_scores() = 0;
 		virtual void clean_up() = 0;

@@ -44,6 +44,7 @@ namespace indexer {
 	class url_level: public level {
 		private:
 		std::unordered_map<uint64_t, std::unique_ptr<index_builder<url_record>>> m_builders;
+		std::unordered_map<uint64_t, std::unique_ptr<index_builder<link_record>>> m_link_builders;
 
 		public:
 		url_level();
@@ -53,6 +54,7 @@ namespace indexer {
 		void add_index_file(const std::string &local_path,
 			std::function<void(uint64_t, const std::string &)> add_data,
 			std::function<void(uint64_t, uint64_t)> add_url);
+		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter);
 		void merge();
 		void calculate_scores() {};
 		void clean_up();
@@ -62,6 +64,7 @@ namespace indexer {
 
 		private:
 			index_builder<url_record> *make_sure_builder_is_present(uint64_t);
+			index_builder<link_record> *make_sure_link_builder_is_present(uint64_t domain_hash);
 	};
 
 }

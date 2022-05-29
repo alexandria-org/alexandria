@@ -88,6 +88,10 @@ namespace indexer {
 		}
 	}
 
+	void domain_level::add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter) {
+	
+	}
+
 	void domain_level::merge() {
 		m_builder->append();
 		m_builder->merge();
