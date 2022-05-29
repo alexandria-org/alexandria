@@ -28,8 +28,8 @@
 
 namespace http {
 
-	request::request(const URL &url)
-	: m_url(url) {
+	request::request(const URL &url, std::string request_method, std::string request_body)
+	: m_url(url), m_request_method(request_method), m_request_body(request_body) {
 	
 	}
 

@@ -51,6 +51,7 @@ namespace indexer {
 	}
 
 	size_t index_reader_file::size() {
+		if (!m_reader->is_open()) return 0;
 		m_reader->seekg(0, ios::end);
 		return m_reader->tellg();
 	}

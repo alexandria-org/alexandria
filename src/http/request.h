@@ -33,13 +33,17 @@ namespace http {
 
 	class request {
 		public:
-			request(const URL &url);
+			request(const URL &url, std::string request_method = "POST", std::string request_body = "");
 
 			const URL& url() const { return m_url; }
+			const std::string &request_method() const { return m_request_method; }
+			const std::string &request_body() const { return m_request_body; }
 
 		private:
 			size_t m_code = 200;
 			URL m_url;
+			std::string m_request_method;
+			std::string m_request_body;
 
 	};
 
