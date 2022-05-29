@@ -40,6 +40,15 @@ namespace algorithm {
 		}
 	}
 
+	bloom_filter::bloom_filter(size_t num_bits)
+	: m_dim(num_bits / 64)
+	{
+		m_bitmap = std::make_unique<uint64_t[]>(m_dim);
+		for (size_t i = 0; i < m_dim; i++) {
+			m_bitmap[i] = 0x0ull;
+		}
+	}
+
 	void bloom_filter::insert(const std::string &item) {
 		for (size_t i = 0; i < m_seeds.size(); i++) {
 			const uint64_t hash = algorithm::hash_with_seed(item, m_seeds[i]);

@@ -147,6 +147,10 @@ int main(int argc, const char **argv) {
 		indexer::truncate_words();
 	} else if (arg == "--truncate-links") {
 		indexer::truncate_links();
+	} else if (arg == "--make-url-bloom") {
+		indexer::make_url_bloom_filter();
+	} else if (arg == "--asd") {
+		indexer::asd();
 	} else {
 		help();
 	}
