@@ -40,8 +40,9 @@ namespace algorithm {
 		}
 	}
 
-	bloom_filter::bloom_filter(size_t num_bits)
-	: m_dim(num_bits / 64)
+	// Dim should be a prime number..
+	bloom_filter::bloom_filter(size_t dim)
+	: m_dim(dim)
 	{
 		m_bitmap = std::make_unique<uint64_t[]>(m_dim);
 		for (size_t i = 0; i < m_dim; i++) {

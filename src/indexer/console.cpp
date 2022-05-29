@@ -959,7 +959,7 @@ namespace indexer {
 
 	void make_url_bloom_filter() {
 
-		::algorithm::bloom_filter urls_to_index(40000000000);
+		::algorithm::bloom_filter urls_to_index(625000027);
 
 		ifstream infile("/root/urls.txt");
 		std::string line;
@@ -971,7 +971,19 @@ namespace indexer {
 			if (num % 1000000 == 0) cout << num << endl;
 		}
 
+		if (urls_to_index.exists("ukcafe.canto.com/v/medialibrary")) {
+			cout << "it exists 1" << endl;
+		}
+
 		urls_to_index.write_file("/mnt/0/urls.bloom");
+
+		::algorithm::bloom_filter urls_to_index2(625000027);
+		urls_to_index2.read_file("/mnt/0/urls.bloom");
+
+		if (urls_to_index2.exists("ukcafe.canto.com/v/medialibrary")) {
+			cout << "it exists 2" << endl;
+		}
+
 
 	}
 
