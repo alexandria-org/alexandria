@@ -32,15 +32,10 @@
 
 namespace algorithm {
 
-	/*
-	 * 2D bloom filter inspired by robustBF
-	 *
-	 * https://github.com/patgiri/robustBF/
-	 * https://arxiv.org/abs/2106.04365
-	 */
 	class bloom_filter {
 		public:
 			bloom_filter();
+			bloom_filter(size_t dim);
 
 			void insert(const std::string &item);
 			void commit();
@@ -59,9 +54,9 @@ namespace algorithm {
 			std::unique_ptr<uint64_t[]> m_bitmap;
 
 			#ifdef IS_TEST
-			const size_t m_dim = 2695797;
+			size_t m_dim = 2695797;
 			#else
-			const size_t m_dim = 2695797707;
+			size_t m_dim = 2695797707;
 			#endif
 
 			// some random prime numbers
