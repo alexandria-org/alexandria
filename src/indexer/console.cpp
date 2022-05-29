@@ -460,7 +460,7 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		::algorithm::bloom_filter urls_to_index;
+		::algorithm::bloom_filter urls_to_index(625000027);
 		urls_to_index.read_file("/mnt/0/urls.bloom");
 
 		size_t limit = 1000;
@@ -987,60 +987,4 @@ namespace indexer {
 
 	}
 
-	void asd() {
-
-		hash_table::hash_table ht("index_manager");
-		std::cout << ht.find(82533792366985216ull) << std::endl;
-
-		// Read page.
-		const size_t key_pos = 0;
-		ifstream reader("/root/asd.idx");
-		reader.seekg(0);
-
-		size_t num_keys;
-		reader.read((char *)&num_keys, sizeof(size_t));
-
-
-		LOG_INFO("num keys: " + std::to_string(num_keys));
-
-		uint64_t *keys = new uint64_t[num_keys];
-
-		reader.read((char *)keys, num_keys * sizeof(uint64_t));
-
-		size_t key_data_pos = SIZE_MAX;
-		for (size_t i = 0; i < num_keys; i++) {
-			key_data_pos = i;
-			break;
-		}
-
-		if (key_data_pos == SIZE_MAX) {
-			return;
-		}
-
-		char buffer[64];
-
-		// Read position and length.
-		reader.seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
-		size_t pos = *((size_t *)(&buffer[0]));
-
-		reader.seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
-		size_t len = *((size_t *)(&buffer[0]));
-
-		reader.seekg(key_pos + 8 + (num_keys * 8)*3 + key_data_pos * 8, std::ios::beg);
-		reader.read(buffer, 8);
-		//size_t total_num_results = *((size_t *)(&buffer[0]));
-
-		reader.seekg(key_pos + 8 + (num_keys * 8)*4 + pos, std::ios::beg);
-
-		size_t num_records = len / sizeof(domain_link::full_text_record);
-		if (num_records > config::ft_max_results_per_section) num_records = config::ft_max_results_per_section;
-
-
-		domain_link::full_text_record rec;
-		reader.read((char *)&rec, sizeof(domain_link::full_text_record));
-
-		return;
-	}
 }

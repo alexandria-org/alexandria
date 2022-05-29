@@ -48,6 +48,5 @@ namespace indexer {
 	void make_domain_index();
 	void make_domain_index_scores();
 	void make_url_bloom_filter();
-	void asd();
 
 }
