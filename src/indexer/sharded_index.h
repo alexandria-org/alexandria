@@ -107,6 +107,7 @@ namespace indexer {
 		size_t m_hash_table_size;
 
 		std::vector<data_record> m_records;
+		mutable std::vector<float> m_scores;
 		std::map<uint64_t, uint32_t> m_record_id_map;
 
 		void read_meta();
@@ -192,6 +193,8 @@ namespace indexer {
 	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys,
 			std::function<float(uint64_t)> score_mod, size_t n) const {
 
+		std::fill(m_scores.begin(), m_scores.end(), 0.0f);
+
 		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
 
@@ -208,12 +211,11 @@ namespace indexer {
 		std::vector<uint32_t> ids;
 		for (uint32_t internal_id : rr) {
 			ids.push_back(internal_id);
-			m_records[internal_id].m_modified_score = m_records[internal_id].m_score *
-					score_mod(m_records[internal_id].m_value);
+			m_scores[internal_id] = m_records[internal_id].m_score * score_mod(m_records[internal_id].m_value);
 		}
 
 		auto ordered = [this](const uint32_t &a, const uint32_t &b) {
-			return m_records[a].m_modified_score < m_records[b].m_modified_score;
+			return m_scores[a] < m_scores[b];
 		};
 
 		std::vector<uint32_t> top_ids = ::algorithm::top_k<uint32_t>(ids, n, ordered);
@@ -221,7 +223,7 @@ namespace indexer {
 		std::vector<data_record> ret;
 		for (uint32_t internal_id : top_ids) {
 			ret.push_back(m_records[internal_id]);
-			ret.back().m_score = ret.back().m_modified_score;
+			ret.back().m_score = m_scores[internal_id];
 		}
 
 		sort(ret.begin(), ret.end(), typename data_record::score_order());
@@ -330,6 +332,7 @@ namespace indexer {
 
 				m_record_id_map[rec.m_value] = m_records.size();
 				m_records.push_back(rec);
+				m_scores.push_back(0.0f);
 			}
 		}
 	}

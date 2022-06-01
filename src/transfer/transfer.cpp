@@ -517,12 +517,17 @@ namespace transfer {
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_stream);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stringstream_writer);
 
-			curl_easy_perform(curl);
+			CURLcode curl_result = curl_easy_perform(curl);
 
-			size_t code = 0;
-			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
-			response.code(code);
-			response.body(response_stream.str());
+			if (curl_result == CURLE_OK) {
+				size_t code = 0;
+				curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+				response.code(code);
+				response.body(response_stream.str());
+			} else {
+				response.code(0);
+				response.body("");
+			}
 
 			curl_easy_cleanup(curl);
 		}

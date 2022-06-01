@@ -830,24 +830,28 @@ namespace indexer {
 
 			http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q), string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
 
-			const string url_res = http_res.body();
-
-			stringstream ss(url_res);
-
 			std::map<uint64_t, std::vector<url_record>> results;
-			while (!ss.eof()) {
-				uint64_t incoming_domain_hash;
-				ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
-				if (ss.eof()) break;
-				size_t num_records;
-				ss.read((char *)&num_records, sizeof(size_t));
-				for (size_t i = 0; i < num_records; i++) {
-					uint64_t value;
-					float score;
-					ss.read((char *)&value, sizeof(uint64_t));
-					ss.read((char *)&score, sizeof(float));
-					results[incoming_domain_hash].push_back(url_record(value, score));
+			if (http_res.code() == 200) {
+
+				const string url_res = http_res.body();
+
+				stringstream ss(url_res);
+
+				while (!ss.eof()) {
+					uint64_t incoming_domain_hash;
+					ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
+					if (ss.eof()) break;
+					size_t num_records;
+					ss.read((char *)&num_records, sizeof(size_t));
+					for (size_t i = 0; i < num_records; i++) {
+						uint64_t value;
+						float score;
+						ss.read((char *)&value, sizeof(uint64_t));
+						ss.read((char *)&score, sizeof(float));
+						results[incoming_domain_hash].push_back(url_record(value, score));
+					}
 				}
+
 			}
 
 			prof.stop();
@@ -865,6 +869,8 @@ namespace indexer {
 					const std::string snippet = cols[4];
 
 					body << "<a href='" << url << "'>" << title << "</a><br>" << std::endl;
+					body << "<small style='color:green'>" << url << "</small><br>" << std::endl;
+					body << snippet << "<br><br>" << endl;
 				}
 			}
 
