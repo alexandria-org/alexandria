@@ -216,7 +216,8 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod, size_t num) const {
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod,
+			size_t num) const {
 		std::vector<roaring::Roaring> bitmaps;
 		for (auto key : keys) {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
@@ -224,10 +225,12 @@ namespace indexer {
 
 		auto intersection = ::algorithm::intersection(bitmaps);
 		std::vector<data_record> res;
+		std::vector<float> scores;
 		size_t i = 0;
 		for (auto internal_id : intersection) {
 			i++;
 			if (i > num) break;
+			scores.emplace_back(m_records[internal_id].m_score + score_mod(m_records[internal_id]));
 			res.emplace_back(m_records[internal_id]);
 		}
 

@@ -120,7 +120,9 @@ namespace indexer {
 		size_t dom_incr = 0;
 		size_t score_incr = 0;
 		size_t mod_incr = 0;
-		auto score_mod = [&dom_incr, &domain_links, &score_incr, &scores, &mod_incr, &domain_modifiers](uint64_t value) {
+		auto score_mod = [&dom_incr, &domain_links, &score_incr, &scores, &mod_incr, &domain_modifiers](const domain_record &rec) {
+
+			uint64_t value = rec.m_value;
 
 			float score = 0.0f;
 			while (mod_incr < domain_modifiers.size() && domain_modifiers[mod_incr].m_value < value) {

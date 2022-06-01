@@ -68,7 +68,7 @@ namespace indexer {
 		 * score_mod is applied in storage_order of data_record.
 		 * */
 		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
-				std::function<float(uint64_t)> score_mod, size_t n) const;
+				std::function<float(const data_record &)> score_mod, size_t n) const;
 
 		/*
 		 * Find intersection of multiple keys and run group by, the groups will be determined by the
@@ -190,7 +190,7 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys,
-			std::function<float(uint64_t)> score_mod, size_t n) const {
+			std::function<float(const data_record &)> score_mod, size_t n) const {
 
 		std::vector<roaring::Roaring> results;
 		for (uint64_t key : keys) {
@@ -209,7 +209,7 @@ namespace indexer {
 		for (uint32_t internal_id : rr) {
 			ids.push_back(internal_id);
 			m_records[internal_id].m_modified_score = m_records[internal_id].m_score *
-					score_mod(m_records[internal_id].m_value);
+					score_mod(m_records[internal_id]);
 		}
 
 		auto ordered = [this](const uint32_t &a, const uint32_t &b) {
