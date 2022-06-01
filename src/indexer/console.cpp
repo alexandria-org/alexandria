@@ -906,7 +906,7 @@ namespace indexer {
 
 				std::map<uint64_t, std::vector<url_record>> results;
 
-				utils::thread_pool pool(32);
+				utils::thread_pool pool(1);
 				std::mutex result_lock;
 				cout << "received " << domain_hashes.size() << " hashes" << endl;
 				for (auto dom_hash : domain_hashes) {
@@ -916,7 +916,7 @@ namespace indexer {
 						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
 						index_reader_file reader(file);
 
-						auto score_mod = [](uint64_t) {
+						auto score_mod = [](const url_record &) {
 							return 0.0f;
 						};
 

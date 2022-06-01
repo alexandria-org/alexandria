@@ -26,20 +26,11 @@
 
 #include "level.h"
 #include "index_builder.h"
+#include "url_record.h"
 
 #include <unordered_map>
 
 namespace indexer {
-
-	class url_record : public generic_record {
-
-		public:
-
-		url_record() : generic_record() {};
-		url_record(uint64_t value) : generic_record(value) {};
-		url_record(uint64_t value, float score) : generic_record(value, score) {};
-
-	};
 
 	class url_level: public level {
 		private:

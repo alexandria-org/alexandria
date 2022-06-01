@@ -60,7 +60,7 @@ namespace indexer {
 		 * score_mod is applied in storage_order of data_record.
 		 * */
 		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
-				std::function<float(uint64_t)> score_mod, size_t n) const;
+				std::function<float(const data_record &)> score_mod, size_t n) const;
 
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
@@ -216,7 +216,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(uint64_t)> score_mod, size_t num) const {
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod, size_t num) const {
 		std::vector<roaring::Roaring> bitmaps;
 		for (auto key : keys) {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
