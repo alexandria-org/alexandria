@@ -42,6 +42,7 @@
 #include "url_store/url_store.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
+#include "indexer/url_level.h"
 
 using namespace std;
 
@@ -64,18 +65,18 @@ int main(int argc, const char **argv) {
 		config::read_config("/etc/alexandria.conf");
 	}
 
-	/*
-	// Debug code.
-	auto domain_formula = [](float score) {
-		return expm1(25.0f * score) / 50.0f;
+
+	indexer::index<indexer::url_record> idx("url", 3803508414306896384ull, 1000);
+
+	auto score_mod = [](uint64_t) {
+		return 0.0f;
 	};
-	std::vector<size_t> counts;
+	std::vector<uint64_t> keys = {::algorithm::hash("file_get_contents"), ::algorithm::hash("php")};
+	for (auto key : keys) cout << "key: " << key << endl;
+	auto recs = idx.find_top(keys, score_mod, 5);
+	std::cout << "found: " << recs.size() << std::endl;
 
-	indexer::sharded_index<indexer::domain_link_record> idx("domain_link_index", 4001);
-	vector<indexer::domain_link_record> domain_links = idx.find_group_by(text::get_tokens("svt"), domain_formula, counts);
-
-	return 0;*/
-
+	return 0;
 	if (argc < 2) {
 		help();
 		return 0;

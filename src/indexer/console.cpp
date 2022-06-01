@@ -900,7 +900,7 @@ namespace indexer {
 
 				std::map<uint64_t, std::vector<url_record>> results;
 
-				utils::thread_pool pool(32);
+				utils::thread_pool pool(1);
 				std::mutex result_lock;
 				cout << "received " << domain_hashes.size() << " hashes" << endl;
 				for (auto dom_hash : domain_hashes) {

@@ -143,12 +143,13 @@ namespace text {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
 				if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
+					trim_punct(cur_token);
 					tokens.push_back(str2token(cur_token));
 				}
 				cur_token.clear();
 			} else {
 				// This if statement trims the token.
-				if (!isspace(ch) && !ispunct(ch)) {
+				if (!isspace(ch)) {
 					cur_token.insert(cur_token.end(), tolower(ch));
 				}
 			}
@@ -156,6 +157,7 @@ namespace text {
 
 		// Remember the last token.
 		if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
+			trim_punct(cur_token);
 			tokens.push_back(str2token(cur_token));
 		}
 
