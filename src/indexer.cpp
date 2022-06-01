@@ -65,23 +65,10 @@ int main(int argc, const char **argv) {
 		config::read_config("/etc/alexandria.conf");
 	}
 
-
-	indexer::index<indexer::url_record> idx("url", 3803508414306896384ull, 1000);
-
-	auto score_mod = [](uint64_t) {
-		return 0.0f;
-	};
-	std::vector<uint64_t> keys = {::algorithm::hash("file_get_contents"), ::algorithm::hash("php")};
-	for (auto key : keys) cout << "key: " << key << endl;
-	auto recs = idx.find_top(keys, score_mod, 5);
-	std::cout << "found: " << recs.size() << std::endl;
-
-	return 0;
 	if (argc < 2) {
 		help();
 		return 0;
 	}
-
 
 	const string arg(argc > 1 ? argv[1] : "");
 

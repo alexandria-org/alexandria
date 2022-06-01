@@ -910,7 +910,7 @@ namespace indexer {
 						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
 						index_reader_file reader(file);
 
-						auto score_mod = [](uint64_t) {
+						auto score_mod = [](const url_record &) {
 							return 0.0f;
 						};
 
