@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,19 +24,27 @@
  * SOFTWARE.
  */
 
-#include "generic_record.h"
+#include <boost/test/unit_test.hpp>
+#include "indexer/url_record.h"
 
-namespace indexer {
-	class url_record : public generic_record {
+using namespace std;
 
-		public:
+BOOST_AUTO_TEST_SUITE(test_url_record)
 
-		url_record() : generic_record() {};
-		url_record(uint64_t value) : generic_record(value) {};
-		url_record(uint64_t value, float score) : generic_record(value, score) {};
+BOOST_AUTO_TEST_CASE(basic) {
 
-		void url_length(uint16_t len) { m_meta = len | (m_meta << 16); };
-		uint16_t url_length(void) const { return m_meta & 0xFFFF; };
+	indexer::url_record record(123ull);
 
-	};
+	record.url_length(442);
+	BOOST_CHECK_EQUAL(record.url_length(), 442);
+
+	record.url_length(4);
+	BOOST_CHECK_EQUAL(record.url_length(), 4);
+
+	record.url_length(0);
+	BOOST_CHECK_EQUAL(record.url_length(), 0);
+
+
 }
+
+BOOST_AUTO_TEST_SUITE_END()

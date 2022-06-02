@@ -26,6 +26,7 @@
 
 #include "url_level.h"
 #include "domain_stats/domain_stats.h"
+#include "utils/thread_pool.hpp"
 
 using namespace std;
 
@@ -55,10 +56,12 @@ namespace indexer {
 		(void)add_url;
 
 		const vector<size_t> cols = {1, 2, 3, 4};
+		const vector<float> scores = {10.0, 3.0, 2.0, 1};
 
 		ifstream infile(local_path, ios::in);
 		string line;
 		unordered_map<uint64_t, index_builder<url_record> *> builders;
+		std::map<uint64_t, float> word_map;
 		while (getline(infile, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -76,12 +79,26 @@ namespace indexer {
 			(void)url_hash;
 			(void)builder;
 
+			url_record record(url_hash);
+			record.url_length(url.path_with_query().size());
+
+			size_t col_idx = 0;
 			for (size_t col : cols) {
-				vector<string> words = text::get_full_text_words(col_values[col]);
-				for (const string &word : words) {
-					builder->add(::algorithm::hash(word), url_record(url_hash));
+				auto tokens = text::get_tokens(col_values[col]);
+				std::sort(tokens.begin(), tokens.end());
+				auto last = std::unique(tokens.begin(), tokens.end());
+				tokens.erase(last, tokens.end());
+				for (auto token : tokens) {
+					word_map[token] += scores[col_idx];
 				}
 			}
+
+			for (const auto &iter : word_map) {
+				record.m_score = iter.second;
+				builder->add(iter.first, record);
+			}
+
+			word_map.clear();
 		}
 	}
 
@@ -168,6 +185,14 @@ namespace indexer {
 	}
 
 	void url_level::merge() {
+		utils::thread_pool pool(32);
+		for (const auto &iter : m_builders) {
+			uint64_t domain_hash = iter.first;
+			pool.enqueue([this, domain_hash]() {
+				m_builders[domain_hash]->optimize();
+			});
+		}
+		pool.run_all();
 	}
 
 	void url_level::clean_up() {

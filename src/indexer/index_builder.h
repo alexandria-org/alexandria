@@ -33,6 +33,7 @@
 #include <unordered_set>
 #include <cstring>
 #include <cassert>
+#include <numeric>
 #include <boost/filesystem.hpp>
 #include "merger.h"
 #include "score_builder.h"
@@ -84,6 +85,7 @@ namespace indexer {
 		void append();
 		void merge();
 		void merge(std::unordered_map<uint64_t, uint32_t> &internal_id_map);
+		void optimize();
 
 		void truncate();
 		void truncate_cache_files();
@@ -134,6 +136,7 @@ namespace indexer {
 		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
 		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
 		void reset_key_map(std::ofstream &key_writer);
+		std::vector<data_record> read_records() const;
 		void write_records(std::ofstream &writer);
 		uint32_t default_record_to_internal_id(const data_record &record);
 
@@ -142,6 +145,9 @@ namespace indexer {
 		std::string key_cache_filename() const;
 		std::string target_filename() const;
 		std::string meta_filename() const;
+
+		bool needs_optimization() const;
+		void sort_records();
 
 	};
 
@@ -284,6 +290,13 @@ namespace indexer {
 		/*std::cout << "did merge: " << target_filename() << " mem bef: " << mem_before << " mem_after: " << mem_after << " mem_usage: " << mem_usage
 			<< " mem_peak: " << mem_peak << std::endl;*/
 
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::optimize() {
+		if (needs_optimization()) {
+			sort_records();
+		}
 	}
 
 	/*
@@ -565,6 +578,20 @@ namespace indexer {
 	}
 
 	template<typename data_record>
+	std::vector<data_record> index_builder<data_record>::read_records() const {
+		ifstream reader(target_filename(), std::ios::in);
+		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
+
+		const size_t num_records = m_records.size();
+		reader.read((char *)&num_records, sizeof(uint64_t));
+
+		std::vector<data_record> records(num_records);
+		reader.read((char *)records.data(), num_records * sizeof(data_record));
+
+		return records;
+	}
+
+	template<typename data_record>
 	void index_builder<data_record>::write_records(std::ofstream &writer) {
 		const size_t num_records = m_records.size();
 		writer.write((char *)&num_records, sizeof(uint64_t));
@@ -601,6 +628,62 @@ namespace indexer {
 	std::string index_builder<data_record>::target_filename() const {
 		if (m_file_name != "") return m_file_name + ".data";
 		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+	}
+
+	template<typename data_record>
+	bool index_builder<data_record>::needs_optimization() const {
+
+		auto records = read_records();
+
+		// Just check if the records are sorted by storage order.
+		if (records.size() <= 1) return false;
+		
+		typename data_record::storage_order ordered;
+		for (size_t i = 0; i < records.size() - 1; i++) {
+			if (!ordered(records[i], records[i + 1])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::sort_records() {
+
+		read_data_to_cache();
+
+		std::vector<uint32_t> permutation(m_records.size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+
+		typename data_record::storage_order ordered;
+
+		std::sort(permutation.begin(), permutation.end(), [this, &ordered](const size_t &a, const size_t &b) {
+			return ordered(m_records[a], m_records[b]);
+		});
+		// permutation now points from new position -> old position of record.
+
+		std::vector<uint32_t> inverse(permutation.size());
+		for (uint32_t i = 0; i < permutation.size(); i++) {
+			inverse[permutation[i]] = i;
+		}
+		// inverse now points from old position -> new position of record.
+
+		// Reorder the records.
+		sort(m_records.begin(), m_records.end(), ordered);
+
+		// Apply transforms.
+		for (auto &iter : m_bitmaps) {
+
+			::roaring::Roaring rr;
+			for (uint32_t v : iter.second) {
+				const uint32_t v_trans = inverse[v];
+				rr.add(v_trans);
+			}
+			m_bitmaps[iter.first] = rr;
+		}
+
+		save_file();
+		truncate_cache_files();
 	}
 
 }

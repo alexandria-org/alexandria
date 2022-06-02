@@ -58,6 +58,15 @@ namespace indexer {
 			}
 		};
 
+		/*
+		 * Will be applied to records before truncating. Top records will be kept.
+		 * */
+		struct truncate_order {
+			inline bool operator() (const generic_record &a, const generic_record &b) {
+				return a.m_score > b.m_score;
+			}
+		};
+
 		struct score_order {
 			inline bool operator() (const generic_record &a, const generic_record &b) {
 				return a.m_score > b.m_score;
