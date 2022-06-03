@@ -185,6 +185,14 @@ namespace indexer {
 	}
 
 	void url_level::merge() {
+
+		// Just store the domain hashes in a file for later optimization.
+		std::ofstream outfile("/root/all_domain_hashes.data", std::ios::binary | std::ios::app);
+		for (const auto &iter : m_builders) {
+			uint64_t domain_hash = iter.first;
+			outfile.write((char *)&domain_hash, sizeof(uint64_t));
+		}
+		/*
 		utils::thread_pool pool(32);
 		for (const auto &iter : m_builders) {
 			uint64_t domain_hash = iter.first;
@@ -192,7 +200,7 @@ namespace indexer {
 				m_builders[domain_hash]->optimize();
 			});
 		}
-		pool.run_all();
+		pool.run_all();*/
 	}
 
 	void url_level::clean_up() {

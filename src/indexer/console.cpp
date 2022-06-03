@@ -494,7 +494,7 @@ namespace indexer {
 	void index_urls(const string &batch) {
 
 		size_t limit = 1000;
-		size_t offset = 0;
+		size_t offset = 35000;
 		while (true) {
 			indexer::index_manager idx_manager;
 
