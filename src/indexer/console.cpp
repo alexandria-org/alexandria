@@ -858,7 +858,9 @@ namespace indexer {
 			body << "took " << prof.get() << "ms" << endl;
 			body << "</pre>";
 
+			size_t i = 0;
 			for (auto domain_hash : domain_hashes) {
+				auto domain_record = domain_records[i];
 				for (const auto &url_record : results[domain_hash]) {
 					const std::string &line = url_ht.find(url_record.m_value);
 					std::vector<std::string> cols;
@@ -868,10 +870,11 @@ namespace indexer {
 					const std::string title = cols[1];
 					const std::string snippet = cols[4];
 
-					body << "<a href='" << url << "'>" << title << "</a><br>" << std::endl;
+					body << "<a href='" << url << "'>" << title << "</a> &nbsp; (score: " << (url_record.m_score + domain_record.m_score) << ")<br>" << std::endl;
 					body << "<small style='color:green'>" << url << "</small><br>" << std::endl;
 					body << snippet << "<br><br>" << endl;
 				}
+				i++;
 			}
 
 			res.code(200);
