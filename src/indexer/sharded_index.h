@@ -68,7 +68,7 @@ namespace indexer {
 		 * score_mod is applied in storage_order of data_record.
 		 * */
 		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
-				std::function<float(uint64_t)> score_mod, size_t n) const;
+				std::function<float(const data_record &)> score_mod, size_t n) const;
 
 		/*
 		 * Find intersection of multiple keys and run group by, the groups will be determined by the
@@ -191,7 +191,7 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys,
-			std::function<float(uint64_t)> score_mod, size_t n) const {
+			std::function<float(const data_record &)> score_mod, size_t n) const {
 
 		std::fill(m_scores.begin(), m_scores.end(), 0.0f);
 

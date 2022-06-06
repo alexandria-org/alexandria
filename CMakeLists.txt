@@ -149,6 +149,7 @@ set(SRC_COMMON
 
 set(SRC_TESTS
 	"tests/test_sharded_index_builder.cpp"
+	"tests/test_index_builder.cpp"
 	"tests/test_bloom_filter.cpp"
 	"tests/test_counted_index_builder.cpp"
 	"tests/test_index_reader.cpp"
@@ -156,6 +157,7 @@ set(SRC_TESTS
 	"tests/test_sum_sorted.cpp"
 	"tests/test_file.cpp"
 	"tests/test_url.cpp"
+	"tests/test_url_record.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 	"tests/test_index_iteration.cpp"

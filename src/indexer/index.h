@@ -31,6 +31,7 @@
 #include "index_base.h"
 #include "roaring/roaring.hh"
 #include "algorithm/intersection.h"
+#include "algorithm/top_k.h"
 
 namespace indexer {
 
@@ -63,6 +64,11 @@ namespace indexer {
 				std::function<float(const data_record &)> score_mod, size_t n) const;
 
 		/*
+		 * Overload without score_mod.
+		 * */
+		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, size_t n) const;
+
+		/*
 		 * Returns inverse document frequency (idf) for the last search.
 		 * */
 		float get_idf(size_t documents_with_term) const;
@@ -85,6 +91,7 @@ namespace indexer {
 		size_t m_unique_count = 0;
 
 		std::vector<data_record> m_records;
+		mutable std::vector<float> m_scores;
 
 		size_t read_key_pos(uint64_t key) const;
 		void read_meta();
@@ -216,22 +223,42 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod, size_t num) const {
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod,
+			size_t num) const {
 		std::vector<roaring::Roaring> bitmaps;
 		for (auto key : keys) {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
 		}
 
 		auto intersection = ::algorithm::intersection(bitmaps);
-		std::vector<data_record> res;
-		size_t i = 0;
+
+		// Apply score modifications.
+		std::vector<uint32_t> ids;
 		for (auto internal_id : intersection) {
-			i++;
-			if (i > num) break;
-			res.emplace_back(m_records[internal_id]);
+			ids.push_back(internal_id);
+			m_scores[internal_id] = m_records[internal_id].m_score + score_mod(m_records[internal_id]);
 		}
 
-		return res;
+		auto ordered = [this](const uint32_t &a, const uint32_t &b) {
+			return m_scores[a] < m_scores[b];
+		};
+
+		std::vector<uint32_t> top_ids = ::algorithm::top_k<uint32_t>(ids, num, ordered);
+
+		std::vector<data_record> ret;
+		for (uint32_t internal_id : top_ids) {
+			ret.push_back(m_records[internal_id]);
+			ret.back().m_score = m_scores[internal_id];
+		}
+
+		std::sort(ret.begin(), ret.end(), typename data_record::truncate_order());
+
+		return ret;
+	}
+
+	template<typename data_record>
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, size_t num) const {
+		return find_top(keys, [](const data_record &) { return 0.0f; }, num);
 	}
 
 	template<typename data_record>
@@ -458,6 +485,8 @@ namespace indexer {
 		m_reader->read((char *)&num_records, sizeof(uint64_t));
 		m_records.resize(num_records);
 		m_reader->read((char *)m_records.data(), num_records * sizeof(data_record));
+		m_scores.resize(num_records);
+		std::fill(m_scores.begin(), m_scores.end(), 0.0f);
 	}
 
 }

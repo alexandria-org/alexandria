@@ -494,7 +494,7 @@ namespace indexer {
 	void index_urls(const string &batch) {
 
 		size_t limit = 1000;
-		size_t offset = 0;
+		size_t offset = 35000;
 		while (true) {
 			indexer::index_manager idx_manager;
 
@@ -518,6 +518,8 @@ namespace indexer {
 			merger::stop_merge_thread();
 
 			offset += limit;
+
+			url_level.merge();
 		}
 		profiler::print_report();
 	}
@@ -909,18 +911,73 @@ namespace indexer {
 
 				std::map<uint64_t, std::vector<url_record>> results;
 
-				utils::thread_pool pool(1);
+				utils::thread_pool pool(32);
 				std::mutex result_lock;
 				cout << "received " << domain_hashes.size() << " hashes" << endl;
 				for (auto dom_hash : domain_hashes) {
 					pool.enqueue([dom_hash, tokens, &query, &result_lock, &results]() {
 						std::vector<url_record> res;
 
+						vector<link_record> links;
+						{
+							// read links
+							const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url_links/" + to_string(dom_hash) + ".data";
+							index_reader_file reader(file);
+
+							if (reader.size()) {
+								if (reader.size() > 10 * 1024* 1024) {
+									index<link_record> idx("url_links", dom_hash, 1000);
+									links = idx.find_top(tokens, 1000);
+								} else {
+									const size_t size = reader.size();
+									std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
+									reader.seek(0);
+									reader.read(buffer.get(), size);
+									index_reader_ram ram_reader(buffer.get(), size);
+									index<link_record> idx(&ram_reader, 1000);
+									links = idx.find_top(tokens, 1000);
+								}
+							} else {
+								cout << dom_hash << " is empty" << endl;
+							}
+
+							std::sort(links.begin(), links.end(), link_record::storage_order());
+
+							auto link_formula = [](float score) {
+								return expm1(20.0f * score) / 50.0f;
+							};
+
+							std::vector<link_record> grouped;
+							for (auto rec : links) {
+								if (grouped.size() && grouped.back().storage_equal(rec)) {
+									grouped.back().m_score += link_formula(rec.m_score);
+								} else {
+									grouped.emplace_back(rec);
+									grouped.back().m_score = link_formula(rec.m_score);
+								}
+							}
+
+							links = grouped;
+
+							for (const auto link : links) {
+								cout << "link: " << link.m_target_hash << std::endl;
+							}
+						}
+
 						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
 						index_reader_file reader(file);
 
-						auto score_mod = [](const url_record &) {
-							return 0.0f;
+						size_t mod_incr = 0;
+						auto score_mod = [&mod_incr, &links](const url_record &record) {
+							cout << "score_mod: " << record.m_value << endl;
+							while (mod_incr < links.size() && links[mod_incr].m_target_hash < record.m_value) {
+								mod_incr++;
+							}
+							float link_score = 0.0f;
+							if (mod_incr < links.size() && links[mod_incr].m_target_hash == record.m_value) {
+								link_score += links[mod_incr].m_score;
+							}
+							return record.m_score + ((1000.0f - record.url_length()) / 500.0f) + link_score;
 						};
 
 						if (reader.size()) {

@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,19 +24,21 @@
  * SOFTWARE.
  */
 
-#include "generic_record.h"
+#include <boost/test/unit_test.hpp>
+#include "indexer/index_builder.h"
+#include "indexer/index.h"
+#include "indexer/generic_record.h"
+#include "indexer/url_record.h"
 
-namespace indexer {
-	class url_record : public generic_record {
+BOOST_AUTO_TEST_SUITE(test_index_builder)
 
-		public:
+BOOST_AUTO_TEST_CASE(test_index_builder) {
 
-		url_record() : generic_record() {};
-		url_record(uint64_t value) : generic_record(value) {};
-		url_record(uint64_t value, float score) : generic_record(value, score) {};
+	{
+		indexer::index_builder<indexer::url_record> idx("url", 3803508414306896384ull, 1000);
 
-		void url_length(uint16_t len) { m_meta = len | (m_meta << 16); };
-		uint16_t url_length(void) const { return m_meta & 0xFFFF; };
-
-	};
+		idx.optimize();
+	}
 }
+
+BOOST_AUTO_TEST_SUITE_END()
