@@ -38,6 +38,8 @@
 #include "profiler/profiler.h"
 #include "full_text/full_text.h"
 #include "indexer/console.h"
+#include "json.hpp"
+#include "indexer/search_server.h"
 
 #include <fstream>
 
@@ -89,6 +91,11 @@ int main(int argc, const char **argv) {
 	}
 
 	if (argc == 2 && arg == "search_server") {
+
+		nlohmann::json json_result;
+		json_result["url"] = string("http://example.com");
+
+		std::cout << json_result.dump(4) << std::endl;
 
 		indexer::search_server();
 

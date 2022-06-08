@@ -40,9 +40,9 @@ namespace indexer {
 		float m_score;
 		uint32_t m_meta;
 
-		generic_record() : m_value(0), m_score(0.0f) {};
-		generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
-		generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
+		explicit generic_record() : m_value(0), m_score(0.0f) {};
+		explicit generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};
+		explicit generic_record(uint64_t value, float score) : m_value(value), m_score(score) {};
 
 		bool operator==(const generic_record &b) const {
 			return m_value == b.m_value;
@@ -90,4 +90,5 @@ namespace indexer {
 		}
 
 	};
+	#pragma pack()
 }

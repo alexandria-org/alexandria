@@ -177,6 +177,12 @@ namespace hash_table {
 	string hash_table_shard::data_at_position(size_t pos) {
 
 		ifstream infile(filename_data(), ios::binary);
+		infile.seekg(0, ios::end);
+
+		size_t file_size = infile.tellg();
+
+		if (pos >= file_size) return "";
+
 		infile.seekg(pos, ios::beg);
 
 		// Read key
@@ -186,6 +192,8 @@ namespace hash_table {
 		// Read data length.
 		size_t data_len;
 		infile.read((char *)&data_len, sizeof(size_t));
+
+		if (pos + data_len >= file_size) return "";
 
 		char *buffer = new char[data_len];
 

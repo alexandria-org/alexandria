@@ -27,6 +27,7 @@
 #pragma once
 
 #include <set>
+#include <cmath>
 #include "index_reader.h"
 #include "index_base.h"
 #include "roaring/roaring.hh"
@@ -265,7 +266,7 @@ namespace indexer {
 	float index<data_record>::get_idf(size_t documents_with_term) const {
 		if (documents_with_term) {
 			const size_t documents_in_corpus = m_unique_count;
-			float idf = log((float)documents_in_corpus / documents_with_term);
+			float idf = std::log((float)documents_in_corpus / documents_with_term);
 			return idf;
 		}
 

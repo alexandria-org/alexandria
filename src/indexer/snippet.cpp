@@ -25,6 +25,7 @@
  */
 
 #include "snippet.h"
+#include "level.h"
 
 namespace indexer {
 
