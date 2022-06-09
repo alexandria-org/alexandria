@@ -920,6 +920,9 @@ namespace indexer {
 							// read links
 							const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url_links/" + to_string(dom_hash) + ".data";
 							index_reader_file reader(file);
+							if (dom_hash == 3940569495922575890ull) {
+								std::cout << "klart.se" << std::endl;
+							}
 
 							if (reader.size()) {
 								if (reader.size() > 10 * 1024* 1024) {
@@ -934,14 +937,16 @@ namespace indexer {
 									index<link_record> idx(&ram_reader, 1000);
 									links = idx.find_top(tokens, 1000);
 								}
-							} else {
-								cout << dom_hash << " is empty" << endl;
+							}
+
+							if (dom_hash == 3940569495922575890ull) {
+								std::cout << "klart.se found " << links.size() << " links" << std::endl;
 							}
 
 							std::sort(links.begin(), links.end(), link_record::storage_order());
 
 							auto link_formula = [](float score) {
-								return expm1(20.0f * score) / 50.0f;
+								return expm1(20.0f * score) / 10.0f;
 							};
 
 							std::vector<link_record> grouped;
@@ -955,10 +960,6 @@ namespace indexer {
 							}
 
 							links = grouped;
-
-							for (const auto link : links) {
-								cout << "link: " << link.m_target_hash << std::endl;
-							}
 						}
 
 						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
@@ -966,7 +967,6 @@ namespace indexer {
 
 						size_t mod_incr = 0;
 						auto score_mod = [&mod_incr, &links](const url_record &record) {
-							cout << "score_mod: " << record.m_value << endl;
 							while (mod_incr < links.size() && links[mod_incr].m_target_hash < record.m_value) {
 								mod_incr++;
 							}
@@ -990,15 +990,6 @@ namespace indexer {
 								index<url_record> idx(&ram_reader, 1000);
 								res = idx.find_top(tokens, score_mod, 5);
 							}
-							if (res.size() == 0) {
-								cout << dom_hash << " no response" << endl;
-							} else {
-								for (auto &rec : res) {
-									cout << dom_hash << ": " << rec.m_value << " on " << query["q"] << endl;
-								}
-							}
-						} else {
-							cout << dom_hash << " is empty" << endl;
 						}
 
 						std::lock_guard lock(result_lock);
@@ -1146,6 +1137,40 @@ namespace indexer {
 		}
 
 
+	}
+
+	void optimize_urls() {
+		std::ifstream infile("/root/all_domain_hashes.data", std::ios::binary);
+		uint64_t tmp_domain_hash;
+		std::set<uint64_t> domain_hashes;
+		while (infile.read((char *)&tmp_domain_hash, sizeof(uint64_t))) {
+			domain_hashes.insert(tmp_domain_hash);
+		}
+
+		std::cout << "read " << domain_hashes.size() << " domain hashes" << std::endl;
+
+		std::cout << "here are the first 10" << endl;
+		size_t idx = 0;
+		for (const uint64_t domain_hash : domain_hashes) {
+			if (idx++ >= 10) break;
+			std::cout << domain_hash << std::endl;
+		}
+
+		utils::thread_pool pool(32);
+		size_t hash_index = 0;
+		for (const uint64_t domain_hash : domain_hashes) {
+			pool.enqueue([domain_hash, hash_index]() {
+				index_builder<url_record> builder("url", domain_hash, 1000);
+				builder.optimize();
+				if (hash_index % 1000 == 999) {
+					std::cout << "done with " << hash_index << std::endl;
+				}
+			});
+
+			hash_index++;
+		}
+
+		pool.run_all();
 	}
 
 }
