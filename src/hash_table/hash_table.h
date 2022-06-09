@@ -31,9 +31,8 @@
 #include <vector>
 #include <map>
 
+#include "config.h"
 #include "hash_table_shard.h"
-#include "common/sub_system.h"
-#include "common/ThreadPool.h"
 
 namespace hash_table {
 
@@ -43,7 +42,7 @@ namespace hash_table {
 
 	public:
 
-		explicit hash_table(const std::string &db_name);
+		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards);
 		~hash_table();
 
 		void add(uint64_t key, const std::string &value);

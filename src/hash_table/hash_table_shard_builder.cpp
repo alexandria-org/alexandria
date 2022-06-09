@@ -24,11 +24,15 @@
  * SOFTWARE.
  */
 
+#include <sstream>
 #include "config.h"
 #include "hash_table_shard_builder.h"
 #include "logger/logger.h"
 #include "file/file.h"
 #include "indexer/merger.h"
+
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace std;
 
@@ -58,7 +62,9 @@ namespace hash_table {
 		size_t last_pos = outfile.tellp();
 
 		for (const auto &iter : m_cache) {
+			const size_t version = m_version[iter.first];
 			outfile.write((char *)&iter.first, config::ht_key_size);
+			outfile.write((char *)&version, sizeof(size_t));
 
 			// Compress data
 			stringstream ss(iter.second);
@@ -79,10 +85,11 @@ namespace hash_table {
 
 			outfile_pos.write((char *)&iter.first, config::ht_key_size);
 			outfile_pos.write((char *)&last_pos, sizeof(size_t));
-			last_pos += data_len + config::ht_key_size + sizeof(size_t);
+			last_pos += data_len + config::ht_key_size + 2 * sizeof(size_t);
 		}
 
 		m_cache = std::map<uint64_t, std::string>{}; // to free memory.
+		m_version = std::map<uint64_t, size_t>{};
 		m_data_size = 0;
 	}
 
@@ -115,50 +122,55 @@ namespace hash_table {
 
 		const size_t buffer_len = 1024*1024*20;
 		
-		std::unique_ptr<char[]> buffer_allocator;
-		try {
-			buffer_allocator = std::make_unique<char[]>(buffer_len);
-		} catch (std::bad_alloc &exception) {
-			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
-			std::cout << "tried to allocate: " << buffer_len << " bytes" << std::endl;
-			return;
-		}
-		char *buffer = buffer_allocator.get();
-
 		ofstream outfile_data(filename_data_tmp(), ios::binary | ios::trunc);
 		ofstream outfile_pos(filename_pos_tmp(), ios::binary | ios::trunc);
 
-		map<size_t, string> hash_map;
+		map<uint64_t, string> hash_map;
+		map<uint64_t, size_t> versions;
 		while (!infile.eof()) {
-			size_t key;
+			uint64_t key;
 			if (!infile.read((char *)&key, config::ht_key_size)) break;
+
+			size_t version;
+			if (!infile.read((char *)&version, sizeof(size_t))) break;
 
 			size_t data_len;
 			if (!infile.read((char *)&data_len, sizeof(size_t))) break;
+
+			std::string data;
 
 			if (data_len > buffer_len) {
 				LOG_INFO("data_len " + to_string(data_len) + "is larger than buffer_len " + to_string(buffer_len) + " in file " + filename_data());
 				infile.seekg(data_len, ios::cur);
 				continue;
 			} else {
-				if (!infile.read(buffer, data_len)) break;
+				data.reserve(data_len);
+				std::copy_n(std::istream_iterator<char>(infile), data_len, std::back_inserter(data));
 			}
 
-			hash_map[key] = string(buffer, data_len);
+			auto ver_iter = versions.find(key);
+			if (ver_iter != versions.end() && ver_iter->second > version) {
+
+			} else {
+				hash_map[key] = std::move(data);
+				versions[key] = version;
+			}
 		}
 
 		size_t last_pos = 0;
 		for (const auto &iter : hash_map) {
-			const size_t key = iter.first;
+			const uint64_t key = iter.first;
+			const size_t version = versions[key];
 			const size_t data_len = iter.second.size();
 			outfile_data.write((char *)&key, config::ht_key_size);
+			outfile_data.write((char *)&version, config::ht_key_size);
 			outfile_data.write((char *)&data_len, sizeof(size_t));
 			outfile_data.write(iter.second.c_str(), data_len);
 
 			outfile_pos.write((char *)&key, config::ht_key_size);
 			outfile_pos.write((char *)&last_pos, sizeof(size_t));
 
-			last_pos += data_len + config::ht_key_size + sizeof(size_t);
+			last_pos += data_len + config::ht_key_size + 2 * sizeof(size_t);
 		}
 
 		outfile_data.close();
@@ -176,10 +188,24 @@ namespace hash_table {
 		std::lock_guard guard(m_lock);
 		m_data_size += value.capacity();
 		m_cache[key] = value;
+		m_version[key] = 0ull;
+	}
+
+	void hash_table_shard_builder::add_versioned(uint64_t key, const string &value, size_t version) {
+		std::lock_guard guard(m_lock);
+		m_data_size += value.capacity();
+		auto ver_iter = m_version.find(key);
+		if (ver_iter != m_version.end() && ver_iter->second > version) {
+			// do nothing
+		} else {
+			m_cache[key] = value;
+			m_version[key] = version;
+		}
 	}
 
 	size_t hash_table_shard_builder::cache_size() const {
-		return m_cache.size() * sizeof(uint64_t) + m_data_size; // this is just wrong...
+		// This is an OK approximation since m_data_size will be much larger than the keys.
+		return m_cache.size() * sizeof(uint64_t) * 2 + m_data_size;
 	}
 
 	string hash_table_shard_builder::filename_data() const {

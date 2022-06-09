@@ -158,6 +158,7 @@ set(SRC_TESTS
 	"tests/test_file.cpp"
 	"tests/test_url.cpp"
 	"tests/test_url_record.cpp"
+	"tests/test_hash_table.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 	"tests/test_index_iteration.cpp"

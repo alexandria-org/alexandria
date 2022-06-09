@@ -25,16 +25,15 @@
  */
 
 #include "builder.h"
-#include "config.h"
 #include "utils/thread_pool.hpp"
 
 using namespace std;
 
 namespace hash_table {
 
-	builder::builder(const string &db_name)
+	builder::builder(const string &db_name, size_t num_shards)
 	: m_db_name(db_name) {
-		for (size_t i = 0; i < config::ht_num_shards; i++) {
+		for (size_t i = 0; i < num_shards; i++) {
 			m_shards.push_back(new hash_table_shard_builder(db_name, i));
 		}
 	}
@@ -46,8 +45,13 @@ namespace hash_table {
 	}
 
 	void builder::add(uint64_t key, const std::string &value) {
-		m_shards[key % config::ht_num_shards]->add(key, value);
+		m_shards[key % m_shards.size()]->add(key, value);
 	}
+
+	void builder::add_versioned(uint64_t key, const std::string &value, size_t version) {
+		m_shards[key % m_shards.size()]->add_versioned(key, value, version);
+	}
+
 
 	void builder::merge() {
 		cout << "Merging hash table" << endl;

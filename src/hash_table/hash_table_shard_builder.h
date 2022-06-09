@@ -48,6 +48,7 @@ namespace hash_table {
 			void sort();
 
 			void add(uint64_t key, const std::string &value);
+			void add_versioned(uint64_t key, const std::string &value, size_t version);
 			size_t cache_size() const;
 
 			std::string filename_data() const;
@@ -58,6 +59,7 @@ namespace hash_table {
 		private:
 
 			std::map<uint64_t, std::string> m_cache;
+			std::map<uint64_t, size_t> m_version;
 			const std::string m_db_name;
 			size_t m_shard_id;
 			const size_t m_cache_limit;

@@ -33,11 +33,11 @@ using namespace std;
 
 namespace hash_table {
 
-	hash_table::hash_table(const string &db_name)
+	hash_table::hash_table(const string &db_name, size_t num_shards)
 	: m_db_name(db_name)
 	{
 		m_num_items = 0;
-		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
 			auto shard = new hash_table_shard(m_db_name, shard_id);
 			m_num_items += shard->size();
 			m_shards.push_back(shard);
@@ -55,7 +55,7 @@ namespace hash_table {
 
 	void hash_table::add(uint64_t key, const string &value) {
 
-		const size_t shard_id = key % config::ht_num_shards;
+		const size_t shard_id = key % m_shards.size();
 		hash_table_shard_builder builder(m_db_name, shard_id);
 
 		builder.add(key, value);
@@ -74,14 +74,14 @@ namespace hash_table {
 				exit(0);
 			}
 		}
-		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < m_shards.size(); shard_id++) {
 			hash_table_shard_builder builder(m_db_name, shard_id);
 			builder.truncate();
 		}
 	}
 
 	string hash_table::find(uint64_t key) {
-		return m_shards[key % config::ht_num_shards]->find(key);
+		return m_shards[key % m_shards.size()]->find(key);
 	}
 
 	size_t hash_table::size() const {

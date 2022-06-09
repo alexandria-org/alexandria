@@ -24,17 +24,19 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "hash_table/hash_table.h"
+#include "hash_table/builder.h"
 #include "hash_table_helper/hash_table_helper.h"
 
-BOOST_AUTO_TEST_SUITE(hash_table)
+BOOST_AUTO_TEST_SUITE(test_hash_table)
 
 BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 
 	hash_table_helper::truncate("test_index");
 
 	{
-		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
+		std::vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 1000; i++) {
@@ -48,14 +50,14 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 	}
 
 	{
-		hash_table hash_table("test_index");
+		hash_table::hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 1000);
 	}
 
 	{
 		// Add more elements.
-		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
+		std::vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 1000; i < 2000; i++) {
@@ -69,7 +71,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table) {
 	}
 
 	{
-		hash_table hash_table("test_index");
+		hash_table::hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 2000);
 	}
@@ -81,7 +83,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 	hash_table_helper::truncate("test_index");
 
 	{
-		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
+		std::vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 100000; i < 200000; i++) {
@@ -95,14 +97,14 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 	}
 
 	{
-		hash_table hash_table("test_index");
+		hash_table::hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 100000);
 	}
 
 	{
 		// Add more elements.
-		vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
+		std::vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("test_index");
 
 		// Add 1000 elements.
 		for (size_t i = 0; i < 100000; i++) {
@@ -116,7 +118,7 @@ BOOST_AUTO_TEST_CASE(add_to_hash_table_reverse) {
 	}
 
 	{
-		hash_table hash_table("test_index");
+		hash_table::hash_table hash_table("test_index");
 
 		BOOST_CHECK_EQUAL(hash_table.size(), 200000);
 	}
@@ -131,7 +133,7 @@ BOOST_AUTO_TEST_CASE(optimize) {
 	size_t shard_file_size = 0;
 
 	{
-		hash_table_shard_builder builder("test_index", 0);
+		hash_table::hash_table_shard_builder builder("test_index", 0);
 
 		builder.add(1, "data element 1 v1");
 		builder.add(2, "data element 2 v1");
@@ -140,14 +142,14 @@ BOOST_AUTO_TEST_CASE(optimize) {
 		builder.write();
 		builder.sort();
 
-		hash_table_shard shard("test_index", 0);
+		hash_table::hash_table_shard shard("test_index", 0);
 		shard_size = shard.size();
 		shard_file_size = shard.file_size();
 	}
 
 	{
 		// Add some more elements with identical keys.
-		hash_table_shard_builder builder("test_index", 0);
+		hash_table::hash_table_shard_builder builder("test_index", 0);
 
 		builder.add(1, "data element 1 v2");
 		builder.add(2, "data element 2 v2");
@@ -158,7 +160,7 @@ BOOST_AUTO_TEST_CASE(optimize) {
 
 		builder.optimize();
 
-		hash_table_shard shard("test_index", 0);
+		hash_table::hash_table_shard shard("test_index", 0);
 
 		BOOST_CHECK_EQUAL(shard.size(), shard_size);
 		BOOST_CHECK_EQUAL(shard.file_size(), shard_file_size);
@@ -173,8 +175,33 @@ BOOST_AUTO_TEST_CASE(optimize_empty) {
 
 	hash_table_helper::truncate("main_index");
 
-	vector<hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("main_index");
+	std::vector<hash_table::hash_table_shard_builder *> shards = hash_table_helper::create_shard_builders("main_index");
 	hash_table_helper::optimize(shards);
+
+}
+
+BOOST_AUTO_TEST_CASE(conditional) {
+
+	hash_table_helper::truncate("main_index");
+
+	{
+
+		hash_table::builder ht("main_index", 10);
+
+		ht.add_versioned(101, "an old value", 1000);
+		ht.add_versioned(101, "a new value", 1001);
+		ht.add_versioned(101, "an older value", 999);
+
+		ht.merge();
+	}
+
+	{
+		hash_table::hash_table ht("main_index", 10);
+
+		std::string value = ht.find(101);
+
+		BOOST_CHECK_EQUAL(value, "a new value");
+	}
 
 }
 

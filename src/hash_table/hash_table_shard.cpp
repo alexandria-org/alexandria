@@ -24,9 +24,14 @@
  * SOFTWARE.
  */
 
+#include <iostream>
+#include <sstream>
 #include "config.h"
 #include "hash_table_shard.h"
 #include "logger/logger.h"
+
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace std;
 
@@ -182,6 +187,10 @@ namespace hash_table {
 		// Read key
 		uint64_t read_key;
 		infile.read((char *)&read_key, sizeof(uint64_t));
+
+		// Read version
+		size_t read_version;
+		infile.read((char *)&read_version, sizeof(size_t));
 
 		// Read data length.
 		size_t data_len;
