@@ -34,6 +34,7 @@
 #include "hash_table/hash_table.h"
 #include "transfer/transfer.h"
 #include "parser/parser.h"
+#include "parser/unicode.h"
 #include "api/result_with_snippet.h"
 #include "api/api_response.h"
 #include "full_text/full_text_record.h"
@@ -66,8 +67,6 @@ namespace server {
 
 			(void)limit;
 
-			std::string q = query["q"];
-
 			if (url.path() == "/favicon.ico") {
 				res.code(404);
 				res.body("404");
@@ -76,79 +75,121 @@ namespace server {
 
 			stringstream body;
 
-			profiler::instance prof("domain search");
-			size_t total_num_domains = 0;
-			std::vector<indexer::return_record> domain_records = idx_manager.find(total_num_domains, q);
+			if (query.find("q") != query.end()) {
+				std::string q = query["q"];
 
-			std::vector<uint64_t> domain_hashes;
-			std::map<uint64_t, float> domain_scores;
-			std::map<uint64_t, uint64_t> url_to_domain;
+				size_t total_num_domains = 0;
+				size_t len = 5;
+				std::vector<indexer::return_record> domain_records;
 
-			for (indexer::return_record &rec : domain_records) {
-				domain_hashes.push_back(rec.m_value);
-				domain_scores[rec.m_value] = rec.m_score;
-			}
+				profiler::instance prof("domain search");
 
-			profiler::instance prof2("url searches");
+				size_t site_search_start = q.find("site:");
+				if (site_search_start != std::string::npos) {
+					// This is a site: search.
+					site_search_start += 5;
+					const size_t site_search_len = q.find(" ", site_search_start) - site_search_start;
+					const std::string site_search_domain = q.substr(site_search_start, site_search_len);
+					URL domain_search("https://" + site_search_domain);
 
-			const std::string post_data((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t));
-			http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q), post_data);
+					domain_records.push_back(indexer::return_record(domain_search.host_hash(), 0.2f));
 
-			std::vector<indexer::url_record> results;
-			if (http_res.code() == 200) {
+					q.erase(site_search_start - 5, site_search_len + 5);
 
-				const string url_res = http_res.body();
+					std::cout << "new search query: '" << q << "'" << std::endl;
+					len = 500;
+					total_num_domains = 1;
+				} else {
+					domain_records = idx_manager.find(total_num_domains, q);
+				}
 
-				stringstream ss(url_res);
+				std::vector<uint64_t> domain_hashes;
+				std::map<uint64_t, float> domain_scores;
+				std::map<uint64_t, uint64_t> url_to_domain;
 
-				while (!ss.eof()) {
-					uint64_t incoming_domain_hash;
-					ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
-					if (ss.eof()) break;
-					size_t num_records;
-					ss.read((char *)&num_records, sizeof(size_t));
-					for (size_t i = 0; i < num_records; i++) {
-						uint64_t value;
-						float score;
-						ss.read((char *)&value, sizeof(uint64_t));
-						ss.read((char *)&score, sizeof(float));
-						indexer::url_record url_rec(value, score + domain_scores[incoming_domain_hash]);
-						results.push_back(url_rec);
-						url_to_domain[value] = incoming_domain_hash;
+				for (indexer::return_record &rec : domain_records) {
+					domain_hashes.push_back(rec.m_value);
+					domain_scores[rec.m_value] = rec.m_score;
+				}
+
+				profiler::instance prof2("url searches");
+
+				const std::string post_data((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t));
+				http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q) + "&len=" + std::to_string(len), post_data);
+
+				size_t all_total_num_results = 0;
+
+				std::vector<indexer::url_record> results;
+				if (http_res.code() == 200) {
+
+					const string url_res = http_res.body();
+
+					stringstream ss(url_res);
+
+					ss.read((char *)&all_total_num_results, sizeof(size_t));
+
+					while (!ss.eof()) {
+						uint64_t incoming_domain_hash;
+						ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
+						if (ss.eof()) break;
+						size_t num_records;
+						ss.read((char *)&num_records, sizeof(size_t));
+						for (size_t i = 0; i < num_records; i++) {
+							uint64_t value;
+							float score;
+							ss.read((char *)&value, sizeof(uint64_t));
+							ss.read((char *)&score, sizeof(float));
+							indexer::url_record url_rec(value, score + domain_scores[incoming_domain_hash]);
+							results.push_back(url_rec);
+							url_to_domain[value] = incoming_domain_hash;
+						}
 					}
 				}
+
+				float avg_urls_per_domain = 0.0f;
+				if (domain_hashes.size()) {
+					avg_urls_per_domain = (float)results.size() / (float)domain_hashes.size();
+				}
+
+				size_t total_num_results = total_num_domains * avg_urls_per_domain;
+
+				if (results.size() < 500) total_num_results = results.size();
+
+				std::sort(results.begin(), results.end(), indexer::url_record::truncate_order());
+
+				prof.stop();
+
+				vector<api::result_with_snippet> results_with_snippets;
+				for (const auto &url_record : results) {
+					const std::string line = url_ht.find(url_record.m_value);
+
+					full_text::full_text_record ft_rec;
+					ft_rec.m_value = url_record.m_value;
+					ft_rec.m_score = url_record.m_score;
+					ft_rec.m_domain_hash = url_to_domain[url_record.m_value];
+
+					results_with_snippets.emplace_back(api::result_with_snippet(line, ft_rec));
+				}
+
+				full_text::search_metric metric;
+				metric.m_total_found = total_num_results;
+				api::api_response response(results_with_snippets, metric, prof.get());
+
+				body << response;
+			} else if (query.find("u") != query.end()) {
+				URL url(query["u"]);
+
+				profiler::instance prof("url_ht.find");
+				// Make URL search.
+				nlohmann::ordered_json message;
+				message["status"] = "success";
+				message["response"] = parser::unicode::encode(url_ht.find(url.hash()));
+				message["time_ms"] = prof.get();
+
+				body << message;			
 			}
 
-			float avg_urls_per_domain = 0.0f;
-			if (domain_hashes.size()) {
-				avg_urls_per_domain = (float)results.size() / (float)domain_hashes.size();
-			}
-
-			size_t total_num_results = total_num_domains * avg_urls_per_domain;
-
-			if (results.size() < 500) total_num_results = results.size();
-
-			std::sort(results.begin(), results.end(), indexer::url_record::truncate_order());
-
-			prof.stop();
-
-			vector<api::result_with_snippet> results_with_snippets;
-			for (const auto &url_record : results) {
-				const std::string line = url_ht.find(url_record.m_value);
-
-				full_text::full_text_record ft_rec;
-				ft_rec.m_value = url_record.m_value;
-				ft_rec.m_score = url_record.m_score;
-				ft_rec.m_domain_hash = url_to_domain[url_record.m_value];
-
-				results_with_snippets.emplace_back(api::result_with_snippet(line, ft_rec));
-			}
-
-			full_text::search_metric metric;
-			metric.m_total_found = total_num_results;
-			api::api_response response(results_with_snippets, metric, prof.get());
-
-			body << response;
+			
 
 			res.code(200);
 
