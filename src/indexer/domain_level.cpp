@@ -107,8 +107,9 @@ namespace indexer {
 		m_search_index = std::make_unique<sharded_index<domain_record>>("domain", 1024);
 	}
 
-	std::vector<return_record> domain_level::find(const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers) {
+	std::vector<return_record> domain_level::find(size_t &total_num_results, const string &query, const std::vector<size_t> &keys,
+		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores,
+		const std::vector<domain_record> &domain_modifiers) {
 
 		(void)keys;
 		(void)links;
@@ -152,7 +153,7 @@ namespace indexer {
 			return score;
 		};
 
-		std::vector<domain_record> res = m_search_index->find_top(tokens, score_mod, 100);
+		std::vector<domain_record> res = m_search_index->find_top(total_num_results, tokens, 100, score_mod);
 		std::vector<return_record> intersected;
 		for (const auto r : res) {
 			intersected.emplace_back(return_record(r.m_value, r.m_score));

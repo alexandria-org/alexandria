@@ -67,8 +67,14 @@ namespace indexer {
 		 * Returns n records with highest score.
 		 * score_mod is applied in storage_order of data_record.
 		 * */
-		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
-				std::function<float(const data_record &)> score_mod, size_t n) const;
+		std::vector<data_record> find_top(size_t &total_num_results, const std::vector<uint64_t> &keys, size_t n, 
+				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
+
+		/*
+		 * Overload without total_num_results
+		 * */
+		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, size_t n, 
+				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
 
 		/*
 		 * Find intersection of multiple keys and run group by, the groups will be determined by the
@@ -190,8 +196,8 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys,
-			std::function<float(const data_record &)> score_mod, size_t n) const {
+	std::vector<data_record> sharded_index<data_record>::find_top(size_t &total_num_results, const std::vector<uint64_t> &keys, size_t n,
+			std::function<float(const data_record &)> score_mod) const {
 
 		std::fill(m_scores.begin(), m_scores.end(), 0.0f);
 
@@ -206,6 +212,8 @@ namespace indexer {
 		}
 
 		roaring::Roaring rr = ::algorithm::intersection(results);
+
+		total_num_results = rr.cardinality();
 
 		// Apply score modifications.
 		std::vector<uint32_t> ids;
@@ -231,6 +239,13 @@ namespace indexer {
 		return ret;
 	}
 
+	template<typename data_record>
+	std::vector<data_record> sharded_index<data_record>::find_top(const std::vector<uint64_t> &keys, size_t n,
+			std::function<float(const data_record &)> score_mod) const {
+
+		size_t total_num_results = 0;
+		return find_top(total_num_results, keys, n, score_mod);
+	}
 
 	template<typename data_record>
 	std::vector<data_record> sharded_index<data_record>::find_group_by(const std::vector<uint64_t> &keys,

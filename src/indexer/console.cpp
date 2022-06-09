@@ -881,7 +881,7 @@ namespace indexer {
 						if (reader.size()) {
 							if (reader.size() > 10 * 1024* 1024) {
 								index<url_record> idx("url", dom_hash, 1000);
-								res = idx.find_top(tokens, score_mod, 5);
+								res = idx.find_top(tokens, 5, score_mod);
 							} else {
 								const size_t size = reader.size();
 								std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
@@ -889,7 +889,7 @@ namespace indexer {
 								reader.read(buffer.get(), size);
 								index_reader_ram ram_reader(buffer.get(), size);
 								index<url_record> idx(&ram_reader, 1000);
-								res = idx.find_top(tokens, score_mod, 5);
+								res = idx.find_top(tokens, 5, score_mod);
 							}
 							if (res.size() == 0) {
 								cout << dom_hash << " no response" << endl;

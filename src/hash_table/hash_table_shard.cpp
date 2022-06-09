@@ -42,9 +42,7 @@ namespace hash_table {
 
 	}
 
-	string hash_table_shard::find(uint64_t key) {
-
-		if (!m_loaded) load();
+	string hash_table_shard::find(uint64_t key) const {
 
 		const uint64_t key_significant = key >> (64-m_significant);
 		auto iter = m_pos.find(key_significant);
@@ -174,7 +172,7 @@ namespace hash_table {
 		}
 	}
 
-	string hash_table_shard::data_at_position(size_t pos) {
+	string hash_table_shard::data_at_position(size_t pos) const {
 
 		ifstream infile(filename_data(), ios::binary);
 		infile.seekg(0, ios::end);

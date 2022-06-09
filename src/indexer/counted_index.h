@@ -111,6 +111,8 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> counted_index<data_record>::find(uint64_t key, size_t limit) const {
 
+		std::lock_guard lock(this->m_lock);
+
 		size_t num_records;
 		unique_ptr<data_record[]> ptr = find_ptr(key, limit, num_records);
 
@@ -130,6 +132,8 @@ namespace indexer {
 
 	template<typename data_record>
 	std::unique_ptr<data_record[]> counted_index<data_record>::find_ptr(uint64_t key, size_t limit, size_t &num_records) const {
+
+		std::lock_guard lock(this->m_lock);
 
 		num_records = 0;
 

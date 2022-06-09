@@ -127,7 +127,8 @@ set(SRC_CLASSES
 	"src/indexer/merger.cpp"
 	"src/indexer/score_builder.cpp"
 	"src/indexer/index_reader.cpp"
-	"src/indexer/search_server.cpp"
+
+	"src/server/search_server.cpp"
 
 	"src/http/server.cpp"
 	"src/http/request.cpp"

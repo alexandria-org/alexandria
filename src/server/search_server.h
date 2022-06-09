@@ -1,6 +1,6 @@
 
 #pragma once
 
-namespace indexer {
+namespace server {
 	void search_server();
 }

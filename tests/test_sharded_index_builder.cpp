@@ -151,10 +151,10 @@ BOOST_AUTO_TEST_CASE(test_score_mod) {
 	{
 		indexer::sharded_index<domain_record> idx("test_index", 1);
 		uint64_t sum_id = 0;
-		vector<domain_record> res = idx.find_top({101, 102},
+		vector<domain_record> res = idx.find_top({101, 102}, 2,
 				[&sum_id](const domain_record &val) -> float {
 					return (float)(sum_id++);
-				}, 2);
+				});
 
 		BOOST_REQUIRE(res.size() == 2);
 		BOOST_CHECK(res[0].m_score == 3.0f);

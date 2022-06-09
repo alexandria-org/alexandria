@@ -1,7 +1,33 @@
+/*
+ * MIT License
+ *
+ * Alexandria.org
+ *
+ * Copyright (c) 2021 Josef Cullhed, <info@alexandria.org>, et al.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include "search_server.h"
 
 #include <iostream>
 #include "http/server.h"
-#include "search_server.h"
 #include "indexer/index_manager.h"
 #include "indexer/domain_level.h"
 #include "indexer/url_record.h"
@@ -14,7 +40,7 @@
 #include "full_text/search_metric.h"
 #include "json.hpp"
 
-namespace indexer {
+namespace server {
 
 	void search_server() {
 
@@ -51,7 +77,8 @@ namespace indexer {
 			stringstream body;
 
 			profiler::instance prof("domain search");
-			std::vector<indexer::return_record> domain_records = idx_manager.find(q);
+			size_t total_num_domains = 0;
+			std::vector<indexer::return_record> domain_records = idx_manager.find(total_num_domains, q);
 
 			std::vector<uint64_t> domain_hashes;
 			std::map<uint64_t, float> domain_scores;
@@ -64,9 +91,10 @@ namespace indexer {
 
 			profiler::instance prof2("url searches");
 
-			http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q), string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
+			const std::string post_data((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t));
+			http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q), post_data);
 
-			std::vector<url_record> results;
+			std::vector<indexer::url_record> results;
 			if (http_res.code() == 200) {
 
 				const string url_res = http_res.body();
@@ -84,14 +112,23 @@ namespace indexer {
 						float score;
 						ss.read((char *)&value, sizeof(uint64_t));
 						ss.read((char *)&score, sizeof(float));
-						url_record url_rec(value, score + domain_scores[incoming_domain_hash]);
+						indexer::url_record url_rec(value, score + domain_scores[incoming_domain_hash]);
 						results.push_back(url_rec);
 						url_to_domain[value] = incoming_domain_hash;
 					}
 				}
 			}
 
-			std::sort(results.begin(), results.end(), url_record::truncate_order());
+			float avg_urls_per_domain = 0.0f;
+			if (domain_hashes.size()) {
+				avg_urls_per_domain = (float)results.size() / (float)domain_hashes.size();
+			}
+
+			size_t total_num_results = total_num_domains * avg_urls_per_domain;
+
+			if (results.size() < 500) total_num_results = results.size();
+
+			std::sort(results.begin(), results.end(), indexer::url_record::truncate_order());
 
 			prof.stop();
 
@@ -108,6 +145,7 @@ namespace indexer {
 			}
 
 			full_text::search_metric metric;
+			metric.m_total_found = total_num_results;
 			api::api_response response(results_with_snippets, metric, prof.get());
 
 			body << response;

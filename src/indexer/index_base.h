@@ -46,6 +46,7 @@ namespace indexer {
 		protected:
 
 			size_t m_hash_table_size;
+			mutable std::recursive_mutex m_lock;
 
 			bool read_page_into(std::ifstream &reader, std::map<uint64_t, std::vector<data_record>> &into) const;
 			bool read_bitmap_page_into(std::ifstream &reader, std::map<uint64_t, roaring::Roaring> &into) const;
