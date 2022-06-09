@@ -82,6 +82,7 @@ namespace indexer {
 		void clean_up();
 		void calculate_scores_for_level(size_t level_num);
 
+		std::vector<return_record> find(size_t &total_num_results, const std::string &query);
 		std::vector<return_record> find(const std::string &query);
 
 	private:

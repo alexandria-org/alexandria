@@ -79,4 +79,5 @@ namespace indexer {
 		}
 
 	};
+	#pragma pack()
 }

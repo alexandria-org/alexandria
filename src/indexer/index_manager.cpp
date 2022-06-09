@@ -492,7 +492,7 @@ namespace indexer {
 		m_levels[level_num]->calculate_scores();
 	}
 
-	std::vector<return_record> index_manager::find(const string &query) {
+	std::vector<return_record> index_manager::find(size_t &total_num_results, const string &query) {
 
 		auto domain_formula = [](float score) {
 			return expm1(20.0f * score) / 50.0f;
@@ -583,7 +583,7 @@ namespace indexer {
 		}
 
 		profiler::instance inst("m_levels[0]->find");
-		std::vector<return_record> res = m_levels[0]->find(query, {}, links, grouped, bm25_scores, grouped2);
+		std::vector<return_record> res = m_levels[0]->find(total_num_results, query, {}, links, grouped, bm25_scores, grouped2);
 		inst.stop();
 
 		// Sort by score.
@@ -592,6 +592,11 @@ namespace indexer {
 		});
 
 		return res;
+	}
+
+	std::vector<return_record> index_manager::find(const string &query) {
+		size_t total_num_results = 0;
+		return find(total_num_results, query);
 	}
 
 	void index_manager::create_directories(level_type lvl) {

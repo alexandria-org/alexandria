@@ -27,6 +27,8 @@
 #pragma once
 
 #include <set>
+#include <cmath>
+#include <mutex>
 #include "index_reader.h"
 #include "index_base.h"
 #include "roaring/roaring.hh"
@@ -60,14 +62,16 @@ namespace indexer {
 		 * Returns n records with highest score.
 		 * score_mod is applied in storage_order of data_record.
 		 * */
-		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, 
-				std::function<float(const data_record &)> score_mod, size_t n) const;
+		std::vector<data_record> find_top(size_t &total_num_results, const std::vector<uint64_t> &keys, size_t n,
+				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
 
 		/*
-		 * Overload without score_mod.
+		 * Overload without total_num_results.
 		 * */
-		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, size_t n) const;
+		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, size_t n,
+				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
 
+		
 		/*
 		 * Returns inverse document frequency (idf) for the last search.
 		 * */
@@ -140,6 +144,8 @@ namespace indexer {
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find(uint64_t key) const {
 
+		std::lock_guard lock(this->m_lock);
+
 		roaring::Roaring rr = find_bitmap(key);
 
 		std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
@@ -160,6 +166,8 @@ namespace indexer {
 	template<typename data_record>
 	roaring::Roaring index<data_record>::find_bitmap(uint64_t key) const {
 		size_t key_pos = read_key_pos(key);
+
+		std::lock_guard lock(this->m_lock);
 
 		if (key_pos == SIZE_MAX) {
 			return roaring::Roaring();
@@ -208,6 +216,9 @@ namespace indexer {
 
 	template<typename data_record>
 	std::vector<data_record> index<data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
+
+		std::lock_guard lock(this->m_lock);
+
 		std::vector<roaring::Roaring> bitmaps;
 		for (auto key : keys) {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
@@ -223,14 +234,19 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, std::function<float(const data_record &)> score_mod,
-			size_t num) const {
+	std::vector<data_record> index<data_record>::find_top(size_t &total_num_results, const std::vector<uint64_t> &keys, size_t num,
+			std::function<float(const data_record &)> score_mod) const {
+
+		std::lock_guard lock(this->m_lock);
+
 		std::vector<roaring::Roaring> bitmaps;
 		for (auto key : keys) {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
 		}
 
 		auto intersection = ::algorithm::intersection(bitmaps);
+
+		total_num_results = intersection.cardinality();
 
 		// Apply score modifications.
 		std::vector<uint32_t> ids;
@@ -257,15 +273,17 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, size_t num) const {
-		return find_top(keys, [](const data_record &) { return 0.0f; }, num);
+	std::vector<data_record> index<data_record>::find_top(const std::vector<uint64_t> &keys, size_t num,
+			std::function<float(const data_record &)> score_mod) const {
+		size_t total_num_results;
+		return find_top(total_num_results, keys, num, score_mod);
 	}
 
 	template<typename data_record>
 	float index<data_record>::get_idf(size_t documents_with_term) const {
 		if (documents_with_term) {
 			const size_t documents_in_corpus = m_unique_count;
-			float idf = log((float)documents_in_corpus / documents_with_term);
+			float idf = std::log((float)documents_in_corpus / documents_with_term);
 			return idf;
 		}
 

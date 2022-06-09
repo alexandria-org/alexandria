@@ -43,6 +43,11 @@
 #include "parser/parser.h"
 #include "http/server.h"
 #include "domain_link/full_text_record.h"
+#include "full_text/full_text_record.h"
+#include "api/result_with_snippet.h"
+#include "api/api_response.h"
+#include "full_text/search_metric.h"
+#include "json.hpp"
 
 using namespace std;
 
@@ -780,110 +785,6 @@ namespace indexer {
 		});
 	}
 
-	void search_server() {
-
-		indexer::index_manager idx_manager;
-
-		indexer::domain_level domain_level;
-		idx_manager.add_level(&domain_level);
-
-		hash_table::hash_table ht("index_manager");
-		hash_table::hash_table url_ht("snippets");
-
-		cout << "starting server..." << endl;
-
-		::http::server srv([&idx_manager, &ht, &url_ht](const http::request &req) {
-			http::response res;
-
-			URL url = req.url();
-
-			auto query = url.query();
-
-			size_t limit = 1000;
-			if (query.count("limit")) limit = std::stoi(query["limit"]);
-
-			(void)limit;
-
-			std::string q = query["q"];
-
-			if (url.path() == "/favicon.ico") {
-				res.code(404);
-				res.body("404");
-				return res;
-			}
-
-			stringstream body;
-
-			profiler::instance prof("domain search");
-			std::vector<indexer::return_record> domain_records = idx_manager.find(q);
-
-			body << "<html><head><meta http-equiv='Content-type' content='text/html; charset=utf-8'></head><body>";
-			body << "<pre>";
-			body << "searched for '" << q << "'" << endl;
-			body << "got " << domain_records.size() << " domains" << endl;
-
-			std::vector<uint64_t> domain_hashes;
-
-			for (indexer::return_record &rec : domain_records) {
-				domain_hashes.push_back(rec.m_value);
-			}
-
-			profiler::instance prof2("url searches");
-
-			http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(q), string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
-
-			std::map<uint64_t, std::vector<url_record>> results;
-			if (http_res.code() == 200) {
-
-				const string url_res = http_res.body();
-
-				stringstream ss(url_res);
-
-				while (!ss.eof()) {
-					uint64_t incoming_domain_hash;
-					ss.read((char *)&incoming_domain_hash, sizeof(uint64_t));
-					if (ss.eof()) break;
-					size_t num_records;
-					ss.read((char *)&num_records, sizeof(size_t));
-					for (size_t i = 0; i < num_records; i++) {
-						uint64_t value;
-						float score;
-						ss.read((char *)&value, sizeof(uint64_t));
-						ss.read((char *)&score, sizeof(float));
-						results[incoming_domain_hash].push_back(url_record(value, score));
-					}
-				}
-
-			}
-
-			prof.stop();
-			body << "took " << prof.get() << "ms" << endl;
-			body << "</pre>";
-
-			for (auto domain_hash : domain_hashes) {
-				for (const auto &url_record : results[domain_hash]) {
-					const std::string &line = url_ht.find(url_record.m_value);
-					std::vector<std::string> cols;
-
-					boost::algorithm::split(cols, line, boost::is_any_of("\t"));
-					const std::string url = cols[0];
-					const std::string title = cols[1];
-					const std::string snippet = cols[4];
-
-					body << "<a href='" << url << "'>" << title << "</a><br>" << std::endl;
-					body << "<small style='color:green'>" << url << "</small><br>" << std::endl;
-					body << snippet << "<br><br>" << endl;
-				}
-			}
-
-			res.code(200);
-
-			res.body(body.str());
-
-			return res;
-		});
-	}
-
 	void url_server() {
 
 		cout << "starting server..." << endl;
@@ -980,7 +881,7 @@ namespace indexer {
 						if (reader.size()) {
 							if (reader.size() > 10 * 1024* 1024) {
 								index<url_record> idx("url", dom_hash, 1000);
-								res = idx.find_top(tokens, score_mod, 5);
+								res = idx.find_top(tokens, 5, score_mod);
 							} else {
 								const size_t size = reader.size();
 								std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
@@ -988,7 +889,7 @@ namespace indexer {
 								reader.read(buffer.get(), size);
 								index_reader_ram ram_reader(buffer.get(), size);
 								index<url_record> idx(&ram_reader, 1000);
-								res = idx.find_top(tokens, score_mod, 5);
+								res = idx.find_top(tokens, 5, score_mod);
 							}
 						}
 

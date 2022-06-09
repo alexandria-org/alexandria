@@ -128,6 +128,8 @@ set(SRC_CLASSES
 	"src/indexer/score_builder.cpp"
 	"src/indexer/index_reader.cpp"
 
+	"src/server/search_server.cpp"
+
 	"src/http/server.cpp"
 	"src/http/request.cpp"
 

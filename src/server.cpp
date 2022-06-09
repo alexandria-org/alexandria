@@ -38,6 +38,8 @@
 #include "profiler/profiler.h"
 #include "full_text/full_text.h"
 #include "indexer/console.h"
+#include "json.hpp"
+#include "server/search_server.h"
 
 #include <fstream>
 
@@ -90,7 +92,7 @@ int main(int argc, const char **argv) {
 
 	if (argc == 2 && arg == "search_server") {
 
-		indexer::search_server();
+		server::search_server();
 
 	}
 

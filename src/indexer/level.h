@@ -79,8 +79,9 @@ namespace indexer {
 		virtual void merge() = 0;
 		virtual void calculate_scores() = 0;
 		virtual void clean_up() = 0;
-		virtual std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers) = 0;
+		virtual std::vector<return_record> find(size_t &total_num_results, const std::string &query, const std::vector<size_t> &keys,
+			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores,
+			const std::vector<domain_record> &domain_modifiers) = 0;
 
 		protected:
 		template<typename data_record>

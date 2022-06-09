@@ -46,7 +46,7 @@ namespace hash_table {
 			hash_table_shard(const std::string &db_name, size_t shard_id);
 			~hash_table_shard();
 
-			std::string find(uint64_t key);
+			std::string find(uint64_t key) const;
 
 			std::string filename_data() const;
 			std::string filename_pos() const;
@@ -68,7 +68,7 @@ namespace hash_table {
 			std::unordered_map<uint64_t, std::pair<size_t, size_t>> m_pos;
 
 			void load();
-			std::string data_at_position(size_t pos);
+			std::string data_at_position(size_t pos) const;
 
 	};
 
