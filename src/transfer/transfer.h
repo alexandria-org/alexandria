@@ -46,8 +46,6 @@ namespace transfer {
 	size_t curl_stringstream_writer(void *ptr, size_t size, size_t nmemb, std::stringstream *ss);
 	size_t curl_ostream_writer(void *ptr, size_t size, size_t nmemb, std::ostream *os);
 
-	void prepare_curl(CURL *curl);
-
 	std::string file_to_string(const std::string &file_path, int &error);
 	std::string gz_file_to_string(const std::string &file_path, int &error);
 

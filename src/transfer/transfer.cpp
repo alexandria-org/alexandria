@@ -81,16 +81,21 @@ namespace transfer {
 		return read_bytes;
 	}
 
-	void prepare_curl(CURL *curl) {
+	void set_internal_auth(CURL *curl) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
 	}
 
-	string make_url(const string &file_path) {
-		if (file_path.size() && file_path[0] != '/') {
-			return "http://" + config::master + "/" + file_path;
+	string make_url(const string &url) {
+
+		if (url.find("http://") == 0 || url.find("https://") == 0) {
+			return url;
 		}
-		return "http://" + config::master + file_path;
+
+		if (url.size() && url[0] != '/') {
+			return "http://" + config::master + "/" + url;
+		}
+		return "http://" + config::master + url;
 	}
 
 	string file_to_string(const string &file_path, int &error) {
@@ -101,7 +106,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -133,7 +138,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -179,7 +184,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &output_stream);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_ostream_writer);
@@ -207,7 +212,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
