@@ -27,37 +27,29 @@
 #pragma once
 
 #include <iostream>
-#include <thread>
-#include <vector>
-#include <map>
+#include "hash_table_shard_builder.h"
+#include "config.h"
 
-#include "hash_table_shard.h"
-#include "common/sub_system.h"
-#include "common/ThreadPool.h"
+namespace hash_table2 {
 
-namespace hash_table {
-
-	class hash_table_shard;
-
-	class hash_table {
+	class builder {
 
 	public:
 
-		explicit hash_table(const std::string &db_name);
-		~hash_table();
+		explicit builder(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		~builder();
 
-		void add(uint64_t key, const std::string &value);
+		void add(uint64_t key, const std::string &value, size_t version = 0);
+		void merge();
+		void optimize();
 		void truncate();
-		std::string find(uint64_t key);
-		size_t size() const;
-		void print_all_items() const;
+
+		void merge_with(const builder &other);
 
 	private:
 
-		std::vector<hash_table_shard *> m_shards;
+		std::vector<hash_table_shard_builder *> m_shards;
 		const std::string m_db_name;
-		size_t m_num_items;
 
 	};
-
 }

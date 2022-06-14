@@ -27,36 +27,49 @@
 #pragma once
 
 #include <iostream>
-#include <thread>
-#include <vector>
 #include <map>
+#include <vector>
+#include <functional>
 
-#include "hash_table_shard.h"
-#include "common/sub_system.h"
-#include "common/ThreadPool.h"
+#include "hash_table_shard_base.h"
 
-namespace hash_table {
+namespace hash_table2 {
 
-	class hash_table_shard;
+	class hash_table_shard : public hash_table_shard_base {
 
-	class hash_table {
+		public:
 
-	public:
+			hash_table_shard(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000);
+			~hash_table_shard();
 
-		explicit hash_table(const std::string &db_name);
-		~hash_table();
+			/*
+			 * Finds a value for the given key. Returns empty string if key is not present.
+			 * */
+			std::string find(uint64_t key) const;
 
-		void add(uint64_t key, const std::string &value);
-		void truncate();
-		std::string find(uint64_t key);
-		size_t size() const;
-		void print_all_items() const;
+			/*
+			 * Applies the given function to all elements in hash table shard. 
+			 * */
+			void for_each(std::function<void(uint64_t, std::string)>) const;
 
-	private:
+			/*
+			 * Returns the id of the shard.
+			 * */
+			size_t shard_id() const;
 
-		std::vector<hash_table_shard *> m_shards;
-		const std::string m_db_name;
-		size_t m_num_items;
+			/*
+			 * Returns the number of elements in the shard.
+			 * */
+			size_t size() const;
+
+			/*
+			 * Returns the size of the data file in bytes.
+			 * */
+			size_t file_size() const;
+
+		private:
+
+			std::string data_at_position(size_t pos) const;
 
 	};
 

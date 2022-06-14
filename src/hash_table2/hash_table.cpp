@@ -31,23 +31,18 @@
 
 using namespace std;
 
-namespace hash_table {
+namespace hash_table2 {
 
-	hash_table::hash_table(const string &db_name)
+	hash_table::hash_table(const string &db_name, size_t num_shards)
 	: m_db_name(db_name)
 	{
-		m_num_items = 0;
-		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
 			auto shard = new hash_table_shard(m_db_name, shard_id);
-			m_num_items += shard->size();
 			m_shards.push_back(shard);
 		}
-
-		LOG_INFO("hash_table contains " + to_string(m_num_items) + " (" + to_string((double)m_num_items/1000000000) + "b) urls");
 	}
 
 	hash_table::~hash_table() {
-
 		for (hash_table_shard *shard : m_shards) {
 			delete shard;
 		}
@@ -55,42 +50,34 @@ namespace hash_table {
 
 	void hash_table::add(uint64_t key, const string &value) {
 
-		const size_t shard_id = key % config::ht_num_shards;
+		const size_t shard_id = key % m_shards.size();
 		hash_table_shard_builder builder(m_db_name, shard_id);
 
 		builder.add(key, value);
-
-		builder.write();
-
 	}
 
 	void hash_table::truncate() {
-		if (m_num_items > 1000000) {
-			cout << "Are you sure you want to truncate hash table containing " << m_num_items << " elements? [y/N]: ";
-			string line;
-			cin >> line;
-			if (line != "y") {
-				cout << "Exiting..." << endl;
-				exit(0);
-			}
-		}
-		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
+		for (size_t shard_id = 0; shard_id < m_shards.size(); shard_id++) {
 			hash_table_shard_builder builder(m_db_name, shard_id);
 			builder.truncate();
 		}
 	}
 
 	string hash_table::find(uint64_t key) {
-		return m_shards[key % config::ht_num_shards]->find(key);
+		return m_shards[key % m_shards.size()]->find(key);
 	}
 
 	size_t hash_table::size() const {
-		return m_num_items;
+		size_t num_items = 0;
+		for (const auto &shard : m_shards) {
+			num_items += shard->size();
+		} 
+		return num_items;
 	}
 
-	void hash_table::print_all_items() const {
-		for (hash_table_shard *shard : m_shards) {
-			shard->print_all_items();
+	void hash_table::for_each(std::function<void(uint64_t, const std::string &)> callback) const {
+		for (const auto &shard : m_shards) {
+			shard->for_each(callback);
 		}
 	}
 

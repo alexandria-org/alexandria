@@ -31,41 +31,75 @@
 #include <mutex>
 
 #include "hash_table.h"
+#include "hash_table_shard_base.h"
 
-namespace hash_table {
+namespace hash_table2 {
 
-	class hash_table_shard_builder {
+	/*
+	 * Implementation of a hash table shard.
+	 *
+	 * usage:
+	 * hash_table_shard shard("test_db", 0);
+	 * shard.add(12345, "test data", 3);
+	 * shard.add(12345, "new test data", 4);
+	 *
+	 * shard.append();
+	 * shard.merge();
+	 *
+	 * */
+
+	class hash_table_shard_builder : public hash_table_shard_base {
 
 		public:
 
-			hash_table_shard_builder(const std::string &db_name, size_t shard_id);
+			hash_table_shard_builder(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000);
 			~hash_table_shard_builder();
 
-			bool full() const;
-			void write();
-			void truncate();
-			void optimize();
-			void sort();
+			/*
+			 * Add key/value pair to hash table.
+			 * */
+			void add(uint64_t key, const std::string &value, size_t version = 0);
 
-			void add(uint64_t key, const std::string &value);
+			/*
+			 * Return approximation of amount of memory in cache.
+			 * */
 			size_t cache_size() const;
 
-			std::string filename_data() const;
-			std::string filename_pos() const;
-			std::string filename_data_tmp() const;
-			std::string filename_pos_tmp() const;
+			/*
+			 * Write memory cache to disc cache.
+			 * */
+			void append();
+
+			/*
+			 * Write disc cache to persistant hash table.
+			 * */
+			void merge();
+
+			/*
+			 * Optimize persistant has table to remove data for unused versions.
+			 * */
+			void optimize();
+
+			/*
+			 * Delete all data in shard.
+			 * */
+			void truncate();
+
+			/*
+			 * Merge with another shard. Handles key collisions by keeping the one with highest version.
+			 * */
+			void merge_with(const hash_table_shard_builder &other);
 
 		private:
 
 			std::map<uint64_t, std::string> m_cache;
-			const std::string m_db_name;
-			size_t m_shard_id;
-			const size_t m_cache_limit;
+			std::map<uint64_t, size_t> m_version;
+
 			std::map<uint64_t, size_t> m_sort_pos;
 			std::mutex m_lock;
 			size_t m_data_size = 0;
 
-			void read_keys();
+			void read_optimized_to(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages, std::ifstream &infile, std::ofstream &outfile) const;
 
 	};
 

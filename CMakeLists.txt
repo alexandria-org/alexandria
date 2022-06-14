@@ -65,6 +65,11 @@ set(SRC_CLASSES
 	"src/hash_table/hash_table_shard_builder.cpp"
 	"src/hash_table/builder.cpp"
 
+	"src/hash_table2/hash_table.cpp"
+	"src/hash_table2/hash_table_shard.cpp"
+	"src/hash_table2/hash_table_shard_builder.cpp"
+	"src/hash_table2/builder.cpp"
+
 	"src/hash_table_helper/hash_table_helper.cpp"
 
 	"src/post_processor/post_processor.cpp"

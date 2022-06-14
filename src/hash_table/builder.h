@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include "hash_table_shard_builder.h"
-#include "config.h"
 
 namespace hash_table {
 
@@ -36,11 +35,10 @@ namespace hash_table {
 
 	public:
 
-		explicit builder(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		explicit builder(const std::string &db_name);
 		~builder();
 
 		void add(uint64_t key, const std::string &value);
-		void add_versioned(uint64_t key, const std::string &value, size_t version);
 		void merge();
 		void truncate();
 
