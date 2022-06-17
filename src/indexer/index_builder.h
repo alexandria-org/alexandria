@@ -199,15 +199,12 @@ namespace indexer {
 	void index_builder<data_record>::add(uint64_t key, const data_record &record) {
 		indexer::merger::lock();
 
-		m_lock.lock();
+		std::lock_guard guard(m_lock);
 
 		// Amortized constant
 		m_key_cache.push_back(key);
 		m_record_cache.push_back(record);
 
-		//assert(m_record_cache.size() == m_key_cache.size());
-
-		m_lock.unlock();
 	}
 
 	/*

@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,37 +24,54 @@
  * SOFTWARE.
  */
 
-#include "level.h"
-#include "index_builder.h"
-#include "url_record.h"
-#include "utils/id_allocator.h"
+#pragma once
 
-#include <unordered_map>
+#include <iostream>
 
 namespace indexer {
 
-	class url_level: public level {
-		private:
-
-		utils::id_allocator<index_builder<url_record>> m_builders;
-		utils::id_allocator<index_builder<link_record>> m_link_builders;
-
+	#pragma pack(4)
+	class value_record {
 		public:
-		url_level();
-		level_type get_type() const;
-		void add_snippet(const snippet &s);
-		void add_document(size_t id, const std::string &doc);
-		void add_index_file(const std::string &local_path,
-			std::function<void(uint64_t, const std::string &)> add_data,
-			std::function<void(uint64_t, uint64_t)> add_url);
-		void add_link_file(const std::string &local_path, const ::algorithm::bloom_filter &url_filter);
-		void merge();
-		void calculate_scores() {};
-		void clean_up();
-		std::vector<return_record> find(const std::string &query, const std::vector<size_t> &keys,
-			const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores, const std::vector<domain_record> &domain_modifiers);
-		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
+		uint64_t m_value;
+
+		value_record() : m_value(0) {};
+		value_record(uint64_t value) : m_value(value) {};
+		value_record(uint64_t value, float score) : m_value(value) {};
+
+		bool operator==(const value_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const value_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		value_record &operator+=(const value_record &b) {
+			return *this;
+		}
+
+		/*
+		 * Will be applied to records before truncating. Top records will be kept.
+		 * */
+		struct truncate_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value > b.m_value;
+			}
+		};
+
+		/*
+		 * Will be applied before storing on disk. This is the order the records will be returned in.
+		 * */
+		struct storage_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value < b.m_value;
+			}
+		};
+
+		bool storage_equal(const value_record &a) const {
+			return m_value == a.m_value;
+		}
 
 	};
-
 }

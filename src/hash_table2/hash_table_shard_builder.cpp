@@ -50,7 +50,10 @@ namespace hash_table2 {
 	}
 
 	void hash_table_shard_builder::add(uint64_t key, const string &value, size_t version) {
+		indexer::merger::lock();
+
 		std::lock_guard guard(m_lock);
+
 		auto ver_iter = m_version.find(key);
 		if (version > 0 && ver_iter != m_version.end() && ver_iter->second > version) {
 			// do nothing

@@ -72,7 +72,7 @@ namespace indexer {
 			uint64_t url_hash = url.hash();
 
 			if (builders.find(domain_hash) == builders.end()) {
-				builders[domain_hash] = make_sure_builder_is_present(domain_hash);
+				builders[domain_hash] = m_builders.get(domain_hash, "url", domain_hash, 1000);
 			}
 			index_builder<url_record> *builder = builders[domain_hash];
 
@@ -133,7 +133,7 @@ namespace indexer {
 			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
 
 			if (builders.find(domain_hash) == builders.end()) {
-				builders[domain_hash] = make_sure_link_builder_is_present(domain_hash);
+				builders[domain_hash] = m_link_builders.get(domain_hash, "url_links", domain_hash, 1000);
 			}
 			index_builder<link_record> *builder = builders[domain_hash];
 
@@ -158,40 +158,14 @@ namespace indexer {
 		cout << "Done with " << local_path << " added " << num_existed << " total " << num_parsed << " took: " << prof.get() << "ms" << endl;
 	}
 
-	index_builder<url_record> *url_level::make_sure_builder_is_present(uint64_t domain_hash) {
-		m_lock.lock();
-		if (m_builders.count(domain_hash) == 0) {
-			m_builders[domain_hash] = std::make_unique<index_builder<url_record>>("url", domain_hash, 1000);
-		}
-
-		auto ptr = m_builders[domain_hash].get();
-
-		m_lock.unlock();
-
-		return ptr;
-	}
-
-	index_builder<link_record> *url_level::make_sure_link_builder_is_present(uint64_t domain_hash) {
-		m_lock.lock();
-		if (m_link_builders.count(domain_hash) == 0) {
-			m_link_builders[domain_hash] = std::make_unique<index_builder<link_record>>("url_links", domain_hash, 1000);
-		}
-
-		auto ptr = m_link_builders[domain_hash].get();
-
-		m_lock.unlock();
-
-		return ptr;
-	}
-
 	void url_level::merge() {
 
 		// Just store the domain hashes in a file for later optimization.
-		std::ofstream outfile("/root/all_domain_hashes.data", std::ios::binary | std::ios::app);
+		/*std::ofstream outfile("/root/all_domain_hashes.data", std::ios::binary | std::ios::app);
 		for (const auto &iter : m_builders) {
 			uint64_t domain_hash = iter.first;
 			outfile.write((char *)&domain_hash, sizeof(uint64_t));
-		}
+		}*/
 		/*
 		utils::thread_pool pool(32);
 		for (const auto &iter : m_builders) {
