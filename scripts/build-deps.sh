@@ -3,9 +3,6 @@
 cd `dirname $0`
 cd ..
 
-export CC=/usr/bin/gcc
-export CXX=/usr/bin/g++
-
 base_path=`pwd`
 
 cd $base_path
@@ -18,6 +15,9 @@ make install
 
 cd $base_path
 cd deps
+
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
 
 cd CRoaring
 mkdir build
