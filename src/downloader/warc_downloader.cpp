@@ -35,6 +35,7 @@
 #include <iostream>
 #include "hash_table2/builder.h"
 #include "algorithm/algorithm.h"
+#include "indexer/index_utils.h"
 #include "indexer/index_builder.h"
 #include "indexer/value_record.h"
 #include "indexer/merger.h"
@@ -89,8 +90,6 @@ namespace downloader {
 						// link is a std::pair<uint64_t, uint64_t>
 						internal_link_builder->add(link.first, indexer::value_record(link.second));
 					}
-
-					std::cout << html.title() << "\t" << date << " - " << time << std::endl;
 			});
 		});
 
@@ -102,6 +101,7 @@ namespace downloader {
 		if (error) {
 			LOG_INFO("error uploading: " + warc_path);
 		}
+
 	}
 
 	vector<string> download_warc_paths() {
@@ -132,6 +132,9 @@ namespace downloader {
 
 	void start_downloaders(const std::vector<std::string> &warc_paths) {
 
+		indexer::delete_db_directories("internal_links");
+		indexer::create_db_directories("internal_links");
+
 		indexer::merger::start_merge_thread();
 
 		const size_t num_threads = 48;
@@ -142,13 +145,17 @@ namespace downloader {
 		utils::thread_pool pool(num_threads);
 
 		hash_table2::builder ht("crawl_index", 1019);
+		ht.truncate();
 		utils::id_allocator<indexer::index_builder<indexer::value_record>> internal_link_allocator;
 
 		for (const auto &chunk : chunks) {
 			pool.enqueue([chunk, &ht, &internal_link_allocator] {
 				std::unordered_map<uint64_t, indexer::index_builder<indexer::value_record> *> internal_link_cache;
+				size_t count = 0;
 				for (const auto &warc_path : chunk) {
 					run_downloader(warc_path, internal_link_allocator, internal_link_cache, ht);
+					count++;
+					std::cout << "done with " << warc_path << " done with " << count << "/" << chunk.size() << std::endl;
 				}
 			});
 		}
@@ -167,10 +174,13 @@ namespace downloader {
 
 		std::stringstream ss(content);
 
+		const size_t limit = 10;
+
 		std::string line;
 		while (std::getline(ss, line)) {
 			warc_paths.emplace_back(std::move(line));
-			break;
+
+			if (warc_paths.size() >= limit) break;
 		}
 
 		start_downloaders(warc_paths);

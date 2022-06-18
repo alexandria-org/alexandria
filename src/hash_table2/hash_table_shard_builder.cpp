@@ -181,9 +181,8 @@ namespace hash_table2 {
 			}
 		}
 
-		// Truncate cache file.
-		ofstream truncate_data_tmp(this->filename_data_tmp(), ios::binary | ios::trunc);
-		truncate_data_tmp.close();
+		// Delete cache file.
+		file::delete_file(this->filename_data_tmp());
 
 		std::ofstream key_writer(this->filename_pos(), std::ios::binary | std::ios::trunc);
 
@@ -233,7 +232,8 @@ namespace hash_table2 {
 		std::lock_guard guard(m_lock);
 		ofstream outfile(this->filename_data(), ios::binary | ios::trunc);
 		ofstream outfile_pos(this->filename_pos(), ios::binary | ios::trunc);
-		ofstream outfile_tmp(this->filename_data_tmp(), ios::binary | ios::trunc);
+
+		file::delete_file(this->filename_data_tmp());
 	}
 
 	void hash_table_shard_builder::merge_with(const hash_table_shard_builder &other) {

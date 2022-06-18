@@ -133,6 +133,7 @@ set(SRC_CLASSES
 	"src/indexer/merger.cpp"
 	"src/indexer/score_builder.cpp"
 	"src/indexer/index_reader.cpp"
+	"src/indexer/index_utils.cpp"
 
 	"src/http/server.cpp"
 	"src/http/request.cpp"

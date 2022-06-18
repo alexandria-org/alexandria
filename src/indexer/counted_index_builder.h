@@ -41,6 +41,7 @@
 #include "profiler/profiler.h"
 #include "logger/logger.h"
 #include "memory/debugger.h"
+#include "file/file.h"
 #include "index_base.h"
 
 namespace indexer {
@@ -256,11 +257,8 @@ namespace indexer {
 
 		reset_cache_variables();
 
-		std::ofstream writer(cache_filename(), std::ios::trunc);
-		writer.close();
-
-		std::ofstream key_writer(key_cache_filename(), std::ios::trunc);
-		key_writer.close();
+		file::delete_file(cache_filename());
+		file::delete_file(key_cache_filename());
 	}
 
 	template<typename data_record>
