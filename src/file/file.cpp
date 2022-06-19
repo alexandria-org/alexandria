@@ -26,6 +26,7 @@
 
 #include "config.h"
 #include "file.h"
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -54,7 +55,22 @@ namespace file {
 	}
 
 	void delete_file(const string &file) {
-		remove(file.c_str());
+		boost::filesystem::remove(file);
+	}
+
+	void create_directory(const std::string &path) {
+		boost::filesystem::create_directory(path);
+	}
+
+	void delete_directory(const std::string &path) {
+		boost::filesystem::remove_all(path);
+	}
+
+	std::string cat(const std::string &filename) {
+		std::ifstream infile(filename);
+		std::istreambuf_iterator<char> iter(infile), end; 
+		std::string ret(iter, end);
+		return ret;
 	}
 
 }

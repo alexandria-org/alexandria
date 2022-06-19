@@ -27,8 +27,10 @@
 #include <boost/test/unit_test.hpp>
 #include "transfer/transfer.h"
 #include "text/text.h"
+#include "file/file.h"
 #include "file/tsv_file_remote.h"
 #include "file/tsv_file.h"
+#include "file/simple_tar.h"
 #include "algorithm/hash.h"
 #include "config.h"
 
@@ -273,6 +275,48 @@ BOOST_AUTO_TEST_CASE(test_tsv_file) {
 		BOOST_CHECK(data.count("line2") == 1);
 		BOOST_CHECK(data.count("line3") == 1);
 	}
+}
+
+/*
+ * Test the file::simple_tar simple tarball
+ * */
+BOOST_AUTO_TEST_CASE(test_simple_tar) {
+
+	{
+		file::simple_tar tar("test_dir.tar");
+
+		file::create_directory("test_dir");
+
+		std::ofstream file1("test_dir/file1.txt");
+		file1 << "hello world 1";
+		file1.close();
+
+		std::ofstream file2("test_dir/file2.txt");
+		file2 << "hello world 2";
+		file2.close();
+
+		std::ofstream file3("test_dir/file3.txt");
+		file3 << "hello world 3";
+		file3.close();
+
+		tar.read_dir("test_dir");
+	}
+
+	{
+		file::simple_tar tar("test_dir.tar");
+
+		file::create_directory("test_dir2");
+		tar.untar("test_dir2");
+
+		BOOST_CHECK_EQUAL(file::cat("test_dir2/file1.txt"), "hello world 1");
+		BOOST_CHECK_EQUAL(file::cat("test_dir2/file2.txt"), "hello world 2");
+		BOOST_CHECK_EQUAL(file::cat("test_dir2/file3.txt"), "hello world 3");
+
+		file::delete_directory("test_dir1");
+	}
+	file::delete_directory("test_dir1");
+	file::delete_directory("test_dir2");
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

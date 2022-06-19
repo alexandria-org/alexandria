@@ -27,22 +27,29 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <stdio.h>
 
 namespace file {
 
-	std::string read_test_file(const std::string &file_name);
+	class simple_tar {
 
-	void copy_file(const std::string &source, const std::string &dest);
-	void delete_file(const std::string &filename);
+		public:
+			explicit simple_tar(const std::string &filename);
+			~simple_tar();
 
-	void create_directory(const std::string &path);
-	void delete_directory(const std::string &path);
+			void read_dir(const std::string &dirname);
+			void untar(const std::string &dest_dir);
 
-	/*
-	 * Returns the whole content of the file.
-	 * */
-	std::string cat(const std::string &filename);
+		private:
+			const size_t m_num_threads = 32;
+			std::string m_filename;
+
+			struct tar_header {
+				size_t m_len;
+				char m_filename[256];
+			};
+
+			void add_file(const std::string &path, const std::string &filename);
+
+	};
 
 }
