@@ -37,7 +37,7 @@ set(SRC_CLASSES
 	"src/worker/worker.cpp"
 
 	"src/file/file.cpp"
-	"src/file/simple_tar.cpp"
+	"src/file/archive.cpp"
 	"src/file/tsv_file.cpp"
 	"src/file/gz_tsv_file.cpp"
 	"src/file/tsv_file_remote.cpp"

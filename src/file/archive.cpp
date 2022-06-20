@@ -24,8 +24,11 @@
  * SOFTWARE.
  */
 
-#include "simple_tar.h"
+#include "archive.h"
 #include "file.h"
+#include "algorithm/algorithm.h"
+#include "utils/thread_pool.hpp"
+#include <cmath>
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -34,16 +37,16 @@
 
 namespace file {
 
-	simple_tar::simple_tar(const std::string &filename)
+	archive::archive(const std::string &filename)
 	: m_filename(filename) {
 
 	}
 
-	simple_tar::~simple_tar() {
+	archive::~archive() {
 	
 	}
 
-	void simple_tar::read_dir(const std::string &dirname) {
+	void archive::read_dir(const std::string &dirname) {
 
 		// Truncate target file.
 		std::ofstream outfile(m_filename, std::ios::binary | std::ios::trunc);
@@ -51,17 +54,52 @@ namespace file {
 
 		boost::filesystem::path path(dirname);
 
-		//utils::thread_pool pool(m_num_threads);
+		std::vector<boost::filesystem::path> paths;
 
 		if (is_directory(path)) {
 			boost::filesystem::directory_iterator iter(path);
 			for (auto &file : boost::make_iterator_range(iter, {})) {
-				add_file(file.path().generic_string(), file.path().filename().generic_string());
+				paths.push_back(file.path());
 			}
+		}
+
+		std::vector<std::vector<boost::filesystem::path>> chunks;
+		algorithm::vector_chunk(paths, std::ceil(paths.size() / m_num_threads) + 1, chunks);
+
+		utils::thread_pool pool(m_num_threads);
+
+		size_t worker_id = 0;
+		for (const auto &chunk : chunks) {
+
+			// Remove worker file.
+			::file::delete_file(m_filename + "." + std::to_string(worker_id));
+
+			pool.enqueue([this, chunk, worker_id]() {
+				for (const auto &path : chunk) {
+					add_file(path.generic_string(), path.filename().generic_string(), worker_id);
+				}
+			});
+			worker_id++;
+		}
+
+		pool.run_all();
+
+		// Merge workers.
+		for (size_t worker_id = 0; worker_id < m_num_threads; worker_id++) {
+
+			std::filebuf infile, outfile;
+			
+			outfile.open(m_filename, std::ios::out | std::ios::binary | std::ios::app);
+			infile.open(m_filename + "." + std::to_string(worker_id), std::ios::in | std::ios::binary);
+
+			std::copy(std::istreambuf_iterator<char>(&infile), {}, std::ostreambuf_iterator<char>(&outfile));
+
+			// Remove worker file.
+			::file::delete_file(m_filename + "." + std::to_string(worker_id));
 		}
 	}
 
-	void simple_tar::untar(const std::string &dest_dir) {
+	void archive::untar(const std::string &dest_dir) {
 		std::ifstream infile(m_filename, std::ios::binary);
 
 		tar_header header;
@@ -92,9 +130,9 @@ namespace file {
 		
 	}
 
-	void simple_tar::add_file(const std::string &path, const std::string &filename) {
+	void archive::add_file(const std::string &path, const std::string &filename, size_t worker_id) {
 
-		std::ofstream outfile(m_filename, std::ios::binary | std::ios::app);
+		std::ofstream outfile(m_filename + "." + std::to_string(worker_id), std::ios::binary | std::ios::app);
 
 		std::string data = ::file::cat(path);
 

@@ -30,11 +30,11 @@
 
 namespace file {
 
-	class simple_tar {
+	class archive {
 
 		public:
-			explicit simple_tar(const std::string &filename);
-			~simple_tar();
+			explicit archive(const std::string &filename);
+			~archive();
 
 			void read_dir(const std::string &dirname);
 			void untar(const std::string &dest_dir);
@@ -48,7 +48,7 @@ namespace file {
 				char m_filename[256];
 			};
 
-			void add_file(const std::string &path, const std::string &filename);
+			void add_file(const std::string &path, const std::string &filename, size_t worker_id);
 
 	};
 
