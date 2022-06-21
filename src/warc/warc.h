@@ -21,9 +21,12 @@ namespace warc {
 			~parser();
 
 			bool parse_stream(std::istream &stream);
+			bool parse_stream(std::istream &stream, std::function<void(const std::string &url, const ::parser::html_parser &html, const std::string &ip,
+						const std::string &date)>);
 			const string &result() const { return m_result; };
 			const string &link_result() const { return m_links; };
 			const string &internal_link_result() const { return m_internal_links; };
+			void handle_html(const std::string &url, const ::parser::html_parser &html, const std::string &ip, const std::string &date);
 
 		private:
 
@@ -33,6 +36,8 @@ namespace warc {
 			std::string m_links;
 			std::string m_internal_links;
 			::parser::html_parser m_html_parser;
+			std::function<void(const std::string &url, const ::parser::html_parser &html, const std::string &ip, const std::string &date)>
+				m_callback;
 
 			char *m_z_buffer_in;
 			char *m_z_buffer_out;

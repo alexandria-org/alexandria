@@ -33,7 +33,16 @@
 namespace file {
 
 	std::string read_test_file(const std::string &file_name);
+
 	void copy_file(const std::string &source, const std::string &dest);
-	void delete_file(const std::string &file);
+	void delete_file(const std::string &filename);
+
+	void create_directory(const std::string &path);
+	void delete_directory(const std::string &path);
+
+	/*
+	 * Returns the whole content of the file.
+	 * */
+	std::string cat(const std::string &filename);
 
 }

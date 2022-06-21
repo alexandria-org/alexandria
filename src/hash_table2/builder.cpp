@@ -24,53 +24,63 @@
  * SOFTWARE.
  */
 
-#include "config.h"
-#include "file.h"
-#include <boost/filesystem.hpp>
+#include "builder.h"
+#include "utils/thread_pool.hpp"
 
 using namespace std;
 
-namespace file {
+namespace hash_table2 {
 
-	string read_test_file(const string &file_name) {
-
-		ifstream file(config::test_data_path + file_name);
-		if (file.is_open()) {
-			string ret;
-			file.seekg(0, ios::end);
-			ret.resize(file.tellg());
-			file.seekg(0, ios::beg);
-			file.read(&ret[0], ret.size());
-			file.close();
-			return ret;
+	builder::builder(const string &db_name, size_t num_shards)
+	: m_db_name(db_name) {
+		for (size_t i = 0; i < num_shards; i++) {
+			m_shards.push_back(new hash_table_shard_builder(db_name, i));
 		}
-		return "";
 	}
 
-	void copy_file(const string &source, const string &dest) {
-		ifstream infile(source, ios::binary);
-		ofstream outfile(dest, ios::binary | ios::trunc);
-
-		outfile << infile.rdbuf();
+	builder::~builder() {
+		for (hash_table_shard_builder *shard : m_shards) {
+			delete shard;
+		}
 	}
 
-	void delete_file(const string &file) {
-		boost::filesystem::remove(file);
+	void builder::add(uint64_t key, const std::string &value, size_t version) {
+		m_shards[key % m_shards.size()]->add(key, value, version);
 	}
 
-	void create_directory(const std::string &path) {
-		boost::filesystem::create_directory(path);
+	void builder::merge() {
+		utils::thread_pool pool(32);
+		for (hash_table_shard_builder *shard : m_shards) {
+			pool.enqueue([shard]() -> void {
+				shard->append();
+				shard->merge();
+				shard->optimize();
+			});
+		}
+
+		pool.run_all();
 	}
 
-	void delete_directory(const std::string &path) {
-		boost::filesystem::remove_all(path);
+	void builder::optimize() {
+		utils::thread_pool pool(32);
+		for (hash_table_shard_builder *shard : m_shards) {
+			pool.enqueue([shard]() -> void {
+				shard->optimize();
+			});
+		}
+
+		pool.run_all();
 	}
 
-	std::string cat(const std::string &filename) {
-		std::ifstream infile(filename);
-		std::istreambuf_iterator<char> iter(infile), end; 
-		std::string ret(iter, end);
-		return ret;
+	void builder::truncate() {
+		for (hash_table_shard_builder *shard : m_shards) {
+			shard->truncate();
+		}
 	}
 
+	void builder::merge_with(const builder &other) {
+		for (size_t i = 0; i < m_shards.size(); i++) {
+			m_shards[i]->merge_with(*(other.m_shards[i]));
+		}
+	}
 }

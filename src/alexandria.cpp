@@ -24,27 +24,42 @@
  * SOFTWARE.
  */
 
-#pragma once
-
 #include <iostream>
-#include <functional>
+#include "logger/logger.h"
+#include "downloader/warc_downloader.h"
 
 using namespace std;
 
-namespace indexer {
+void help() {
+	cout << "Usage: ./alexandria [OPTION]..." << endl;
+	cout << "--downloader [node-id] [limit] [offset]" << endl;
+}
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+int main(int argc, const char **argv) {
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
-	};
+	logger::start_logger_thread();
+	logger::verbose(true);
 
+	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
+		config::read_config(getenv("ALEXANDRIA_CONFIG"));
+	} else {
+		config::read_config("/etc/alexandria.conf");
+	}
+
+	if (argc < 2) {
+		help();
+		return 0;
+	}
+
+	const string arg(argc > 1 ? argv[1] : "");
+
+	if (arg == "--downloader" && argc > 4) {
+		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
+	} else {
+		help();
+	}
+
+	logger::join_logger_thread();
+
+	return 0;
 }

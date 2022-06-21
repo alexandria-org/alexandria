@@ -27,24 +27,51 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
-
-using namespace std;
 
 namespace indexer {
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+	#pragma pack(4)
+	class value_record {
+		public:
+		uint64_t m_value;
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
+		value_record() : m_value(0) {};
+		value_record(uint64_t value) : m_value(value) {};
+		value_record(uint64_t value, float score) : m_value(value) {};
+
+		bool operator==(const value_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const value_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		value_record &operator+=(const value_record &b) {
+			return *this;
+		}
+
+		/*
+		 * Will be applied to records before truncating. Top records will be kept.
+		 * */
+		struct truncate_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value > b.m_value;
+			}
+		};
+
+		/*
+		 * Will be applied before storing on disk. This is the order the records will be returned in.
+		 * */
+		struct storage_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value < b.m_value;
+			}
+		};
+
+		bool storage_equal(const value_record &a) const {
+			return m_value == a.m_value;
+		}
+
 	};
-
 }

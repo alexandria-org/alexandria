@@ -38,13 +38,17 @@ namespace indexer {
 
 	namespace merger {
 
-		const double mem_limit = 0.4;
+		double mem_limit = 0.4;
 
 		bool is_merging = false;
 		map<size_t, std::function<void()>> mergers;
 		map<size_t, std::function<void()>> appenders;
 		map<size_t, std::function<size_t()>> sizes;
 		mutex merger_lock;
+
+		void set_mem_limit(double mem_limit) {
+			::indexer::merger::mem_limit = mem_limit;
+		}
 
 		void wait_for_merges() {
 			while (is_merging) {

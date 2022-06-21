@@ -27,24 +27,12 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
+#include <vector>
 
-using namespace std;
+namespace downloader {
 
-namespace indexer {
+	std::vector<std::string> download_warc_paths();
+	bool upload_warc_paths(const std::vector<std::string> &warc_paths);
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
-
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
-	};
-
+	void warc_downloader(const std::string &batch, size_t limit, size_t offset);
 }
