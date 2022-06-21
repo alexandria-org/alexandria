@@ -38,7 +38,6 @@
 #include "html_link.h"
 #include "parser/unicode.h"
 
-#define HTML_PARSER_LONG_TEXT_LEN 1000
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
 
