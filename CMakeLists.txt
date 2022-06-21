@@ -129,6 +129,7 @@ set(SRC_CLASSES
 	"src/indexer/index_reader.cpp"
 
 	"src/server/search_server.cpp"
+	"src/server/url_server.cpp"
 
 	"src/http/server.cpp"
 	"src/http/request.cpp"

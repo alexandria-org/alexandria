@@ -40,6 +40,7 @@
 #include "indexer/console.h"
 #include "json.hpp"
 #include "server/search_server.h"
+#include "server/url_server.h"
 
 #include <fstream>
 
@@ -86,7 +87,7 @@ int main(int argc, const char **argv) {
 
 	if (argc == 2 && arg == "url_server") {
 
-		indexer::url_server();
+		server::url_server();
 
 	}
 

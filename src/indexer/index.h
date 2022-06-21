@@ -244,6 +244,13 @@ namespace indexer {
 			bitmaps.emplace_back(std::move(find_bitmap(key)));
 		}
 
+		if (keys.size() == 0) {
+			// Return all records...
+			roaring::Roaring all_ids;
+			all_ids.addRange(0, m_records.size());
+			bitmaps.push_back(all_ids);
+		}
+
 		auto intersection = ::algorithm::intersection(bitmaps);
 
 		total_num_results = intersection.cardinality();

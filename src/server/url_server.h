@@ -27,5 +27,5 @@
 #pragma once
 
 namespace server {
-	void search_server();
+	void url_server();
 }
