@@ -27,24 +27,29 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
 
-using namespace std;
+namespace file {
 
-namespace indexer {
+	class archive {
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+		public:
+			explicit archive(const std::string &filename);
+			~archive();
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
+			void read_dir(const std::string &dirname);
+			void untar(const std::string &dest_dir);
+
+		private:
+			const size_t m_num_threads = 32;
+			std::string m_filename;
+
+			struct tar_header {
+				size_t m_len;
+				char m_filename[256];
+			};
+
+			void add_file(const std::string &path, const std::string &filename, size_t worker_id);
+
 	};
 
 }

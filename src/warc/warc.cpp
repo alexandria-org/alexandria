@@ -20,7 +20,14 @@ namespace warc {
 	}
 
 	bool parser::parse_stream(istream &stream) {
+		return parse_stream(stream, [this](const std::string &url, const ::parser::html_parser &html, const std::string &ip, const std::string &date) {
+			handle_html(url, html, ip, date);
+		});
+	}
 
+	bool parser::parse_stream(std::istream &stream, std::function<void(const std::string &url, const ::parser::html_parser &html, const std::string &ip,
+				const std::string &date)> callback) {
+		m_callback = callback;
 		size_t total_bytes_read = 0;
 		while (stream.good()) {
 			stream.read(m_z_buffer_in, WARC_PARSER_ZLIB_IN);
@@ -37,6 +44,34 @@ namespace warc {
 		}
 
 		return true;
+	}
+
+	void parser::handle_html(const std::string &url, const ::parser::html_parser &html, const std::string &ip, const std::string &date) {
+
+		m_result += (url
+				+ '\t' + html.title()
+				+ '\t' + html.h1()
+				+ '\t' + html.meta()
+				+ '\t' + html.text()
+				+ '\t' + date
+				+ '\t' + ip
+				+ '\n');
+			for (const auto &link : html.links()) {
+				m_links += (link.host()
+					+ '\t' + link.path()
+					+ '\t' + link.target_host()
+					+ '\t' + link.target_path()
+					+ '\t' + link.text()
+					+ '\t' + (link.nofollow() ? "1" : "0")
+					+ '\n');
+			}
+
+			for (const auto &link : html.internal_links()) {
+				// link is a std::pair<uint64_t, uint64_t>
+				m_internal_links.append((char *)&link.first, sizeof(uint64_t));
+				m_internal_links.append((char *)&link.second, sizeof(uint64_t));
+			}
+
 	}
 
 	int parser::unzip_record(char *data, int size) {
@@ -224,31 +259,7 @@ namespace warc {
 		m_html_parser.parse(html, url);
 
 		if (m_html_parser.should_insert()) {
-			m_result += (url
-				+ '\t' + m_html_parser.title()
-				+ '\t' + m_html_parser.h1()
-				+ '\t' + m_html_parser.meta()
-				+ '\t' + m_html_parser.text()
-				+ '\t' + date
-				+ '\t' + ip
-				+ '\n');
-			for (const auto &link : m_html_parser.links()) {
-				m_links += (link.host()
-					+ '\t' + link.path()
-					+ '\t' + link.target_host()
-					+ '\t' + link.target_path()
-					+ '\t' + link.text()
-					+ '\t' + (link.nofollow() ? "1" : "0")
-					+ '\n');
-			}
-			for (const auto &link : m_html_parser.internal_links()) {
-				if (!link.nofollow()) {
-					uint64_t source_hash = link.source_url().hash();
-					uint64_t target_hash = link.target_url().hash();
-					m_internal_links.append((char *)&source_hash, sizeof(uint64_t));
-					m_internal_links.append((char *)&target_hash, sizeof(uint64_t));
-				}
-			}
+			m_callback(url, m_html_parser, ip, date);
 		}
 	}
 

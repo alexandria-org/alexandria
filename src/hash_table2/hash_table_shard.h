@@ -27,24 +27,50 @@
 #pragma once
 
 #include <iostream>
+#include <map>
+#include <vector>
 #include <functional>
 
-using namespace std;
+#include "hash_table_shard_base.h"
 
-namespace indexer {
+namespace hash_table2 {
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+	class hash_table_shard : public hash_table_shard_base {
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
+		public:
+
+			hash_table_shard(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000);
+			~hash_table_shard();
+
+			/*
+			 * Finds a value for the given key. Returns empty string if key is not present.
+			 * */
+			std::string find(uint64_t key) const;
+
+			/*
+			 * Applies the given function to all elements in hash table shard. 
+			 * */
+			void for_each(std::function<void(uint64_t, std::string)>) const;
+
+			/*
+			 * Returns the id of the shard.
+			 * */
+			size_t shard_id() const;
+
+			/*
+			 * Returns the number of elements in the shard.
+			 * */
+			size_t size() const;
+
+			/*
+			 * Returns the size of the data file in bytes.
+			 * */
+			size_t file_size() const;
+
+		private:
+
+			std::string data_at_position(size_t pos) const;
+
 	};
 
 }

@@ -27,24 +27,10 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
-
-using namespace std;
 
 namespace indexer {
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
-
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
-	};
+	void create_db_directories(const std::string &db_name);
+	void delete_db_directories(const std::string &db_name);
 
 }

@@ -27,24 +27,36 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
+#include <thread>
+#include <vector>
+#include <map>
 
-using namespace std;
+#include "config.h"
+#include "hash_table_shard.h"
 
-namespace indexer {
+namespace hash_table2 {
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+	class hash_table_shard;
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
+	class hash_table {
+
+	public:
+
+		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		~hash_table();
+
+		void add(uint64_t key, const std::string &value);
+		void truncate();
+		std::string find(uint64_t key);
+		size_t size() const;
+		void for_each(std::function<void(uint64_t, const std::string &)> callback) const;
+		void for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const;
+
+	private:
+
+		std::vector<hash_table_shard *> m_shards;
+		const std::string m_db_name;
+
 	};
 
 }

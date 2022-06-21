@@ -37,11 +37,13 @@
 #include <boost/filesystem.hpp>
 #include "merger.h"
 #include "score_builder.h"
+#include "index_utils.h"
 #include "index_base.h"
 #include "algorithm/hyper_log_log.h"
 #include "config.h"
 #include "profiler/profiler.h"
 #include "logger/logger.h"
+#include "file/file.h"
 #include "memory/debugger.h"
 #include "roaring/roaring.hh"
 
@@ -199,15 +201,12 @@ namespace indexer {
 	void index_builder<data_record>::add(uint64_t key, const data_record &record) {
 		indexer::merger::lock();
 
-		m_lock.lock();
+		std::lock_guard guard(m_lock);
 
 		// Amortized constant
 		m_key_cache.push_back(key);
 		m_record_cache.push_back(record);
 
-		//assert(m_record_cache.size() == m_key_cache.size());
-
-		m_lock.unlock();
 	}
 
 	/*
@@ -319,18 +318,14 @@ namespace indexer {
 
 		reset_cache_variables();
 
-		std::ofstream writer(cache_filename(), std::ios::trunc);
-		writer.close();
+		file::delete_file(cache_filename());
+		file::delete_file(key_cache_filename());
 
-		std::ofstream key_writer(key_cache_filename(), std::ios::trunc);
-		key_writer.close();
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::create_directories() {
-		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
-		}
+		create_db_directories(m_db_name);
 	}
 
 	template<typename data_record>

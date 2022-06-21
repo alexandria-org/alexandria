@@ -81,16 +81,35 @@ namespace transfer {
 		return read_bytes;
 	}
 
-	void prepare_curl(CURL *curl) {
+	size_t curl_file_reader(char *ptr, size_t size, size_t nmemb, void *userdata) {
+		std::ifstream *infile = (std::ifstream *)userdata;
+
+		if (infile->eof()) {
+			return 0ull;
+		}
+
+		size_t max_read = size * nmemb;
+
+		infile->read(ptr, max_read);
+
+		return infile->gcount();
+	}
+
+	void set_internal_auth(CURL *curl) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
 	}
 
-	string make_url(const string &file_path) {
-		if (file_path.size() && file_path[0] != '/') {
-			return "http://" + config::master + "/" + file_path;
+	string make_url(const string &url) {
+
+		if (url.find("http://") == 0 || url.find("https://") == 0) {
+			return url;
 		}
-		return "http://" + config::master + file_path;
+
+		if (url.size() && url[0] != '/') {
+			return "http://" + config::master + "/" + url;
+		}
+		return "http://" + config::master + url;
 	}
 
 	string file_to_string(const string &file_path, int &error) {
@@ -101,7 +120,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -133,7 +152,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -179,7 +198,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &output_stream);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_ostream_writer);
@@ -207,7 +226,7 @@ namespace transfer {
 			LOG_INFO("Downloading url: " + make_url(file_path));
 			curl_easy_setopt(curl, CURLOPT_URL, make_url(file_path).c_str());
 
-			prepare_curl(curl);
+			set_internal_auth(curl);
 
 			stringstream response;
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -425,6 +444,37 @@ namespace transfer {
 			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_string_reader);
 			curl_easy_setopt(curl, CURLOPT_READDATA, &arg);
+
+			res = curl_easy_perform(curl);
+
+			curl_easy_cleanup(curl);
+
+			if (res == CURLE_OK) {
+				return OK;
+			}
+			return ERROR;
+		}
+
+		return ERROR;
+	}
+
+	int upload_file_from_disk(const string &dest_path, const string &filename) {
+		CURL *curl = curl_easy_init();
+		if (curl) {
+			CURLcode res;
+			const string url = "http://" + config::upload + "/" + dest_path;
+			LOG_INFO("Uploading file to:" + url);
+			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
+			curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 30L);
+
+			std::ifstream infile(filename, std::ios::in | std::ios::binary);
+
+			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1l);
+			curl_easy_setopt(curl, CURLOPT_USERNAME, config::file_upload_user.c_str());
+			curl_easy_setopt(curl, CURLOPT_PASSWORD, config::file_upload_password.c_str());
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, curl_file_reader);
+			curl_easy_setopt(curl, CURLOPT_READDATA, &infile);
 
 			res = curl_easy_perform(curl);
 
