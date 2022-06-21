@@ -62,6 +62,7 @@ namespace transfer {
 
 	int upload_file(const std::string &path, const std::string &data);
 	int upload_gz_file(const std::string &path, const std::string &data);
+	int upload_file_from_disk(const std::string &dest_path, const std::string &filename);
 
 	/*
 	 * Perform simple GET request and return response.

@@ -40,14 +40,6 @@ namespace hash_table2 {
 			hash_table_shard_base(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000)
 			: m_hash_table_size(hash_table_size), m_db_name(db_name), m_shard_id(shard_id) {}
 
-		protected:
-
-			size_t m_hash_table_size;
-			const std::string m_db_name;
-			size_t m_shard_id;
-
-			size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
-
 			std::string filename_data() const {
 				const size_t disk_shard = m_shard_id % 8;
 				return "/mnt/" + std::to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + std::to_string(m_shard_id) + ".data";
@@ -62,6 +54,14 @@ namespace hash_table2 {
 				const size_t disk_shard = m_shard_id % 8;
 				return "/mnt/" + std::to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + std::to_string(m_shard_id) + ".data.tmp";
 			}
+
+		protected:
+
+			size_t m_hash_table_size;
+			const std::string m_db_name;
+			size_t m_shard_id;
+
+			size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 
 			std::vector<std::vector<std::array<uint64_t, 3>>> read_pages() const {
 				

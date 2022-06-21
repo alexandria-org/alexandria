@@ -34,6 +34,7 @@ using namespace std;
 namespace indexer {
 
 	namespace merger {
+		void set_mem_limit(double mem_limit);
 		void lock();
 		void register_merger(size_t id, std::function<void()> merge);
 		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);

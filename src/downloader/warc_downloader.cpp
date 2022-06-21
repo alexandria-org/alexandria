@@ -24,11 +24,12 @@
  * SOFTWARE.
  */
 
-// main.cpp
 #include "config.h"
+#include "common/datetime.h"
 #include "warc/warc.h"
 #include "utils/thread_pool.hpp"
 #include "utils/id_allocator.h"
+#include "file/archive.h"
 #include "logger/logger.h"
 #include "text/text.h"
 #include "transfer/transfer.h"
@@ -135,12 +136,13 @@ namespace downloader {
 		indexer::delete_db_directories("internal_links");
 		indexer::create_db_directories("internal_links");
 
+		indexer::merger::set_mem_limit(0.1);
 		indexer::merger::start_merge_thread();
 
-		const size_t num_threads = 48;
+		const size_t num_threads = 24;
 
 		std::vector<std::vector<std::string>> chunks;
-		algorithm::vector_chunk<std::string>(warc_paths, 100, chunks);
+		algorithm::vector_chunk<std::string>(warc_paths, std::ceil(warc_paths.size() / num_threads) + 1, chunks);
 
 		utils::thread_pool pool(num_threads);
 
@@ -165,7 +167,35 @@ namespace downloader {
 		indexer::merger::stop_merge_thread();
 	}
 
-	void warc_downloader(const std::string &batch) {
+	void upload_all() {
+
+		std::string upload_id = std::to_string(common::cur_datetime());
+
+		// Upload internal links.
+		for (size_t i = 0; i < 8; i++) {
+			const std::string filename = "internal_links_" + std::to_string(i);
+			file::archive tar(filename);
+			tar.read_dir("/mnt/" + std::to_string(i) + "/full_text/internal_links");
+
+			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/" + filename, filename);
+
+			file::delete_file(filename);
+		}
+
+		hash_table2::hash_table ht("crawl_index", 1019);
+		ht.for_each_shard([upload_id](auto shard) {
+
+			const std::string pos_filename = shard->filename_pos();
+			const std::string data_filename = shard->filename_data();
+			const std::string target_filename = std::to_string(shard->shard_id());
+
+			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".pos", pos_filename);
+			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".data", data_filename);
+		});
+
+	}
+
+	void warc_downloader(const std::string &batch, size_t limit, size_t offset) {
 
 		std::vector<std::string> warc_paths;
 
@@ -174,16 +204,20 @@ namespace downloader {
 
 		std::stringstream ss(content);
 
-		const size_t limit = 10;
-
 		std::string line;
+		size_t line_num = 0;
 		while (std::getline(ss, line)) {
-			warc_paths.emplace_back(std::move(line));
+			if (line_num >= offset) {
+				warc_paths.emplace_back(std::move(line));
+			}
 
 			if (warc_paths.size() >= limit) break;
+			line_num++;
 		}
 
 		start_downloaders(warc_paths);
+
+		upload_all();
 	}
 }
 

@@ -32,7 +32,7 @@ using namespace std;
 
 void help() {
 	cout << "Usage: ./alexandria [OPTION]..." << endl;
-	cout << "--downloader [node-id]" << endl;
+	cout << "--downloader [node-id] [limit] [offset]" << endl;
 }
 
 int main(int argc, const char **argv) {
@@ -53,8 +53,8 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--downloader" && argc > 2) {
-		downloader::warc_downloader(argv[2]);
+	if (arg == "--downloader" && argc > 4) {
+		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
 	} else {
 		help();
 	}

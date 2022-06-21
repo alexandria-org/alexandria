@@ -81,4 +81,10 @@ namespace hash_table2 {
 		}
 	}
 
+	void hash_table::for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const {
+		for (const auto &shard : m_shards) {
+			callback(shard);
+		}
+	}
+
 }
