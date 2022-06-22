@@ -237,9 +237,15 @@ namespace hash_table2 {
 	}
 
 	void hash_table_shard_builder::merge_with(const hash_table_shard_builder &other) {
+		merge_with(other.filename_pos(), other.filename_data());
+	}
+
+	void hash_table_shard_builder::merge_with(const std::string &pos_file, const std::string &data_file) {
+
+		std::ifstream other_posfile(pos_file, std::ios::binary);
 
 		auto pages1 = this->read_pages();
-		auto pages2 = other.read_pages();
+		auto pages2 = this->read_pages(other_posfile);
 
 		// Remove the pages in pages1 that have higher version number in pages2 and vise versa.
 		for (size_t p = 0; p < pages1.size(); p++) {
@@ -266,7 +272,7 @@ namespace hash_table2 {
 		std::ofstream outfile(this->filename_data_tmp(), std::ios::binary | std::ios::trunc);
 
 		std::ifstream data_file_1(this->filename_data(), std::ios::binary);
-		std::ifstream data_file_2(other.filename_data(), std::ios::binary);
+		std::ifstream data_file_2(data_file, std::ios::binary);
 		
 		read_optimized_to(pages1, data_file_1, outfile);
 		read_optimized_to(pages2, data_file_2, outfile);

@@ -29,7 +29,6 @@
 #include <set>
 #include <cmath>
 #include <mutex>
-#include "index_reader.h"
 #include "index_base.h"
 #include "roaring/roaring.hh"
 #include "algorithm/intersection.h"
@@ -42,10 +41,10 @@ namespace indexer {
 
 	public:
 
-		index(const std::string &file_name);
-		index(const std::string &db_name, size_t id);
-		index(const std::string &db_name, size_t id, size_t hash_table_size);
-		index(index_reader *ram_reader, size_t hash_table_size);
+		explicit index(const std::string &file_name);
+		explicit index(const std::string &db_name, size_t id);
+		explicit index(const std::string &db_name, size_t id, size_t hash_table_size);
+		explicit index(std::istream *reader, size_t hash_table_size);
 		~index();
 
 		std::vector<data_record> find(uint64_t key) const;
@@ -81,14 +80,15 @@ namespace indexer {
 		void print_stats();
 
 		std::set<uint64_t> get_keys(size_t with_more_than_records) const;
+		const std::vector<data_record> &records() const { return m_records; }
 
 		void for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const;
 
 	private:
 
-		mutable index_reader *m_reader;
-		std::unique_ptr<index_reader_file> m_default_reader;
-		
+		mutable std::istream *m_reader;
+		std::unique_ptr<std::ifstream> m_default_reader;
+
 		std::string m_file_name;
 		std::string m_db_name;
 		size_t m_id;
@@ -109,31 +109,31 @@ namespace indexer {
 	template<typename data_record>
 	index<data_record>::index(const std::string &file_name)
 	: index_base<data_record>(), m_file_name(file_name) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 		read_records();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id)
 	: index_base<data_record>(), m_db_name(db_name), m_id(id) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 		read_records();
 	}
 
 	template<typename data_record>
 	index<data_record>::index(const std::string &db_name, size_t id, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 		read_records();
 	}
 
 	template<typename data_record>
-	index<data_record>::index(index_reader *ram_reader, size_t hash_table_size)
+	index<data_record>::index(std::istream *reader, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size) {
-		m_reader = ram_reader;
+		m_reader = reader;
 		read_records();
 	}
 
@@ -150,7 +150,7 @@ namespace indexer {
 
 		std::function<data_record(uint32_t)> id_to_rec = [this](uint32_t id) {
 			data_record rec;
-			m_reader->seek((this->m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record));
+			m_reader->seekg((this->m_hash_table_size + 1) * sizeof(uint64_t) + id * sizeof(data_record), std::ios::beg);
 			m_reader->read((char *)&rec, sizeof(data_record));
 			return rec;
 		};
@@ -174,7 +174,7 @@ namespace indexer {
 		}
 
 		// Read page.
-		m_reader->seek(key_pos);
+		m_reader->seekg(key_pos, std::ios::beg);
 		size_t num_keys;
 		m_reader->read((char *)&num_keys, sizeof(size_t));
 
@@ -196,15 +196,15 @@ namespace indexer {
 		char buffer[64];
 
 		// Read position and length.
-		m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+		m_reader->seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
 		m_reader->read(buffer, 8);
 		size_t pos = *((size_t *)(&buffer[0]));
 
-		m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+		m_reader->seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
 		m_reader->read(buffer, 8);
 		size_t len = *((size_t *)(&buffer[0]));
 
-		m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+		m_reader->seekg(key_pos + 8 + (num_keys * 8)*3 + pos, std::ios::beg);
 
 		std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
 		char *data = data_allocator.get();
@@ -307,7 +307,7 @@ namespace indexer {
 
 		const size_t hash_pos = key % this->m_hash_table_size;
 
-		m_reader->seek(hash_pos * sizeof(size_t));
+		m_reader->seekg(hash_pos * sizeof(size_t), std::ios::beg);
 
 		size_t pos;
 		m_reader->read((char *)&pos, sizeof(size_t));
@@ -361,11 +361,11 @@ namespace indexer {
 		size_t total_num_records = 0;
 		size_t total_roaring_size = 0;
 		size_t total_record_size = 0;
-		size_t total_file_size = m_reader->size();
+		size_t total_file_size = 0;
 		size_t total_cardinality = 0;
 		size_t total_page_header_size = 0;
 
-		m_reader->seek(this->hash_table_byte_size());
+		m_reader->seekg(this->hash_table_byte_size(), std::ios::beg);
 		m_reader->read((char *)&total_num_records, sizeof(size_t));
 
 		total_record_size = total_num_records * sizeof(data_record);
@@ -378,7 +378,7 @@ namespace indexer {
 			}
 
 			// Read page.
-			m_reader->seek(key_pos);
+			m_reader->seekg(key_pos, std::ios::beg);
 			size_t num_keys;
 			m_reader->read((char *)&num_keys, sizeof(size_t));
 
@@ -395,15 +395,15 @@ namespace indexer {
 				char buffer[64];
 
 				// Read position and length.
-				m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+				m_reader->seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
 				m_reader->read(buffer, 8);
 				size_t pos = *((size_t *)(&buffer[0]));
 
-				m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+				m_reader->seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
 				m_reader->read(buffer, 8);
 				size_t len = *((size_t *)(&buffer[0]));
 
-				m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+				m_reader->seekg(key_pos + 8 + (num_keys * 8)*3 + pos, std::ios::beg);
 
 				std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
 				char *data = data_allocator.get();
@@ -448,7 +448,7 @@ namespace indexer {
 			}
 
 			// Read page.
-			m_reader->seek(key_pos);
+			m_reader->seekg(key_pos, std::ios::beg);
 			size_t num_keys;
 			m_reader->read((char *)&num_keys, sizeof(size_t));
 
@@ -462,15 +462,15 @@ namespace indexer {
 				char buffer[64];
 
 				// Read position and length.
-				m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+				m_reader->seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8, std::ios::beg);
 				m_reader->read(buffer, 8);
 				size_t pos = *((size_t *)(&buffer[0]));
 
-				m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+				m_reader->seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8, std::ios::beg);
 				m_reader->read(buffer, 8);
 				size_t len = *((size_t *)(&buffer[0]));
 
-				m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+				m_reader->seekg(key_pos + 8 + (num_keys * 8)*3 + pos, std::ios::beg);
 
 				std::unique_ptr<char[]> data_allocator = std::make_unique<char[]>(len);
 				char *data = data_allocator.get();
@@ -491,11 +491,15 @@ namespace indexer {
 
 	template<typename data_record>
 	void index<data_record>::for_each(std::function<void(uint64_t key, roaring::Roaring &bitmap)> on_each_key) const {
-		std::ifstream reader(filename(), std::ios::binary);
-		reader.seekg(this->hash_table_byte_size(), std::ios::beg);
+
+		m_reader->seekg(this->hash_table_byte_size(), std::ios::beg);
+
+		size_t num_records = 0;
+		m_reader->read((char *)&num_records, sizeof(size_t));
+		m_reader->seekg(num_records * sizeof(data_record), std::ios::cur);
 
 		std::map<uint64_t, roaring::Roaring> page;
-		while (this->read_bitmap_page_into(reader, page)) {
+		while (this->read_bitmap_page_into(*m_reader, page)) {
 			for (auto &iter : page) {
 				on_each_key(iter.first, iter.second);
 			}
@@ -506,7 +510,7 @@ namespace indexer {
 	template<typename data_record>
 	void index<data_record>::read_records() {
 		size_t num_records = 0;
-		m_reader->seek(this->hash_table_byte_size());
+		m_reader->seekg(this->hash_table_byte_size());
 		m_reader->read((char *)&num_records, sizeof(uint64_t));
 		m_records.resize(num_records);
 		m_reader->read((char *)m_records.data(), num_records * sizeof(data_record));

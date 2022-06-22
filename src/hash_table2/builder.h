@@ -46,6 +46,8 @@ namespace hash_table2 {
 
 		void merge_with(const builder &other);
 
+		hash_table_shard_builder *get_shard(size_t shard_id) { return m_shards[shard_id]; };
+
 	private:
 
 		std::vector<hash_table_shard_builder *> m_shards;

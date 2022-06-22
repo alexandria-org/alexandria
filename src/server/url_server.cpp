@@ -83,7 +83,7 @@ namespace server {
 									std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
 									reader.seek(0);
 									reader.read(buffer.get(), size);
-									indexer::index_reader_ram ram_reader(buffer.get(), size);
+									std::istringstream ram_reader(string(buffer.get(), size));
 									indexer::index<indexer::link_record> idx(&ram_reader, 1000);
 									links = idx.find_top(tokens, 1000);
 								}
@@ -134,7 +134,7 @@ namespace server {
 								std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
 								reader.seek(0);
 								reader.read(buffer.get(), size);
-								indexer::index_reader_ram ram_reader(buffer.get(), size);
+								std::istringstream ram_reader(std::string(buffer.get(), size));
 								indexer::index<indexer::url_record> idx(&ram_reader, 1000);
 								res = idx.find_top(total_num_results, tokens, len, score_mod);
 							}

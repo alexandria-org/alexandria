@@ -64,8 +64,11 @@ namespace hash_table2 {
 			size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 
 			std::vector<std::vector<std::array<uint64_t, 3>>> read_pages() const {
-				
 				std::ifstream infile(filename_pos(), std::ios::binary);
+				return read_pages(infile);
+			}
+
+			std::vector<std::vector<std::array<uint64_t, 3>>> read_pages(std::ifstream &infile) const {
 				
 				const size_t max_records = 10000;
 				const size_t record_len = sizeof(std::array<uint64_t, 3>);

@@ -130,6 +130,36 @@ namespace file {
 		
 	}
 
+	void archive::untar(std::function<void(const std::string &, const std::string &)> cb) {
+		std::ifstream infile(m_filename, std::ios::binary);
+
+		tar_header header;
+
+		while (!infile.eof()) {
+			infile.read((char *)&header, sizeof(tar_header));
+
+			if (infile.eof()) break;
+
+			// This is an unnessecary copy.
+			char *buffer = new char[header.m_len];
+			infile.read(buffer, header.m_len);
+
+			std::string buffer_string(buffer, header.m_len);
+			std::stringstream buffer_stream(buffer_string);
+
+			delete buffer;
+
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(buffer_stream);
+
+			std::string decompressed_data(std::istreambuf_iterator<char>(decompress_stream), {});
+
+			cb(header.m_filename, decompressed_data);
+		}
+		
+	}
+
 	void archive::add_file(const std::string &path, const std::string &filename, size_t worker_id) {
 
 		std::ofstream outfile(m_filename + "." + std::to_string(worker_id), std::ios::binary | std::ios::app);

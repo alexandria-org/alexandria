@@ -27,12 +27,14 @@
 #include <iostream>
 #include "logger/logger.h"
 #include "downloader/warc_downloader.h"
+#include "downloader/merge_downloader.h"
 
 using namespace std;
 
 void help() {
 	cout << "Usage: ./alexandria [OPTION]..." << endl;
-	cout << "--downloader [node-id] [limit] [offset]" << endl;
+	cout << "--downloader [commoncrawl-batch] [limit] [offset]" << endl;
+	cout << "--downloader-merge" << endl;
 }
 
 int main(int argc, const char **argv) {
@@ -55,6 +57,8 @@ int main(int argc, const char **argv) {
 
 	if (arg == "--downloader" && argc > 4) {
 		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
+	} else if (arg == "--downloader-merge") {
+		downloader::merge_downloader();
 	} else {
 		help();
 	}

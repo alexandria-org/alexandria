@@ -27,6 +27,7 @@
 #include "config.h"
 #include "file.h"
 #include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 using namespace std;
 
@@ -71,6 +72,23 @@ namespace file {
 		std::istreambuf_iterator<char> iter(infile), end; 
 		std::string ret(iter, end);
 		return ret;
+	}
+
+	void read_directory(const std::string &dirname, std::function<void(const std::string &)> cb) {
+
+		boost::filesystem::path path(dirname);
+
+		if (is_directory(path)) {
+			boost::filesystem::directory_iterator iter(path);
+			for (auto &file : boost::make_iterator_range(iter, {})) {
+				cb(file.path().filename().generic_string());
+			}
+		}
+	}
+
+	bool file_exists(const std::string &filename) {
+		std::ifstream infile(filename);
+		return infile.good();
 	}
 
 }

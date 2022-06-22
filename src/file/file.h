@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <functional>
 
 namespace file {
 
@@ -44,5 +45,9 @@ namespace file {
 	 * Returns the whole content of the file.
 	 * */
 	std::string cat(const std::string &filename);
+
+	void read_directory(const std::string &path, std::function<void(const std::string &)> cb);
+
+	bool file_exists(const std::string &filename);
 
 }

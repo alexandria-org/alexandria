@@ -27,31 +27,8 @@
 #pragma once
 
 #include <iostream>
-#include <functional>
 
-namespace file {
-
-	class archive {
-
-		public:
-			explicit archive(const std::string &filename);
-			~archive();
-
-			void read_dir(const std::string &dirname);
-			void untar(const std::string &dest_dir);
-			void untar(std::function<void(const std::string &, const std::string &)> cb);
-
-		private:
-			const size_t m_num_threads = 32;
-			std::string m_filename;
-
-			struct tar_header {
-				size_t m_len;
-				char m_filename[256];
-			};
-
-			void add_file(const std::string &path, const std::string &filename, size_t worker_id);
-
-	};
-
+namespace downloader {
+	void merge_downloader();
 }
+

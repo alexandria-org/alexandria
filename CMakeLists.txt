@@ -83,6 +83,7 @@ set(SRC_CLASSES
 	"src/parser/cc_parser.cpp"
 
 	"src/downloader/warc_downloader.cpp"
+	"src/downloader/merge_downloader.cpp"
 
 	"src/URL.cpp"
 

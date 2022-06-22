@@ -62,9 +62,11 @@ BOOST_AUTO_TEST_CASE(test_index_reader) {
 		char *buffer = new char[file_size];
 		reader.read(buffer, file_size);
 
-		indexer::index_reader_ram ram_reader(buffer, file_size);
+		std::string file_data(buffer, file_size);
 
-		indexer::index<indexer::generic_record> idx((indexer::index_reader *)&ram_reader, 1000);
+		std::istringstream ram_reader(file_data);
+
+		indexer::index<indexer::generic_record> idx(&ram_reader, 1000);
 
 		vector<indexer::generic_record> res = idx.find(100);
 

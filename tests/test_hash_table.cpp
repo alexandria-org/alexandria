@@ -546,4 +546,61 @@ BOOST_AUTO_TEST_CASE(merge_with) {
 
 }
 
+BOOST_AUTO_TEST_CASE(merge_with_files) {
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.truncate();
+
+		ht.add(123, "a1", 10);
+		ht.add(1230, "a2", 10);
+		ht.add(1231, "a3", 10);
+		ht.add(1231, "a3_n2", 11);
+
+		ht.add(3828540, "a4", 10);
+		ht.add(2234645, "a5", 10);
+		ht.add(8424878, "a6", 10);
+		ht.add(4174861, "a7", 10);
+		ht.add(7013344, "a8", 10);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::builder ht("main_index2", 1);
+
+		ht.truncate();
+
+		ht.add(123, "b1", 11);
+		ht.add(1230, "b2", 12);
+		ht.add(1231, "b3", 9);
+		ht.add(1231, "b3", 8);
+
+		ht.add(8321508, "b4", 10);
+		ht.add(7309646, "b5", 10);
+		ht.add(2809224, "b6", 10);
+		ht.add(6543485, "b7", 10);
+		ht.add(6078858, "b8", 10);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::builder ht("main_index2", 1);
+
+		ht.get_shard(0)->merge_with("/mnt/0/hash_table/ht_main_index_0.pos", "/mnt/0/hash_table/ht_main_index_0.data");
+	}
+	{
+		hash_table2::hash_table ht("main_index2", 1);
+
+		BOOST_CHECK_EQUAL(ht.find(123), "b1");
+		BOOST_CHECK_EQUAL(ht.find(1230), "b2");
+		BOOST_CHECK_EQUAL(ht.find(1231), "a3_n2");
+		BOOST_CHECK_EQUAL(ht.find(6543485), "b7");
+		BOOST_CHECK_EQUAL(ht.find(2234645), "a5");
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

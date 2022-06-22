@@ -90,6 +90,11 @@ namespace hash_table2 {
 			 * */
 			void merge_with(const hash_table_shard_builder &other);
 
+			/*
+			 * Merge with another pos and datafile.
+			 * */
+			void merge_with(const std::string &pos_file, const std::string &data_file);
+
 		private:
 
 			std::map<uint64_t, std::string> m_cache;
