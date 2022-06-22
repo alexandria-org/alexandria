@@ -173,6 +173,16 @@ namespace downloader {
 
 		// Upload internal links.
 		for (size_t i = 0; i < 8; i++) {
+
+			// Optimize all internal links.
+			utils::thread_pool pool(32);
+			file::read_directory("/mnt/" + std::to_string(i) + "/full_text/internal_links", [&pool](const std::string &filename) {
+				uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
+				indexer::index_builder<indexer::value_record> idx("internal_links", host_hash, 1000);
+				idx.optimize();
+			});
+			pool.run_all();
+
 			const std::string filename = "internal_links_" + std::to_string(i);
 			file::archive tar(filename);
 			tar.read_dir("/mnt/" + std::to_string(i) + "/full_text/internal_links");
