@@ -68,7 +68,6 @@ namespace downloader {
 		utils::thread_pool pool(32);
 		for (size_t i = 0; i < 8; i++) {
 			pool.enqueue([i, path]() {
-				std::cout << path << std::endl;
 				file::archive tar(path + "/internal_links_" + std::to_string(i));
 				tar.untar([](const std::string &filename, const std::string &data) {
 					uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
@@ -87,24 +86,30 @@ namespace downloader {
 	}
 
 	void merge_hash_table(const std::string &path) {
+		utils::thread_pool pool(32);
 		hash_table2::builder ht("all_urls", 1019);
 		for (size_t i = 0; i < 1019; i++) {
-			ht.get_shard(i)->merge_with(path + "/" + std::to_string(i) + ".pos", path + "/" + std::to_string(i) + ".data");
+			pool.enqueue([&ht, i, path]() {
+				ht.get_shard(i)->merge_with(path + "/" + std::to_string(i) + ".pos", path + "/" + std::to_string(i) + ".data");
+			});
 		}
+		pool.run_all();
 	}
 
 	void merge_downloader() {
+
+		indexer::index_builder<indexer::value_record>::create_directories("internal_links");
+
 		file::read_directory("/mnt/downloader", [](const std::string &node_id) {
 			const std::string dir = "/mnt/downloader/" + node_id;
 			file::read_directory(dir, [dir](const std::string &file) {
 				try {
 					size_t ts = std::stoull(file);
 					const std::string batch = dir + "/" + std::to_string(ts);
-					std::cout << batch << std::endl;
 					if (internal_links_complete(batch) && hash_table_complete(batch + "/ht")) {
 						merge_internal_links(batch);
-						//merge_hash_table(batch + "/ht");
-						//file::delete_directory(batch);
+						merge_hash_table(batch + "/ht");
+						file::delete_directory(batch);
 					}
 				} catch (...) {
 				}

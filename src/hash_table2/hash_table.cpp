@@ -64,7 +64,12 @@ namespace hash_table2 {
 	}
 
 	string hash_table::find(uint64_t key) {
-		return m_shards[key % m_shards.size()]->find(key);
+		size_t ver = 0;
+		return find(key, ver);
+	}
+
+	std::string hash_table::find(uint64_t key, size_t &ver) {
+		return m_shards[key % m_shards.size()]->find(key, ver);
 	}
 
 	size_t hash_table::size() const {

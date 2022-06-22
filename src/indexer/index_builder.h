@@ -47,6 +47,7 @@
 #include "file/file.h"
 #include "memory/debugger.h"
 #include "roaring/roaring.hh"
+#include "URL.h"
 
 namespace indexer {
 
@@ -103,6 +104,8 @@ namespace indexer {
 			const data_record &record);*/
 
 		size_t get_max_id();
+
+		static void create_directories(const std::string &db_name);
 
 	private:
 
@@ -394,6 +397,13 @@ namespace indexer {
 		}
 
 		return (size_t)max_internal_id;
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::create_directories(const std::string &db_name) {
+		for (size_t i = 0; i < 8; i++) {
+			file::create_directory("/mnt/" + std::to_string(i) + "/full_text/" + db_name);
+		}
 	}
 
 	template<typename data_record>

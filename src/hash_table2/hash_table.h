@@ -48,6 +48,7 @@ namespace hash_table2 {
 		void add(uint64_t key, const std::string &value);
 		void truncate();
 		std::string find(uint64_t key);
+		std::string find(uint64_t key, size_t &ver);
 		size_t size() const;
 		void for_each(std::function<void(uint64_t, const std::string &)> callback) const;
 		void for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const;

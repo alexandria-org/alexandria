@@ -48,6 +48,11 @@ namespace hash_table2 {
 			std::string find(uint64_t key) const;
 
 			/*
+			 * Finds a value for the given key. Returns empty string if key is not present. Also sets version in 'ver'
+			 * */
+			std::string find(uint64_t key, size_t &ver) const;
+
+			/*
 			 * Applies the given function to all elements in hash table shard. 
 			 * */
 			void for_each(std::function<void(uint64_t, std::string)>) const;

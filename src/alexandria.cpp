@@ -28,6 +28,8 @@
 #include "logger/logger.h"
 #include "downloader/warc_downloader.h"
 #include "downloader/merge_downloader.h"
+#include "URL.h"
+#include "hash_table2/hash_table.h"
 
 using namespace std;
 
@@ -35,6 +37,7 @@ void help() {
 	cout << "Usage: ./alexandria [OPTION]..." << endl;
 	cout << "--downloader [commoncrawl-batch] [limit] [offset]" << endl;
 	cout << "--downloader-merge" << endl;
+	cout << "--url [URL]" << endl;
 }
 
 int main(int argc, const char **argv) {
@@ -59,6 +62,14 @@ int main(int argc, const char **argv) {
 		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
 	} else if (arg == "--downloader-merge") {
 		downloader::merge_downloader();
+	} else if (arg == "--url" && argc > 2) {
+		URL url(argv[2]);
+		hash_table2::hash_table ht("all_urls", 1019);
+
+		size_t ver = 0;
+		std::string data = ht.find(url.hash(), ver);
+		std::cout << ver << std::endl;
+		std::cout << data << std::endl;
 	} else {
 		help();
 	}

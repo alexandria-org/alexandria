@@ -48,6 +48,11 @@ namespace hash_table2 {
 	}
 
 	string hash_table_shard::find(uint64_t key) const {
+		size_t ver;
+		return find(key, ver);
+	}
+
+	string hash_table_shard::find(uint64_t key, size_t &ver) const {
 
 		std::ifstream reader(filename_pos(), std::ios::binary);
 
@@ -73,6 +78,7 @@ namespace hash_table2 {
 		for (const auto &page_item : page) {
 			if (page_item[0] == key) {
 				pos = page_item[1];
+				ver = page_item[2];
 			}
 		}
 
