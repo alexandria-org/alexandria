@@ -27,6 +27,7 @@
 #include "level.h"
 #include "index_builder.h"
 #include "url_record.h"
+#include "utils/id_allocator.h"
 
 #include <unordered_map>
 
@@ -34,8 +35,9 @@ namespace indexer {
 
 	class url_level: public level {
 		private:
-		std::unordered_map<uint64_t, std::unique_ptr<index_builder<url_record>>> m_builders;
-		std::unordered_map<uint64_t, std::unique_ptr<index_builder<link_record>>> m_link_builders;
+
+		utils::id_allocator<index_builder<url_record>> m_builders;
+		utils::id_allocator<index_builder<link_record>> m_link_builders;
 
 		public:
 		url_level();
@@ -54,9 +56,6 @@ namespace indexer {
 			const std::vector<domain_record> &domain_modifiers);
 		size_t apply_url_links(const std::vector<link_record> &links, std::vector<return_record> &results);
 
-		private:
-			index_builder<url_record> *make_sure_builder_is_present(uint64_t);
-			index_builder<link_record> *make_sure_link_builder_is_present(uint64_t domain_hash);
 	};
 
 }

@@ -30,25 +30,48 @@
 
 namespace indexer {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+	#pragma pack(4)
+	class value_record {
+		public:
+		uint64_t m_value;
 
+		value_record() : m_value(0) {};
+		value_record(uint64_t value) : m_value(value) {};
+		value_record(uint64_t value, float score) : m_value(value) {};
+
+		bool operator==(const value_record &b) const {
+			return m_value == b.m_value;
+		}
+
+		bool operator<(const value_record &b) const {
+			return m_value < b.m_value;
+		}
+
+		value_record &operator+=(const value_record &b) {
+			return *this;
+		}
+
+		/*
+		 * Will be applied to records before truncating. Top records will be kept.
+		 * */
+		struct truncate_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value > b.m_value;
+			}
+		};
+
+		/*
+		 * Will be applied before storing on disk. This is the order the records will be returned in.
+		 * */
+		struct storage_order {
+			inline bool operator() (const value_record &a, const value_record &b) {
+				return a.m_value < b.m_value;
+			}
+		};
+
+		bool storage_equal(const value_record &a) const {
+			return m_value == a.m_value;
+		}
+
+	};
 }

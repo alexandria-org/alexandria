@@ -40,6 +40,7 @@
 #include <mutex>
 #include "leveldb/db.h"
 #include "leveldb/write_batch.h"
+#include "common/ThreadPool.h"
 
 using namespace std;
 

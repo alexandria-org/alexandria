@@ -27,28 +27,31 @@
 #pragma once
 
 #include <iostream>
+#include "hash_table_shard_builder.h"
+#include "config.h"
 
-namespace indexer {
+namespace hash_table2 {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+	class builder {
 
+	public:
+
+		explicit builder(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		~builder();
+
+		void add(uint64_t key, const std::string &value, size_t version = 0);
+		void merge();
+		void optimize();
+		void truncate();
+
+		void merge_with(const builder &other);
+
+		hash_table_shard_builder *get_shard(size_t shard_id) { return m_shards[shard_id]; };
+
+	private:
+
+		std::vector<hash_table_shard_builder *> m_shards;
+		const std::string m_db_name;
+
+	};
 }

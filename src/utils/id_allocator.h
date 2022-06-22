@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,29 +26,53 @@
 
 #pragma once
 
-#include <iostream>
+#include <mutex>
+#include <memory>
 
-namespace indexer {
+namespace utils {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+	/*
+	 * Very simple helper for allocating one shared object per id by multiple threads. Each thread should keep its own cache of the pointers since
+	 * the get function locks execution.
+	 *
+	 *
+	 * - thread A
+	 *   std::unordered_map<uint64_t, data *> local_cache;
+	 *   for (...) {
+	 *		if (!local_cache.count(id)) {
+	 *			local_cache[id] = alloc.get(id, ...); // alloc is shared instance of id_allocator
+	 *		}
+	 *
+	 *		local_cache[id] can be used now.
+	 *   }
+	 * */
 
+	template<typename alloc_type>
+	class id_allocator {
+
+		public:
+
+			/*
+			 * Allocates a pointer to an "alloc_type" object associated with id. The rest of the arguments are passed to the constructor of
+			 * alloc_type.
+			 * */
+			template<class... type_args>
+			alloc_type *get(uint64_t id, type_args&&... args) {
+
+				std::lock_guard guard(m_lock);
+
+				if (m_map.count(id) == 0) {
+					m_map[id] = std::make_unique<alloc_type>(std::forward<type_args>(args)...);
+				}
+
+				return m_map[id].get();
+			}
+
+		private:
+
+			std::mutex m_lock;
+			std::unordered_map<uint64_t, std::unique_ptr<alloc_type>> m_map;
+
+	};
+	
 }

@@ -26,6 +26,8 @@
 
 #include "config.h"
 #include "file.h"
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 using namespace std;
 
@@ -54,7 +56,39 @@ namespace file {
 	}
 
 	void delete_file(const string &file) {
-		remove(file.c_str());
+		boost::filesystem::remove(file);
+	}
+
+	void create_directory(const std::string &path) {
+		boost::filesystem::create_directory(path);
+	}
+
+	void delete_directory(const std::string &path) {
+		boost::filesystem::remove_all(path);
+	}
+
+	std::string cat(const std::string &filename) {
+		std::ifstream infile(filename);
+		std::istreambuf_iterator<char> iter(infile), end; 
+		std::string ret(iter, end);
+		return ret;
+	}
+
+	void read_directory(const std::string &dirname, std::function<void(const std::string &)> cb) {
+
+		boost::filesystem::path path(dirname);
+
+		if (is_directory(path)) {
+			boost::filesystem::directory_iterator iter(path);
+			for (auto &file : boost::make_iterator_range(iter, {})) {
+				cb(file.path().filename().generic_string());
+			}
+		}
+	}
+
+	bool file_exists(const std::string &filename) {
+		std::ifstream infile(filename);
+		return infile.good();
 	}
 
 }

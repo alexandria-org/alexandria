@@ -27,28 +27,37 @@
 #pragma once
 
 #include <iostream>
+#include <thread>
+#include <vector>
+#include <map>
 
-namespace indexer {
+#include "config.h"
+#include "hash_table_shard.h"
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+namespace hash_table2 {
+
+	class hash_table_shard;
+
+	class hash_table {
+
+	public:
+
+		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		~hash_table();
+
+		void add(uint64_t key, const std::string &value);
+		void truncate();
+		std::string find(uint64_t key);
+		std::string find(uint64_t key, size_t &ver);
+		size_t size() const;
+		void for_each(std::function<void(uint64_t, const std::string &)> callback) const;
+		void for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const;
+
+	private:
+
+		std::vector<hash_table_shard *> m_shards;
+		const std::string m_db_name;
+
+	};
 
 }

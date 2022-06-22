@@ -3,7 +3,9 @@
 cd `dirname $0`
 cd ..
 
-for shard in $(seq 0 7); do
+for shard_id in $(seq 0 7); do
+	shard="/mnt/$shard_id"
+	rm -r $shard
 	mkdir $shard
 	mkdir "$shard/input";
 	mkdir "$shard/output";

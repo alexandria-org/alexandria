@@ -37,13 +37,17 @@
 #include <boost/filesystem.hpp>
 #include "merger.h"
 #include "score_builder.h"
+#include "index_utils.h"
 #include "index_base.h"
+#include "index.h"
 #include "algorithm/hyper_log_log.h"
 #include "config.h"
 #include "profiler/profiler.h"
 #include "logger/logger.h"
+#include "file/file.h"
 #include "memory/debugger.h"
 #include "roaring/roaring.hh"
+#include "URL.h"
 
 namespace indexer {
 
@@ -85,6 +89,7 @@ namespace indexer {
 		void append();
 		void merge();
 		void merge(std::unordered_map<uint64_t, uint32_t> &internal_id_map);
+		void merge_with(const index<data_record> &other);
 		void optimize();
 
 		void truncate();
@@ -99,6 +104,8 @@ namespace indexer {
 			const data_record &record);*/
 
 		size_t get_max_id();
+
+		static void create_directories(const std::string &db_name);
 
 	private:
 
@@ -199,15 +206,12 @@ namespace indexer {
 	void index_builder<data_record>::add(uint64_t key, const data_record &record) {
 		indexer::merger::lock();
 
-		m_lock.lock();
+		std::lock_guard guard(m_lock);
 
 		// Amortized constant
 		m_key_cache.push_back(key);
 		m_record_cache.push_back(record);
 
-		//assert(m_record_cache.size() == m_key_cache.size());
-
-		m_lock.unlock();
 	}
 
 	/*
@@ -275,21 +279,71 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::merge(std::unordered_map<uint64_t, uint32_t> &internal_id_map) {
 
-		//const size_t mem_before = memory::allocated_memory();
-
 		{
 			read_append_cache(internal_id_map);
 			save_file();
 			truncate_cache_files();
 		}
 
-		//const size_t mem_usage = memory::get_usage();
-		//const size_t mem_peak = memory::get_usage_peak();
-		//const size_t mem_after = memory::allocated_memory();
+	}
 
-		/*std::cout << "did merge: " << target_filename() << " mem bef: " << mem_before << " mem_after: " << mem_after << " mem_usage: " << mem_usage
-			<< " mem_peak: " << mem_peak << std::endl;*/
+	template<typename data_record>
+	void index_builder<data_record>::merge_with(const index<data_record> &other) {
+		/*
+		 * The only algorithm I can come up with is to append the records from 'other' that are not present in 'this'.
+		 * And also create a map from ids in 'other' to ids in the new record array.
+		 * Then transform the bitmaps in other before merging them.
+		 * */
 
+		const auto &other_records = other.records();
+
+		typename data_record::storage_order ordered;
+
+		if (!std::is_sorted(other_records.cbegin(), other_records.cend(), ordered))
+			throw std::runtime_error("index_builder::merge_with needs optimized input");
+
+		read_data_to_cache();
+
+		if (!std::is_sorted(m_records.cbegin(), m_records.cend(), ordered))
+			throw std::runtime_error("index_builder::merge_with needs to run on optimized index");
+
+		std::map<uint32_t, uint32_t> id_map;
+		std::vector<data_record> new_records;
+
+		size_t i = 0, j = 0;
+		while (i < m_records.size() && j < other_records.size()) {
+			if (ordered(m_records[i], other_records[j])) {
+				i++;
+			} else if (m_records[i].storage_equal(other_records[j])) {
+				id_map[j] = i;
+				i++;
+				j++;
+			} else {
+				id_map[j] = m_records.size() + new_records.size();
+				new_records.push_back(other_records[j]);
+				j++;
+			}
+		}
+		while (j < other_records.size()) {
+			id_map[j] = m_records.size() + new_records.size();
+			new_records.push_back(other_records[j]);
+			j++;
+		}
+
+		m_records.insert(m_records.end(), new_records.cbegin(), new_records.cend());
+
+		other.for_each([this, &id_map](uint64_t key, roaring::Roaring &bitmap) {
+			roaring::Roaring new_bitmap;
+			for (auto idx : bitmap) {
+				new_bitmap.add(id_map[idx]);
+			}
+			m_bitmaps[key] |= new_bitmap;
+		});
+
+		save_file();
+		truncate_cache_files();
+
+		optimize();
 	}
 
 	template<typename data_record>
@@ -319,18 +373,14 @@ namespace indexer {
 
 		reset_cache_variables();
 
-		std::ofstream writer(cache_filename(), std::ios::trunc);
-		writer.close();
+		file::delete_file(cache_filename());
+		file::delete_file(key_cache_filename());
 
-		std::ofstream key_writer(key_cache_filename(), std::ios::trunc);
-		key_writer.close();
 	}
 
 	template<typename data_record>
 	void index_builder<data_record>::create_directories() {
-		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
-		}
+		create_db_directories(m_db_name);
 	}
 
 	template<typename data_record>
@@ -347,6 +397,13 @@ namespace indexer {
 		}
 
 		return (size_t)max_internal_id;
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::create_directories(const std::string &db_name) {
+		for (size_t i = 0; i < 8; i++) {
+			file::create_directory("/mnt/" + std::to_string(i) + "/full_text/" + db_name);
+		}
 	}
 
 	template<typename data_record>
@@ -638,13 +695,7 @@ namespace indexer {
 		// Just check if the records are sorted by storage order.
 		if (records.size() <= 1) return false;
 		
-		typename data_record::storage_order ordered;
-		for (size_t i = 0; i < records.size() - 1; i++) {
-			if (!ordered(records[i], records[i + 1])) {
-				return true;
-			}
-		}
-		return false;
+		return !std::is_sorted(records.cbegin(), records.cend(), typename data_record::storage_order());
 	}
 
 	template<typename data_record>

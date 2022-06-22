@@ -27,28 +27,12 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
-namespace indexer {
+namespace downloader {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+	std::vector<std::string> download_warc_paths();
+	bool upload_warc_paths(const std::vector<std::string> &warc_paths);
 
+	void warc_downloader(const std::string &batch, size_t limit, size_t offset);
 }

@@ -37,10 +37,10 @@ namespace indexer {
 
 	public:
 
-		counted_index(const std::string &file_name);
-		counted_index(const std::string &db_name, size_t id);
-		counted_index(const std::string &db_name, size_t id, size_t hash_table_size);
-		counted_index(index_reader *ram_reader, size_t hash_table_size);
+		explicit counted_index(const std::string &file_name);
+		explicit counted_index(const std::string &db_name, size_t id);
+		explicit counted_index(const std::string &db_name, size_t id, size_t hash_table_size);
+		explicit counted_index(std::istream *reader, size_t hash_table_size);
 		~counted_index();
 
 		std::vector<data_record> find(uint64_t key) const;
@@ -56,8 +56,8 @@ namespace indexer {
 
 	private:
 
-		mutable index_reader *m_reader;
-		std::unique_ptr<index_reader_file> m_default_reader;
+		mutable std::istream *m_reader;
+		std::unique_ptr<std::ifstream> m_default_reader;
 		
 		std::string m_file_name;
 		std::string m_db_name;
@@ -75,28 +75,28 @@ namespace indexer {
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &file_name)
 	: index_base<data_record>(), m_file_name(file_name) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 	}
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &db_name, size_t id)
 	: index_base<data_record>(), m_db_name(db_name), m_id(id) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 	}
 
 	template<typename data_record>
 	counted_index<data_record>::counted_index(const std::string &db_name, size_t id, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id) {
-		m_default_reader = make_unique<index_reader_file>(filename());
-		m_reader = (index_reader *)m_default_reader.get();
+		m_default_reader = std::make_unique<std::ifstream>(filename(), std::ios::binary);
+		m_reader = m_default_reader.get();
 	}
 
 	template<typename data_record>
-	counted_index<data_record>::counted_index(index_reader *ram_reader, size_t hash_table_size)
+	counted_index<data_record>::counted_index(std::istream *reader, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size) {
-		m_reader = ram_reader;
+		m_reader = reader;
 	}
 
 	template<typename data_record>
@@ -144,7 +144,7 @@ namespace indexer {
 		}
 
 		// Read page.
-		m_reader->seek(key_pos);
+		m_reader->seekg(key_pos);
 		size_t num_keys;
 		m_reader->read((char *)&num_keys, sizeof(size_t));
 
@@ -166,15 +166,15 @@ namespace indexer {
 		char buffer[64];
 
 		// Read position and length.
-		m_reader->seek(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
+		m_reader->seekg(key_pos + 8 + num_keys * 8 + key_data_pos * 8);
 		m_reader->read(buffer, 8);
 		size_t pos = *((size_t *)(&buffer[0]));
 
-		m_reader->seek(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+		m_reader->seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
 		m_reader->read(buffer, 8);
 		size_t len = *((size_t *)(&buffer[0]));
 
-		m_reader->seek(key_pos + 8 + (num_keys * 8)*3 + pos);
+		m_reader->seekg(key_pos + 8 + (num_keys * 8)*3 + pos);
 
 		num_records = len / sizeof(data_record);
 
@@ -219,7 +219,7 @@ namespace indexer {
 
 		const size_t hash_pos = key % this->m_hash_table_size;
 
-		if (!m_reader->seek(hash_pos * sizeof(size_t))) return SIZE_MAX;
+		if (!m_reader->seekg(hash_pos * sizeof(size_t))) return SIZE_MAX;
 
 		size_t pos;
 		m_reader->read((char *)&pos, sizeof(size_t));

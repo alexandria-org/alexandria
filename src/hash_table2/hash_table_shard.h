@@ -27,28 +27,55 @@
 #pragma once
 
 #include <iostream>
+#include <map>
+#include <vector>
+#include <functional>
 
-namespace indexer {
+#include "hash_table_shard_base.h"
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+namespace hash_table2 {
+
+	class hash_table_shard : public hash_table_shard_base {
+
+		public:
+
+			hash_table_shard(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000);
+			~hash_table_shard();
+
+			/*
+			 * Finds a value for the given key. Returns empty string if key is not present.
+			 * */
+			std::string find(uint64_t key) const;
+
+			/*
+			 * Finds a value for the given key. Returns empty string if key is not present. Also sets version in 'ver'
+			 * */
+			std::string find(uint64_t key, size_t &ver) const;
+
+			/*
+			 * Applies the given function to all elements in hash table shard. 
+			 * */
+			void for_each(std::function<void(uint64_t, std::string)>) const;
+
+			/*
+			 * Returns the id of the shard.
+			 * */
+			size_t shard_id() const;
+
+			/*
+			 * Returns the number of elements in the shard.
+			 * */
+			size_t size() const;
+
+			/*
+			 * Returns the size of the data file in bytes.
+			 * */
+			size_t file_size() const;
+
+		private:
+
+			std::string data_at_position(size_t pos) const;
+
+	};
 
 }

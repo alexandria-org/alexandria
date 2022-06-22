@@ -24,27 +24,57 @@
  * SOFTWARE.
  */
 
-#pragma once
-
 #include <iostream>
-#include <functional>
+#include "logger/logger.h"
+#include "downloader/warc_downloader.h"
+#include "downloader/merge_downloader.h"
+#include "URL.h"
+#include "hash_table2/hash_table.h"
 
 using namespace std;
 
-namespace indexer {
+void help() {
+	cout << "Usage: ./alexandria [OPTION]..." << endl;
+	cout << "--downloader [commoncrawl-batch] [limit] [offset]" << endl;
+	cout << "--downloader-merge" << endl;
+	cout << "--url [URL]" << endl;
+}
 
-	namespace merger {
-		void set_mem_limit(double mem_limit);
-		void lock();
-		void register_merger(size_t id, std::function<void()> merge);
-		void register_appender(size_t id, std::function<void()> append, std::function<size_t()> size);
-		void deregister_merger(size_t id);
+int main(int argc, const char **argv) {
 
-		void start_merge_thread();
-		void stop_merge_thread();
-		void stop_merge_thread_only_append();
-		void terminate_merge_thread();
-		void force_append();
-	};
+	logger::start_logger_thread();
+	logger::verbose(true);
 
+	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
+		config::read_config(getenv("ALEXANDRIA_CONFIG"));
+	} else {
+		config::read_config("/etc/alexandria.conf");
+	}
+
+	if (argc < 2) {
+		help();
+		return 0;
+	}
+
+	const string arg(argc > 1 ? argv[1] : "");
+
+	if (arg == "--downloader" && argc > 4) {
+		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
+	} else if (arg == "--downloader-merge") {
+		downloader::merge_downloader();
+	} else if (arg == "--url" && argc > 2) {
+		URL url(argv[2]);
+		hash_table2::hash_table ht("all_urls", 1019);
+
+		size_t ver = 0;
+		std::string data = ht.find(url.hash(), ver);
+		std::cout << ver << std::endl;
+		std::cout << data << std::endl;
+	} else {
+		help();
+	}
+
+	logger::join_logger_thread();
+
+	return 0;
 }

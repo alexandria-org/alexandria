@@ -80,7 +80,8 @@ namespace indexer {
 
 		public:
 
-			index_reader_ram(char *buffer, size_t length);
+			explicit index_reader_ram(const std::string &str);
+			index_reader_ram(const char *buffer, size_t length);
 			index_reader_ram(index_reader_ram &&other);
 
 			bool seek(size_t position);
@@ -89,9 +90,9 @@ namespace indexer {
 		
 		private:
 		
+			const char *m_buffer;
 			size_t m_len;
-			size_t m_pos;
-			char *m_buffer;
+			size_t m_pos = 0;
 
 	};
 

@@ -37,6 +37,7 @@ set(SRC_CLASSES
 	"src/worker/worker.cpp"
 
 	"src/file/file.cpp"
+	"src/file/archive.cpp"
 	"src/file/tsv_file.cpp"
 	"src/file/gz_tsv_file.cpp"
 	"src/file/tsv_file_remote.cpp"
@@ -65,6 +66,11 @@ set(SRC_CLASSES
 	"src/hash_table/hash_table_shard_builder.cpp"
 	"src/hash_table/builder.cpp"
 
+	"src/hash_table2/hash_table.cpp"
+	"src/hash_table2/hash_table_shard.cpp"
+	"src/hash_table2/hash_table_shard_builder.cpp"
+	"src/hash_table2/builder.cpp"
+
 	"src/hash_table_helper/hash_table_helper.cpp"
 
 	"src/post_processor/post_processor.cpp"
@@ -74,10 +80,12 @@ set(SRC_CLASSES
 	"src/parser/html_link.cpp"
 	"src/parser/html_parser.cpp"
 	"src/parser/unicode.cpp"
+	"src/parser/cc_parser.cpp"
+
+	"src/downloader/warc_downloader.cpp"
+	"src/downloader/merge_downloader.cpp"
 
 	"src/URL.cpp"
-
-	"src/parser/cc_parser.cpp"
 
 	"src/warc/warc.cpp"
 
@@ -127,8 +135,10 @@ set(SRC_CLASSES
 	"src/indexer/merger.cpp"
 	"src/indexer/score_builder.cpp"
 	"src/indexer/index_reader.cpp"
+	"src/indexer/index_utils.cpp"
 
 	"src/server/search_server.cpp"
+	"src/server/url_server.cpp"
 
 	"src/http/server.cpp"
 	"src/http/request.cpp"
@@ -160,6 +170,7 @@ set(SRC_TESTS
 	"tests/test_file.cpp"
 	"tests/test_url.cpp"
 	"tests/test_url_record.cpp"
+	"tests/test_hash_table.cpp"
 	"tests/hyper_log_log.cpp"
 	"tests/memory.cpp"
 	"tests/test_index_iteration.cpp"
@@ -189,6 +200,11 @@ add_executable(indexer
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
+add_executable(alexandria
+	"src/alexandria.cpp"
+	${SRC_CLASSES}
+	${SRC_COMMON}
+)
 
 target_compile_definitions(run_tests PUBLIC IS_TEST)
 target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
@@ -200,6 +216,7 @@ target_compile_options(run_tests PUBLIC -Wall -Werror)
 target_compile_options(server PUBLIC -Wall -Werror)
 target_compile_options(scraper PUBLIC -Wall -Werror)
 target_compile_options(indexer PUBLIC -Wall -Werror)
+target_compile_options(alexandria PUBLIC -Wall -Werror)
 
 target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
@@ -221,4 +238,8 @@ target_link_libraries(indexer PUBLIC
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
 	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
-
+target_link_libraries(alexandria PUBLIC
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)

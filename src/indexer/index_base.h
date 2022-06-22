@@ -39,7 +39,7 @@ namespace indexer {
 		public:
 
 		index_base();
-		index_base(size_t hash_table_size);
+		explicit index_base(size_t hash_table_size);
 
 		void set_hash_table_size(size_t size) { m_hash_table_size = size; }
 
@@ -48,8 +48,8 @@ namespace indexer {
 			size_t m_hash_table_size;
 			mutable std::recursive_mutex m_lock;
 
-			bool read_page_into(std::ifstream &reader, std::map<uint64_t, std::vector<data_record>> &into) const;
-			bool read_bitmap_page_into(std::ifstream &reader, std::map<uint64_t, roaring::Roaring> &into) const;
+			bool read_page_into(std::istream &reader, std::map<uint64_t, std::vector<data_record>> &into) const;
+			bool read_bitmap_page_into(std::istream &reader, std::map<uint64_t, roaring::Roaring> &into) const;
 			size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 	};
 
@@ -64,7 +64,7 @@ namespace indexer {
 	{}
 
 	template<typename data_record>
-	bool index_base<data_record>::read_page_into(std::ifstream &reader, std::map<uint64_t, std::vector<data_record>> &into) const {
+	bool index_base<data_record>::read_page_into(std::istream &reader, std::map<uint64_t, std::vector<data_record>> &into) const {
 
 		uint64_t num_keys;
 		reader.read((char *)&num_keys, sizeof(uint64_t));
@@ -141,7 +141,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	bool index_base<data_record>::read_bitmap_page_into(std::ifstream &reader, std::map<uint64_t, roaring::Roaring> &into) const {
+	bool index_base<data_record>::read_bitmap_page_into(std::istream &reader, std::map<uint64_t, roaring::Roaring> &into) const {
 
 		uint64_t num_keys;
 		reader.read((char *)&num_keys, sizeof(uint64_t));

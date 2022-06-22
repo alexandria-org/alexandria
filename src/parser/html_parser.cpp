@@ -39,7 +39,7 @@ namespace parser {
 		"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 
 	html_parser::html_parser()
-	: m_long_text_len(1000), m_long_str_buf_len(m_long_text_len)
+	: m_long_text_len(100000), m_long_str_buf_len(100000)
 	{
 		m_long_str_buf = new char[m_long_str_buf_len];
 	}
@@ -175,7 +175,9 @@ namespace parser {
 
 		if (host == m_host) {
 			// Ignore internal links for now.
-			//m_internal_links.push_back(html_link(m_host, m_path, host, path, nofollow));
+			if (!nofollow) {
+				m_internal_links.emplace_back(std::make_pair(URL(m_host, m_path).hash(), URL(host, path).hash()));
+			}
 			return ::parser::OK;
 		}
 
@@ -284,31 +286,31 @@ namespace parser {
 		str = str_out;
 	}
 
-	string html_parser::title() {
+	string html_parser::title() const {
 		return m_title;
 	} 
 
-	string html_parser::meta() {
+	string html_parser::meta() const {
 		return m_meta;
 	}
 
-	string html_parser::h1() {
+	string html_parser::h1() const {
 		return m_h1;
 	}
 
-	string html_parser::text() {
+	string html_parser::text() const {
 		return m_text;
 	}
 
-	vector<html_link> html_parser::links() {
+	vector<html_link> html_parser::links() const {
 		return m_links;
 	}
 
-	vector<html_link> html_parser::internal_links() {
+	vector<std::pair<uint64_t, uint64_t>> html_parser::internal_links() const {
 		return m_internal_links;
 	}
 
-	bool html_parser::should_insert() {
+	bool html_parser::should_insert() const {
 		return m_should_insert;
 	}
 

@@ -56,14 +56,16 @@ namespace indexer {
 		return m_reader->tellg();
 	}
 
-	index_reader_ram::index_reader_ram(char *buffer, size_t length) {
-		m_buffer = buffer;
-		m_len = length;
+	index_reader_ram::index_reader_ram(const std::string &str)
+	: m_buffer(str.c_str()), m_len(str.size()) {
 	}
 
-	index_reader_ram::index_reader_ram(index_reader_ram &&other) {
-		m_buffer = other.m_buffer;
-		m_len = other.m_len;
+	index_reader_ram::index_reader_ram(const char *buffer, size_t length)
+	: m_buffer(buffer), m_len(length) {
+	}
+
+	index_reader_ram::index_reader_ram(index_reader_ram &&other)
+	: m_buffer(other.m_buffer), m_len(other.m_len) {
 
 		other.m_buffer = nullptr;
 		other.m_len = 0;

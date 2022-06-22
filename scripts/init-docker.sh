@@ -52,8 +52,9 @@ mkdir /var/www/html/node0003.alexandria.org/upload-tmp
 
 chown -R www-data:www-data /var/www/html/node0003.alexandria.org
 
-for shard in $(seq 0 7); do
-	rm -r $shard/*
+for shard_id in $(seq 0 7); do
+	shard="/mnt/$shard_id"
+	rm -r $shard
 	mkdir $shard
 	mkdir "$shard/input";
 	mkdir "$shard/output";

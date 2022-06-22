@@ -38,7 +38,6 @@
 #include "html_link.h"
 #include "parser/unicode.h"
 
-#define HTML_PARSER_LONG_TEXT_LEN 1000
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
 
@@ -62,13 +61,13 @@ namespace parser {
 		void parse(const std::string &html, const std::string &url);
 		void parse(const std::string &html);
 
-		std::string title();
-		std::string meta();
-		std::string h1();
-		std::string text();
-		std::vector<html_link> links();
-		std::vector<html_link> internal_links();
-		bool should_insert();
+		std::string title() const;
+		std::string meta() const;
+		std::string h1() const;
+		std::string text() const;
+		std::vector<html_link> links() const;
+		std::vector<std::pair<uint64_t, uint64_t>> internal_links() const;
+		bool should_insert() const;
 
 		// Return top level domain
 		std::string url_tld(const std::string &url);
@@ -78,7 +77,7 @@ namespace parser {
 	private:
 
 		std::vector<html_link> m_links;
-		std::vector<html_link> m_internal_links;
+		std::vector<std::pair<uint64_t, uint64_t>> m_internal_links;
 		std::vector<std::pair<size_t, size_t>> m_invisible_pos;
 
 		const size_t m_long_text_len = 1000;

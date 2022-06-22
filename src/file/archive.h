@@ -27,28 +27,31 @@
 #pragma once
 
 #include <iostream>
+#include <functional>
 
-namespace indexer {
+namespace file {
 
-	void console();
-	void index_domains(const std::string &batch);
-	void index_title_counter(const std::string &batch);
-	void index_link_counter(const std::string &batch);
-	void index_links(const std::string &batch);
-	void index_url_links(const std::string &batch);
-	void index_urls(const std::string &batch);
-	void index_words(const std::string &batch);
-	void index_snippets(const std::string &batch);
-	void truncate_words();
-	void truncate_links();
-	void print_info();
-	void calc_scores();
-	void domain_info_server();
-	void search_server();
-	void url_server();
-	void make_domain_index();
-	void make_domain_index_scores();
-	void make_url_bloom_filter();
-	void optimize_urls();
+	class archive {
+
+		public:
+			explicit archive(const std::string &filename);
+			~archive();
+
+			void read_dir(const std::string &dirname);
+			void untar(const std::string &dest_dir);
+			void untar(std::function<void(const std::string &, const std::string &)> cb);
+
+		private:
+			const size_t m_num_threads = 32;
+			std::string m_filename;
+
+			struct tar_header {
+				size_t m_len;
+				char m_filename[256];
+			};
+
+			void add_file(const std::string &path, const std::string &filename, size_t worker_id);
+
+	};
 
 }
