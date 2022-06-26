@@ -37,29 +37,46 @@ namespace hash_table2 {
 
 		public:
 
-			hash_table_shard_base(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000)
-			: m_hash_table_size(hash_table_size), m_db_name(db_name), m_shard_id(shard_id) {}
+			hash_table_shard_base(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000,
+					const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table")
+			: m_db_name(db_name), m_shard_id(shard_id), m_hash_table_size(hash_table_size), m_data_path(data_path) {}
+
+			std::string file_base_data() const {
+				const size_t disk_shard = m_shard_id % 8;
+				std::string data_path = m_data_path;
+				if (data_path.find("{shard_id_mod_8}") != std::string::npos) {
+					data_path.replace(data_path.find("{shard_id_mod_8}"), 16, std::to_string(disk_shard));
+				}
+				return data_path + "/ht_" + m_db_name + "_" + std::to_string(m_shard_id);
+			}
+
+			std::string file_base() const {
+				const size_t disk_shard = m_shard_id % 8;
+				std::string data_path = "/mnt/{shard_id_mod_8}/hash_table";
+				if (data_path.find("{shard_id_mod_8}") != std::string::npos) {
+					data_path.replace(data_path.find("{shard_id_mod_8}"), 16, std::to_string(disk_shard));
+				}
+				return data_path + "/ht_" + m_db_name + "_" + std::to_string(m_shard_id);
+			}
 
 			std::string filename_data() const {
-				const size_t disk_shard = m_shard_id % 8;
-				return "/mnt/" + std::to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + std::to_string(m_shard_id) + ".data";
+				return file_base_data() + ".data";
 			}
 
 			std::string filename_pos() const {
-				const size_t disk_shard = m_shard_id % 8;
-				return "/mnt/" + std::to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + std::to_string(m_shard_id) + ".pos";
+				return file_base() + ".pos";
 			}
 
 			std::string filename_data_tmp() const {
-				const size_t disk_shard = m_shard_id % 8;
-				return "/mnt/" + std::to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + std::to_string(m_shard_id) + ".data.tmp";
+				return file_base() + ".data.tmp";
 			}
 
 		protected:
 
-			size_t m_hash_table_size;
 			const std::string m_db_name;
 			size_t m_shard_id;
+			size_t m_hash_table_size;
+			const std::string m_data_path;
 
 			size_t hash_table_byte_size() const { return m_hash_table_size * sizeof(size_t); }
 

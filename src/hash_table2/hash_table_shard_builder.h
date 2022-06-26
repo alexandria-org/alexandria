@@ -52,7 +52,8 @@ namespace hash_table2 {
 
 		public:
 
-			hash_table_shard_builder(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000);
+			hash_table_shard_builder(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000,
+					const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table");
 			~hash_table_shard_builder();
 
 			/*
@@ -105,6 +106,7 @@ namespace hash_table2 {
 			size_t m_data_size = 0;
 
 			void read_optimized_to(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages, std::ifstream &infile, std::ofstream &outfile) const;
+			void write_pages(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages);
 
 	};
 

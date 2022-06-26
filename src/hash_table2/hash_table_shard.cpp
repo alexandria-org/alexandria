@@ -38,8 +38,9 @@ using namespace std;
 
 namespace hash_table2 {
 
-	hash_table_shard::hash_table_shard(const string &db_name, size_t shard_id, size_t hash_table_size)
-	: hash_table_shard_base(db_name, shard_id, hash_table_size)
+	hash_table_shard::hash_table_shard(const string &db_name, size_t shard_id, size_t hash_table_size,
+			const std::string &data_path)
+	: hash_table_shard_base(db_name, shard_id, hash_table_size, data_path)
 	{
 	}
 

@@ -37,6 +37,22 @@
 
 BOOST_AUTO_TEST_SUITE(test_hash_table)
 
+BOOST_AUTO_TEST_CASE(test_file_paths) {
+
+	{
+		hash_table2::hash_table_shard_builder ht_builder("test_index", 8);
+		BOOST_CHECK_EQUAL(ht_builder.file_base_data(), "/mnt/0/hash_table/ht_test_index_8");
+		BOOST_CHECK_EQUAL(ht_builder.filename_data(), "/mnt/0/hash_table/ht_test_index_8.data");
+	}
+	{
+		hash_table2::hash_table_shard_builder ht_builder("test_index", 8, 1000, "/data_path");
+		BOOST_CHECK_EQUAL(ht_builder.file_base_data(), "/data_path/ht_test_index_8");
+		BOOST_CHECK_EQUAL(ht_builder.filename_data(), "/data_path/ht_test_index_8.data");
+		BOOST_CHECK_EQUAL(ht_builder.filename_pos(), "/mnt/0/hash_table/ht_test_index_8.pos");
+	}
+
+}
+
 BOOST_AUTO_TEST_CASE(single_shard_add) {
 
 	hash_table_helper::truncate("test_index");

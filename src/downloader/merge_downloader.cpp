@@ -87,7 +87,7 @@ namespace downloader {
 
 	void merge_hash_table(const std::string &path) {
 		utils::thread_pool pool(32);
-		hash_table2::builder ht("all_urls", 1019);
+		hash_table2::builder ht("all_urls", 1019, 1000000, "/slow_data");
 		for (size_t i = 0; i < 1019; i++) {
 			pool.enqueue([&ht, i, path]() {
 				ht.get_shard(i)->merge_with(path + "/" + std::to_string(i) + ".pos", path + "/" + std::to_string(i) + ".data");
@@ -107,9 +107,11 @@ namespace downloader {
 					size_t ts = std::stoull(file);
 					const std::string batch = dir + "/" + std::to_string(ts);
 					if (internal_links_complete(batch) && hash_table_complete(batch + "/ht")) {
+						std::cout << "merging directory: " << batch << std::endl;
 						merge_internal_links(batch);
 						merge_hash_table(batch + "/ht");
 						file::delete_directory(batch);
+						exit(0);
 					}
 				} catch (...) {
 				}

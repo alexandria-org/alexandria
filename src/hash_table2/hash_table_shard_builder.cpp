@@ -38,8 +38,9 @@ using namespace std;
 
 namespace hash_table2 {
 
-	hash_table_shard_builder::hash_table_shard_builder(const string &db_name, size_t shard_id, size_t hash_table_size)
-	: hash_table_shard_base(db_name, shard_id, hash_table_size)
+	hash_table_shard_builder::hash_table_shard_builder(const string &db_name, size_t shard_id, size_t hash_table_size,
+		const std::string &data_path)
+	: hash_table_shard_base(db_name, shard_id, hash_table_size, data_path)
 	{
 		indexer::merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 		indexer::merger::register_merger((size_t)this, [this]() {merge();});
@@ -184,32 +185,7 @@ namespace hash_table2 {
 		// Delete cache file.
 		file::delete_file(this->filename_data_tmp());
 
-		std::ofstream key_writer(this->filename_pos(), std::ios::binary | std::ios::trunc);
-
-		const size_t page_item_size = sizeof(std::array<uint64_t, 3>);
-		const size_t empty_key = SIZE_MAX;
-
-		last_pos = 0;
-		for (size_t page_id = 0; page_id < pages.size(); page_id++) {
-			const size_t page_len = pages[page_id].size();
-			if (page_len) {
-				key_writer.write((char *)&last_pos, sizeof(size_t));
-				last_pos += pages[page_id].size() * page_item_size + sizeof(size_t);
-			} else {
-				key_writer.write((char *)&empty_key, sizeof(size_t));
-			}
-		}
-
-		// Write pages.
-		for (size_t page_id = 0; page_id < pages.size(); page_id++) {
-			const size_t page_len = pages[page_id].size();
-			if (page_len) {
-				key_writer.write((char *)&page_len, sizeof(size_t));
-				for (const auto &page_item : pages[page_id]) {
-					key_writer.write((char *)&page_item, page_item_size);
-				}
-			}
-		}
+		write_pages(pages);
 	}
 
 	void hash_table_shard_builder::optimize() {
@@ -271,15 +247,12 @@ namespace hash_table2 {
 
 		std::ofstream outfile(this->filename_data_tmp(), std::ios::binary | std::ios::trunc);
 
-		std::ifstream data_file_1(this->filename_data(), std::ios::binary);
 		std::ifstream data_file_2(data_file, std::ios::binary);
 		
-		read_optimized_to(pages1, data_file_1, outfile);
 		read_optimized_to(pages2, data_file_2, outfile);
 
 		outfile.close();
 
-		file::delete_file(filename_data());
 		file::delete_file(filename_pos());
 
 		merge();
@@ -337,6 +310,36 @@ namespace hash_table2 {
 				outfile.write(buffer, data_len);
 			} else {
 				infile.seekg(data_len, std::ios::cur);
+			}
+		}
+	}
+
+	void hash_table_shard_builder::write_pages(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages) {
+
+		std::ofstream key_writer(this->filename_pos(), std::ios::binary | std::ios::trunc);
+
+		const size_t page_item_size = sizeof(std::array<uint64_t, 3>);
+		const size_t empty_key = SIZE_MAX;
+
+		size_t last_pos = 0;
+		for (size_t page_id = 0; page_id < pages.size(); page_id++) {
+			const size_t page_len = pages[page_id].size();
+			if (page_len) {
+				key_writer.write((char *)&last_pos, sizeof(size_t));
+				last_pos += pages[page_id].size() * page_item_size + sizeof(size_t);
+			} else {
+				key_writer.write((char *)&empty_key, sizeof(size_t));
+			}
+		}
+
+		// Write pages.
+		for (size_t page_id = 0; page_id < pages.size(); page_id++) {
+			const size_t page_len = pages[page_id].size();
+			if (page_len) {
+				key_writer.write((char *)&page_len, sizeof(size_t));
+				for (const auto &page_item : pages[page_id]) {
+					key_writer.write((char *)&page_item, page_item_size);
+				}
 			}
 		}
 	}

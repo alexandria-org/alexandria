@@ -31,10 +31,11 @@ using namespace std;
 
 namespace hash_table2 {
 
-	builder::builder(const string &db_name, size_t num_shards)
+	builder::builder(const string &db_name, size_t num_shards, size_t hash_table_size,
+			const std::string &data_path)
 	: m_db_name(db_name) {
 		for (size_t i = 0; i < num_shards; i++) {
-			m_shards.push_back(new hash_table_shard_builder(db_name, i));
+			m_shards.push_back(new hash_table_shard_builder(db_name, i, hash_table_size, data_path));
 		}
 	}
 

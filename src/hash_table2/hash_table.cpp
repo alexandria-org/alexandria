@@ -33,11 +33,11 @@ using namespace std;
 
 namespace hash_table2 {
 
-	hash_table::hash_table(const string &db_name, size_t num_shards)
+	hash_table::hash_table(const string &db_name, size_t num_shards, size_t hash_table_size, const std::string &data_path)
 	: m_db_name(db_name)
 	{
 		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
-			auto shard = new hash_table_shard(m_db_name, shard_id);
+			auto shard = new hash_table_shard(m_db_name, shard_id, hash_table_size, data_path);
 			m_shards.push_back(shard);
 		}
 	}

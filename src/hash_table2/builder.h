@@ -36,7 +36,9 @@ namespace hash_table2 {
 
 	public:
 
-		explicit builder(const std::string &db_name, size_t num_shards = config::ht_num_shards);
+		explicit builder(const std::string &db_name, size_t num_shards = config::ht_num_shards,
+			size_t hash_table_size = 1000000,
+			const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table");
 		~builder();
 
 		void add(uint64_t key, const std::string &value, size_t version = 0);
