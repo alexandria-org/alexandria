@@ -253,8 +253,6 @@ namespace hash_table2 {
 
 		outfile.close();
 
-		file::delete_file(filename_pos());
-
 		merge();
 	}
 
