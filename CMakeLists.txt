@@ -110,7 +110,6 @@ set(SRC_CLASSES
 	"src/algorithm/algorithm.cpp"
 	"src/algorithm/intersection.cpp"
 	"src/algorithm/sort.cpp"
-	"src/algorithm/hyper_ball.cpp"
 	"src/algorithm/hash.cpp"
 	"src/algorithm/hyper_log_log.cpp"
 	"src/algorithm/bloom_filter.cpp"

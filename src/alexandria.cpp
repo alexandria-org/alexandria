@@ -25,11 +25,15 @@
  */
 
 #include <iostream>
+#include <numeric>
 #include "logger/logger.h"
 #include "downloader/warc_downloader.h"
 #include "downloader/merge_downloader.h"
 #include "URL.h"
 #include "hash_table2/hash_table.h"
+#include "indexer/index.h"
+#include "indexer/value_record.h"
+#include "algorithm/hyper_ball.h"
 
 using namespace std;
 
@@ -70,6 +74,48 @@ int main(int argc, const char **argv) {
 		std::string data = ht.find(url.hash(), ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
+	} else if (arg == "--internal-harmonic") {
+		std::ifstream infile("../3492248666075096845.data", std::ios::binary);
+		indexer::index<indexer::value_record> idx(&infile, 1000);
+
+		std::vector<uint64_t> vertices;
+		std::map<uint64_t, uint64_t> vertex_map;
+
+		size_t record_id = 0;
+		for (const auto &record : idx.records()) {
+			vertices.push_back(record.m_value);
+			vertex_map[record.m_value] = record_id;
+			record_id++;
+		}
+
+		std::vector<roaring::Roaring> edge_map(vertices.size());
+
+		idx.for_each([&edge_map, &vertex_map, &vertices](uint64_t key, roaring::Roaring &bitmap) {
+				if (vertex_map.count(key)) {
+					edge_map[vertex_map[key]] = std::move(bitmap);
+				}
+		});
+
+		// invert the edge map.
+		std::vector<roaring::Roaring> edge_map2(vertices.size());
+
+		for (size_t i = 0; i < edge_map.size(); i++) {
+			for (auto j : edge_map[i]) {
+				edge_map2[j].add(i);
+			}
+		}
+
+		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map2.data());
+
+		std::vector<size_t> sorted(harmonic.size());
+		std::iota(sorted.begin(), sorted.end(), 0);
+		std::sort(sorted.begin(), sorted.end(), [&harmonic] (const auto &a, const auto &b) {
+			return harmonic[a] > harmonic[b];
+		});
+
+		for (size_t i = 0; i < harmonic.size(); i++) {
+			std::cout << "vertex: " << vertices[sorted[i]] << " has harmonic: " << harmonic[sorted[i]] << std::endl;
+		}
 	} else {
 		help();
 	}
