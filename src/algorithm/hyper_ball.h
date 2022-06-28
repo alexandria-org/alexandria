@@ -58,6 +58,8 @@ namespace algorithm {
 	 * edge_map is pointing to an array of size n.
 	 * each item in edge_map is a vector of variable size.
 	 * each vector edge_map[m] contains values between 0 and n-1 indicating edge between m and edge_map[m].
+	 * NOTE direction of edge in edge map has to be EDGE_FROM -> EDGE_TO.
+	 * so for vertex m, n = edge_map[m] indicates directed edge from n to m
 	 * */
 	template <typename iterable_type>
 	std::vector<double> hyper_ball(uint32_t n, const iterable_type *edge_map) {

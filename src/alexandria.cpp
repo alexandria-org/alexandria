@@ -32,8 +32,11 @@
 #include "URL.h"
 #include "hash_table2/hash_table.h"
 #include "indexer/index.h"
+#include "indexer/index_builder.h"
 #include "indexer/value_record.h"
 #include "algorithm/hyper_ball.h"
+#include "utils/thread_pool.hpp"
+#include "file/file.h"
 
 using namespace std;
 
@@ -41,6 +44,7 @@ void help() {
 	cout << "Usage: ./alexandria [OPTION]..." << endl;
 	cout << "--downloader [commoncrawl-batch] [limit] [offset]" << endl;
 	cout << "--downloader-merge" << endl;
+	cout << "--invert-all-internal" << endl;
 	cout << "--url [URL]" << endl;
 }
 
@@ -74,6 +78,42 @@ int main(int argc, const char **argv) {
 		std::string data = ht.find(url.hash(), ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
+	} else if (arg == "--invert-all-internal") {
+
+		utils::thread_pool pool(32);
+
+		for (size_t i = 0; i < 8; i++) {
+			const std::string dir = "/mnt/" + std::to_string(i) + "/full_text/internal_links";
+			file::read_directory(dir, [&pool, dir](const std::string &filename) {
+				uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
+
+				pool.enqueue([host_hash, filename, dir]() {
+					std::ifstream infile(dir + "/" + filename, std::ios::binary);
+					std::string data(std::istreambuf_iterator<char>(infile), {});
+					infile.close();
+					std::istringstream data_stream(data);
+
+					std::cout << "data: " << data.size() << std::endl;
+
+					indexer::index<indexer::value_record> idx(&data_stream, 1000);
+					indexer::index_builder<indexer::value_record> builder("internal_links", host_hash, 1000);
+					builder.truncate();
+					
+					idx.for_each([&idx, &builder](uint64_t key, roaring::Roaring &bitmap) {
+						for (uint32_t x : bitmap) {
+							std::cout << key << " => " << idx.records()[x].m_value << std::endl;
+							builder.add(idx.records()[x].m_value, indexer::value_record(key));
+						}
+					});
+					builder.append();
+					builder.merge();
+					builder.optimize();
+				});
+			});
+		}
+
+		pool.run_all();
+
 	} else if (arg == "--internal-harmonic") {
 		std::ifstream infile("../3492248666075096845.data", std::ios::binary);
 		indexer::index<indexer::value_record> idx(&infile, 1000);
@@ -96,16 +136,7 @@ int main(int argc, const char **argv) {
 				}
 		});
 
-		// invert the edge map.
-		std::vector<roaring::Roaring> edge_map2(vertices.size());
-
-		for (size_t i = 0; i < edge_map.size(); i++) {
-			for (auto j : edge_map[i]) {
-				edge_map2[j].add(i);
-			}
-		}
-
-		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map2.data());
+		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map.data());
 
 		std::vector<size_t> sorted(harmonic.size());
 		std::iota(sorted.begin(), sorted.end(), 0);
