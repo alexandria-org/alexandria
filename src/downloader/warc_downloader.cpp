@@ -91,7 +91,7 @@ namespace downloader {
 						// link is a std::pair<uint64_t, uint64_t> link_from -> link_to
 						// but we store the internal links as link_to -> link_from because the hyper_ball algorithm requires it.
 						// see src/algorithm/hyper_ball.h
-						internal_link_builder->add(link.second, indexer::value_record(link.to));
+						internal_link_builder->add(link.second, indexer::value_record(link.first));
 					}
 			});
 		});
