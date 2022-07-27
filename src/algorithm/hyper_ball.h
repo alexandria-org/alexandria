@@ -66,8 +66,8 @@ namespace algorithm {
 
 		const size_t num_threads = std::min(12, (int)n);
 		const size_t items_per_thread = n / num_threads;
-		std::vector<hyper_log_log> c(n);
-		std::vector<hyper_log_log> a(n);
+		std::vector<hyper_log_log> c(n, hyper_log_log(10));
+		std::vector<hyper_log_log> a(n, hyper_log_log(10));
 		std::vector<double> harmonic(n, 0.0);
 
 		for (uint32_t v = 0; v < n; v++) {

@@ -116,7 +116,12 @@ int main(int argc, const char **argv) {
 
 	} else if (arg == "--internal-harmonic") {
 		std::ifstream infile("../3492248666075096845.data", std::ios::binary);
-		indexer::index<indexer::value_record> idx(&infile, 1000);
+		std::string infile_data(std::istreambuf_iterator<char>(infile), {});
+		infile.close();
+		std::istringstream reader(infile_data);
+		indexer::index<indexer::value_record> idx(&reader, 1000);
+
+		profiler::instance prof("make vertices");
 
 		std::vector<uint64_t> vertices;
 		std::map<uint64_t, uint64_t> vertex_map;
@@ -130,11 +135,17 @@ int main(int argc, const char **argv) {
 
 		std::vector<roaring::Roaring> edge_map(vertices.size());
 
-		idx.for_each([&edge_map, &vertex_map, &vertices](uint64_t key, roaring::Roaring &bitmap) {
-				if (vertex_map.count(key)) {
-					edge_map[vertex_map[key]] = std::move(bitmap);
+		idx.for_each([&edge_map, &vertex_map, &vertices, &record_id](uint64_t key, roaring::Roaring &bitmap) {
+				if (vertex_map.count(key) == 0) {
+					vertices.push_back(key);
+					edge_map.push_back(roaring::Roaring());
+					vertex_map[key] = record_id;
+					record_id++;
 				}
+				edge_map[vertex_map[key]] = std::move(bitmap);
 		});
+
+		prof.stop();
 
 		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map.data());
 

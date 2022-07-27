@@ -25,36 +25,42 @@
  */
 
 #include "hyper_log_log.h"
+#include "algorithm/hash.h"
 
 namespace algorithm {
 
-	hyper_log_log::hyper_log_log() {
+	hyper_log_log::hyper_log_log(size_t b)
+	: m_b(b), m_len(1ull << m_b), m_alpha(0.7213/(1.0 + 1.079/m_len)) {
 		m_M = new char[m_len];
 		memset(m_M, 0, m_len);
 	}
 
-	hyper_log_log::hyper_log_log(const hyper_log_log &other) {
+	hyper_log_log::hyper_log_log(const char *registers, size_t b)
+	: m_b(b), m_len(1ull << m_b), m_alpha(0.7213/(1.0 + 1.079/m_len)) {
+		m_M = new char[m_len];
+		memcpy(m_M, registers, m_len);
+	}
+
+	hyper_log_log::hyper_log_log(const hyper_log_log &other)
+	: m_b(other.m_b), m_len(other.m_len), m_alpha(other.m_alpha) {
 		m_M = new char[m_len];
 		memcpy(m_M, other.m_M, m_len);
 	}
 
-	hyper_log_log::hyper_log_log(const char *m) {
-		m_M = new char[m_len];
-		memcpy(m_M, m, m_len);
-	}
-
-	hyper_log_log::hyper_log_log(size_t b)
-	: m_b(b) {
-		m_M = new char[m_len];
-		memset(m_M, 0, m_len);
+	hyper_log_log::hyper_log_log(hyper_log_log &&other)
+	: m_b(other.m_b), m_len(other.m_len), m_alpha(other.m_alpha) {
+		m_M = other.m_M;
+		other.m_M = nullptr;
 	}
 
 	hyper_log_log::~hyper_log_log() {
-		delete [] m_M;
+		if (m_M != nullptr) {
+			delete [] m_M;
+		}
 	}
 
 	void hyper_log_log::insert(size_t v) {
-		size_t x = m_hasher(std::to_string(v));
+		size_t x = algorithm::hash(std::to_string(v));
 		size_t j = x >> (64-m_b);
 		m_M[j] = std::max(m_M[j], leading_zeros_plus_one(x << m_b));
 	}

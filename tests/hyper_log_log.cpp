@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(hyper_log_log_data_copy) {
 		hl1.insert(i);
 	}
 
-	algorithm::hyper_log_log hl2(hl1.data());
+	algorithm::hyper_log_log hl2(hl1.data(), hl1.b());
 
 	BOOST_CHECK(std::abs((int)hl2.count() - 250000) < 250000 * hl1.error_bound());
 
@@ -120,13 +120,29 @@ BOOST_AUTO_TEST_CASE(hyper_log_log_data_copy) {
 }
 
 BOOST_AUTO_TEST_CASE(hyper_log_log_test2) {
-	algorithm::hyper_log_log hl1(8);
+	algorithm::hyper_log_log hl1(10);
 
-	for (size_t i = 0; i < 1500000; i++) {
+	const int sz = 100000;
+
+	for (size_t i = 0; i < sz; i++) {
 		hl1.insert(rand());
 	}
 
-	cout << "size: " << hl1.count() << endl;
+	BOOST_CHECK(std::abs((int)hl1.count() - sz) < sz * hl1.error_bound());
+}
+
+BOOST_AUTO_TEST_CASE(hyper_log_log_move) {
+	algorithm::hyper_log_log hl1(10);
+
+	const int sz = 100000;
+
+	for (size_t i = 0; i < sz; i++) {
+		hl1.insert(rand());
+	}
+
+	auto hl2 = std::move(hl1);
+
+	BOOST_CHECK(std::abs((int)hl2.count() - sz) < sz * hl1.error_bound());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
