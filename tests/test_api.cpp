@@ -24,12 +24,18 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
+#include "full_text/full_text.h"
 #include "hash_table_helper/hash_table_helper.h"
+#include "full_text/url_to_domain.h"
 #include "api/api.h"
+#include "search_allocation/search_allocation.h"
 #include "json.hpp"
 
+using namespace std;
 using json = nlohmann::json;
 using url_to_domain = full_text::url_to_domain;
+using full_text::url_to_domain;
 
 BOOST_AUTO_TEST_SUITE(api)
 

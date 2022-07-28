@@ -24,11 +24,19 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "algorithm/algorithm.h"
 #include "algorithm/intersection.h"
 #include "algorithm/hyper_ball.h"
+#include "full_text/full_text_record.h"
+#include "full_text/url_to_domain.h"
+#include "search_engine/search_engine.h"
 
-BOOST_AUTO_TEST_SUITE(algorithms)
+using namespace std;
+using full_text::full_text_record;
+using full_text::url_to_domain;
+
+BOOST_AUTO_TEST_SUITE(test_algorithm)
 
 BOOST_AUTO_TEST_CASE(intersection_test) {
 

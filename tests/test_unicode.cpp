@@ -24,51 +24,19 @@
  * SOFTWARE.
  */
 
-#include "utils/thread_pool.hpp"
+#include <boost/test/unit_test.hpp>
+#include "parser/unicode.h"
 
-BOOST_AUTO_TEST_SUITE(thread_pool)
+BOOST_AUTO_TEST_SUITE(unicode)
 
-BOOST_AUTO_TEST_CASE(thread_pool) {
-	utils::thread_pool pool(10);
+BOOST_AUTO_TEST_CASE(unicode) {
+	BOOST_CHECK_EQUAL(parser::unicode::encode("hej jag heter josef"), "hej jag heter josef");
+	BOOST_CHECK_EQUAL(parser::unicode::encode("hej jag heter josef och jag tillåter utf8 åäö chars$€"),
+		"hej jag heter josef och jag tillåter utf8 åäö chars$€");
+	BOOST_CHECK_EQUAL(parser::unicode::encode("是美国民主党政治家，于19世纪下半叶担"), "是美国民主党政治家，于19世纪下半叶担");
 
-	vector<int> vec(10);
-	for (int &i : vec) {
-		pool.enqueue([&i]() {
-			i++;
-		});
-	}
-
-	pool.run_all();
-
-	for (int i : vec) {
-		BOOST_CHECK(i == 1);
-	}
-	
-}
-
-BOOST_AUTO_TEST_CASE(thread_pool2) {
-	utils::thread_pool pool(12);
-
-	vector<int> vec(24);
-	for (int &i : vec) {
-		pool.enqueue([&i]() {
-				std::this_thread::sleep_for(200ms);
-			i = 1;
-		});
-	}
-
-	double now = profiler::now_micro();
-
-	pool.run_all();
-
-	double dt = profiler::now_micro() - now;
-
-	BOOST_CHECK(dt < (200*2 + 10)*1000);
-
-	for (int i : vec) {
-		BOOST_CHECK(i == 1);
-	}
-	
+	BOOST_CHECK(parser::unicode::is_valid(parser::unicode::encode("L�gg i varukorg Om produkten Specifikation Anv�ndning Våra bönor är \
+		rika på protein, mineraler och fibrer. Smaken är söt och konsistensen le")));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

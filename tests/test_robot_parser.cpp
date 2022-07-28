@@ -24,7 +24,10 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "robots.h"
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(robot_parser)
 

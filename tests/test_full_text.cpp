@@ -38,6 +38,7 @@
 
 #include "json.hpp"
 
+using namespace std;
 using json = nlohmann::json;
 using full_text_record = full_text::full_text_record;
 

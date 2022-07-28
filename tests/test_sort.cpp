@@ -24,7 +24,11 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "algorithm/sort.h"
+#include <vector>
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_sort)
 

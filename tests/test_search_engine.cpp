@@ -24,9 +24,11 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "search_engine/search_engine.h"
 
 using namespace full_text;
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_search_engine)
 

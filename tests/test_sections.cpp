@@ -24,11 +24,17 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "hash_table_helper/hash_table_helper.h"
 #include "api/api.h"
+#include "config.h"
+#include "search_allocation/search_allocation.h"
+#include "full_text/full_text.h"
 
 #include "json.hpp"
 
+using namespace full_text;
+using namespace std;
 using json = nlohmann::json;
 
 BOOST_AUTO_TEST_SUITE(sections)

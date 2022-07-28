@@ -24,7 +24,13 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "algorithm/hyper_ball.h"
+#include "algorithm/algorithm.h"
+#include <set>
+#include <vector>
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(hyper_ball)
 

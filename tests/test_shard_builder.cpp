@@ -24,8 +24,11 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "full_text/full_text_shard_builder.h"
 #include "full_text/full_text_shard.h"
+
+using namespace full_text;
 
 BOOST_AUTO_TEST_SUITE(shard_builder)
 

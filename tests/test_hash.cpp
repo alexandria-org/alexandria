@@ -24,26 +24,19 @@
  * SOFTWARE.
  */
 
-#include <map>
-#include <set>
-#include "full_text/full_text.h"
+#include <boost/test/unit_test.hpp>
+#include "algorithm/hash.h"
 
-BOOST_AUTO_TEST_SUITE(link_counter)
+BOOST_AUTO_TEST_SUITE(hash)
 
-BOOST_AUTO_TEST_CASE(link_counter) {
+BOOST_AUTO_TEST_CASE(str) {
 
-	std::map<size_t, std::map<size_t, float>> counter;
+	BOOST_CHECK_EQUAL(algorithm::hash("testing"), 4540905123118180926ull);
+	BOOST_CHECK_EQUAL(algorithm::hash(""), 6142509188972423790ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("abcdefghijklmnopqrstuvxyz"), 17219978627035894604ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("123"), 10089081994332581363ull);
+	BOOST_CHECK_EQUAL(algorithm::hash("1234"), 15651099383784684535ull);
 
-	
-}
-
-BOOST_AUTO_TEST_CASE(link_counter2) {
-
-	std::map<size_t, std::set<size_t>> counter;
-
-	config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
-
-	
 }
 
 BOOST_AUTO_TEST_SUITE_END()
