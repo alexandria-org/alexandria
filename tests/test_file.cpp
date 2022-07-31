@@ -360,4 +360,21 @@ BOOST_AUTO_TEST_CASE(test_archive2) {
 	file::delete_file("test_dir.tar");
 }
 
+BOOST_AUTO_TEST_CASE(test_rename_file) {
+	file::create_directory("/tmp/alexandria_test_98237593257");
+	file::create_directory("/tmp/alexandria_test_98237593257/testdir");
+	file::rename("/tmp/alexandria_test_98237593257/testdir", "/tmp/alexandria_test_98237593257/testdir2");
+	BOOST_CHECK(file::file_exists("/tmp/alexandria_test_98237593257/testdir2"));
+	BOOST_CHECK(!file::file_exists("/tmp/alexandria_test_98237593257/testdir"));
+	file::delete_directory("/tmp/alexandria_test_98237593257");
+	BOOST_CHECK(!file::file_exists("/tmp/alexandria_test_98237593257/testdir"));
+	BOOST_CHECK(!file::file_exists("/tmp/alexandria_test_98237593257/testdir2"));
+	BOOST_CHECK(!file::file_exists("/tmp/alexandria_test_98237593257"));
+
+	file::create_directory("/tmp/alexandria_test_98237593257/testdir");
+	BOOST_CHECK(file::file_exists("/tmp/alexandria_test_98237593257"));
+	file::delete_directory("/tmp/alexandria_test_98237593257");
+	BOOST_CHECK(!file::file_exists("/tmp/alexandria_test_98237593257"));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

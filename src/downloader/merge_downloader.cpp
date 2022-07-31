@@ -64,7 +64,13 @@ namespace downloader {
 		return true;
 	}
 
-	void merge_internal_links(const std::string &path) {
+	void merge_internal_links(const std::string &path, const std::string &batch_name) {
+		const std::string target_path = "/slow_data/internal_links/" + batch_name;
+		file::create_directory(target_path);
+		for (size_t i = 0; i < 8; i++) {
+			file::copy_file(path + "/internal_links_" + std::to_string(i), target_path + "/internal_links_" + std::to_string(i));
+		}
+		/*
 		utils::thread_pool pool(32);
 		for (size_t i = 0; i < 8; i++) {
 			pool.enqueue([i, path]() {
@@ -77,12 +83,23 @@ namespace downloader {
 					indexer::index_builder<indexer::value_record> idx1("internal_links", host_hash, 1000);
 					indexer::index<indexer::value_record> idx2(&ram_reader, 1000);
 
-					idx1.merge_with(idx2);
+					try {
+						idx1.merge_with(idx2);
+					} catch (const std::runtime_error &err) {
+						// The file is corrupt. Lets delete it and report.
+						std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
+						idx1.truncate();
+					} catch (const std::bad_alloc &err) {
+						// The file is corrupt. Lets delete it and report.
+						std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
+						idx1.truncate();
+					}
 				});
 			});
 		}
 		pool.run_all();
 		std::cout << "finished with the merge" << std::endl;
+		*/
 	}
 
 	void merge_hash_table(const std::string &path) {
@@ -108,8 +125,12 @@ namespace downloader {
 					const std::string batch = dir + "/" + std::to_string(ts);
 					if (internal_links_complete(batch) && hash_table_complete(batch + "/ht")) {
 						std::cout << "merging directory: " << batch << std::endl;
-						merge_internal_links(batch);
+						profiler::instance prof1("merge_internal_links");
+						merge_internal_links(batch, std::to_string(ts));
+						prof1.stop();
+						profiler::instance prof2("merge_hash_table");
 						merge_hash_table(batch + "/ht");
+						prof2.stop();
 						file::delete_directory(batch);
 						exit(0);
 					}

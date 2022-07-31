@@ -48,6 +48,10 @@ namespace file {
 		return "";
 	}
 
+	void rename(const std::string &old_path, const std::string &new_path) {
+		boost::filesystem::rename(old_path, new_path);
+	}
+
 	void copy_file(const string &source, const string &dest) {
 		ifstream infile(source, ios::binary);
 		ofstream outfile(dest, ios::binary | ios::trunc);
@@ -60,7 +64,7 @@ namespace file {
 	}
 
 	void create_directory(const std::string &path) {
-		boost::filesystem::create_directory(path);
+		boost::filesystem::create_directories(path);
 	}
 
 	void delete_directory(const std::string &path) {

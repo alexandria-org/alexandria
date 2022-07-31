@@ -35,6 +35,8 @@ namespace file {
 
 	std::string read_test_file(const std::string &file_name);
 
+	void rename(const std::string &old_path, const std::string &new_path);
+
 	void copy_file(const std::string &source, const std::string &dest);
 	void delete_file(const std::string &filename);
 

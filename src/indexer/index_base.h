@@ -192,7 +192,7 @@ namespace indexer {
 		} catch (std::bad_alloc &exception) {
 			std::cout << "bad_alloc detected: " << exception.what() << " file: " << __FILE__ << " line: " << __LINE__ << std::endl;
 			std::cout << "tried to allocate: " << max_len << " bytes" << std::endl;
-			return false;
+			throw exception;
 		}
 		char *buffer = buffer_allocator.get();
 
@@ -203,7 +203,7 @@ namespace indexer {
 			const size_t read_len = reader.gcount();
 			if (read_len != len) {
 				LOG_INFO("Data stopped before end. Ignoring shard ");
-				return false;
+				throw std::runtime_error("Data stopped before end. File is corrupt.");
 			}
 
 			into[keys[i]] = roaring::Roaring::readSafe(buffer, len);
