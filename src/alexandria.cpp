@@ -72,10 +72,18 @@ int main(int argc, const char **argv) {
 		downloader::merge_downloader();
 	} else if (arg == "--url" && argc > 2) {
 		URL url(argv[2]);
-		hash_table2::hash_table ht("all_urls", 1019);
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
 
 		size_t ver = 0;
 		std::string data = ht.find(url.hash(), ver);
+		std::cout << ver << std::endl;
+		std::cout << data << std::endl;
+	} else if (arg == "--url-hash" && argc > 2) {
+		uint64_t url_hash = std::stoull(argv[2]);
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
+
+		size_t ver = 0;
+		std::string data = ht.find(url_hash, ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
 	} else if (arg == "--invert-all-internal") {
