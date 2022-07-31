@@ -32,6 +32,8 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include "config.h"
+#include "logger/logger.h"
+#include "worker/worker.h"
 
 #include <iostream>
 #include <stdlib.h>
@@ -49,36 +51,6 @@ using std::stringstream;
 using std::set;
 using std::map;
 using std::pair;
-
-#include "search_allocation.h"
-#include "html_parser.h"
-#include "unicode.h"
-#include "text.h"
-#include "sub_system.h"
-#include "full_text.h"
-#include "api.h"
-#include "search_engine.h"
-#include "configuration.h"
-#include "performance.h"
-#include "sort.h"
-#include "algorithm.h"
-#include "deduplication.h"
-#include "sections.h"
-#include "logger.h"
-#include "hyper_ball.h"
-#include "cluster.h"
-#include "cc_parser.h"
-#include "hash.h"
-#include "shard_builder.h"
-#include "n_gram.h"
-#include "link_counter.h"
-#include "test_url_store.h"
-#include "test_key_value_store.h"
-#include "robot_parser.h"
-#include "test_scraper.h"
-#include "test_datetime.h"
-#include "memory.h"
-#include "thread_pool.h"
 
 void run_before() {
 	config::read_config("../tests/test_config.conf");

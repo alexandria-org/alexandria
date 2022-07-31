@@ -24,8 +24,11 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "logger/logger.h"
 #include "config.h"
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_logger)
 

@@ -24,10 +24,13 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "config.h"
 #include "warc/warc.h"
 #include "URL.h"
 #include "parser/cc_parser.h"
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(cc_parser)
 

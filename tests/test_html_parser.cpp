@@ -24,9 +24,12 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "parser/html_parser.h"
 #include "text/text.h"
 #include "file/file.h"
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(html_parser)
 

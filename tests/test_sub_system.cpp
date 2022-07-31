@@ -24,18 +24,17 @@
  * SOFTWARE.
  */
 
-#include "parser/unicode.h"
+#include <boost/test/unit_test.hpp>
+#include "common/sub_system.h"
+#include "common/dictionary.h"
 
-BOOST_AUTO_TEST_SUITE(unicode)
+BOOST_AUTO_TEST_SUITE(test_sub_system)
 
-BOOST_AUTO_TEST_CASE(unicode) {
-	BOOST_CHECK_EQUAL(parser::unicode::encode("hej jag heter josef"), "hej jag heter josef");
-	BOOST_CHECK_EQUAL(parser::unicode::encode("hej jag heter josef och jag tillåter utf8 åäö chars$€"),
-		"hej jag heter josef och jag tillåter utf8 åäö chars$€");
-	BOOST_CHECK_EQUAL(parser::unicode::encode("是美国民主党政治家，于19世纪下半叶担"), "是美国民主党政治家，于19世纪下半叶担");
+BOOST_AUTO_TEST_CASE(subsys) {
 
-	BOOST_CHECK(parser::unicode::is_valid(parser::unicode::encode("L�gg i varukorg Om produkten Specifikation Anv�ndning Våra bönor är \
-		rika på protein, mineraler och fibrer. Smaken är söt och konsistensen le")));
+	common::sub_system *ss = new common::sub_system();
+
+	delete ss;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

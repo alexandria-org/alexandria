@@ -102,6 +102,9 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--host-hash") {
 		URL url(argv[2]);
 		cout << url.host_hash() << endl;
+	} else if (arg == "--url-hash") {
+		URL url(argv[2]);
+		cout << url.hash() << endl;
 	} else if (arg == "--host-hash-mod") {
 		URL url(argv[2]);
 		cout << url.host_hash() % stoull(argv[3]) << endl;

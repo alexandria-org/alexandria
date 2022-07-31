@@ -24,9 +24,11 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "url_store/url_store.h"
 #include "json.hpp"
 
+using namespace std;
 using namespace std::literals::chrono_literals;
 
 using json = nlohmann::json;

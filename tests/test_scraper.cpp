@@ -24,9 +24,12 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "scraper/scraper.h"
 #include <queue>
 #include <vector>
+
+using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_scraper)
 

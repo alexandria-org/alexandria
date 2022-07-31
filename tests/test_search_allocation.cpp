@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "search_allocation/search_allocation.h"
 #include "full_text/full_text_record.h"
 

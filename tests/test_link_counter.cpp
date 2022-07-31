@@ -24,27 +24,27 @@
  * SOFTWARE.
  */
 
-#include "cluster/document.h"
-#include "transfer/transfer.h"
-#include "algorithm/hash.h"
+#include <boost/test/unit_test.hpp>
+#include <map>
+#include <set>
+#include "full_text/full_text.h"
 
-BOOST_AUTO_TEST_SUITE(test_cluster)
+BOOST_AUTO_TEST_SUITE(link_counter)
 
-BOOST_AUTO_TEST_CASE(test_cluster) {
-	/*{
-		int error;
-		stringstream ss;
-		transfer::gz_file_to_stream("/test-data/10272145489625484395-1002.gz", ss, error);
-		BOOST_CHECK(error == transfer::OK);
+BOOST_AUTO_TEST_CASE(link_counter) {
 
-		cluster::corpus corpus;
-		cluster::documents documents;
-		cluster::read_corpus(corpus, documents, ss);
+	std::map<size_t, std::map<size_t, float>> counter;
 
-		const size_t key = algorithm::hash("aftonbladet.se");
-		BOOST_CHECK(documents.count(key) == 1);
-		BOOST_CHECK(documents[key].size() > 0);
-	}*/
+	
+}
+
+BOOST_AUTO_TEST_CASE(link_counter2) {
+
+	std::map<size_t, std::set<size_t>> counter;
+
+	config::link_batches = {"ALEXANDRIA-TEST-01", "ALEXANDRIA-TEST-02"};
+
+	
 }
 
 BOOST_AUTO_TEST_SUITE_END()

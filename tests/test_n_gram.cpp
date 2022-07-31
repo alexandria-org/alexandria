@@ -24,9 +24,16 @@
  * SOFTWARE.
  */
 
+#include <boost/test/unit_test.hpp>
 #include "text/text.h"
 #include "algorithm/hash.h"
 #include "full_text/full_text.h"
+#include "search_allocation/search_allocation.h"
+#include "hash_table_helper/hash_table_helper.h"
+#include "search_engine/search_engine.h"
+
+using namespace std;
+using namespace full_text;
 
 BOOST_AUTO_TEST_SUITE(n_gram)
 

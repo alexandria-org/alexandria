@@ -24,18 +24,55 @@
  * SOFTWARE.
  */
 
-#include "algorithm/hash.h"
+#include <boost/test/unit_test.hpp>
+#include "utils/thread_pool.hpp"
+#include "profiler/profiler.h"
 
-BOOST_AUTO_TEST_SUITE(hash)
+using namespace std;
 
-BOOST_AUTO_TEST_CASE(str) {
+BOOST_AUTO_TEST_SUITE(thread_pool)
 
-	BOOST_CHECK_EQUAL(algorithm::hash("testing"), 4540905123118180926ull);
-	BOOST_CHECK_EQUAL(algorithm::hash(""), 6142509188972423790ull);
-	BOOST_CHECK_EQUAL(algorithm::hash("abcdefghijklmnopqrstuvxyz"), 17219978627035894604ull);
-	BOOST_CHECK_EQUAL(algorithm::hash("123"), 10089081994332581363ull);
-	BOOST_CHECK_EQUAL(algorithm::hash("1234"), 15651099383784684535ull);
+BOOST_AUTO_TEST_CASE(thread_pool) {
+	utils::thread_pool pool(10);
 
+	vector<int> vec(10);
+	for (int &i : vec) {
+		pool.enqueue([&i]() {
+			i++;
+		});
+	}
+
+	pool.run_all();
+
+	for (int i : vec) {
+		BOOST_CHECK(i == 1);
+	}
+	
+}
+
+BOOST_AUTO_TEST_CASE(thread_pool2) {
+	utils::thread_pool pool(12);
+
+	vector<int> vec(24);
+	for (int &i : vec) {
+		pool.enqueue([&i]() {
+				std::this_thread::sleep_for(200ms);
+			i = 1;
+		});
+	}
+
+	double now = profiler::now_micro();
+
+	pool.run_all();
+
+	double dt = profiler::now_micro() - now;
+
+	BOOST_CHECK(dt < (200*2 + 10)*1000);
+
+	for (int i : vec) {
+		BOOST_CHECK(i == 1);
+	}
+	
 }
 
 BOOST_AUTO_TEST_SUITE_END()

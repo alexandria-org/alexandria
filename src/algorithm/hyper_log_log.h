@@ -43,10 +43,14 @@ namespace algorithm {
 	class hyper_log_log {
 
 		public:
-			hyper_log_log();
+
+			/*
+			 * initializes with given b parameter. size of data structure will be 2^b bytes.
+			 * */
+			hyper_log_log(size_t b = 15);
+			hyper_log_log(const char *registers, size_t b = 15);
 			hyper_log_log(const hyper_log_log &other);
-			hyper_log_log(const char *b);
-			hyper_log_log(size_t b);
+			hyper_log_log(hyper_log_log &&other);
 			~hyper_log_log();
 
 			void insert(size_t v);
@@ -56,6 +60,7 @@ namespace algorithm {
 
 			const char *data() const { return m_M; };
 			char *data() { return m_M; };
+			int b() const { return m_b; }
 			size_t data_size() const { return m_len; };
 
 			hyper_log_log operator +(const hyper_log_log &hl) const;
@@ -66,11 +71,10 @@ namespace algorithm {
 
 		private:
 			
-			char *m_M; // Points to registers.
-			const int m_b = 15;
-			const size_t m_len = 1ull << m_b; // 2^m_b
-			const double m_alpha = 0.7213/(1.0 + 1.079/m_len);
-			std::hash<std::string> m_hasher;
+			char *m_M = nullptr; // Points to registers.
+			const int m_b;
+			const size_t m_len;
+			const double m_alpha;
 
 			size_t num_zero_registers() const;
 
