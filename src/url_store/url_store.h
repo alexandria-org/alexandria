@@ -119,8 +119,8 @@ namespace url_store {
 	url_store<store_data>::url_store()  {
 		const string &db_prefix = store_data::uri;
 		for (size_t i = 0; i < config::url_store_shards; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i));
-			m_shards.push_back(new key_value_store("/mnt/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i)));
+			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i));
+			m_shards.push_back(new key_value_store(config::data_path() + "/" + std::to_string(i % 8) + "/store/"+db_prefix+"/url_store_" + std::to_string(i)));
 		}
 	}
 

@@ -38,7 +38,7 @@ namespace hash_table2 {
 		public:
 
 			hash_table_shard_base(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000,
-					const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table")
+					const std::string &data_path = config::data_path() + "/{shard_id_mod_8}/hash_table")
 			: m_db_name(db_name), m_shard_id(shard_id), m_hash_table_size(hash_table_size), m_data_path(data_path) {}
 
 			std::string file_base_data() const {
@@ -52,7 +52,7 @@ namespace hash_table2 {
 
 			std::string file_base() const {
 				const size_t disk_shard = m_shard_id % 8;
-				std::string data_path = "/mnt/{shard_id_mod_8}/hash_table";
+				std::string data_path = config::data_path() + "/{shard_id_mod_8}/hash_table";
 				if (data_path.find("{shard_id_mod_8}") != std::string::npos) {
 					data_path.replace(data_path.find("{shard_id_mod_8}"), 16, std::to_string(disk_shard));
 				}

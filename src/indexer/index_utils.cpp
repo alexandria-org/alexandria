@@ -26,18 +26,19 @@
 
 #include "index_utils.h"
 #include <boost/filesystem.hpp>
+#include "config.h"
 
 namespace indexer {
 
 	void create_db_directories(const std::string &db_name) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + db_name);
+			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" + db_name);
 		}
 	}
 
 	void delete_db_directories(const std::string &db_name) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::remove_all("/mnt/" + std::to_string(i) + "/full_text/" + db_name);
+			boost::filesystem::remove_all(config::data_path() + "/" + std::to_string(i) + "/full_text/" + db_name);
 		}
 	}
 

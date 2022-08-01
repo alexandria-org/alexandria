@@ -71,7 +71,8 @@ namespace server {
 						vector<indexer::link_record> links;
 						{
 							// read links
-							const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url_links/" + to_string(dom_hash) + ".data";
+							const string file = config::data_path() + "/" + to_string(dom_hash % 8) +
+								"/full_text/url_links/" + to_string(dom_hash) + ".data";
 							indexer::index_reader_file reader(file);
 
 							if (reader.size()) {
@@ -108,7 +109,8 @@ namespace server {
 							links = grouped;
 						}
 
-						const string file = "/mnt/" + to_string(dom_hash % 8) + "/full_text/url/" + to_string(dom_hash) + ".data";
+						const string file = config::data_path() + "/" + to_string(dom_hash % 8) + "/full_text/url/" +
+							to_string(dom_hash) + ".data";
 						indexer::index_reader_file reader(file);
 
 						size_t mod_incr = 0;

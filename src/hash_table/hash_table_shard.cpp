@@ -80,12 +80,14 @@ namespace hash_table {
 
 	string hash_table_shard::filename_data() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".data";
 	}
 
 	string hash_table_shard::filename_pos() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".pos";
 	}
 
 	size_t hash_table_shard::shard_id() const {

@@ -556,22 +556,26 @@ namespace full_text {
 
 	template<typename data_record>
 	std::string full_text_shard_builder<data_record>::cache_filename() const {
-		return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + std::to_string(m_shard_id) + ".cache";
+		return config::data_path() + "/" + mountpoint() + "/output/precache_" + m_db_name + "_" +
+			std::to_string(m_shard_id) + ".cache";
 	}
 
 	template<typename data_record>
 	std::string full_text_shard_builder<data_record>::key_cache_filename() const {
-		return "/mnt/" + mountpoint() + "/output/precache_" + m_db_name + "_" + std::to_string(m_shard_id) +".keys";
+		return config::data_path() + "/" + mountpoint() + "/output/precache_" + m_db_name + "_" +
+			std::to_string(m_shard_id) +".keys";
 	}
 
 	template<typename data_record>
 	std::string full_text_shard_builder<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".keys";
+		return config::data_path() + "/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" +
+			std::to_string(m_shard_id) + ".keys";
 	}
 
 	template<typename data_record>
 	std::string full_text_shard_builder<data_record>::target_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".idx";
+		return config::data_path() + "/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" +
+			std::to_string(m_shard_id) + ".idx";
 	}
 
 	/*

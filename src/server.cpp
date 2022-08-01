@@ -46,24 +46,6 @@
 
 using namespace std;
 
-void runner(void) {
-	const size_t data_len = 16000000ull*24ull;
-	char *random_data = new char[data_len];
-
-	const size_t file_len = 8000000ull*24ull*200ull*5ull*4ull;
-	hash<string> hasher;
-	while (true) {
-		ifstream infile("/mnt/0/asd");
-		size_t rnd = hasher(to_string(rand())) % (file_len - data_len);
-		infile.seekg(rnd);
-		cout << hasher(to_string(rand())) << endl;
-		profiler::instance prof("reading data");
-		infile.read((char *)random_data, data_len);
-		prof.stop();
-		prof.print();
-	}
-}
-
 int main(int argc, const char **argv) {
 
 	struct sigaction act{SIG_IGN};

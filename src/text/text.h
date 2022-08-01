@@ -42,14 +42,14 @@ namespace text {
 
 	inline void ltrim(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch);
 		}));
 	}
 
 	// trim from end (in place)
 	inline void rtrim(std::string &s) {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch);
 		}).base(), s.end());
 	}
 
@@ -88,6 +88,32 @@ namespace text {
 	}
 
 	inline std::string trim_punct(const std::string &s) {
+		std::string copy = s;
+		ltrim(copy);
+		rtrim(copy);
+		return copy;
+	}
+
+	inline void ltrim_both(std::string &s) {
+		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
+			return !isspace(ch) && !ispunct(ch);
+		}));
+	}
+
+	// trim from end (in place)
+	inline void rtrim_both(std::string &s) {
+		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
+			return !isspace(ch) && !ispunct(ch);
+		}).base(), s.end());
+	}
+
+	// trim return
+	inline void trim_both_inplace(std::string &s) {
+		ltrim_both(s);
+		rtrim_both(s);
+	}
+
+	inline std::string trim_both(const std::string &s) {
 		std::string copy = s;
 		ltrim(copy);
 		rtrim(copy);

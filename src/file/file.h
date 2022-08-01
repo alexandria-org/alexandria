@@ -50,6 +50,7 @@ namespace file {
 
 	void read_directory(const std::string &path, std::function<void(const std::string &)> cb);
 
+	bool directory_exists(const std::string &filename);
 	bool file_exists(const std::string &filename);
 
 }

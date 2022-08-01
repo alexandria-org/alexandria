@@ -601,13 +601,13 @@ namespace indexer {
 
 	void index_manager::create_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}
 	}
 
 	void index_manager::delete_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::remove_all("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+			boost::filesystem::remove_all(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}
 	}
 }

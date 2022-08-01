@@ -128,7 +128,7 @@ namespace url_link {
 		vector<vector<string>> chunks;
 		algorithm::vector_chunk<string>(local_files, ceil(local_files.size() / config::ft_num_threads_indexing) + 1, chunks);
 
-		key_value_store kv_store("/mnt/0/tmp_kwstore");
+		key_value_store kv_store(config::data_path() + "/0/tmp_kwstore");
 
 		for (const vector<string> &chunk : chunks) {
 
@@ -162,10 +162,6 @@ namespace url_link {
 	}
 
 	void upload_link_counts(const string &batch, size_t sub_batch, std::map<string, std::map<size_t, float>> &counter) {
-
-		//KeyValue_store kv_store("/mnt/0/tmp_kwstore");
-		//LOG_INFO("Compacting /mnt/0/tmp_kwstore");
-		//kv_store.db()->CompactRange(nullptr, nullptr);
 
 		struct link_count {
 			string url;

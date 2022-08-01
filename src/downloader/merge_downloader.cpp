@@ -117,8 +117,8 @@ namespace downloader {
 
 		indexer::index_builder<indexer::value_record>::create_directories("internal_links");
 
-		file::read_directory("/mnt/downloader", [](const std::string &node_id) {
-			const std::string dir = "/mnt/downloader/" + node_id;
+		file::read_directory(config::data_path() + "/downloader", [](const std::string &node_id) {
+			const std::string dir = config::data_path() + "/downloader/" + node_id;
 			file::read_directory(dir, [dir](const std::string &file) {
 				try {
 					size_t ts = std::stoull(file);

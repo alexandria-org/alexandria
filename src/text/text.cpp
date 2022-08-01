@@ -89,7 +89,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			trim(word);
+			trim_both_inplace(word);
 			if (is_clean_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);
@@ -119,7 +119,7 @@ namespace text {
 
 		for (string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
-				trim(word);
+				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);
 				}
@@ -227,7 +227,7 @@ namespace text {
 
 		for (string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
-				trim(word);
+				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);
 
@@ -236,7 +236,7 @@ namespace text {
 					boost::split(blended, word, boost::is_any_of(blend_chars));
 					if (blended.size() > 1) {
 						for (string &blended_word : blended) {
-							trim(blended_word);
+							trim_both_inplace(blended_word);
 							words.push_back(blended_word);
 							if (limit && words.size() == limit) break;
 						}
@@ -267,7 +267,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			trim(word);
+			trim_both_inplace(word);
 			if (is_clean_word(word) && !stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);

@@ -87,7 +87,7 @@ namespace tools {
 		vector<string> files;
 		for (const string &batch : config::batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -97,7 +97,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 				if (pos != string::npos) {
 					warc_path.replace(pos, 8, ".gz");
@@ -134,7 +134,7 @@ namespace tools {
 		}
 
 		idx = 0;
-		ofstream outfile("/mnt/hosts.txt", ios::trunc);
+		ofstream outfile(config::data_path() + "/hosts.txt", ios::trunc);
 		for (const auto &iter : hosts) {
 			outfile << idx << '\t' << iter.first << '\t' << iter.second << '\n';
 			idx++;
@@ -144,8 +144,8 @@ namespace tools {
 
 	unordered_map<uint64_t, uint32_t> read_hosts_file() {
 
-		// Load the hosts from /mnt/hosts.txt
-		ifstream infile("/mnt/hosts.txt");
+		// Load the hosts
+		ifstream infile(config::data_path() + "/hosts.txt");
 
 		unordered_map<uint64_t, uint32_t> ret;
 
@@ -164,8 +164,8 @@ namespace tools {
 
 	vector<uint32_t> read_hosts_file_vec() {
 
-		// Load the hosts from /mnt/hosts.txt
-		ifstream infile("/mnt/hosts.txt");
+		// Load the hosts
+		ifstream infile(config::data_path() + "/hosts.txt");
 
 		vector<uint32_t> ret;
 
@@ -183,8 +183,8 @@ namespace tools {
 
 	vector<uint32_t> *read_edge_file(size_t vlen) {
 
-		// Load the hosts from /mnt/hosts.txt
-		ifstream infile("/mnt/edges.txt");
+		// Load the hosts
+		ifstream infile(config::data_path() + "/edges.txt");
 
 		vector<uint32_t> *edge_map = new vector<uint32_t>[vlen];
 
@@ -212,7 +212,7 @@ namespace tools {
 		vector<string> files;
 		for (const string &batch : config::link_batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -222,7 +222,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
 				if (pos != string::npos) {
@@ -260,7 +260,7 @@ namespace tools {
 			idx++;
 		}
 
-		ofstream outfile("/mnt/edges.txt", ios::trunc);
+		ofstream outfile(config::data_path() + "/edges.txt", ios::trunc);
 		for (const pair<uint32_t, uint32_t> edge : edges) {
 			outfile << edge.first << '\t' << edge.second << '\n';
 		}
@@ -285,7 +285,7 @@ namespace tools {
 		delete [] edge_map;
 
 		// Save harmonic centrality.
-		ofstream outfile("/mnt/harmonic.txt", ios::trunc);
+		ofstream outfile(config::data_path() + "/harmonic.txt", ios::trunc);
 		for (size_t i = 0; i < hosts.size(); i++) {
 			outfile << fixed << hosts[i] << '\t' << harmonic[i] << '\n';
 		}

@@ -184,22 +184,26 @@ namespace hash_table {
 
 	string hash_table_shard_builder::filename_data() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".data";
 	}
 
 	string hash_table_shard_builder::filename_pos() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".pos";
 	}
 
 	string hash_table_shard_builder::filename_data_tmp() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".data.tmp";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".data.tmp";
 	}
 
 	string hash_table_shard_builder::filename_pos_tmp() const {
 		size_t disk_shard = m_shard_id % 8;
-		return "/mnt/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" + to_string(m_shard_id) + ".pos.tmp";
+		return config::data_path() + "/" + to_string(disk_shard) + "/hash_table/ht_" + m_db_name + "_" +
+			to_string(m_shard_id) + ".pos.tmp";
 	}
 
 	void hash_table_shard_builder::read_keys() {

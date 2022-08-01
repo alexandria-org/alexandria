@@ -255,13 +255,15 @@ namespace indexer {
 	template<typename data_record>
 	std::string counted_index<data_record>::filename() const {
 		if (m_file_name != "") return m_file_name + ".data";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".data";
 	}
 
 	template<typename data_record>
 	std::string counted_index<data_record>::meta_filename() const {
 		if (m_file_name != "") return m_file_name + ".meta";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".meta";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".meta";
 	}
 
 }

@@ -96,8 +96,8 @@ namespace tools {
 
 		// Save rows.
 		if (saved_rows.size() > 0) {
-			boost::filesystem::create_directories("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
-			ofstream outfile("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
+			ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
 			boost::iostreams::filtering_ostream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(outfile);
@@ -116,7 +116,7 @@ namespace tools {
 		vector<string> files;
 		vector<string> link_files;
 
-		const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+		const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 		ifstream infile(file_name);
 
@@ -126,7 +126,7 @@ namespace tools {
 
 		string line;
 		while (getline(decompress_stream, line)) {
-			string warc_path = string("/mnt/") + line;
+			string warc_path = config::data_path() + "/" + line;
 			const size_t pos = warc_path.find(".warc.gz");
 			if (pos != string::npos) {
 				warc_path.replace(pos, 8, ".gz");
@@ -224,7 +224,7 @@ namespace tools {
 
 		for (const string &batch : config::batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -234,7 +234,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 				if (pos != string::npos) {
 					warc_path.replace(pos, 8, ".gz");
@@ -246,7 +246,7 @@ namespace tools {
 
 		for (const string &batch : config::link_batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -256,7 +256,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
 				if (pos != string::npos) {

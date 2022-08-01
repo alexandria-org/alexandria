@@ -433,7 +433,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		::algorithm::bloom_filter urls_to_index;
-		urls_to_index.read_file("/mnt/0/url_filter.bloom");
+		urls_to_index.read_file(config::data_path() + "/0/url_filter.bloom");
 
 		size_t limit = 1000;
 		size_t offset = 142000;
@@ -466,7 +466,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		::algorithm::bloom_filter urls_to_index(625000027);
-		urls_to_index.read_file("/mnt/0/urls.bloom");
+		urls_to_index.read_file(config::data_path() + "/0/urls.bloom");
 
 		size_t limit = 1000;
 		size_t offset = 0;
@@ -888,10 +888,10 @@ namespace indexer {
 			cout << "it exists 1" << endl;
 		}
 
-		urls_to_index.write_file("/mnt/0/urls.bloom");
+		urls_to_index.write_file(config::data_path() + "/0/urls.bloom");
 
 		::algorithm::bloom_filter urls_to_index2(625000027);
-		urls_to_index2.read_file("/mnt/0/urls.bloom");
+		urls_to_index2.read_file(config::data_path() + "/0/urls.bloom");
 
 		if (urls_to_index2.exists("ukcafe.canto.com/v/medialibrary")) {
 			cout << "it exists 2" << endl;

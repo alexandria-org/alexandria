@@ -27,10 +27,36 @@
 #include "config.h"
 #include "text/text.h"
 #include "logger/logger.h"
+#include "file/file.h"
 
 using namespace std;
 
 namespace config {
+
+	config::config() {
+		create_data_directories(m_data_path);
+	}
+
+	const config s_instance = config();
+
+	const std::string &data_path() {
+		return s_instance.data_path();
+	}
+
+	void create_data_directories(const std::string &data_path) {
+		if (file::directory_exists(data_path)) {
+			for (size_t shard_id = 0; shard_id < 8; shard_id++) {
+				const std::string base = data_path + "/" + to_string(shard_id);
+				file::create_directory(base);
+				file::create_directory(base + "/input");
+				file::create_directory(base + "/output");
+				file::create_directory(base + "/upload");
+				file::create_directory(base + "/hash_table");
+				file::create_directory(base + "/full_text");
+				file::create_directory(base + "/tmp");
+			}
+		}
+	}
 
 	string node = "test0001";
 	string master = "localhost";
@@ -166,6 +192,8 @@ namespace config {
 				shard_hash_table_size = stoull(parts[1]);
 			} else if (parts[0] == "html_parser_long_text_len") {
 				html_parser_long_text_len = stoull(parts[1]);
+			} else if (parts[0] == "data_path") {
+				s_instance.data_path(parts[1]);
 			}
 		}
 	}

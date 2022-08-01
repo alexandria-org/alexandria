@@ -55,7 +55,8 @@ namespace full_text {
 	void url_to_domain::read() {
 		lock_guard lock(m_lock);
 		for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-			const string file_name = "/mnt/"+(to_string(bucket_id))+"/full_text/url_to_domain_"+m_db_name+".fti";
+			const string file_name = config::data_path() + "/" + (to_string(bucket_id)) + "/full_text/url_to_domain_"
+				+ m_db_name + ".fti";
 
 			ifstream infile(file_name, ios::binary);
 			if (infile.is_open()) {
@@ -86,32 +87,19 @@ namespace full_text {
 
 	void url_to_domain::convert() {
 
-		/*algorithm::bloom_filter bf;
-		bf.read_file("/mnt/0/url_filter.bloom");
-		int fp = 0;
-		for (size_t i = 0; i < 100000; i++) {
-			if (bf.exists(to_string(rand()))) {
-				fp++;
-			}
-		}
-
-		cout << "fp: " << fp << "/" << 100000 << endl;
-		return;
-		*/
-
 		algorithm::bloom_filter bf;
-		bf.read_file("/mnt/0/url_filter_0.bloom");
+		bf.read_file(config::data_path() + "/0/url_filter_0.bloom");
 
 		for (size_t i = 1; i < 24; i++) {
 			algorithm::bloom_filter bf2;
-			const string file_name = "/mnt/0/url_filter_"+to_string(i)+".bloom";
+			const string file_name = config::data_path() + "/0/url_filter_"+to_string(i)+".bloom";
 			cout << "reading_file: " << file_name << endl;
 			bf2.read_file(file_name);
 
 			bf.merge(bf2);
 		}
 
-		bf.write_file("/mnt/0/url_filter.bloom");
+		bf.write_file(config::data_path() + "/0/url_filter.bloom");
 
 		int fp = 0;
 		for (size_t i = 0; i < 100000; i++) {
@@ -144,7 +132,7 @@ namespace full_text {
 				bf.commit();
 				cout << "done with " << idx << ": " << filename << endl;
 
-				bf.write_file("/mnt/0/url_filter_"+to_string(i)+".bloom");
+				bf.write_file(config::data_path() + "/0/url_filter_"+to_string(i)+".bloom");
 			});
 		}
 
@@ -154,7 +142,8 @@ namespace full_text {
 
 	void url_to_domain::write(size_t indexer_id) {\
 		lock_guard lock(m_lock);
-		const string file_name = "/mnt/"+(to_string(indexer_id % 8))+"/full_text/url_to_domain_"+m_db_name+".fti";
+		const string file_name = config::data_path() + "/" + (to_string(indexer_id % 8)) + "/full_text/url_to_domain_"
+			+ m_db_name + ".fti";
 
 		ofstream outfile(file_name, ios::binary | ios::app);
 		if (!outfile.is_open()) {
@@ -174,7 +163,8 @@ namespace full_text {
 
 	void url_to_domain::truncate() {
 		for (size_t i = 0; i < 8; i++) {
-			const string file_name = "/mnt/"+(to_string(i))+"/full_text/url_to_domain_"+m_db_name+".fti";
+			const string file_name = config::data_path() + "/" + (to_string(i)) + "/full_text/url_to_domain_" +
+				m_db_name + ".fti";
 			ofstream outfile(file_name, ios::trunc);
 		}
 	}

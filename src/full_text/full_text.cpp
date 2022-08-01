@@ -44,7 +44,8 @@ namespace full_text {
 	void truncate_url_to_domain(const string &index_name) {
 
 		for (size_t bucket_id = 0; bucket_id < 8; bucket_id++) {
-			const string file_name = "/mnt/"+to_string(bucket_id)+"/full_text/url_to_domain_"+index_name+".fti";
+			const string file_name = config::data_path() + "/" + to_string(bucket_id) + "/full_text/url_to_domain_" +
+				index_name + ".fti";
 			ofstream outfile(file_name, ios::binary | ios::trunc);
 			outfile.close();
 		}
@@ -127,8 +128,8 @@ namespace full_text {
 
 	bool is_indexed() {
 
-		// First check if file /mnt/0/indexed exists.
-		ifstream infile("/mnt/0/indexed");
+		// First check if file [DATA_PATH]/0/indexed exists.
+		ifstream infile(config::data_path() + "/0/indexed");
 		if (infile.is_open()) {
 			return true;
 		}
@@ -140,7 +141,7 @@ namespace full_text {
 	}
 
 	void mark_indexed() {
-		ofstream outfile("/mnt/0/indexed", ios::trunc);
+		ofstream outfile(config::data_path() + "/0/indexed", ios::trunc);
 		if (outfile.is_open()) {
 			outfile << 1;
 		}

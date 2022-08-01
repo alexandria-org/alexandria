@@ -236,12 +236,14 @@ namespace full_text {
 
 	template<typename data_record>
 	std::string full_text_shard<data_record>::filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".idx";
+		return config::data_path() + "/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" +
+			std::to_string(m_shard_id) + ".idx";
 	}
 
 	template<typename data_record>
 	std::string full_text_shard<data_record>::key_filename() const {
-		return "/mnt/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" + std::to_string(m_shard_id) + ".keys";
+		return config::data_path() + "/" + mountpoint() + "/full_text/fti_" + m_db_name + "_" +
+			std::to_string(m_shard_id) + ".keys";
 	}
 
 	template<typename data_record>
