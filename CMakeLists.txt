@@ -159,8 +159,8 @@ set(SRC_COMMON
 )
 
 set(SRC_TESTS
-	"tests/hyper_log_log.cpp"
-	"tests/memory.cpp"
+	"tests/test_hyper_log_log.cpp"
+	"tests/test_memory.cpp"
 	"tests/test_algorithm.cpp"
 	"tests/test_api.cpp"
 	"tests/test_bloom_filter.cpp"
