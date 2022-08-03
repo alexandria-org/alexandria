@@ -12,7 +12,6 @@ add_definitions(-Wfatal-errors)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-add_subdirectory("deps/leveldb")
 add_subdirectory("deps/abseil-cpp")
 
 find_package(roaring REQUIRED)
@@ -99,8 +98,6 @@ set(SRC_CLASSES
 
 	"src/config.cpp"
 
-	"src/key_value_store.cpp"
-
 	"src/algorithm/algorithm.cpp"
 	"src/algorithm/intersection.cpp"
 	"src/algorithm/sort.cpp"
@@ -174,7 +171,6 @@ set(SRC_TESTS
 	"tests/test_index_builder.cpp"
 	"tests/test_index_iteration.cpp"
 	"tests/test_index_reader.cpp"
-	"tests/test_key_value_store.h"
 	"tests/test_logger.cpp"
 	"tests/test_n_gram.cpp"
 	"tests/test_robot_parser.cpp"
@@ -241,24 +237,24 @@ target_link_libraries(run_tests PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
 target_link_libraries(server PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
 target_link_libraries(scraper PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
 target_link_libraries(indexer PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
 target_link_libraries(alexandria PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
-	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads leveldb absl::strings absl::numeric roaring::roaring)
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
