@@ -39,19 +39,22 @@ namespace parser {
 		"iframe", "head", "meta", "link", "object", "aside", "channel", "img"};
 
 	html_parser::html_parser()
-	: m_long_text_len(100000), m_long_str_buf_len(100000)
+	: m_long_text_len(100000)
 	{
-		m_long_str_buf = new char[m_long_str_buf_len];
+		m_long_str_buf = std::make_unique<char[]>(m_long_text_len);
+		m_clean_buff = std::make_unique<char[]>(m_long_text_len);
+		m_encoding_buffer = std::make_unique<unsigned char []>(m_long_text_len);
 	}
 
 	html_parser::html_parser(size_t long_text_len)
-	: m_long_text_len(long_text_len), m_long_str_buf_len(long_text_len)
+	: m_long_text_len(long_text_len)
 	{
-		m_long_str_buf = new char[m_long_str_buf_len];
+		m_long_str_buf = std::make_unique<char[]>(m_long_text_len);
+		m_clean_buff = std::make_unique<char[]>(m_long_text_len);
+		m_encoding_buffer = std::make_unique<unsigned char []>(m_long_text_len);
 	}
 
 	html_parser::~html_parser() {
-		delete [] m_long_str_buf;
 	}
 
 	void html_parser::parse(const string &html) {
@@ -88,8 +91,6 @@ namespace parser {
 		m_h1 = get_tag_content(html, "<h1", "</h1>");
 		m_meta = get_meta_tag(html);
 		m_text = get_text_content(html);
-
-		text::trim_punct(m_meta);
 
 		if (m_encoding == ENC_ISO_8859_1) {
 			iso_to_utf8(m_title);
@@ -223,9 +224,9 @@ namespace parser {
 		char *cpath;
 		uc = curl_url_get(h, CURLUPART_PATH, &cpath, 0);
 		if (!uc) {
-			if (strnlen(cpath, HTML_PARSER_CLEANBUF_LEN) < HTML_PARSER_CLEANBUF_LEN) {
-				decode_html_entities_utf8(m_clean_buff, cpath);
-				path = m_clean_buff;
+			if (strnlen(cpath, m_long_text_len) < m_long_text_len) {
+				decode_html_entities_utf8(m_clean_buff.get(), cpath);
+				path = m_clean_buff.get();
 			} else {
 				path = cpath;
 			}
@@ -235,9 +236,9 @@ namespace parser {
 		char *cquery;
 		uc = curl_url_get(h, CURLUPART_QUERY, &cquery, 0);
 		if (!uc) {
-			if (strnlen(cquery, HTML_PARSER_CLEANBUF_LEN) < HTML_PARSER_CLEANBUF_LEN) {
-				decode_html_entities_utf8(m_clean_buff, cquery);
-				path += "?" + string(m_clean_buff);
+			if (strnlen(cquery, m_long_text_len) < m_long_text_len) {
+				decode_html_entities_utf8(m_clean_buff.get(), cquery);
+				path += "?" + string(m_clean_buff.get());
 			} else {
 				path += "?" + string(cquery);
 			}
@@ -252,7 +253,7 @@ namespace parser {
 	void html_parser::remove_www(string &path) {
 		size_t pos = path.find("www.");
 		if (pos == 0) path.erase(0, 4);
-		text::trim(path);
+		text::trim_inplace(path);
 	}
 
 	void html_parser::parse_encoding(const string &html) {
@@ -387,11 +388,11 @@ namespace parser {
 
 	void html_parser::clean_text(string &str) {
 		strip_tags(str);
-		if (str.size() >= HTML_PARSER_CLEANBUF_LEN) return;
-		decode_html_entities_utf8(m_clean_buff, str.c_str());
-		str = m_clean_buff;
+		if (str.size() >= m_long_text_len) return;
+		decode_html_entities_utf8(m_clean_buff.get(), str.c_str());
+		str = m_clean_buff.get();
 		strip_whitespace(str);
-		text::trim(str);
+		text::trim_both_inplace(str);
 	}
 
 	void html_parser::strip_tags(string &html) {
@@ -464,7 +465,7 @@ namespace parser {
 
 		const char *html_s = html.c_str();
 
-		for (; i < len && j < m_long_str_buf_len; i++) {
+		for (; i < len && j < m_long_text_len; i++) {
 			if (html_s[i] == '<') {
 				if (interval != invisible_end && interval->first == i) {
 					// Skip the whole invisible tag.
@@ -480,18 +481,18 @@ namespace parser {
 				copy = false;
 			}
 			if (isspace(html_s[i])) {
-				if (j < m_long_str_buf_len) m_long_str_buf[j] = ' ';
+				if (j < m_long_text_len) m_long_str_buf[j] = ' ';
 				if (copy && !last_was_space) j++;
 				last_was_space = true;
 			} else {
-				if (j < m_long_str_buf_len) m_long_str_buf[j] = html_s[i];
+				if (j < m_long_text_len) m_long_str_buf[j] = html_s[i];
 				if (copy) j++;
 				last_was_space = false;
 			}
 			if (!ignore && html_s[i] == '>') copy = true;
 		}
 
-		string text(m_long_str_buf, j);
+		string text(m_long_str_buf.get(), j);
 
 		return text;
 	}

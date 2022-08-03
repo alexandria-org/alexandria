@@ -143,7 +143,7 @@ namespace text {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
 				if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
-					trim_punct(cur_token);
+					trim_punct_inplace(cur_token);
 					tokens.push_back(str2token(cur_token));
 				}
 				cur_token.clear();
@@ -157,7 +157,7 @@ namespace text {
 
 		// Remember the last token.
 		if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
-			trim_punct(cur_token);
+			trim_punct_inplace(cur_token);
 			tokens.push_back(str2token(cur_token));
 		}
 
@@ -182,7 +182,7 @@ namespace text {
 						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 						cur_snippet.insert(cur_snippet.end(), ' ');
 					} else {
-						trim(cur_snippet);
+						trim_inplace(cur_snippet);
 						snippets.push_back(cur_snippet);
 						cur_snippet.clear();
 						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
@@ -200,7 +200,7 @@ namespace text {
 			cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 		}
 
-		trim(cur_snippet);
+		trim_inplace(cur_snippet);
 		snippets.push_back(cur_snippet);
 
 		return snippets;

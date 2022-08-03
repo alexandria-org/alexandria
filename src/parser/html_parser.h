@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cctype>
 #include <string.h>
+#include <memory>
 #include <boost/algorithm/string.hpp>
 
 #include "html_link.h"
@@ -40,9 +41,6 @@
 
 #define HTML_PARSER_MAX_H1_LEN 400
 #define HTML_PARSER_MAX_TITLE_LEN 400
-
-#define HTML_PARSER_CLEANBUF_LEN 1024
-#define HTML_PARSER_ENCODING_BUFFER_LEN 8192
 
 #define ENC_UTF_8 1
 #define ENC_ISO_8859_1 2
@@ -81,10 +79,9 @@ namespace parser {
 		std::vector<std::pair<size_t, size_t>> m_invisible_pos;
 
 		const size_t m_long_text_len = 1000;
-		char m_clean_buff[HTML_PARSER_CLEANBUF_LEN];
-		const size_t m_long_str_buf_len;
-		char *m_long_str_buf;
-		unsigned char m_encoding_buffer[HTML_PARSER_ENCODING_BUFFER_LEN];
+		std::unique_ptr<char[]> m_long_str_buf;
+		std::unique_ptr<char[]> m_clean_buff;
+		std::unique_ptr<unsigned char[]> m_encoding_buffer;
 		bool m_should_insert;
 		int m_encoding = ENC_UNKNOWN;
 

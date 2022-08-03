@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(html_parser_long_text) {
 	parser.parse(html, "https://zlib.net/manual.html");
 
 	string text = parser.text();
-	BOOST_CHECK_EQUAL(text.substr(text.size() - 15), "# endif #endif ");
+	BOOST_CHECK_EQUAL(text.substr(text.size() - 14), "# endif #endif");
 
 	vector<string> words = text::get_expanded_full_text_words(text);
 
