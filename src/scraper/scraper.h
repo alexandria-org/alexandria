@@ -27,11 +27,12 @@
 #include <iostream>
 #include <queue>
 #include <curl/curl.h>
+#include <thread>
+#include <boost/filesystem.hpp>
+#include "transfer/transfer.h"
 #include "robots.h"
 #include "scraper_store.h"
 #include "URL.h"
-#include "url_store/domain_data.h"
-#include "url_store/robots_data.h"
 #include "profiler/profiler.h"
 
 namespace scraper {
@@ -77,7 +78,6 @@ namespace scraper {
 			scraper_store *m_store;
 			std::queue<URL> m_queue;
 			googlebot::RobotsMatcher m_robots;
-			url_store::domain_data m_domain_data;
 			std::string m_robots_content;
 			size_t m_num_total = 0;
 			size_t m_num_www = 0;

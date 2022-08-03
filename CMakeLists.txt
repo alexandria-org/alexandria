@@ -57,7 +57,6 @@ set(SRC_CLASSES
 	"src/url_link/link.cpp"
 	"src/url_link/indexer.cpp"
 	"src/url_link/indexer_runner.cpp"
-	"src/url_link/link_counter.cpp"
 
 	"src/domain_link/indexer.cpp"
 
@@ -89,11 +88,6 @@ set(SRC_CLASSES
 
 	"src/warc/warc.cpp"
 
-	"src/url_store/url_store.cpp"
-	"src/url_store/url_data.cpp"
-	"src/url_store/domain_data.cpp"
-	"src/url_store/robots_data.cpp"
-	
 	"src/profiler/profiler.cpp"
 
 	"src/logger/logger.cpp"
@@ -181,7 +175,6 @@ set(SRC_TESTS
 	"tests/test_index_iteration.cpp"
 	"tests/test_index_reader.cpp"
 	"tests/test_key_value_store.h"
-	"tests/test_link_counter.cpp"
 	"tests/test_logger.cpp"
 	"tests/test_n_gram.cpp"
 	"tests/test_robot_parser.cpp"
@@ -200,7 +193,6 @@ set(SRC_TESTS
 	"tests/test_unicode.cpp"
 	"tests/test_url.cpp"
 	"tests/test_url_record.cpp"
-	"tests/test_url_store.cpp"
 
 	# This overloads the new/delete operators to keep track of memory, slows things down a lot.
 	"src/memory/overload.cpp"

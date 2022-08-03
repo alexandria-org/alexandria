@@ -39,7 +39,6 @@
 #include "indexer/console.h"
 #include <iostream>
 #include <set>
-#include "url_store/url_store.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
 #include "indexer/url_level.h"
@@ -84,9 +83,6 @@ int main(int argc, const char **argv) {
 		tools::count_all_links();
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
-	} else if (arg == "--urlstore") {
-		worker::start_urlstore_server();
-		worker::wait_for_urlstore_server();
 	} else if (arg == "--split-with-links") {
 		tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {
@@ -116,8 +112,6 @@ int main(int argc, const char **argv) {
 		indexer::index_domains(argv[2]);
 	} else if (arg == "--index-titles") {
 		indexer::index_title_counter(argv[2]);
-	} else if (arg == "--index-link-counter") {
-		indexer::index_link_counter(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
 	} else if (arg == "--index-url-links") {

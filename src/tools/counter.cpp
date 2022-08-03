@@ -35,11 +35,9 @@
 #include "config.h"
 #include "URL.h"
 #include "url_link/link.h"
-#include "url_link/link_counter.h"
 #include "transfer/transfer.h"
 #include "algorithm/hyper_log_log.h"
 #include "algorithm/algorithm.h"
-#include "url_store/url_store.h"
 #include "file/tsv_file_remote.h"
 #include "common/system.h"
 
@@ -332,36 +330,10 @@ namespace tools {
 	void count_link_batch(const common::sub_system *sub_system, const string &batch, size_t sub_batch, const vector<string> &files,
 			map<string, map<size_t, float>> &counter) {
 
-		const size_t chunk_size = 500;
-
-		vector<vector<string>> chunks;
-		algorithm::vector_chunk(files, chunk_size, chunks);
-
-		for (const vector<string> &chunk : chunks) {
-			url_link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);
-		}
-
 	}
 
 	void count_all_links() {
 
-		common::sub_system *sub_system = new common::sub_system();
-
-		for (const string &batch : config::link_batches) {
-
-			vector<string> files = download_link_batch(batch, 50000, 0);
-
-			for (size_t sub_batch = 0; sub_batch < 5; sub_batch++) {
-
-				map<string, map<size_t, float>> counter;
-				count_link_batch(sub_system, batch, sub_batch, files, counter);
-				// Upload link counts.
-				url_link::upload_link_counts(batch, sub_batch, counter);
-			}
-
-			transfer::delete_downloaded_files(files);
-		}
-		delete sub_system;
 	}
 }
 

@@ -29,11 +29,9 @@
 #include "full_text_indexer_runner.h"
 #include "file/tsv_file_remote.h"
 #include "url_link/indexer_runner.h"
-#include "url_link/link_counter.h"
 #include "transfer/transfer.h"
 #include "search_engine/search_engine.h"
 #include "hash_table_helper/hash_table_helper.h"
-#include "url_store/url_store.h"
 
 using namespace std;
 

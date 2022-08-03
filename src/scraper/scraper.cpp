@@ -28,6 +28,7 @@
 #include "parser/html_parser.h"
 #include "common/datetime.h"
 #include "text/text.h"
+#include "logger/logger.h"
 #include <memory>
 
 using namespace std;
@@ -131,7 +132,7 @@ namespace scraper {
 	scraper::scraper(const string &domain, scraper_store *store) :
 		m_domain(domain), m_store(store)
 	{
-		m_domain_data.m_domain = domain;
+		//m_domain_data.m_domain = domain;
 		m_curl = curl_easy_init();
 	}
 
@@ -243,13 +244,7 @@ namespace scraper {
 	}
 
 	void scraper::update_url(const URL &url, size_t http_code, size_t last_visited, const URL &redirect) {
-		url_store::url_data url_data;
-		url_data.m_url = url;
-		url_data.m_redirect = redirect;
-		url_data.m_http_code = http_code;
-		url_data.m_last_visited = last_visited;
-
-		m_store->add_url_data(url_data);
+		// Store information about URL.
 	}
 
 	void scraper::handle_curl_error(const URL &url, size_t curl_error, const std::string &error_msg) {
@@ -330,10 +325,7 @@ namespace scraper {
 	}
 
 	void scraper::download_domain_data() {
-		int error = url_store::get(m_domain, m_domain_data);
-		if (error == url_store::ERROR) {
-			LOG_INFO("Could not download domain data");
-		}
+		
 	}
 
 	void scraper::download_robots() {
@@ -390,27 +382,18 @@ namespace scraper {
 
 	void scraper::upload_domain_info() {
 		if (m_num_total > 0) {
-			url_store::domain_data data;
-			data.m_domain = m_domain;
-			data.m_has_https = m_num_https > 0;
-			data.m_has_www = m_num_www > 0;
-
-			m_store->add_domain_data(data);
+			// TODO.. Upload data about domain.
 		}
 	}
 
 	void scraper::upload_robots_txt(const string &robots_content) {
-		url_store::robots_data data;
-		data.m_domain = m_domain;
-		data.m_robots = robots_content;
-
-		m_store->add_robots_data(data);
+		// TODO.. Upload data about robots.txt
 	}
 
 	URL scraper::filter_url(const URL &url) {
 		URL ret(url);
-		if (m_domain_data.m_has_https && !url.has_https()) ret.set_scheme("https");
-		if (m_domain_data.m_has_www && !url.has_www()) ret.set_www(true);
+		//if (m_domain_data.m_has_https && !url.has_https()) ret.set_scheme("https");
+		//if (m_domain_data.m_has_www && !url.has_www()) ret.set_www(true);
 
 		return ret;
 	}

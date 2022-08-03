@@ -28,6 +28,8 @@
 #include "common/system.h"
 #include "common/datetime.h"
 #include "warc/warc.h"
+#include "transfer/transfer.h"
+#include "logger/logger.h"
 
 using namespace std;
 
@@ -46,29 +48,6 @@ namespace scraper {
 		m_upload_limit = 0;
 		upload_results();
 		upload_non_200_results();
-		url_store::update_many(m_url_datas, url_store::update_url | url_store::update_redirect | url_store::update_http_code |
-				url_store::update_last_visited);
-	}
-
-	void scraper_store::add_url_data(const url_store::url_data &data) {
-		m_lock.lock();
-		m_url_datas.push_back(data);
-		m_lock.unlock();
-		upload_url_datas();
-	}
-
-	void scraper_store::add_domain_data(const url_store::domain_data &data) {
-		m_lock.lock();
-		m_domain_datas.push_back(data);
-		m_lock.unlock();
-		upload_domain_datas();
-	}
-
-	void scraper_store::add_robots_data(const url_store::robots_data &data) {
-		m_lock.lock();
-		m_robots_datas.push_back(data);
-		m_lock.unlock();
-		upload_robots_datas();
 	}
 
 	void scraper_store::add_scraper_data(const std::string &line) {
@@ -98,40 +77,21 @@ namespace scraper {
 	void scraper_store::upload_url_datas() {
 		if (!m_do_upload) return;
 		m_lock.lock();
-		if (m_url_datas.size() > 1000) {
-			vector<url_store::url_data> tmp_datas;
-			tmp_datas.swap(m_url_datas);
-			m_lock.unlock();
-			url_store::update_many(tmp_datas, url_store::update_url | url_store::update_redirect | url_store::update_http_code |
-					url_store::update_last_visited);
-			return;
-		}
+		// todo upload data
 		m_lock.unlock();
 	}
 
 	void scraper_store::upload_domain_datas() {
 		if (!m_do_upload) return;
 		m_lock.lock();
-		if (m_domain_datas.size() > 1000) {
-			vector<url_store::domain_data> tmp_datas;
-			tmp_datas.swap(m_domain_datas);
-			m_lock.unlock();
-			url_store::update_many(tmp_datas, url_store::update_has_https | url_store::update_has_www);
-			return;
-		}
+		// todo upload data
 		m_lock.unlock();
 	}
 
 	void scraper_store::upload_robots_datas() {
 		if (!m_do_upload) return;
 		m_lock.lock();
-		if (m_robots_datas.size() > 1000) {
-			vector<url_store::robots_data> tmp_datas;
-			tmp_datas.swap(m_robots_datas);
-			m_lock.unlock();
-			url_store::update_many(tmp_datas, url_store::update_robots);
-			return;
-		}
+		// todo upload data
 		m_lock.unlock();
 	}
 
