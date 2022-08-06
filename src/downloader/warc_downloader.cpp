@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <iomanip>
+
 #include "config.h"
 #include "common/datetime.h"
 #include "warc/warc.h"

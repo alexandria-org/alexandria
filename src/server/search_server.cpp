@@ -31,13 +31,12 @@
 #include "indexer/index_manager.h"
 #include "indexer/domain_level.h"
 #include "indexer/url_record.h"
-#include "hash_table/hash_table.h"
+#include "hash_table2/hash_table.h"
 #include "transfer/transfer.h"
 #include "parser/parser.h"
 #include "parser/unicode.h"
 #include "api/result_with_snippet.h"
 #include "api/api_response.h"
-#include "full_text/full_text_record.h"
 #include "full_text/search_metric.h"
 #include "json.hpp"
 
@@ -50,8 +49,8 @@ namespace server {
 		indexer::domain_level domain_level;
 		idx_manager.add_level(&domain_level);
 
-		hash_table::hash_table ht("index_manager");
-		hash_table::hash_table url_ht("snippets");
+		hash_table2::hash_table ht("index_manager");
+		hash_table2::hash_table url_ht("snippets");
 
 		cout << "starting server..." << endl;
 
@@ -163,7 +162,7 @@ namespace server {
 				for (const auto &url_record : results) {
 					const std::string line = url_ht.find(url_record.m_value);
 
-					full_text::full_text_record ft_rec;
+					indexer::return_record ft_rec;
 					ft_rec.m_value = url_record.m_value;
 					ft_rec.m_score = url_record.m_score;
 					ft_rec.m_domain_hash = url_to_domain[url_record.m_value];

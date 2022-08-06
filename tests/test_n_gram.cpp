@@ -27,13 +27,8 @@
 #include <boost/test/unit_test.hpp>
 #include "text/text.h"
 #include "algorithm/hash.h"
-#include "full_text/full_text.h"
-#include "search_allocation/search_allocation.h"
-#include "hash_table_helper/hash_table_helper.h"
-#include "search_engine/search_engine.h"
 
 using namespace std;
-using namespace full_text;
 
 BOOST_AUTO_TEST_SUITE(n_gram)
 
@@ -65,50 +60,6 @@ BOOST_AUTO_TEST_CASE(words_to_ngram) {
 
 	BOOST_CHECK_EQUAL(ngrams.size(), 24);
 
-}
-
-BOOST_AUTO_TEST_CASE(n_gram) {
-
-	size_t initial_results_per_section = config::ft_max_results_per_section;
-
-	config::n_grams = 5;
-	config::ft_max_results_per_section = 1000;
-
-	search_allocation::allocation *allocation = search_allocation::create_allocation();
-
-	full_text::truncate_url_to_domain("main_index");
-	full_text::truncate_index("test_main_index");
-
-	hash_table_helper::truncate("test_main_index");
-
-	{
-		// Index full text
-		full_text::index_single_batch("test_main_index", "test_main_index", "ALEXANDRIA-TEST-07");
-	}
-
-	{
-		// Count elements in hash tables.
-		hash_table::hash_table ht("test_main_index");
-
-		// Make searches.
-		full_text_index<full_text_record> index("test_main_index");
-
-		const string query = "The latter is commonly used";
-		struct search_metric metric;
-
-		vector<full_text_record> results = search_engine::search_exact(allocation->record_storage, index, query, 1000, metric);
-
-		BOOST_CHECK_EQUAL(results.size(), 1);
-		BOOST_CHECK_EQUAL(metric.m_total_found, 1);
-		BOOST_CHECK_EQUAL(metric.m_link_domain_matches, 0);
-		BOOST_CHECK_EQUAL(metric.m_link_url_matches, 0);
-		BOOST_CHECK_EQUAL(results[0].m_value, URL("https://en.wikipedia.org/wiki/A").hash());
-	}
-
-	search_allocation::delete_allocation(allocation);
-
-	config::n_grams = 1;
-	config::ft_max_results_per_section = initial_results_per_section;
 }
 
 BOOST_AUTO_TEST_CASE(n_gram2) {

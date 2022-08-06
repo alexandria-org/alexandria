@@ -26,10 +26,12 @@
 
 #pragma once
 
+#include "config.h"
+
 #include <iostream>
 #include <functional>
+#include <map>
 #include <boost/algorithm/string/join.hpp>
-#include "common/sub_system.h"
 
 class URL {
 
@@ -69,7 +71,11 @@ public:
 	void set_scheme(const std::string &scheme);
 	void set_www(bool has_www);
 
-	float harmonic(const common::sub_system *sub_system) const;
+	float harmonic() const;
+
+	size_t index_on_node() const {
+		return host_hash() % config::nodes_in_cluster;
+	}
 
 	URL &operator=(const URL &other);
 	friend std::istream &operator >>(std::istream &ss, URL &url);

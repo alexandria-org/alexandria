@@ -25,6 +25,7 @@
  */
 
 #include "link.h"
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 

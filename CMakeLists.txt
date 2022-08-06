@@ -26,15 +26,11 @@ include_directories(deps/)
 include_directories(tests/)
 
 set(SRC_CLASSES
-	
-	"src/api/api.cpp"
-	"src/api/api_response.cpp"
-	"src/api/api_status_response.cpp"
-	"src/api/domain_link_result.cpp"
+
+	"src/url_link/link.cpp"
 	"src/api/result_with_snippet.cpp"
-
-	"src/worker/worker.cpp"
-
+	"src/api/api_response.cpp"
+	
 	"src/file/file.cpp"
 	"src/file/archive.cpp"
 	"src/file/tsv_file.cpp"
@@ -44,26 +40,6 @@ set(SRC_CLASSES
 
 	"src/transfer/transfer.cpp"
 
-	"src/full_text/full_text_indexer.cpp"
-	"src/full_text/full_text_indexer_runner.cpp"
-	"src/full_text/url_to_domain.cpp"
-	"src/full_text/full_text.cpp"
-
-	"src/search_engine/search_engine.cpp"
-
-	"src/search_allocation/search_allocation.cpp"
-
-	"src/url_link/link.cpp"
-	"src/url_link/indexer.cpp"
-	"src/url_link/indexer_runner.cpp"
-
-	"src/domain_link/indexer.cpp"
-
-	"src/hash_table/hash_table.cpp"
-	"src/hash_table/hash_table_shard.cpp"
-	"src/hash_table/hash_table_shard_builder.cpp"
-	"src/hash_table/builder.cpp"
-
 	"src/hash_table2/hash_table.cpp"
 	"src/hash_table2/hash_table_shard.cpp"
 	"src/hash_table2/hash_table_shard_builder.cpp"
@@ -71,8 +47,6 @@ set(SRC_CLASSES
 
 	"src/hash_table_helper/hash_table_helper.cpp"
 
-	"src/post_processor/post_processor.cpp"
-	
 	"src/parser/parser.cpp"
 	"src/parser/entities.cpp"
 	"src/parser/html_link.cpp"
@@ -142,7 +116,6 @@ set(SRC_CLASSES
 set(SRC_COMMON
 	"src/common/dictionary.cpp"
 	"src/common/system.cpp"
-	"src/common/sub_system.cpp"
 	"src/common/datetime.cpp"
 	"src/common/dictionary_row.cpp"
 	"src/text/stopwords.cpp"
@@ -153,17 +126,12 @@ set(SRC_TESTS
 	"tests/test_hyper_log_log.cpp"
 	"tests/test_memory.cpp"
 	"tests/test_algorithm.cpp"
-	"tests/test_api.cpp"
 	"tests/test_bloom_filter.cpp"
 	"tests/test_cc_parser.cpp"
-	"tests/test_config.conf"
-	"tests/test_config2.conf"
 	"tests/test_configuration.cpp"
 	"tests/test_counted_index_builder.cpp"
 	"tests/test_datetime.h"
-	"tests/test_deduplication.cpp"
 	"tests/test_file.cpp"
-	"tests/test_full_text.cpp"
 	"tests/test_hash.cpp"
 	"tests/test_hash_table.cpp"
 	"tests/test_html_parser.cpp"
@@ -175,13 +143,8 @@ set(SRC_TESTS
 	"tests/test_n_gram.cpp"
 	"tests/test_robot_parser.cpp"
 	"tests/test_scraper.cpp"
-	"tests/test_search_allocation.cpp"
-	"tests/test_search_engine.cpp"
-	"tests/test_sections.cpp"
-	"tests/test_shard_builder.cpp"
 	"tests/test_sharded_index_builder.cpp"
 	"tests/test_sort.cpp"
-	"tests/test_sub_system.cpp"
 	"tests/test_sum_sorted.cpp"
 	"tests/test_text.cpp"
 	"tests/test_thread_pool.cpp"

@@ -33,7 +33,6 @@
 
 #include "config.h"
 #include "logger/logger.h"
-#include "worker/worker.h"
 
 #include <iostream>
 #include <stdlib.h>

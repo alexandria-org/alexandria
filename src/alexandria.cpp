@@ -25,6 +25,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include <numeric>
 #include "logger/logger.h"
 #include "downloader/warc_downloader.h"

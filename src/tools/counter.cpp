@@ -327,13 +327,5 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	void count_link_batch(const common::sub_system *sub_system, const string &batch, size_t sub_batch, const vector<string> &files,
-			map<string, map<size_t, float>> &counter) {
-
-	}
-
-	void count_all_links() {
-
-	}
 }
 

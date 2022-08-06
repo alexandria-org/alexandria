@@ -100,8 +100,9 @@ namespace indexer {
 	void sharded_builder<index_type, data_record>::add(uint64_t key, const data_record &record) {
 		m_shards[key % m_shards.size()]->add(key, record);
 
-		/*m_num_added_keys++;
 		m_document_counter.insert(record.m_value);
+
+		/*m_num_added_keys++;
 		m_document_sizes[record.m_value]++;*/ // Raw non unique document size.
 	}
 

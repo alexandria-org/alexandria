@@ -25,6 +25,7 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include <boost/algorithm/string.hpp>
 #include "scraper/scraper.h"
 #include <queue>
 #include <vector>

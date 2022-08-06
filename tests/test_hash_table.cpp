@@ -25,12 +25,10 @@
  */
 
 #include <boost/test/unit_test.hpp>
-#include "hash_table/hash_table.h"
-#include "hash_table/builder.h"
-#include "hash_table_helper/hash_table_helper.h"
 
 #include "hash_table2/hash_table.h"
 #include "hash_table2/builder.h"
+#include "hash_table_helper/hash_table_helper.h"
 #include "indexer/merger.h"
 
 #include <set>
@@ -41,14 +39,14 @@ BOOST_AUTO_TEST_CASE(test_file_paths) {
 
 	{
 		hash_table2::hash_table_shard_builder ht_builder("test_index", 8);
-		BOOST_CHECK_EQUAL(ht_builder.file_base_data(), "/mnt/0/hash_table/ht_test_index_8");
-		BOOST_CHECK_EQUAL(ht_builder.filename_data(), "/mnt/0/hash_table/ht_test_index_8.data");
+		BOOST_CHECK_EQUAL(ht_builder.file_base_data(), "./0/hash_table/ht_test_index_8");
+		BOOST_CHECK_EQUAL(ht_builder.filename_data(), "./0/hash_table/ht_test_index_8.data");
 	}
 	{
 		hash_table2::hash_table_shard_builder ht_builder("test_index", 8, 1000, "/data_path");
 		BOOST_CHECK_EQUAL(ht_builder.file_base_data(), "/data_path/ht_test_index_8");
 		BOOST_CHECK_EQUAL(ht_builder.filename_data(), "/data_path/ht_test_index_8.data");
-		BOOST_CHECK_EQUAL(ht_builder.filename_pos(), "/mnt/0/hash_table/ht_test_index_8.pos");
+		BOOST_CHECK_EQUAL(ht_builder.filename_pos(), "./0/hash_table/ht_test_index_8.pos");
 	}
 
 }
@@ -605,7 +603,7 @@ BOOST_AUTO_TEST_CASE(merge_with_files) {
 	{
 		hash_table2::builder ht("main_index2", 1);
 
-		ht.get_shard(0)->merge_with("/mnt/0/hash_table/ht_main_index_0.pos", "/mnt/0/hash_table/ht_main_index_0.data");
+		ht.get_shard(0)->merge_with("./0/hash_table/ht_main_index_0.pos", "./0/hash_table/ht_main_index_0.data");
 	}
 	{
 		hash_table2::hash_table ht("main_index2", 1);

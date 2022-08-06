@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include "full_text/full_text.h"
 #include <iostream>
 #include "config.h"
 #include "logger/logger.h"
@@ -35,7 +34,6 @@
 #include "tools/generate_url_lists.h"
 #include "tools/find_links.h"
 #include "URL.h"
-#include "worker/worker.h"
 #include "indexer/console.h"
 #include <iostream>
 #include <set>
@@ -71,16 +69,12 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--index") {
-		full_text::index_all_batches("main_index", "main_index");
-	} else if (arg == "--split") {
+	if (arg == "--split") {
 		tools::run_splitter();
 	} else if (arg == "--count") {
 		tools::run_counter();
 		} else if (arg == "--count-domains") {
 		tools::run_counter_per_domain(argv[2]);
-	} else if (arg == "--count-links") {
-		tools::count_all_links();
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
 	} else if (arg == "--split-with-links") {

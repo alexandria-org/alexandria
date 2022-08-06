@@ -149,6 +149,15 @@ BOOST_AUTO_TEST_CASE(test_score_mod) {
 	}
 
 	{
+		/*
+		 * intersected records will be in this order:
+		 * 1000
+		 * 1001
+		 * 1002
+		 *
+		 * so score modification will take place in that order.
+		 *
+		 * */
 		indexer::sharded_index<domain_record> idx("test_index", 1);
 		uint64_t sum_id = 0;
 		vector<domain_record> res = idx.find_top({101, 102}, 2,
@@ -157,9 +166,9 @@ BOOST_AUTO_TEST_CASE(test_score_mod) {
 				});
 
 		BOOST_REQUIRE(res.size() == 2);
-		BOOST_CHECK(res[0].m_score == 3.0f);
+		BOOST_CHECK(res[0].m_score == 2.0f);
 		BOOST_CHECK(res[0].m_value == 1002);
-		BOOST_CHECK(res[1].m_score == 2.0f);
+		BOOST_CHECK(res[1].m_score == 1.0f);
 		BOOST_CHECK(res[1].m_value == 1001);
 	}
 
@@ -190,7 +199,7 @@ BOOST_AUTO_TEST_CASE(test_with_real_data) {
 	cout << "diff: " << mem_after - mem_before << endl;
 
 	{
-		hash_table::hash_table ht("index_manager");
+		hash_table2::hash_table ht("index_manager");
 		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
 		idx_manager.add_level(&domain_level);
@@ -225,7 +234,7 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 	}
 
 	{
-		hash_table::hash_table ht("index_manager");
+		hash_table2::hash_table ht("index_manager");
 		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
 		idx_manager.add_level(&domain_level);
@@ -243,7 +252,7 @@ BOOST_AUTO_TEST_CASE(test_optimization) {
 	}
 
 	{
-		hash_table::hash_table ht("index_manager");
+		hash_table2::hash_table ht("index_manager");
 		indexer::index_manager idx_manager;
 		indexer::domain_level domain_level;
 		idx_manager.add_level(&domain_level);

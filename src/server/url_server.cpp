@@ -31,7 +31,6 @@
 #include "indexer/index_manager.h"
 #include "indexer/domain_level.h"
 #include "indexer/url_record.h"
-#include "hash_table/hash_table.h"
 
 namespace server {
 	void url_server() {

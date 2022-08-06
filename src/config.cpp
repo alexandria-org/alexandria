@@ -146,9 +146,9 @@ namespace config {
 				nodes_in_cluster = stoi(parts[1]);
 			} else if (parts[0] == "node_id") {
 				node_id = stoi(parts[1]);
-			} else if (parts[0] == "batches") {
+			} else if (parts[0] == "batches[]") {
 				batches.push_back(parts[1]);
-			} else if (parts[0] == "link_batches") {
+			} else if (parts[0] == "link_batches[]") {
 				link_batches.push_back(parts[1]);
 			} else if (parts[0] == "worker_count") {
 				worker_count = stoi(parts[1]);

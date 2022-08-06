@@ -7,11 +7,11 @@
 #include <fstream>
 #include <cmath>
 #include <thread>
+#include <future>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
 #include "url_link/link.h"
-#include "full_text/full_text.h"
 #include "algorithm/algorithm.h"
 #include "URL.h"
 #include "common/system.h"
@@ -69,7 +69,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
-				const size_t node_id = full_text::url_to_node(url);
+				const size_t node_id = url.index_on_node();
 				cache[node_id].push_back(line);
 			}
 
@@ -116,7 +116,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
-				const size_t node_id = full_text::link_to_node(link);
+				const size_t node_id = link.index_on_node();
 				cache[node_id].push_back(line);
 			}
 
@@ -161,7 +161,7 @@ namespace tools {
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				if (urls.count(url.hash())) {
-					const size_t node_id = full_text::url_to_node(url);
+					const size_t node_id = url.index_on_node();
 					cache[node_id].push_back(line);
 				}
 			}
