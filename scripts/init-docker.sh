@@ -2,6 +2,9 @@
 
 cd `dirname $0`
 
+# The local docker development environment runs the data server on the local machine.
+# This script sets that up and downloads the test data.
+
 echo "Copying nginx config";
 
 echo "server {
@@ -51,18 +54,6 @@ mkdir /var/www/html/node0003.alexandria.org/nodes/test0001
 mkdir /var/www/html/node0003.alexandria.org/upload-tmp
 
 chown -R www-data:www-data /var/www/html/node0003.alexandria.org
-
-for shard_id in $(seq 0 7); do
-	shard="/mnt/$shard_id"
-	rm -r $shard
-	mkdir $shard
-	mkdir "$shard/input";
-	mkdir "$shard/output";
-	mkdir "$shard/upload";
-	mkdir "$shard/hash_table";
-	mkdir "$shard/full_text";
-	mkdir "$shard/tmp";
-done
 
 /etc/init.d/nginx restart
 
