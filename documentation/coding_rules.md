@@ -66,7 +66,9 @@ class index_builder {
 if (something) {
     do_something();
 } else if (something_else) {
+    do_something_else();
 } else {
+    do_else();
 }
 ```
 
@@ -76,10 +78,27 @@ if (something) {
 for (const auto &iter : m_map) {
 
 }
-
+// But if you need a standard loop indent it like this.
 for (int i = 0; i < 100; i++) {
 
 } 
+```
+
+### memory allocation
+```c++
+// Avoid new/delete, use smart pointers everywhere.
+// If you just need a regular pointer to memory do this:
+std::unique_ptr<char[]> allocator;
+try {
+    allocator = std::make_unique<char[]>(1000);
+} catch (std::bad_alloc &error) {
+    // Handle allocation error.
+}
+
+char *ptr = allocator.get();
+
+// Use ptr as regular pointer to 1000 chars.
+// ptr will be deleted automatically when allocator goes out of scope.
 ```
 
 
