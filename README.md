@@ -2,14 +2,7 @@
 
 [Coding Rules](/documentation/coding_rules.md)
 
-## Documentation
-1. [Index file format (.fti)](/documentation/index_file_format.md)
-2. [Search Result Ranking](/documentation/search_result_ranking.md)
-3. [API Response format](/documentation/api_response_format.md)
-4. [Caching](/documentation/caching.md)
-5. [Installing nodes](/documentation/installing_nodes.md)
-
-## Build with docker
+## Build instructions with docker
 1. Build docker image
 ```
 docker build . -t alexandria
@@ -43,6 +36,13 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 
 make -j4 run_tests
 ```
+
+## Documentation
+1. [Index file format (.fti)](/documentation/index_file_format.md)
+2. [Search Result Ranking](/documentation/search_result_ranking.md)
+3. [API Response format](/documentation/api_response_format.md)
+4. [Caching](/documentation/caching.md)
+5. [Installing nodes](/documentation/installing_nodes.md)
 
 ## How to build manually
 1. Configure the system (Tested on Ubuntu 20.04)
