@@ -1,8 +1,8 @@
 # Alexandria.org
 
 1. [Coding Rules](/documentation/coding_rules.md)
-2. [Full text indexing](/documentation/index_file_format.md)
-3. [Hash table](/documentation/hash_table_format.md)
+2. [Full text indexes](/documentation/full_text_indexes.md)
+3. [Hash table](/documentation/hash_table.md)
 
 ## Build instructions with docker
 1. Build docker image
