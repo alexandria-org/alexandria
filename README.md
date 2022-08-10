@@ -1,6 +1,8 @@
 # Alexandria.org
 
-[Coding Rules](/documentation/coding_rules.md)
+1. [Coding Rules](/documentation/coding_rules.md)
+2. [Full text indexing](/documentation/index_file_format.md)
+3. [Hash table](/documentation/hash_table_format.md)
 
 ## Build instructions with docker
 1. Build docker image
@@ -44,10 +46,6 @@ make -j4 run_tests
 ## run test suite
 ./run_tests
 ```
-
-## Documentation
-1. [Full text indexes](/documentation/index_file_format.md)
-2. [Hash table index](/documentation/hash_table_format.md)
 
 ## How to build manually (not recommended)
 1. Configure the system (Tested on Ubuntu 20.04)
