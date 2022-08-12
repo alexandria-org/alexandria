@@ -31,6 +31,7 @@
 #include "downloader/merge_downloader.h"
 #include "URL.h"
 #include "hash_table2/hash_table.h"
+#include "hash_table2/hash_table_shard_builder.h"
 #include "indexer/index.h"
 #include "indexer/index_builder.h"
 #include "indexer/value_record.h"
@@ -46,6 +47,8 @@ void help() {
 	cout << "--downloader-merge" << endl;
 	cout << "--invert-all-internal" << endl;
 	cout << "--url [URL]" << endl;
+	cout << "--url-hash [URL_HASH]" << endl;
+	cout << "--optimize" << endl;
 }
 
 int main(int argc, const char **argv) {
@@ -86,6 +89,12 @@ int main(int argc, const char **argv) {
 		std::string data = ht.find(url_hash, ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
+	} else if (arg == "--optimize-shard" && argc > 2) {
+		size_t shard_id = std::stoull(argv[2]);
+		hash_table2::hash_table_shard_builder ht_shard("all_urls", shard_id, 1000000, "/slow_data");
+
+		ht_shard.optimize();
+
 	} else if (arg == "--invert-all-internal") {
 
 		utils::thread_pool pool(32);

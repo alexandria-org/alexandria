@@ -198,6 +198,8 @@ namespace hash_table2 {
 
 		outfile.close();
 
+		std::cout << "optimized shard only dry run: " << this->filename_data_tmp() << std::endl;
+
 		file::delete_file(filename_data());
 		file::delete_file(filename_pos());
 
