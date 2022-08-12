@@ -32,6 +32,7 @@
 #include "algorithm/hyper_log_log.h"
 #include "utils/thread_pool.hpp"
 #include "debug.h"
+#include "config.h"
 
 namespace indexer {
 
@@ -99,8 +100,9 @@ namespace indexer {
 	void sharded_builder<index_type, data_record>::add(uint64_t key, const data_record &record) {
 		m_shards[key % m_shards.size()]->add(key, record);
 
-		/*m_num_added_keys++;
 		m_document_counter.insert(record.m_value);
+
+		/*m_num_added_keys++;
 		m_document_sizes[record.m_value]++;*/ // Raw non unique document size.
 	}
 
@@ -272,7 +274,7 @@ namespace indexer {
 	template<template<typename> typename index_type, typename data_record>
 	std::string sharded_builder<index_type, data_record>::filename() const {
 		// This file will contain meta data on the index. For example the hyper log log document counter.
-		return "/mnt/0/full_text/" + m_db_name + ".meta";
+		return config::data_path() + "/0/full_text/" + m_db_name + ".meta";
 	}
 
 }

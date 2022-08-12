@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include "full_text/full_text.h"
 #include <iostream>
 #include "config.h"
 #include "logger/logger.h"
@@ -35,11 +34,9 @@
 #include "tools/generate_url_lists.h"
 #include "tools/find_links.h"
 #include "URL.h"
-#include "worker/worker.h"
 #include "indexer/console.h"
 #include <iostream>
 #include <set>
-#include "url_store/url_store.h"
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
 #include "indexer/url_level.h"
@@ -72,21 +69,14 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--index") {
-		full_text::index_all_batches("main_index", "main_index");
-	} else if (arg == "--split") {
+	if (arg == "--split") {
 		tools::run_splitter();
 	} else if (arg == "--count") {
 		tools::run_counter();
 		} else if (arg == "--count-domains") {
 		tools::run_counter_per_domain(argv[2]);
-	} else if (arg == "--count-links") {
-		tools::count_all_links();
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
-	} else if (arg == "--urlstore") {
-		worker::start_urlstore_server();
-		worker::wait_for_urlstore_server();
 	} else if (arg == "--split-with-links") {
 		tools::run_splitter_with_links();
 	} else if (arg == "--download-batch") {
@@ -116,8 +106,6 @@ int main(int argc, const char **argv) {
 		indexer::index_domains(argv[2]);
 	} else if (arg == "--index-titles") {
 		indexer::index_title_counter(argv[2]);
-	} else if (arg == "--index-link-counter") {
-		indexer::index_link_counter(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
 	} else if (arg == "--index-url-links") {

@@ -44,7 +44,7 @@ namespace hash_table2 {
 
 		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards,
 				size_t hash_table_size = 1000000,
-				const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table");
+				const std::string &data_path = config::data_path() + "/{shard_id_mod_8}/hash_table");
 		~hash_table();
 
 		void add(uint64_t key, const std::string &value);

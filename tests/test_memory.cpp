@@ -66,6 +66,8 @@ BOOST_AUTO_TEST_CASE(test_memory) {
 BOOST_AUTO_TEST_CASE(test_indexer_memory) {
 	memory::update();
 
+	indexer::create_db_directories("domain_link_index");
+
 	BOOST_CHECK(memory::get_available_memory() > 0);
 	BOOST_CHECK(memory::get_total_memory() > 0);
 
@@ -76,16 +78,12 @@ BOOST_AUTO_TEST_CASE(test_indexer_memory) {
 		indexer::counted_index_builder<indexer::domain_link_record> idx("domain_link_index", 97ull);
 
 		memuse2 = memory::allocated_memory();
+		idx.append();
 		idx.merge();
 		memuse3 = memory::allocated_memory();
 	}
 
 	memuse4 = memory::allocated_memory();
-
-	std::cout << "memuse1: " << memuse1 << std::endl;
-	std::cout << "memuse2: " << memuse2 << std::endl;
-	std::cout << "memuse3: " << memuse3 << std::endl;
-	std::cout << "memuse4: " << memuse4 << std::endl;
 
 	BOOST_CHECK(memuse1 == memuse4);
 	BOOST_CHECK(memuse2 == memuse3);

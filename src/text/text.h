@@ -40,57 +40,111 @@
 
 namespace text {
 
-	inline void ltrim(std::string &s) {
+	/*
+	 * trim whitespace from beginning (in place)
+	 * */
+	inline void ltrim_inplace(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch);
 		}));
 	}
 
-	// trim from end (in place)
-	inline void rtrim(std::string &s) {
+	/*
+	 * trim whitespace from end (in place)
+	 * */
+	inline void rtrim_inplace(std::string &s) {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch);
 		}).base(), s.end());
 	}
 
-	// trim return
-	inline std::string trim(std::string &s) {
-		ltrim(s);
-		rtrim(s);
-		return s;
+	/*
+	 * trim whitespace from both beginning and end (in place)
+	 * */
+	inline void trim_inplace(std::string &s) {
+		ltrim_inplace(s);
+		rtrim_inplace(s);
 	}
 
+	/*
+	 * trim whitespace from both beginning and end (return result)
+	 * */
 	inline std::string trim(const std::string &s) {
 		std::string copy = s;
-		ltrim(copy);
-		rtrim(copy);
+		ltrim_inplace(copy);
+		rtrim_inplace(copy);
 		return copy;
 	}
 
-	inline void ltrim_punct(std::string &s) {
+	/*
+	 * trim punctuation from beginning (in place)
+	 * */
+	inline void ltrim_punct_inplace(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
 			return !ispunct(ch);
 		}));
 	}
 
-	// trim from end (in place)
-	inline void rtrim_punct(std::string &s) {
+	/*
+	 * trim punctuation from end (in place)
+	 * */
+	inline void rtrim_punct_inplace(std::string &s) {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
 			return !ispunct(ch);
 		}).base(), s.end());
 	}
 
-	// trim return
-	inline std::string trim_punct(std::string &s) {
-		ltrim_punct(s);
-		rtrim_punct(s);
-		return s;
+	/*
+	 * trim punctuation from both beginning and end (in place)
+	 * */
+	inline void trim_punct_inplace(std::string &s) {
+		ltrim_punct_inplace(s);
+		rtrim_punct_inplace(s);
 	}
 
+	/*
+	 * trim punctuation from both beginning and end (return result)
+	 * */
 	inline std::string trim_punct(const std::string &s) {
 		std::string copy = s;
-		ltrim(copy);
-		rtrim(copy);
+		ltrim_punct_inplace(copy);
+		rtrim_punct_inplace(copy);
+		return copy;
+	}
+
+	/*
+	 * trim both whitespace and punctuation from beginning (in place)
+	 * */
+	inline void ltrim_both_inplace(std::string &s) {
+		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
+			return !isspace(ch) && !ispunct(ch);
+		}));
+	}
+
+	/*
+	 * trim both whitespace and punctuation from end (in place)
+	 * */
+	inline void rtrim_both_inplace(std::string &s) {
+		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
+			return !isspace(ch) && !ispunct(ch);
+		}).base(), s.end());
+	}
+
+	/*
+	 * trim both whitespace and punctuation from both beginning and end (in place)
+	 * */
+	inline void trim_both_inplace(std::string &s) {
+		ltrim_both_inplace(s);
+		rtrim_both_inplace(s);
+	}
+
+	/*
+	 * trim both whitespace and punctuation from both beginning and end (return result)
+	 * */
+	inline std::string trim_both(const std::string &s) {
+		std::string copy = s;
+		ltrim_both_inplace(copy);
+		rtrim_both_inplace(copy);
 		return copy;
 	}
 

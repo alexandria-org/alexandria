@@ -7,11 +7,11 @@
 #include <fstream>
 #include <cmath>
 #include <thread>
+#include <future>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
 #include "url_link/link.h"
-#include "full_text/full_text.h"
 #include "algorithm/algorithm.h"
 #include "URL.h"
 #include "common/system.h"
@@ -20,10 +20,10 @@ using namespace std;
 
 namespace tools {
 
-	// File structure is /mnt/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
+	// File structure is [data_path]/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
 	string write_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
 		const string filename = "crawl-data/NODE-" + to_string(node_id) + "-BIG/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
-		ofstream outfile("/mnt/" + filename, ios::trunc | ios::binary);
+		ofstream outfile(config::data_path() + "/" + filename, ios::trunc | ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
 		compress_stream.push(boost::iostreams::gzip_compressor());
@@ -36,10 +36,10 @@ namespace tools {
 		return filename;
 	}
 
-	// File structure is /mnt/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
+	// File structure is [DATA_PATH]/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
 	string write_link_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
 		const string filename = "crawl-data/LINK-" + to_string(node_id) + "-BIG/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
-		ofstream outfile("/mnt/" + filename, ios::trunc | ios::binary);
+		ofstream outfile(config::data_path() + "/" + filename, ios::trunc | ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
 		compress_stream.push(boost::iostreams::gzip_compressor());
@@ -69,7 +69,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
-				const size_t node_id = full_text::url_to_node(url);
+				const size_t node_id = url.index_on_node();
 				cache[node_id].push_back(line);
 			}
 
@@ -85,7 +85,7 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = "/mnt/crawl-data/NODE-" + to_string(node_id) + "-BIG/warc.paths";
+			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-BIG/warc.paths";
 			ofstream outfile(filename, ios::app);
 			for (const string &file : file_names[node_id]) {
 				outfile << file << "\n";
@@ -116,7 +116,7 @@ namespace tools {
 			string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
-				const size_t node_id = full_text::link_to_node(link);
+				const size_t node_id = link.index_on_node();
 				cache[node_id].push_back(line);
 			}
 
@@ -132,7 +132,7 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = "/mnt/crawl-data/LINK-" + to_string(node_id) + "-BIG/warc.paths";
+			const string filename = config::data_path() + "/crawl-data/LINK-" + to_string(node_id) + "-BIG/warc.paths";
 			ofstream outfile(filename, ios::app);
 			for (const string &file : file_names[node_id]) {
 				outfile << file << "\n";
@@ -161,7 +161,7 @@ namespace tools {
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				if (urls.count(url.hash())) {
-					const size_t node_id = full_text::url_to_node(url);
+					const size_t node_id = url.index_on_node();
 					cache[node_id].push_back(line);
 				}
 			}
@@ -183,7 +183,7 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = "/mnt/crawl-data/NODE-" + to_string(node_id) + "-BIG/warc.paths";
+			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-BIG/warc.paths";
 			ofstream outfile(filename, ios::app);
 			for (const string &file : file_names[node_id]) {
 				outfile << file << "\n";
@@ -217,12 +217,12 @@ namespace tools {
 	void create_warc_directories() {
 		// Create directories.
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			boost::filesystem::create_directories("/mnt/crawl-data/NODE-" + to_string(node_id) + "-BIG");
-			boost::filesystem::create_directories("/mnt/crawl-data/NODE-" + to_string(node_id) + "-BIG/files");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-BIG");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-BIG/files");
 		}
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			boost::filesystem::create_directories("/mnt/crawl-data/LINK-" + to_string(node_id));
-			boost::filesystem::create_directories("/mnt/crawl-data/LINK-" + to_string(node_id) + "/files");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + to_string(node_id));
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + to_string(node_id) + "/files");
 		}
 	}
 
@@ -238,7 +238,7 @@ namespace tools {
 
 		for (const string &batch : config::batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -248,7 +248,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 				if (pos != string::npos) {
 					warc_path.replace(pos, 8, ".gz");
@@ -260,7 +260,7 @@ namespace tools {
 
 		for (const string &batch : config::link_batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -270,7 +270,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
 				if (pos != string::npos) {
@@ -324,7 +324,7 @@ namespace tools {
 		vector<string> files;
 		for (const string &batch : config::batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -334,7 +334,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 				if (pos != string::npos) {
 					warc_path.replace(pos, 8, ".gz");
@@ -373,7 +373,7 @@ namespace tools {
 		vector<string> link_files;
 		for (const string &batch : config::link_batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -383,7 +383,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
 				if (pos != string::npos) {

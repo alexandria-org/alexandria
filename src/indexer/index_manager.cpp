@@ -45,9 +45,9 @@ namespace indexer {
 		m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
 		m_domain_link_index = std::make_unique<sharded<counted_index, domain_link_record>>("domain_link_index", 4001);
 
-		m_hash_table = std::make_unique<hash_table::builder>("index_manager");
-		m_hash_table_words = std::make_unique<hash_table::builder>("word_hash_table");
-		m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
+		m_hash_table = std::make_unique<hash_table2::builder>("index_manager");
+		m_hash_table_words = std::make_unique<hash_table2::builder>("word_hash_table");
+		//m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
 
 		m_fp_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("first_page_title_word_counter", 101);
 
@@ -76,7 +76,7 @@ namespace indexer {
 			m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
 		}
 		if (only_snippets) {
-			m_hash_table_snippets = std::make_unique<hash_table::builder>("snippets");
+			m_hash_table_snippets = std::make_unique<hash_table2::builder>("snippets");
 		}
 	}
 
@@ -105,7 +105,7 @@ namespace indexer {
 			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
 				m_hash_table->add(key, value);
 			}, [this](uint64_t url_hash, uint64_t domain_hash) {
-				m_url_to_domain->add_url(url_hash, domain_hash);
+				//m_url_to_domain->add_url(url_hash, domain_hash);
 			});
 		}
 	}
@@ -122,7 +122,7 @@ namespace indexer {
 
 		pool.run_all();
 
-		m_url_to_domain->write(0);
+		//m_url_to_domain->write(0);
 		m_hash_table->merge();
 
 	}
@@ -601,13 +601,13 @@ namespace indexer {
 
 	void index_manager::create_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}
 	}
 
 	void index_manager::delete_directories(level_type lvl) {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::remove_all("/mnt/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
+			boost::filesystem::remove_all(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
 		}
 	}
 }

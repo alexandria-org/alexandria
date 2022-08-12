@@ -33,7 +33,7 @@ using namespace std;
 namespace hash_table_helper {
 
 	void truncate(const string &hash_table_name) {
-		vector<hash_table::hash_table_shard_builder *> shards = create_shard_builders(hash_table_name);
+		vector<hash_table2::hash_table_shard_builder *> shards = create_shard_builders(hash_table_name);
 
 		for (auto shard : shards) {
 			shard->truncate();
@@ -42,44 +42,21 @@ namespace hash_table_helper {
 		delete_shard_builders(shards);
 	}
 
-	vector<hash_table::hash_table_shard_builder *> create_shard_builders(const string &hash_table_name) {
-		vector<hash_table::hash_table_shard_builder *> shards;
+	vector<hash_table2::hash_table_shard_builder *> create_shard_builders(const string &hash_table_name) {
+		vector<hash_table2::hash_table_shard_builder *> shards;
 		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
-			shards.push_back(new hash_table::hash_table_shard_builder(hash_table_name, shard_id));
+			shards.push_back(new hash_table2::hash_table_shard_builder(hash_table_name, shard_id));
 		}
 
 		return shards;
 	}
 
-	void delete_shard_builders(vector<hash_table::hash_table_shard_builder *> &shards) {
+	void delete_shard_builders(vector<hash_table2::hash_table_shard_builder *> &shards) {
 		for (auto shard : shards) {
 			delete shard;
 		}
 
 		shards.clear();
-	}
-
-	void add_data(vector<hash_table::hash_table_shard_builder *> &shards, uint64_t key, const string &value) {
-		shards[key % config::ht_num_shards]->add(key, value);
-	}
-
-	void write(vector<hash_table::hash_table_shard_builder *> &shards) {
-		for (auto shard : shards) {
-			shard->write();
-		}
-	}
-
-	void sort(vector<hash_table::hash_table_shard_builder *> &shards) {
-		for (auto shard : shards) {
-			shard->sort();
-		}
-	}
-
-	void optimize(vector<hash_table::hash_table_shard_builder *> &shards) {
-		for (auto shard : shards) {
-			LOG_INFO("Optimizing shard: " + shard->filename_data());
-			shard->optimize();
-		}
 	}
 
 }

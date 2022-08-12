@@ -42,11 +42,6 @@
 #include "algorithm/bloom_filter.h"
 #include "parser/parser.h"
 #include "http/server.h"
-#include "domain_link/full_text_record.h"
-#include "full_text/full_text_record.h"
-#include "api/result_with_snippet.h"
-#include "api/api_response.h"
-#include "full_text/search_metric.h"
 #include "json.hpp"
 
 using namespace std;
@@ -83,7 +78,7 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_manager &idx_manager, hash_table::hash_table &ht, hash_table::hash_table &url_ht, const string &query) {
+	void cmd_search(index_manager &idx_manager, hash_table2::hash_table &ht, hash_table2::hash_table &url_ht, const string &query) {
 
 		profiler::instance prof("domain search");
 		std::vector<indexer::return_record> res = idx_manager.find(query);
@@ -152,7 +147,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
+	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
 
 		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
@@ -169,7 +164,7 @@ namespace indexer {
 
 	}
 
-	void cmd_domain_info(index_manager &idx_manager, hash_table::hash_table &ht, const string &domain, size_t limit, size_t offset) {
+	void cmd_domain_info(index_manager &idx_manager, hash_table2::hash_table &ht, const string &domain, size_t limit, size_t offset) {
 
 		indexer::sharded<indexer::counted_index, indexer::counted_record> idx("title_word_counter", 997);
 
@@ -188,7 +183,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word(index_manager &idx_manager, hash_table::hash_table &ht, const string &query, const string &domain) {
+	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query, const string &domain) {
 
 		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
@@ -207,7 +202,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word_num(index_manager &idx_manager, hash_table::hash_table &ht, const string &query) {
+	void cmd_word_num(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
 
 		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
 
@@ -257,9 +252,9 @@ namespace indexer {
 
 		//idx_manager.truncate();
 
-		hash_table::hash_table ht("index_manager");
-		hash_table::hash_table url_ht("snippets");
-		//hash_table::hash_table ht_words("word_hash_table");
+		hash_table2::hash_table ht("index_manager");
+		hash_table2::hash_table url_ht("snippets");
+		//hash_table2::hash_table ht_words("word_hash_table");
 
 		string input;
 		while (cout << "# " && getline(cin, input)) {
@@ -352,7 +347,7 @@ namespace indexer {
 
 	void index_title_counter(const string &batch) {
 
-		hash_table::builder ht("word_hash_table");
+		hash_table2::builder ht("word_hash_table");
 		//ht.truncate();
 
 		size_t limit = 5000;
@@ -391,7 +386,7 @@ namespace indexer {
 
 	void index_link_counter(const string &batch) {
 
-		hash_table::builder ht("word_hash_table");
+		hash_table2::builder ht("word_hash_table");
 
 		size_t limit = 5000;
 		size_t offset = 5000;
@@ -433,7 +428,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		::algorithm::bloom_filter urls_to_index;
-		urls_to_index.read_file("/mnt/0/url_filter.bloom");
+		urls_to_index.read_file(config::data_path() + "/0/url_filter.bloom");
 
 		size_t limit = 1000;
 		size_t offset = 142000;
@@ -466,7 +461,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		::algorithm::bloom_filter urls_to_index(625000027);
-		urls_to_index.read_file("/mnt/0/urls.bloom");
+		urls_to_index.read_file(config::data_path() + "/0/urls.bloom");
 
 		size_t limit = 1000;
 		size_t offset = 0;
@@ -631,7 +626,7 @@ namespace indexer {
 				return a.m_score > b.m_score;	
 			});
 
-			hash_table::hash_table ht("index_manager");
+			hash_table2::hash_table ht("index_manager");
 
 			for (auto &rec : res) {
 
@@ -674,7 +669,7 @@ namespace indexer {
 		LOG_INFO("Done download_domain_stats");
 
 		indexer::index_manager idx_manager;
-		hash_table::hash_table ht("word_hash_table");
+		hash_table2::hash_table ht("word_hash_table");
 
 		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
 		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
@@ -854,7 +849,7 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		hash_table::hash_table ht("index_manager");
+		hash_table2::hash_table ht("index_manager");
 
 		sharded_index_builder<domain_record> idx("domain_info", 997);
 
@@ -888,10 +883,10 @@ namespace indexer {
 			cout << "it exists 1" << endl;
 		}
 
-		urls_to_index.write_file("/mnt/0/urls.bloom");
+		urls_to_index.write_file(config::data_path() + "/0/urls.bloom");
 
 		::algorithm::bloom_filter urls_to_index2(625000027);
-		urls_to_index2.read_file("/mnt/0/urls.bloom");
+		urls_to_index2.read_file(config::data_path() + "/0/urls.bloom");
 
 		if (urls_to_index2.exists("ukcafe.canto.com/v/medialibrary")) {
 			cout << "it exists 2" << endl;

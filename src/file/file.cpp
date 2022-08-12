@@ -90,6 +90,10 @@ namespace file {
 		}
 	}
 
+	bool directory_exists(const std::string &filename) {
+		return boost::filesystem::is_directory(filename) && boost::filesystem::exists(filename);
+	}
+
 	bool file_exists(const std::string &filename) {
 		std::ifstream infile(filename);
 		return infile.good();

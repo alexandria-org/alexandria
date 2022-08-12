@@ -27,17 +27,13 @@
 #pragma once
 
 #include <iostream>
-#include "hash_table/hash_table.h"
-#include "hash_table/hash_table_shard_builder.h"
+#include "hash_table2/hash_table.h"
+#include "hash_table2/hash_table_shard_builder.h"
 
 namespace hash_table_helper {
 
 	void truncate(const std::string &hash_table_name);
-	std::vector<hash_table::hash_table_shard_builder *> create_shard_builders(const std::string &hash_table_name);
-	void delete_shard_builders(std::vector<hash_table::hash_table_shard_builder *> &shards);
-	void add_data(std::vector<hash_table::hash_table_shard_builder *> &shards, uint64_t key, const std::string &value);
-	void write(std::vector<hash_table::hash_table_shard_builder *> &shards);
-	void sort(std::vector<hash_table::hash_table_shard_builder *> &shards);
-	void optimize(std::vector<hash_table::hash_table_shard_builder *> &shards);
+	std::vector<hash_table2::hash_table_shard_builder *> create_shard_builders(const std::string &hash_table_name);
+	void delete_shard_builders(std::vector<hash_table2::hash_table_shard_builder *> &shards);
 
 }

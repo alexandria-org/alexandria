@@ -33,7 +33,6 @@
 
 #include "config.h"
 #include "logger/logger.h"
-#include "worker/worker.h"
 
 #include <iostream>
 #include <stdlib.h>
@@ -55,7 +54,6 @@ using std::pair;
 void run_before() {
 	config::read_config("../tests/test_config.conf");
 	logger::start_logger_thread();
-	worker::start_urlstore_server();
 }
 
 void run_after() {

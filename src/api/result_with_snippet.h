@@ -28,17 +28,14 @@
 
 #include <iostream>
 #include "URL.h"
-
-namespace full_text {
-	struct full_text_record;
-}
+#include "indexer/return_record.h"
 
 namespace api {
 
 	class result_with_snippet {
 
 	public:
-		result_with_snippet(const std::string &tsv_data, const full_text::full_text_record &res);
+		result_with_snippet(const std::string &tsv_data, const indexer::return_record &res);
 		~result_with_snippet();
 
 		const URL &url() const { return m_url; };

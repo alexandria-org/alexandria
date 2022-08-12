@@ -33,8 +33,7 @@
 #include "sharded_index.h"
 #include "level.h"
 #include "snippet.h"
-#include "hash_table/builder.h"
-#include "full_text/url_to_domain.h"
+#include "hash_table2/builder.h"
 #include "sharded_builder.h"
 #include "sharded.h"
 #include "counted_index_builder.h"
@@ -107,10 +106,10 @@ namespace indexer {
 		std::unique_ptr<sharded_index<domain_record>> m_domain_info;
 
 		std::vector<level *> m_levels;
-		std::unique_ptr<hash_table::builder> m_hash_table;
-		std::unique_ptr<hash_table::builder> m_hash_table_words;
-		std::unique_ptr<hash_table::builder> m_hash_table_snippets;
-		std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
+		std::unique_ptr<hash_table2::builder> m_hash_table;
+		std::unique_ptr<hash_table2::builder> m_hash_table_words;
+		std::unique_ptr<hash_table2::builder> m_hash_table_snippets;
+		//std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
 
 		void create_directories(level_type lvl);
 		void delete_directories(level_type lvl);

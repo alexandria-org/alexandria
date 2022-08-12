@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_SUITE(test_index_builder)
 
 BOOST_AUTO_TEST_CASE(test_merge_with) {
 
-	file::delete_directory("/mnt/0/full_text/test_index");
-	file::create_directory("/mnt/0/full_text/test_index");
+	file::delete_directory("./0/full_text/test_index");
+	file::create_directory("./0/full_text/test_index");
 
 	{
 		indexer::index_builder<indexer::value_record> idx("test_index", 0, 1000);

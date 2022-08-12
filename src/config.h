@@ -32,6 +32,25 @@
 
 namespace config {
 
+	void create_data_directories(const std::string &data_path);
+
+	class config {
+		public:
+
+			config();
+
+			const std::string &data_path() const { return m_data_path; }
+
+			void data_path(const std::string &str) const { m_data_path = str; create_data_directories(m_data_path); }
+
+		private:
+
+			mutable std::string m_data_path = "/mnt";
+
+	};
+
+	const std::string &data_path();
+
 	extern std::string node;
 	extern std::string master;
 	extern std::string upload;

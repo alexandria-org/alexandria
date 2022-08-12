@@ -26,13 +26,12 @@
 
 #include "result_with_snippet.h"
 #include "text/text.h"
-#include "full_text/full_text_record.h"
 
 using namespace std;
 
 namespace api {
 
-	result_with_snippet::result_with_snippet(const string &tsv_data, const full_text::full_text_record &res)
+	result_with_snippet::result_with_snippet(const string &tsv_data, const indexer::return_record &res)
 	: m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
 		size_t pos_start = 0;
 		size_t pos_end = 0;

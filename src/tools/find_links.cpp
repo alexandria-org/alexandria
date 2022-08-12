@@ -14,6 +14,7 @@
 #include "utils/thread_pool.hpp"
 #include "algorithm/hash.h"
 #include "common/system.h"
+#include "config.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ namespace tools {
 
 		ofstream outfile;
 
-		outfile.open("/mnt/crawl-data/SMALL-LINK-MIX/files/" + to_string(thread_id) + "_" + to_string(links_written) + "-" +
+		outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + to_string(thread_id) + "_" + to_string(links_written) + "-" +
 			to_string(links_written + links_per_file) + ".gz", ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
@@ -35,7 +36,7 @@ namespace tools {
 		compress_stream.push(outfile);
 
 		for (auto file : files) {
-			ifstream infile("/mnt/" + file);
+			ifstream infile(config::data_path() + "/" + file);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
@@ -59,8 +60,8 @@ namespace tools {
 						compress_stream.strict_sync();
 						compress_stream.pop();
 						outfile.close();
-						outfile.open("/mnt/crawl-data/SMALL-LINK-MIX/files/" + to_string(thread_id) + "_" +
-							to_string(links_written) + "-" + to_string(links_written + links_per_file) + ".gz",
+						outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + to_string(thread_id) +
+							"_" + to_string(links_written) + "-" + to_string(links_written + links_per_file) + ".gz",
 							ios::binary);
 						compress_stream.push(outfile);
 					}
@@ -74,7 +75,7 @@ namespace tools {
 		const size_t num_threads = 12;
 		size_t limit = 4000;
 
-		file::gz_tsv_file batch_file("/mnt/crawl-data/"+batch+"/warc.paths.gz");
+		file::gz_tsv_file batch_file(config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz");
 
 		vector<string> rows;
 		batch_file.read_column_into(0, rows);
@@ -99,7 +100,7 @@ namespace tools {
 		const string batch = "SMALL-MIX";
 		size_t limit = 20;
 
-		file::gz_tsv_file batch_file("/mnt/crawl-data/"+batch+"/warc.paths.gz");
+		file::gz_tsv_file batch_file(config::data_path() + "/crawl-data/"+batch+"/warc.paths.gz");
 
 		vector<string> rows;
 		batch_file.read_column_into(0, rows);
@@ -110,7 +111,7 @@ namespace tools {
 		set<size_t> host_hashes;
 
 		for (auto row : rows) {
-			ifstream infile("/mnt/" + row);
+			ifstream infile(config::data_path() + "/" + row);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());

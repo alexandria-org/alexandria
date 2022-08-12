@@ -24,10 +24,12 @@
  * SOFTWARE.
  */
 
-#include "url_store/url_store.h"
-#include "url_store/url_data.h"
-#include "url_store/domain_data.h"
-#include "url_store/robots_data.h"
+#pragma once
+
+#include <iostream>
+#include <vector>
+#include <mutex>
+#include <thread>
 
 namespace scraper {
 
@@ -40,9 +42,6 @@ namespace scraper {
 			scraper_store(bool do_upload);
 			~scraper_store();
 
-			void add_url_data(const url_store::url_data &data);
-			void add_domain_data(const url_store::domain_data &data);
-			void add_robots_data(const url_store::robots_data &data);
 			void add_scraper_data(const std::string &line);
 			void add_non_200_scraper_data(const std::string &line);
 			void add_link_data(const std::string &links);
@@ -59,9 +58,6 @@ namespace scraper {
 
 		private:
 			std::mutex m_lock;
-			std::vector<url_store::url_data> m_url_datas;
-			std::vector<url_store::domain_data> m_domain_datas;
-			std::vector<url_store::robots_data> m_robots_datas;
 			std::vector<std::string> m_results;
 			std::vector<std::string> m_non_200_results;
 			std::vector<std::string> m_link_results;

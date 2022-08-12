@@ -1,15 +1,10 @@
 # Alexandria.org
 
-[Coding Rules](/documentation/coding_rules.md)
+1. [Coding Rules](/documentation/coding_rules.md)
+2. [Full text indexes](/documentation/full_text_indexes.md)
+3. [Hash table](/documentation/hash_table.md)
 
-## Documentation
-1. [Index file format (.fti)](/documentation/index_file_format.md)
-2. [Search Result Ranking](/documentation/search_result_ranking.md)
-3. [API Response format](/documentation/api_response_format.md)
-4. [Caching](/documentation/caching.md)
-5. [Installing nodes](/documentation/installing_nodes.md)
-
-## Build with docker
+## Build instructions with docker
 1. Build docker image
 ```
 docker build . -t alexandria
@@ -23,28 +18,36 @@ docker container run --name alexandria -v $PWD:/alexandria -it -d alexandria
 ```
 docker exec -it alexandria /bin/bash
 ```
-4. Initialize docker
+4. Navigate to directory
 ```
-/alexandria/scripts/init-docker.sh
+cd /alexandria
+```
+5. Initialize docker
+```
+scripts/init-docker.sh
 ```
 5. Download and build dependencies.
 ```
-/alexandria/scripts/download-deps.sh
-/alexandria/scripts/build-deps.sh
+scripts/download-deps.sh
+scripts/build-deps.sh
 ```
 6. Configure with cmake and build tests.
 ```
-mkdir /alexandria/build
-cd /alexandria/build
+mkdir build; cd build; 
 
+## Build with debug symbols
 cmake .. -DCMAKE_BUILD_TYPE=Debug
-or
+## or build with compiler optimization
 cmake .. -DCMAKE_BUILD_TYPE=Release
 
+## build test suite
 make -j4 run_tests
+
+## run test suite
+./run_tests
 ```
 
-## How to build manually
+## How to build manually (not recommended)
 1. Configure the system (Tested on Ubuntu 20.04)
 ```
 # Will alter your system and install dependencies with apt.

@@ -25,6 +25,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include <numeric>
 #include "logger/logger.h"
 #include "downloader/warc_downloader.h"
@@ -100,7 +101,7 @@ int main(int argc, const char **argv) {
 		utils::thread_pool pool(32);
 
 		for (size_t i = 0; i < 8; i++) {
-			const std::string dir = "/mnt/" + std::to_string(i) + "/full_text/internal_links";
+			const std::string dir = config::data_path() + "/" + std::to_string(i) + "/full_text/internal_links";
 			file::read_directory(dir, [&pool, dir](const std::string &filename) {
 				uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
 

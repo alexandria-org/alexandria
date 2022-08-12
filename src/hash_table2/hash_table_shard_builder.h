@@ -53,7 +53,7 @@ namespace hash_table2 {
 		public:
 
 			hash_table_shard_builder(const std::string &db_name, size_t shard_id, size_t hash_table_size = 1000000,
-					const std::string &data_path = "/mnt/{shard_id_mod_8}/hash_table");
+					const std::string &data_path = config::data_path() + "/{shard_id_mod_8}/hash_table");
 			~hash_table_shard_builder();
 
 			/*

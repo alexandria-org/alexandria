@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "config.h"
 #include "logger/logger.h"
 #include "roaring/roaring.hh"

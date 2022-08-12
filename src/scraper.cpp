@@ -27,10 +27,10 @@
 #include <iostream>
 #include <signal.h>
 #include <set>
+#include <boost/algorithm/string.hpp>
 #include "fcgio.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "worker/worker.h"
 #include "scraper/scraper.h"
 
 using namespace std;
@@ -265,9 +265,6 @@ int main(int argc, const char **argv) {
 	}
 
 	custom_scraper();
-
-	/*worker::start_scraper_server();
-	worker::wait_for_scraper_server();*/
 
 	logger::join_logger_thread();
 

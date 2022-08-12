@@ -402,7 +402,7 @@ namespace indexer {
 	template<typename data_record>
 	void index_builder<data_record>::create_directories(const std::string &db_name) {
 		for (size_t i = 0; i < 8; i++) {
-			file::create_directory("/mnt/" + std::to_string(i) + "/full_text/" + db_name);
+			file::create_directory(config::data_path() + "/" + std::to_string(i) + "/full_text/" + db_name);
 		}
 	}
 
@@ -672,19 +672,22 @@ namespace indexer {
 	template<typename data_record>
 	std::string index_builder<data_record>::cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".cache";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".cache";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::key_cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache.keys";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +".cache.keys";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".cache.keys";
 	}
 
 	template<typename data_record>
 	std::string index_builder<data_record>::target_filename() const {
 		if (m_file_name != "") return m_file_name + ".data";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".data";
 	}
 
 	template<typename data_record>

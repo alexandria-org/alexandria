@@ -35,11 +35,9 @@
 #include "config.h"
 #include "URL.h"
 #include "url_link/link.h"
-#include "url_link/link_counter.h"
 #include "transfer/transfer.h"
 #include "algorithm/hyper_log_log.h"
 #include "algorithm/algorithm.h"
-#include "url_store/url_store.h"
 #include "file/tsv_file_remote.h"
 #include "common/system.h"
 
@@ -96,8 +94,8 @@ namespace tools {
 
 		// Save rows.
 		if (saved_rows.size() > 0) {
-			boost::filesystem::create_directories("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
-			ofstream outfile("/mnt/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
+			ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
 			boost::iostreams::filtering_ostream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(outfile);
@@ -116,7 +114,7 @@ namespace tools {
 		vector<string> files;
 		vector<string> link_files;
 
-		const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+		const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 		ifstream infile(file_name);
 
@@ -126,7 +124,7 @@ namespace tools {
 
 		string line;
 		while (getline(decompress_stream, line)) {
-			string warc_path = string("/mnt/") + line;
+			string warc_path = config::data_path() + "/" + line;
 			const size_t pos = warc_path.find(".warc.gz");
 			if (pos != string::npos) {
 				warc_path.replace(pos, 8, ".gz");
@@ -224,7 +222,7 @@ namespace tools {
 
 		for (const string &batch : config::batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -234,7 +232,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 				if (pos != string::npos) {
 					warc_path.replace(pos, 8, ".gz");
@@ -246,7 +244,7 @@ namespace tools {
 
 		for (const string &batch : config::link_batches) {
 
-			const string file_name = string("/mnt/crawl-data/") + batch + "/warc.paths.gz";
+			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
 			ifstream infile(file_name);
 
@@ -256,7 +254,7 @@ namespace tools {
 
 			string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = string("/mnt/") + line;
+				string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
 				if (pos != string::npos) {
@@ -329,39 +327,5 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	void count_link_batch(const common::sub_system *sub_system, const string &batch, size_t sub_batch, const vector<string> &files,
-			map<string, map<size_t, float>> &counter) {
-
-		const size_t chunk_size = 500;
-
-		vector<vector<string>> chunks;
-		algorithm::vector_chunk(files, chunk_size, chunks);
-
-		for (const vector<string> &chunk : chunks) {
-			url_link::run_link_counter(sub_system, batch, sub_batch, chunk, counter);
-		}
-
-	}
-
-	void count_all_links() {
-
-		common::sub_system *sub_system = new common::sub_system();
-
-		for (const string &batch : config::link_batches) {
-
-			vector<string> files = download_link_batch(batch, 50000, 0);
-
-			for (size_t sub_batch = 0; sub_batch < 5; sub_batch++) {
-
-				map<string, map<size_t, float>> counter;
-				count_link_batch(sub_system, batch, sub_batch, files, counter);
-				// Upload link counts.
-				url_link::upload_link_counts(batch, sub_batch, counter);
-			}
-
-			transfer::delete_downloaded_files(files);
-		}
-		delete sub_system;
-	}
 }
 

@@ -57,7 +57,7 @@ namespace file {
 	}
 
 	string tsv_file_remote::get_path() const {
-		return string(TSV_FILE_DESTINATION) + "/" + m_file_name;
+		return config::data_path() + "/0/" + m_file_name;
 	}
 
 	int tsv_file_remote::download_file() {

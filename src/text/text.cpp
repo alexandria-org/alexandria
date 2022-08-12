@@ -89,7 +89,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			trim(word);
+			trim_both_inplace(word);
 			if (is_clean_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);
@@ -119,7 +119,7 @@ namespace text {
 
 		for (string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
-				trim(word);
+				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);
 				}
@@ -143,7 +143,7 @@ namespace text {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
 				if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
-					trim_punct(cur_token);
+					trim_punct_inplace(cur_token);
 					tokens.push_back(str2token(cur_token));
 				}
 				cur_token.clear();
@@ -157,7 +157,7 @@ namespace text {
 
 		// Remember the last token.
 		if (cur_token.size() && parser::unicode::is_valid(cur_token)) {
-			trim_punct(cur_token);
+			trim_punct_inplace(cur_token);
 			tokens.push_back(str2token(cur_token));
 		}
 
@@ -182,7 +182,7 @@ namespace text {
 						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 						cur_snippet.insert(cur_snippet.end(), ' ');
 					} else {
-						trim(cur_snippet);
+						trim_inplace(cur_snippet);
 						snippets.push_back(cur_snippet);
 						cur_snippet.clear();
 						cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
@@ -200,7 +200,7 @@ namespace text {
 			cur_snippet.insert(cur_snippet.end(), cur_token.begin(), cur_token.end());
 		}
 
-		trim(cur_snippet);
+		trim_inplace(cur_snippet);
 		snippets.push_back(cur_snippet);
 
 		return snippets;
@@ -227,7 +227,7 @@ namespace text {
 
 		for (string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
-				trim(word);
+				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
 					words.push_back(word);
 
@@ -236,7 +236,7 @@ namespace text {
 					boost::split(blended, word, boost::is_any_of(blend_chars));
 					if (blended.size() > 1) {
 						for (string &blended_word : blended) {
-							trim(blended_word);
+							trim_both_inplace(blended_word);
 							words.push_back(blended_word);
 							if (limit && words.size() == limit) break;
 						}
@@ -267,7 +267,7 @@ namespace text {
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
 		for (string &word : raw_words) {
-			trim(word);
+			trim_both_inplace(word);
 			if (is_clean_word(word) && !stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
 				words.push_back(word);

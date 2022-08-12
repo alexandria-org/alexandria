@@ -175,25 +175,9 @@ map<string, string> URL::query() const {
 	return ret;
 }
 
-float URL::harmonic(const common::sub_system *subsys) const {
+float URL::harmonic() const {
 
-	const auto iter = subsys->domain_index()->find(m_host_reverse);
-
-	float harmonic;
-	if (iter == subsys->domain_index()->end()) {
-		const auto iter2 = subsys->domain_index()->find(host_reverse_top_domain(m_host));
-		if (iter2 == subsys->domain_index()->end()) {
-			harmonic = 0.0f;
-		} else {
-			const common::dictionary_row row = iter2->second;
-			harmonic = row.get_float(1) / 2.0; // Half the power for sub domains.
-		}
-	} else {
-		const common::dictionary_row row = iter->second;
-		harmonic = row.get_float(1);
-	}
-
-	return harmonic;
+	return 0.0f;
 }
 
 string URL::host_reverse(const string &host) {

@@ -38,7 +38,7 @@
 
 BOOST_AUTO_TEST_SUITE(test_index_reader)
 
-BOOST_AUTO_TEST_CASE(test_index_reader) {
+BOOST_AUTO_TEST_CASE(test_index_reader1) {
 
 	{
 		indexer::index_builder<indexer::generic_record> idx("test_db", 0, 1000);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(test_index_reader) {
 	}
 
 	{
-		ifstream reader("/mnt/0/full_text/test_db/0.data", ios::binary);
+		ifstream reader("./0/full_text/test_db/0.data", ios::binary);
 		reader.seekg(0, ios::end);
 		size_t file_size = reader.tellg();
 		reader.seekg(0, ios::beg);

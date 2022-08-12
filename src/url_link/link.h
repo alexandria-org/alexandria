@@ -27,6 +27,7 @@
 #pragma once
 
 #include "URL.h"
+#include "config.h"
 
 namespace url_link {
 
@@ -46,6 +47,10 @@ namespace url_link {
 		const uint64_t &target_host_hash() const { return m_target_host_hash; }
 		const float &source_harmonic() const { return m_source_harmonic; }
 		const float &target_harmonic() const { return m_target_harmonic; }
+
+		size_t index_on_node() const {
+			return target_url().host_hash() % config::nodes_in_cluster;
+		}
 
 	private:
 		URL m_source_url;

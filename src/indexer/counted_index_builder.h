@@ -264,7 +264,8 @@ namespace indexer {
 	template<typename data_record>
 	void counted_index_builder<data_record>::create_directories() {
 		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories("/mnt/" + std::to_string(i) + "/full_text/" + m_db_name);
+			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" +
+				m_db_name);
 		}
 	}
 
@@ -489,19 +490,22 @@ namespace indexer {
 	template<typename data_record>
 	std::string counted_index_builder<data_record>::cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".cache";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".cache";
 	}
 
 	template<typename data_record>
 	std::string counted_index_builder<data_record>::key_cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache.keys";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +".cache.keys";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".cache.keys";
 	}
 
 	template<typename data_record>
 	std::string counted_index_builder<data_record>::target_filename() const {
 		if (m_file_name != "") return m_file_name + ".data";
-		return "/mnt/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) + ".data";
+		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
+			".data";
 	}
 
 }

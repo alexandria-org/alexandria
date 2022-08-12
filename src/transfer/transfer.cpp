@@ -289,7 +289,7 @@ namespace transfer {
 
 	string run_gz_download_thread(const string &file_path) {
 		size_t hsh = algorithm::hash(file_path);
-		const string target_filename = "/mnt/" + to_string(hsh % 8) + "/tmp/tmp_" + to_string(hsh);
+		const string target_filename = config::data_path() + "/" + to_string(hsh % 8) + "/tmp/tmp_" + to_string(hsh);
 		ofstream target_file(target_filename, ios::binary | ios::trunc);
 		int error;
 		gz_file_to_stream(file_path, target_file, error);
