@@ -58,8 +58,8 @@ namespace algorithm {
 			double error_bound() const;
 			void reset();
 
-			const char *data() const { return m_M; };
-			char *data() { return m_M; };
+			const char *data() const { return m_M.data(); };
+			char *data() { return m_M.data(); };
 			int b() const { return m_b; }
 			size_t data_size() const { return m_len; };
 
@@ -71,7 +71,7 @@ namespace algorithm {
 
 		private:
 			
-			char *m_M = nullptr; // Points to registers.
+			std::vector<char> m_M; // Points to registers.
 			const int m_b;
 			const size_t m_len;
 			const double m_alpha;

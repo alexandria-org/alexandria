@@ -31,14 +31,15 @@
 #include "hyper_log_log.h"
 #include "profiler/profiler.h"
 #include "logger/logger.h"
-#include <thread>
+#include <future>
 
 namespace algorithm {
 
 	template <typename iterable_type>
-	void hyper_ball_worker(double t, size_t v_begin, size_t v_end, const iterable_type *edge_map,
+	bool hyper_ball_worker(double t, size_t v_begin, size_t v_end, const iterable_type *edge_map,
 			std::vector<hyper_log_log> &c, std::vector<hyper_log_log> &a, std::vector<double> &harmonic) {
 
+		bool counter_changed = false;
 		for (uint32_t v = v_begin; v < v_end; v++) {
 			a[v] = c[v];
 			for (const uint32_t &w : edge_map[v]) {
@@ -46,11 +47,16 @@ namespace algorithm {
 			}
 
 			// a[v] is t + 1 and c[v] is at t
-			harmonic[v] += (1.0 / (t + 1.0)) * (a[v].count() - c[v].count());
+			const size_t counter_diff = a[v].count() - c[v].count();
+			if (counter_diff) {
+				counter_changed = true;
+				harmonic[v] += (1.0 / (t + 1.0)) * counter_diff;
+			}
 		}
 		for (uint32_t v = v_begin; v < v_end; v++) {
 			c[v] = a[v];
 		}
+		return counter_changed;
 	}
 
 	/*
@@ -64,7 +70,9 @@ namespace algorithm {
 	template <typename iterable_type>
 	std::vector<double> hyper_ball(uint32_t n, const iterable_type *edge_map) {
 
-		const size_t num_threads = std::min(12, (int)n);
+		if (n == 0) return {};
+
+		const size_t num_threads = std::min(32, (int)n);
 		const size_t items_per_thread = n / num_threads;
 		std::vector<hyper_log_log> c(n, hyper_log_log(10));
 		std::vector<hyper_log_log> a(n, hyper_log_log(10));
@@ -76,20 +84,21 @@ namespace algorithm {
 
 		double t = 0.0;
 		while (true) {
-			std::vector<std::thread> threads;
+			std::vector<std::future<bool>> threads;
 			for (size_t i = 0; i < num_threads; i++) {
 				const size_t v_begin = i * items_per_thread;
 				const size_t v_end = (i == num_threads - 1) ? n : (i + 1) * items_per_thread;
-				std::thread th(hyper_ball_worker<iterable_type>, t, v_begin, v_end, edge_map, ref(c), ref(a), ref(harmonic));
-				threads.push_back(std::move(th));
+				auto fut = std::async(hyper_ball_worker<iterable_type>, t, v_begin, v_end, edge_map, ref(c), ref(a), ref(harmonic));
+				threads.emplace_back(std::move(fut));
 			}
 
-			for (auto &th : threads) {
-				th.join();
+			bool should_continue = false;
+			for (auto &fut : threads) {
+				should_continue = fut.get() || should_continue;
 			}
-			LOG_INFO("Finished run t = " + std::to_string(t));
+
 			t += 1.0;
-			if (t > 40.0) break;
+			if (!should_continue) break;
 		}
 
 		return harmonic;

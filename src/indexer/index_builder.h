@@ -337,6 +337,7 @@ namespace indexer {
 			for (auto idx : bitmap) {
 				new_bitmap.add(id_map[idx]);
 			}
+			// Union the bitmaps.
 			m_bitmaps[key] |= new_bitmap;
 		});
 

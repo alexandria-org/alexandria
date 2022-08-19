@@ -127,9 +127,8 @@ namespace hash_table2 {
 
 			const std::string value = decompressed.str();
 
-			callback(key, value);
+			callback(key, std::move(value));
 		}
-
 	}
 
 	size_t hash_table_shard::shard_id() const {

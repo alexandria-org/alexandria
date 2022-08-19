@@ -39,17 +39,13 @@
 #include "algorithm/hyper_ball.h"
 #include "utils/thread_pool.hpp"
 #include "file/file.h"
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
 void help() {
-	cout << "Usage: ./alexandria [OPTION]..." << endl;
-	cout << "--downloader [commoncrawl-batch] [limit] [offset]" << endl;
-	cout << "--downloader-merge" << endl;
-	cout << "--invert-all-internal" << endl;
-	cout << "--url [URL]" << endl;
-	cout << "--url-hash [URL_HASH]" << endl;
-	cout << "--optimize" << endl;
+	std::string content = file::cat("../documentation/alexandria.md");
+	std::cout << content << std::endl;
 }
 
 int main(int argc, const char **argv) {
@@ -74,7 +70,7 @@ int main(int argc, const char **argv) {
 		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
 	} else if (arg == "--downloader-merge") {
 		downloader::merge_downloader();
-	} else if (arg == "--url" && argc > 2) {
+	} else if (arg == "--hash-table-url" && argc > 2) {
 		URL url(argv[2]);
 		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
 
@@ -82,7 +78,7 @@ int main(int argc, const char **argv) {
 		std::string data = ht.find(url.hash(), ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
-	} else if (arg == "--url-hash" && argc > 2) {
+	} else if (arg == "--hash-table-url-hash" && argc > 2) {
 		uint64_t url_hash = std::stoull(argv[2]);
 		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
 
@@ -90,54 +86,179 @@ int main(int argc, const char **argv) {
 		std::string data = ht.find(url_hash, ver);
 		std::cout << ver << std::endl;
 		std::cout << data << std::endl;
-	} else if (arg == "--optimize-shard" && argc > 2) {
+	} else if (arg == "--hash-table-count") {
+
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
+
+		std::cout << ht.size() << std::endl;
+
+	} else if (arg == "--hash-table-find-all" && argc > 2) {
+
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
+
+		// Put given hosts in array with hashes to search for.
+		std::vector<uint64_t> search_for;
+		for (int i = 2; i < argc; i++) {
+			search_for.push_back(URL(string("https://") + argv[i]).host_hash());
+		}
+
+		ht.for_each([&search_for](uint64_t key, std::string value) {
+
+			URL url(value.substr(0, value.find("\t")));
+
+			const auto my_host_hash = url.host_hash();
+			for (const auto &host_hash : search_for) {
+				if (host_hash == my_host_hash) {
+					std::cout << key << "\t" << url.str() << std::endl;
+					break;
+				}
+			}
+
+		});
+
+	} else if (arg == "--hash-table-count" && argc > 2) {
+
+		std::string data = file::cat("domains.txt");
+		std::vector<std::string> lines;
+		boost::split(lines, data, boost::is_any_of("\n"));
+		std::map<std::string, uint64_t> domains;
+		std::map<uint64_t, size_t> domain_counts;
+		std::vector<std::string> domain_list;
+		for (const auto &line : lines) {
+			if (line == "") continue;
+			const std::string reversed = URL::host_reverse(line);
+			std::cout << reversed << std::endl;
+			const uint64_t domain_hash = URL(string("https://") + reversed).host_hash();
+			domains[reversed] = domain_hash;
+			domain_counts[domain_hash] = 0;
+			domain_list.push_back(reversed);
+		}
+
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
+
+		uint64_t thelazy_host_hash = URL(string("https://") + argv[2]).host_hash();
+
+		ht.for_each([thelazy_host_hash, &domain_counts](uint64_t key, std::string value) {
+
+			URL url(value.substr(0, value.find("\t")));
+
+			const auto my_host_hash = url.host_hash();
+			for (auto &iter : domain_counts) {
+				if (iter.first == my_host_hash) {
+					domain_counts[iter.first]++;
+					break;
+				}
+			}
+
+			/*if (url.host_hash() == thelazy_host_hash) {
+				std::cout << key << " => " << url.str() << std::endl;
+			}*/
+
+		});
+
+		for (auto &domain : domain_list) {
+			std::cout << domain << "\t" << domain_counts[domains[domain]] << std::endl;
+		}
+
+	} else if (arg == "--hash-table-optimize-shard" && argc > 2) {
 		size_t shard_id = std::stoull(argv[2]);
 		hash_table2::hash_table_shard_builder ht_shard("all_urls", shard_id, 1000000, "/slow_data");
 
 		ht_shard.optimize();
 
-	} else if (arg == "--invert-all-internal") {
+	} else if (arg == "--internal-harmonic") {
+		profiler::instance prof_total("total");
+		/*
 
-		utils::thread_pool pool(32);
+		std::vector<std::string> all_files;
+		file::read_directory("/mnt/0/full_text/internal_links", [&all_files](const std::string &filename) {
+			all_files.push_back(filename);
+		});
 
-		for (size_t i = 0; i < 8; i++) {
-			const std::string dir = config::data_path() + "/" + std::to_string(i) + "/full_text/internal_links";
-			file::read_directory(dir, [&pool, dir](const std::string &filename) {
-				uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
+		size_t done_with = 0;
+		profiler::instance prof("total");
+		for (const auto &filename : all_files) {
 
-				pool.enqueue([host_hash, filename, dir]() {
-					std::ifstream infile(dir + "/" + filename, std::ios::binary);
-					std::string data(std::istreambuf_iterator<char>(infile), {});
-					infile.close();
-					std::istringstream data_stream(data);
+			// Read the file.
+			std::ifstream infile("/mnt/0/full_text/internal_links/" + filename, std::ios::binary);
+			std::string infile_data(std::istreambuf_iterator<char>(infile), {});
+			infile.close();
+			std::istringstream reader(infile_data);
+			indexer::index<indexer::value_record> idx(&reader, 1000);
 
-					std::cout << "data: " << data.size() << std::endl;
+			// Create vertices vector
+			std::vector<uint64_t> vertices;
+			std::map<uint64_t, uint64_t> vertex_map;
 
-					indexer::index<indexer::value_record> idx(&data_stream, 1000);
-					indexer::index_builder<indexer::value_record> builder("internal_links", host_hash, 1000);
-					builder.truncate();
-					
-					idx.for_each([&idx, &builder](uint64_t key, roaring::Roaring &bitmap) {
-						for (uint32_t x : bitmap) {
-							std::cout << key << " => " << idx.records()[x].m_value << std::endl;
-							builder.add(idx.records()[x].m_value, indexer::value_record(key));
-						}
-					});
-					builder.append();
-					builder.merge();
-					builder.optimize();
-				});
+			size_t record_id = 0;
+			for (const auto &record : idx.records()) {
+				vertices.push_back(record.m_value);
+				vertex_map[record.m_value] = record_id;
+				record_id++;
+			}
+
+			std::vector<roaring::Roaring> edge_map(vertices.size());
+
+			// Populate edge map
+			idx.for_each([&edge_map, &vertex_map, &vertices, &record_id](uint64_t key, roaring::Roaring &bitmap) {
+					if (vertex_map.count(key) == 0) {
+						vertices.push_back(key);
+						edge_map.push_back(roaring::Roaring());
+						vertex_map[key] = record_id;
+						record_id++;
+					}
+					edge_map[vertex_map[key]] = std::move(bitmap);
 			});
+
+
+			// Calculate harmonic centrality on graph.
+			if (vertices.size() > 500) {
+				auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map.data());
+			}
+
+			// Sort the results a bit.
+			std::vector<size_t> sorted(harmonic.size());
+			std::iota(sorted.begin(), sorted.end(), 0);
+			std::sort(sorted.begin(), sorted.end(), [&harmonic] (const auto &a, const auto &b) {
+				return harmonic[a] > harmonic[b];
+			});
+
+			done_with++;
+			float percent = ((float)done_with / all_files.size()) * 100.0f;
+			float elapsed_milliseconds = prof.get();
+			size_t items_left = all_files.size() - done_with;
+			float milliseconds_per_file = elapsed_milliseconds/done_with;
+			float milliseconds_left = milliseconds_per_file * items_left;
+			float hours_left = milliseconds_left / (1000.0f * 3600.0f);
+			std::cout << "done with " << done_with << " out of " << all_files.size() << " (" <<
+				percent << "% done) time left: " << hours_left << " hours"<< std::endl;
 		}
 
-		pool.run_all();
+		return 0;*/
 
-	} else if (arg == "--internal-harmonic") {
-		std::ifstream infile("../3492248666075096845.data", std::ios::binary);
+		// load the file
+		std::string content = file::cat("multiple_domains.tsv");
+		std::vector<std::string> lines;
+		boost::split(lines, content, boost::is_any_of("\n"));
+		std::vector<std::vector<std::string>> csv_data;
+		for (auto line : lines) {
+			std::vector<std::string> cols;
+			boost::split(cols, line, boost::is_any_of("\t"));
+			if (cols.size() > 1) {
+				if (URL(cols[1]).host_hash() == URL("http://abc13.com").host_hash()) {
+					csv_data.push_back(cols);
+				}
+			}
+		}
+
+		profiler::instance prof_load("load");
+		//std::ifstream infile("/mnt/5/full_text/internal_links/3492248666075096845.data", std::ios::binary);
+		std::ifstream infile("/mnt/6/full_text/internal_links/12854855988816217414.data", std::ios::binary);
 		std::string infile_data(std::istreambuf_iterator<char>(infile), {});
 		infile.close();
 		std::istringstream reader(infile_data);
 		indexer::index<indexer::value_record> idx(&reader, 1000);
+		prof_load.stop();
 
 		profiler::instance prof("make vertices");
 
@@ -164,8 +285,74 @@ int main(int argc, const char **argv) {
 		});
 
 		prof.stop();
+		profiler::instance prof2("run hyper_ball");
 
 		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map.data());
+
+		prof2.stop();
+
+		prof_total.stop();
+
+		std::vector<size_t> sorted(harmonic.size());
+		std::iota(sorted.begin(), sorted.end(), 0);
+		std::sort(sorted.begin(), sorted.end(), [&harmonic] (const auto &a, const auto &b) {
+			return harmonic[a] > harmonic[b];
+		});
+		std::map<uint64_t, double> harmonic_by_url;
+		for (size_t i = 0; i < harmonic.size(); i++) {
+			harmonic_by_url[vertices[sorted[i]]] = harmonic[sorted[i]] / vertices.size();
+		}
+
+		for (auto row : csv_data) {
+			uint64_t url_hash = stoull(row[0]);
+			double harmonic = harmonic_by_url[url_hash];
+			std::cout << row[0] << "\t" << row[1] << "\t" << harmonic << std::endl;
+		}
+
+		/*
+		profiler::instance prof_load("load");
+		//std::ifstream infile("/mnt/5/full_text/internal_links/3492263685688109621.data", std::ios::binary);
+		//std::ifstream infile("/mnt/5/full_text/internal_links/3492528524383210893.data", std::ios::binary);
+		//std::ifstream infile("/mnt/0/full_text/internal_links/7131549202223940368.data", std::ios::binary);
+		std::ifstream infile("/mnt/0/full_text/internal_links/10401139885298228528.data", std::ios::binary);
+		std::string infile_data(std::istreambuf_iterator<char>(infile), {});
+		infile.close();
+		std::istringstream reader(infile_data);
+		indexer::index<indexer::value_record> idx(&reader, 1000);
+		prof_load.stop();
+
+		profiler::instance prof("make vertices");
+
+		std::vector<uint64_t> vertices;
+		std::map<uint64_t, uint64_t> vertex_map;
+
+		size_t record_id = 0;
+		for (const auto &record : idx.records()) {
+			vertices.push_back(record.m_value);
+			vertex_map[record.m_value] = record_id;
+			record_id++;
+		}
+
+		std::vector<roaring::Roaring> edge_map(vertices.size());
+
+		idx.for_each([&edge_map, &vertex_map, &vertices, &record_id](uint64_t key, roaring::Roaring &bitmap) {
+				if (vertex_map.count(key) == 0) {
+					vertices.push_back(key);
+					edge_map.push_back(roaring::Roaring());
+					vertex_map[key] = record_id;
+					record_id++;
+				}
+				edge_map[vertex_map[key]] = std::move(bitmap);
+		});
+
+		prof.stop();
+		profiler::instance prof2("run hyper_ball");
+
+		auto harmonic = algorithm::hyper_ball(vertices.size(), edge_map.data());
+
+		prof2.stop();
+
+		prof_total.stop();
 
 		std::vector<size_t> sorted(harmonic.size());
 		std::iota(sorted.begin(), sorted.end(), 0);
@@ -173,9 +360,10 @@ int main(int argc, const char **argv) {
 			return harmonic[a] > harmonic[b];
 		});
 
-		for (size_t i = 0; i < harmonic.size(); i++) {
-			std::cout << "vertex: " << vertices[sorted[i]] << " has harmonic: " << harmonic[sorted[i]] << std::endl;
-		}
+		//for (size_t i = 0; i < harmonic.size(); i++) {
+			//std::cout << "vertex: " << vertices[sorted[i]] << " has harmonic: " << harmonic[sorted[i]] << std::endl;
+		//}
+		*/
 	} else {
 		help();
 	}

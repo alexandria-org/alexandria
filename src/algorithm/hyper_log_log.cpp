@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <numeric>
 #include "hyper_log_log.h"
 #include "algorithm/hash.h"
 
@@ -31,32 +32,28 @@ namespace algorithm {
 
 	hyper_log_log::hyper_log_log(size_t b)
 	: m_b(b), m_len(1ull << m_b), m_alpha(0.7213/(1.0 + 1.079/m_len)) {
-		m_M = new char[m_len];
-		memset(m_M, 0, m_len);
+		m_M.resize(m_len);
+		std::fill(m_M.begin(), m_M.end(), 0);
 	}
 
 	hyper_log_log::hyper_log_log(const char *registers, size_t b)
 	: m_b(b), m_len(1ull << m_b), m_alpha(0.7213/(1.0 + 1.079/m_len)) {
-		m_M = new char[m_len];
-		memcpy(m_M, registers, m_len);
+		m_M.resize(m_len);
+		memcpy(m_M.data(), registers, m_len);
 	}
 
 	hyper_log_log::hyper_log_log(const hyper_log_log &other)
 	: m_b(other.m_b), m_len(other.m_len), m_alpha(other.m_alpha) {
-		m_M = new char[m_len];
-		memcpy(m_M, other.m_M, m_len);
+		m_M.resize(m_len);
+		std::copy(other.m_M.cbegin(), other.m_M.cend(), m_M.begin());
 	}
 
 	hyper_log_log::hyper_log_log(hyper_log_log &&other)
 	: m_b(other.m_b), m_len(other.m_len), m_alpha(other.m_alpha) {
-		m_M = other.m_M;
-		other.m_M = nullptr;
+		m_M.swap(other.m_M);
 	}
 
 	hyper_log_log::~hyper_log_log() {
-		if (m_M != nullptr) {
-			delete [] m_M;
-		}
 	}
 
 	void hyper_log_log::insert(size_t v) {
@@ -84,7 +81,7 @@ namespace algorithm {
 	}
 
 	void hyper_log_log::reset() {
-		memset(m_M, 0, m_len);
+		std::fill(m_M.begin(), m_M.end(), 0);
 	}
 
 	char hyper_log_log::leading_zeros_plus_one(size_t x) const {
@@ -97,11 +94,9 @@ namespace algorithm {
 	}
 
 	size_t hyper_log_log::num_zero_registers() const {
-		size_t num_zero = 0;
-		for (size_t i = 0; i < m_len; i++) {
-			if (m_M[i] == 0) num_zero++;
-		}
-		return num_zero;
+		return std::transform_reduce(m_M.begin(), m_M.end(), 0,
+			[](int a, int b) { return a + b; },
+			[](char a) { return a == 0 ? 1 : 0; });
 	}
 
 	double hyper_log_log::error_bound() const {
@@ -111,22 +106,18 @@ namespace algorithm {
 
 	hyper_log_log hyper_log_log::operator +(const hyper_log_log &hl) const {
 		hyper_log_log res;
-		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
-			res.m_M[i] = std::max(m_M[i], hl.m_M[i]);
-		}
+		std::transform(std::begin(m_M), std::end(m_M), std::begin(hl.m_M), std::begin(res.m_M), [] (char a, char b) { return std::max(a, b); });
 
 		return res;
 	}
 
 	hyper_log_log &hyper_log_log::operator +=(const hyper_log_log &hl) {
-		for (size_t i = 0; i < m_len && i < hl.m_len; i++) {
-			m_M[i] = std::max(m_M[i], hl.m_M[i]);
-		}
+		std::transform(std::begin(m_M), std::end(m_M), std::begin(hl.m_M), std::begin(m_M), [] (char a, char b) { return std::max(a, b); });
 		return *this;
 	}
 
 	hyper_log_log &hyper_log_log::operator =(const hyper_log_log &other) {
-		memcpy(m_M, other.m_M, m_len);
+		std::copy(other.m_M.cbegin(), other.m_M.cend(), m_M.begin());
 		return *this;
 	}
 

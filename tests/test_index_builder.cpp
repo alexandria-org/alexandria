@@ -101,4 +101,72 @@ BOOST_AUTO_TEST_CASE(test_merge_with) {
 	}
 }
 
+BOOST_AUTO_TEST_CASE(test_merge_with2) {
+
+	file::delete_directory("./0/full_text/test_index");
+	file::create_directory("./0/full_text/test_index");
+
+	{
+		indexer::index_builder<indexer::value_record> idx("test_index", 0, 1000);
+
+		idx.add(123, indexer::value_record(1000));
+		idx.add(123, indexer::value_record(1001));
+		idx.add(124, indexer::value_record(1000));
+
+		idx.append();
+		idx.merge();
+	}
+	{
+		indexer::index<indexer::value_record> idx("test_index", 0, 1000);
+
+		auto res1 = idx.find(123);
+		auto res2 = idx.find(124);
+
+		BOOST_REQUIRE_EQUAL(res1.size(), 2);
+		BOOST_REQUIRE_EQUAL(res2.size(), 1);
+
+		BOOST_CHECK_EQUAL(res1[0].m_value, 1000);
+		BOOST_CHECK_EQUAL(res1[1].m_value, 1001);
+		BOOST_CHECK_EQUAL(res2[0].m_value, 1000);
+	}
+	{
+		indexer::index_builder<indexer::value_record> idx("test_index", 8, 1000);
+
+		idx.add(123, indexer::value_record(1002));
+		idx.add(123, indexer::value_record(1003));
+		idx.add(124, indexer::value_record(1010));
+		idx.add(125, indexer::value_record(1011));
+
+		idx.append();
+		idx.merge();
+	}
+
+	{
+		indexer::index_builder<indexer::value_record> idx1("test_index", 0, 1000);
+		indexer::index<indexer::value_record> idx2("test_index", 8, 1000);
+
+		idx1.merge_with(idx2);
+	}
+
+	{
+		indexer::index<indexer::value_record> idx("test_index", 0, 1000);
+
+		auto res1 = idx.find(123);
+		auto res2 = idx.find(124);
+		auto res3 = idx.find(125);
+
+		BOOST_REQUIRE_EQUAL(res1.size(), 4);
+		BOOST_REQUIRE_EQUAL(res2.size(), 2);
+		BOOST_REQUIRE_EQUAL(res3.size(), 1);
+
+		BOOST_CHECK_EQUAL(res1[0].m_value, 1000);
+		BOOST_CHECK_EQUAL(res1[1].m_value, 1001);
+		BOOST_CHECK_EQUAL(res1[2].m_value, 1002);
+		BOOST_CHECK_EQUAL(res1[3].m_value, 1003);
+		BOOST_CHECK_EQUAL(res2[0].m_value, 1000);
+		BOOST_CHECK_EQUAL(res2[1].m_value, 1010);
+		BOOST_CHECK_EQUAL(res3[0].m_value, 1011);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
