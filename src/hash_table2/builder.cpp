@@ -49,13 +49,16 @@ namespace hash_table2 {
 		m_shards[key % m_shards.size()]->add(key, value, version);
 	}
 
+	void builder::remove(uint64_t key) {
+		m_shards[key % m_shards.size()]->remove(key);
+	}
+
 	void builder::merge() {
 		utils::thread_pool pool(32);
 		for (hash_table_shard_builder *shard : m_shards) {
 			pool.enqueue([shard]() -> void {
 				shard->append();
 				shard->merge();
-				shard->optimize();
 			});
 		}
 

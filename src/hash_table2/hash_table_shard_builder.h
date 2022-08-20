@@ -62,6 +62,11 @@ namespace hash_table2 {
 			void add(uint64_t key, const std::string &value, size_t version = 0);
 
 			/*
+			 * Remove key from hash table.
+			 * */
+			void remove(uint64_t key);
+
+			/*
 			 * Return approximation of amount of memory in cache.
 			 * */
 			size_t cache_size() const;
@@ -100,6 +105,7 @@ namespace hash_table2 {
 
 			std::map<uint64_t, std::string> m_cache;
 			std::map<uint64_t, size_t> m_version;
+			std::vector<uint64_t> m_remove_keys;
 
 			std::map<uint64_t, size_t> m_sort_pos;
 			std::mutex m_lock;
@@ -107,6 +113,7 @@ namespace hash_table2 {
 
 			void read_optimized_to(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages, std::ifstream &infile, std::ofstream &outfile) const;
 			void write_pages(const std::vector<std::vector<std::array<uint64_t, 3>>> &pages);
+			void remove_keys_from_pages(std::vector<std::vector<std::array<uint64_t, 3>>> &pages);
 
 	};
 

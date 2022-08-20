@@ -401,19 +401,25 @@ BOOST_AUTO_TEST_CASE(for_each) {
 		ht.merge();
 		ht.add(102, "third value", 1002);
 
+		ht.add(103, "third value", 99999999999);
 		ht.add(103, "first value", 1);
 		ht.merge();
 		ht.add(103, "second value", 100000);
 		ht.merge();
-		ht.add(103, "third value", 99999999999);
 
 		ht.add(50, "third value");
 
 		ht.merge();
+		ht.optimize();
 	}
 
 	{
 		hash_table2::hash_table ht("main_index", 10);
+
+		BOOST_CHECK_EQUAL(ht.find(101), "third value");
+		BOOST_CHECK_EQUAL(ht.find(102), "third value");
+		BOOST_CHECK_EQUAL(ht.find(103), "third value");
+		BOOST_CHECK_EQUAL(ht.find(50), "third value");
 
 		std::set<uint64_t> keys;
 		std::set<std::string> values;
@@ -613,6 +619,113 @@ BOOST_AUTO_TEST_CASE(merge_with_files) {
 		BOOST_CHECK_EQUAL(ht.find(1231), "a3_n2");
 		BOOST_CHECK_EQUAL(ht.find(6543485), "b7");
 		BOOST_CHECK_EQUAL(ht.find(2234645), "a5");
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(remove_record) {
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.truncate();
+
+		ht.add(10000, "data1", 10);
+		ht.add(10001, "data2", 10);
+		ht.add(10002, "data3", 10);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::hash_table ht("main_index", 1);
+
+		BOOST_CHECK_EQUAL(ht.find(10000), "data1");
+		BOOST_CHECK_EQUAL(ht.find(10001), "data2");
+		BOOST_CHECK_EQUAL(ht.find(10002), "data3");
+	}
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.remove(10001);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::hash_table ht("main_index", 1);
+
+		BOOST_CHECK_EQUAL(ht.find(10000), "data1");
+		BOOST_CHECK_EQUAL(ht.find(10001), "");
+		BOOST_CHECK_EQUAL(ht.find(10002), "data3");
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE(remove_record2) {
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.truncate();
+
+		ht.add(10000, "data1", 10);
+		ht.add(10001, "data2", 10);
+		ht.add(10002, "data3", 10);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::builder ht("main_index2", 1);
+
+		ht.truncate();
+
+		ht.add(10000, "data1", 10);
+		ht.add(10002, "data3", 10);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::hash_table ht("main_index", 1);
+
+		BOOST_CHECK_EQUAL(ht.find(10000), "data1");
+		BOOST_CHECK_EQUAL(ht.find(10001), "data2");
+		BOOST_CHECK_EQUAL(ht.find(10002), "data3");
+	}
+
+	{
+		hash_table2::hash_table ht("main_index2", 1);
+
+		BOOST_CHECK_EQUAL(ht.find(10000), "data1");
+		BOOST_CHECK_EQUAL(ht.find(10002), "data3");
+	}
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.remove(10001);
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::hash_table ht1("main_index", 1);
+		hash_table2::hash_table ht2("main_index", 1);
+
+		size_t total_size1 = 0;
+		ht1.for_each_shard([&total_size1](auto shard) {
+			total_size1 += shard->file_size();
+		});
+
+		size_t total_size2 = 0;
+		ht2.for_each_shard([&total_size2](auto shard) {
+			total_size2 += shard->file_size();
+		});
+
+		BOOST_CHECK_EQUAL(total_size1, total_size2);
 	}
 
 }
