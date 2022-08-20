@@ -75,11 +75,12 @@ namespace indexer {
 		index_builder& operator=(const index_builder &);
 	public:
 
-		index_builder(const std::string &file_name);
-		index_builder(const std::string &db_name, size_t id);
-		index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
-		index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
-		index_builder(const std::string &db_name, size_t id, std::function<uint32_t(const data_record &)> &rec_to_id);
+		explicit index_builder(const std::string &file_name);
+		explicit index_builder(size_t hash_table_size, const std::string &file_name);
+		explicit index_builder(const std::string &db_name, size_t id);
+		explicit index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
+		explicit index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
+		explicit index_builder(const std::string &db_name, size_t id, std::function<uint32_t(const data_record &)> &rec_to_id);
 		~index_builder();
 
 		void add(uint64_t key, const data_record &record);
@@ -161,6 +162,15 @@ namespace indexer {
 	template<typename data_record>
 	index_builder<data_record>::index_builder(const std::string &file_name)
 	: index_base<data_record>(), m_file_name(file_name), m_id(0),
+		m_max_results(config::ft_max_results_per_section)
+	{
+		merger::register_merger((size_t)this, [this]() {merge();});
+		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
+	}
+
+	template<typename data_record>
+	index_builder<data_record>::index_builder(size_t hash_table_size, const std::string &file_name)
+	: index_base<data_record>(hash_table_size), m_file_name(file_name), m_id(0),
 		m_max_results(config::ft_max_results_per_section)
 	{
 		merger::register_merger((size_t)this, [this]() {merge();});
@@ -307,6 +317,7 @@ namespace indexer {
 		if (!std::is_sorted(m_records.cbegin(), m_records.cend(), ordered))
 			throw std::runtime_error("index_builder::merge_with needs to run on optimized index");
 
+		profiler::instance prof1("build_new_records");
 		std::map<uint32_t, uint32_t> id_map;
 		std::vector<data_record> new_records;
 
@@ -331,7 +342,9 @@ namespace indexer {
 		}
 
 		m_records.insert(m_records.end(), new_records.cbegin(), new_records.cend());
+		prof1.stop();
 
+		profiler::instance prof2("merge_bitmaps");
 		other.for_each([this, &id_map](uint64_t key, roaring::Roaring &bitmap) {
 			roaring::Roaring new_bitmap;
 			for (auto idx : bitmap) {
@@ -340,10 +353,14 @@ namespace indexer {
 			// Union the bitmaps.
 			m_bitmaps[key] |= new_bitmap;
 		});
+		prof2.stop();
 
+		profiler::instance prof3("save_file");
 		save_file();
 		truncate_cache_files();
+		prof3.stop();
 
+		profiler::instance prof4("optimize");
 		optimize();
 	}
 

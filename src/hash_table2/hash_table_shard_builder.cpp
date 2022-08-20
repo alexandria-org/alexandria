@@ -65,6 +65,10 @@ namespace hash_table2 {
 		}
 	}
 
+	void hash_table_shard_builder::remove(uint64_t key) {
+		m_remove_keys.push_back(key);
+	}
+
 	size_t hash_table_shard_builder::cache_size() const {
 		// This is an OK approximation since m_data_size will be much larger than the keys.
 		return m_cache.size() * sizeof(uint64_t) * 2 + m_data_size;
@@ -162,7 +166,7 @@ namespace hash_table2 {
 
 				const auto elem_at = *(insert_at - 1);
 				if (elem_at[0] == elem[0]) {
-					// Version is bigger. Replace element.
+					// If version is bigger on the new element. Replace element.
 					if (elem_at[2] <= elem[2]) {
 						*(insert_at - 1) = elem;
 						add_data = true;
@@ -185,6 +189,10 @@ namespace hash_table2 {
 		// Delete cache file.
 		file::delete_file(this->filename_data_tmp());
 
+		// Remove keys that are in m_remove_keys.
+		remove_keys_from_pages(pages);
+		m_remove_keys = std::vector<uint64_t>{};
+
 		write_pages(pages);
 	}
 
@@ -197,8 +205,6 @@ namespace hash_table2 {
 		read_optimized_to(pages, infile, outfile);
 
 		outfile.close();
-
-		std::cout << "optimized shard only dry run: " << this->filename_data_tmp() << std::endl;
 
 		file::delete_file(filename_data());
 		file::delete_file(filename_pos());
@@ -309,6 +315,7 @@ namespace hash_table2 {
 				outfile.write((char *)&data_len, sizeof(size_t));
 				outfile.write(buffer, data_len);
 			} else {
+				// Ignore data.
 				infile.seekg(data_len, std::ios::cur);
 			}
 		}
@@ -340,6 +347,26 @@ namespace hash_table2 {
 				for (const auto &page_item : pages[page_id]) {
 					key_writer.write((char *)&page_item, page_item_size);
 				}
+			}
+		}
+	}
+
+	void hash_table_shard_builder::remove_keys_from_pages(std::vector<std::vector<std::array<uint64_t, 3>>> &pages) {
+		for (auto key : m_remove_keys) {
+
+			const size_t page_id = key % this->m_hash_table_size;
+
+			std::array elem{key, (uint64_t)0, (uint64_t)0};
+
+			auto iter = std::upper_bound(pages[page_id].cbegin(), pages[page_id].cend(), elem, [](const auto &a, const auto &b) {
+				return a[0] < b[0];
+			});
+
+			iter--;
+
+			if ((*iter)[0] == key) {
+				// remove the key from the page.
+				pages[page_id].erase(iter);
 			}
 		}
 	}

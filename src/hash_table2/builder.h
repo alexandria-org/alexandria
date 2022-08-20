@@ -42,6 +42,8 @@ namespace hash_table2 {
 		~builder();
 
 		void add(uint64_t key, const std::string &value, size_t version = 0);
+		void remove(uint64_t key);
+
 		void merge();
 		void optimize();
 		void truncate();
