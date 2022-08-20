@@ -176,6 +176,18 @@ int main(int argc, const char **argv) {
 		for (size_t i = 0; i < harmonic.size(); i++) {
 			std::cout << "vertex: " << vertices[sorted[i]] << " has harmonic: " << harmonic[sorted[i]] << std::endl;
 		}
+	} else if (arg == "--test-merge") {
+
+		std::string data = file::cat("17735709110730612472.data");
+
+		std::istringstream ram_reader(data);
+
+		indexer::index_builder<indexer::value_record> idx1(1000, "17735709110730612472.data.out");
+		indexer::index<indexer::value_record> idx2(&ram_reader, 1000);
+
+		profiler::instance prof("total");
+		idx1.merge_with(idx2);
+
 	} else {
 		help();
 	}
