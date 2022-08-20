@@ -35,6 +35,7 @@
 #include <cassert>
 #include <numeric>
 #include <boost/filesystem.hpp>
+#include <sstream>
 #include "merger.h"
 #include "score_builder.h"
 #include "index_utils.h"
@@ -141,11 +142,11 @@ namespace indexer {
 		bool read_page(std::ifstream &reader);
 		void reset_cache_variables();
 		void save_file();
-		void write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos);
-		size_t write_page(std::ofstream &writer, const std::vector<uint64_t> &keys);
-		void reset_key_map(std::ofstream &key_writer);
+		void write_key(std::ostream &key_writer, uint64_t key, size_t page_pos);
+		size_t write_page(std::ostream &writer, const std::vector<uint64_t> &keys);
+		void reset_key_map(std::ostream &key_writer);
 		std::vector<data_record> read_records() const;
-		void write_records(std::ofstream &writer);
+		void write_records(std::ostream &writer);
 		uint32_t default_record_to_internal_id(const data_record &record);
 
 		std::string mountpoint() const;
@@ -156,6 +157,7 @@ namespace indexer {
 
 		bool needs_optimization() const;
 		void sort_records();
+		void sort_records_and_bitmaps(std::vector<data_record> &records, std::map<uint64_t, roaring::Roaring> &bitmaps);
 
 	};
 
@@ -317,7 +319,6 @@ namespace indexer {
 		if (!std::is_sorted(m_records.cbegin(), m_records.cend(), ordered))
 			throw std::runtime_error("index_builder::merge_with needs to run on optimized index");
 
-		profiler::instance prof1("build_new_records");
 		std::map<uint32_t, uint32_t> id_map;
 		std::vector<data_record> new_records;
 
@@ -342,9 +343,7 @@ namespace indexer {
 		}
 
 		m_records.insert(m_records.end(), new_records.cbegin(), new_records.cend());
-		prof1.stop();
 
-		profiler::instance prof2("merge_bitmaps");
 		other.for_each([this, &id_map](uint64_t key, roaring::Roaring &bitmap) {
 			roaring::Roaring new_bitmap;
 			for (auto idx : bitmap) {
@@ -353,15 +352,12 @@ namespace indexer {
 			// Union the bitmaps.
 			m_bitmaps[key] |= new_bitmap;
 		});
-		prof2.stop();
 
-		profiler::instance prof3("save_file");
+		sort_records_and_bitmaps(m_records, m_bitmaps);
+
 		save_file();
 		truncate_cache_files();
-		prof3.stop();
 
-		profiler::instance prof4("optimize");
-		optimize();
 	}
 
 	template<typename data_record>
@@ -558,10 +554,7 @@ namespace indexer {
 
 		//profiler::instance prof("index_builder::save_file");
 
-		std::ofstream writer(target_filename(), std::ios::binary | std::ios::trunc);
-		if (!writer.is_open()) {
-			throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
-		}
+		std::ostringstream writer;
 
 		reset_key_map(writer);
 		write_records(writer);
@@ -580,10 +573,17 @@ namespace indexer {
 			write_key(writer, iter.first, page_pos);
 			writer.flush();
 		}
+
+		std::ofstream file_writer(target_filename(), std::ios::binary | std::ios::trunc);
+		if (!file_writer.is_open()) {
+			throw LOG_ERROR_EXCEPTION("Could not open full text shard. Error: " + std::string(strerror(errno)));
+		}
+
+		file_writer.write(writer.str().c_str(), writer.str().size());
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
+	void index_builder<data_record>::write_key(std::ostream &key_writer, uint64_t key, size_t page_pos) {
 		if (this->m_hash_table_size > 0) {
 			assert(key < this->m_hash_table_size);
 			key_writer.seekp(key * sizeof(uint64_t));
@@ -595,7 +595,7 @@ namespace indexer {
 	 * Writes the page with keys, appending it to the file stream writer.
 	 * */
 	template<typename data_record>
-	size_t index_builder<data_record>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
+	size_t index_builder<data_record>::write_page(std::ostream &writer, const std::vector<uint64_t> &keys) {
 
 		writer.seekp(0, ios::end);
 
@@ -644,7 +644,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::reset_key_map(std::ofstream &key_writer) {
+	void index_builder<data_record>::reset_key_map(std::ostream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
 		for (size_t i = 0; i < this->m_hash_table_size; i++) {
@@ -667,7 +667,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void index_builder<data_record>::write_records(std::ofstream &writer) {
+	void index_builder<data_record>::write_records(std::ostream &writer) {
 		const size_t num_records = m_records.size();
 		writer.write((char *)&num_records, sizeof(uint64_t));
 		writer.write((char *)m_records.data(), num_records * sizeof(data_record));
@@ -724,13 +724,23 @@ namespace indexer {
 
 		read_data_to_cache();
 
-		std::vector<uint32_t> permutation(m_records.size());
+		sort_records_and_bitmaps(m_records, m_bitmaps);
+
+		save_file();
+		truncate_cache_files();
+	}
+
+	template<typename data_record>
+	void index_builder<data_record>::sort_records_and_bitmaps(std::vector<data_record> &records,
+			std::map<uint64_t, roaring::Roaring> &bitmaps) {
+
+		std::vector<uint32_t> permutation(records.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 
 		typename data_record::storage_order ordered;
 
-		std::sort(permutation.begin(), permutation.end(), [this, &ordered](const size_t &a, const size_t &b) {
-			return ordered(m_records[a], m_records[b]);
+		std::sort(permutation.begin(), permutation.end(), [&records, &ordered](const size_t &a, const size_t &b) {
+			return ordered(records[a], records[b]);
 		});
 		// permutation now points from new position -> old position of record.
 
@@ -741,21 +751,18 @@ namespace indexer {
 		// inverse now points from old position -> new position of record.
 
 		// Reorder the records.
-		sort(m_records.begin(), m_records.end(), ordered);
+		sort(records.begin(), records.end(), ordered);
 
 		// Apply transforms.
-		for (auto &iter : m_bitmaps) {
+		for (auto &iter : bitmaps) {
 
 			::roaring::Roaring rr;
 			for (uint32_t v : iter.second) {
 				const uint32_t v_trans = inverse[v];
 				rr.add(v_trans);
 			}
-			m_bitmaps[iter.first] = rr;
+			bitmaps[iter.first] = rr;
 		}
-
-		save_file();
-		truncate_cache_files();
 	}
 
 }
