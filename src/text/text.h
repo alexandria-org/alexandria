@@ -41,6 +41,15 @@
 namespace text {
 
 	/*
+	 * excludes + from punctuation trim since we want to be able to search for c++
+	 */
+	inline bool my_ispunct(int ch) {
+		if (ch == '+') return false;
+		if (ch == '#') return false;
+		return ispunct(ch);
+	}
+
+	/*
 	 * trim whitespace from beginning (in place)
 	 * */
 	inline void ltrim_inplace(std::string &s) {
@@ -81,7 +90,7 @@ namespace text {
 	 * */
 	inline void ltrim_punct_inplace(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
-			return !ispunct(ch);
+			return !my_ispunct(ch);
 		}));
 	}
 
@@ -90,7 +99,7 @@ namespace text {
 	 * */
 	inline void rtrim_punct_inplace(std::string &s) {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-			return !ispunct(ch);
+			return !my_ispunct(ch);
 		}).base(), s.end());
 	}
 
@@ -117,7 +126,7 @@ namespace text {
 	 * */
 	inline void ltrim_both_inplace(std::string &s) {
 		s.erase(s.begin(), find_if(s.begin(), s.end(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch) && !my_ispunct(ch);
 		}));
 	}
 
@@ -126,7 +135,7 @@ namespace text {
 	 * */
 	inline void rtrim_both_inplace(std::string &s) {
 		s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-			return !isspace(ch) && !ispunct(ch);
+			return !isspace(ch) && !my_ispunct(ch);
 		}).base(), s.end());
 	}
 

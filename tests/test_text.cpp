@@ -32,10 +32,23 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(test_text)
 
 BOOST_AUTO_TEST_CASE(get_full_text_words) {
-	vector<string> words = text::get_full_text_words("C++ map");
-	/*for (const string &word : words) {
-		std::cout << word << std::endl;
-	}*/
+	{
+		vector<string> words = text::get_full_text_words("C++ map. is the, best thing");
+		BOOST_CHECK_EQUAL(words[0], "c++");
+		BOOST_CHECK_EQUAL(words[1], "map");
+		BOOST_CHECK_EQUAL(words[2], "is");
+		BOOST_CHECK_EQUAL(words[3], "the");
+		BOOST_CHECK_EQUAL(words[4], "best");
+		BOOST_CHECK_EQUAL(words[5], "thing");
+	}
+
+	{
+		vector<string> words = text::get_full_text_words("C# is also good.");
+		BOOST_CHECK_EQUAL(words[0], "c#");
+		BOOST_CHECK_EQUAL(words[1], "is");
+		BOOST_CHECK_EQUAL(words[2], "also");
+		BOOST_CHECK_EQUAL(words[3], "good");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(get_tokens) {
@@ -60,7 +73,7 @@ BOOST_AUTO_TEST_CASE(get_tokens2) {
 		algorithm::hash("ing"),
 		algorithm::hash("the"),
 		algorithm::hash("test"),
-		algorithm::hash("function"),
+		algorithm::hash("+function+"),
 	};
 
 	BOOST_CHECK(tokens == targets);
