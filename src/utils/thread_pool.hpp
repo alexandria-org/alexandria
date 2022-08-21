@@ -37,7 +37,7 @@ namespace utils {
 
 		public:
 
-			explicit thread_pool(size_t);
+			explicit thread_pool(size_t num_workers, size_t max_queue_len = 0);
 			~thread_pool();
 
 			void enqueue(std::function<void()> &&fun);
@@ -53,6 +53,7 @@ namespace utils {
 			std::mutex m_queue_lock;
 			std::condition_variable m_condition;
 			bool m_stop = false;
+			size_t m_max_queue_len;
 
 	};
 	

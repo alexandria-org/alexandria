@@ -25,14 +25,18 @@
  */
 
 #include "thread_pool.hpp"
+#include <chrono>
 #include <iostream>
 #include <thread>
 #include <future>
 #include <queue>
 
+using namespace std::chrono_literals;
+
 namespace utils {
 
-	thread_pool::thread_pool(size_t num_threads) {
+	thread_pool::thread_pool(size_t num_threads, size_t max_queue_len)
+	: m_max_queue_len(max_queue_len) {
 		for (size_t i = 0; i < num_threads; i++) {
 			m_workers.emplace_back([this]() {
 				this->handle_work();
@@ -49,9 +53,23 @@ namespace utils {
 			throw std::runtime_error("enqueue on stopped thread_pool not allowed");
 		}
 
-		m_queue_lock.lock();
-		m_queue.emplace(std::move(fun));
-		m_queue_lock.unlock();
+		if (m_max_queue_len > 0) {
+			while (true) {
+				
+				{
+					std::lock_guard lock(m_queue_lock);
+					if (m_queue.size() < m_max_queue_len) {
+						m_queue.emplace(std::move(fun));
+						break;
+					}
+				}
+				std::this_thread::sleep_for(100ms);
+			}
+		} else {
+			m_queue_lock.lock();
+			m_queue.emplace(std::move(fun));
+			m_queue_lock.unlock();
+		}
 
 		m_condition.notify_one();
 	}
