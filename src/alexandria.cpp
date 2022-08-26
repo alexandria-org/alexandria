@@ -39,6 +39,8 @@
 #include "algorithm/hyper_ball.h"
 #include "utils/thread_pool.hpp"
 #include "file/file.h"
+#include "http/server.h"
+#include "parser/parser.h"
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
@@ -364,18 +366,31 @@ int main(int argc, const char **argv) {
 			//std::cout << "vertex: " << vertices[sorted[i]] << " has harmonic: " << harmonic[sorted[i]] << std::endl;
 		//}
 		*/
-	} else if (arg == "--test-merge") {
+	} else if (arg == "--url-server") {
+		// Spin up a simple url server.
 
-		std::string data = file::cat("17735709110730612472.data");
+		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
 
-		std::istringstream ram_reader(data);
+		http::server url_server([&ht](auto request) {
+			http::response res;
 
-		indexer::index_builder<indexer::value_record> idx1(1000, "17735709110730612472.data.out");
-		indexer::index<indexer::value_record> idx2(&ram_reader, 1000);
+			URL url = request.url();
+			auto query = url.query();
+			URL find_url(parser::urldecode(query["url"]));
 
-		profiler::instance prof("total");
-		idx1.merge_with(idx2);
+			size_t ver;
+			const auto find_str = ht.find(find_url.hash(), ver);
 
+			if (find_str == "") {
+				res.code(404);
+				res.body("Not found 404");
+			} else {
+				res.code(200);
+				res.body(find_str);
+			}
+
+			return res;
+		});
 	} else {
 		help();
 	}

@@ -65,41 +65,47 @@ namespace downloader {
 	}
 
 	void merge_internal_links(const std::string &path, const std::string &batch_name) {
+		return;
+		/*
 		const std::string target_path = "/slow_data/internal_links/" + batch_name;
 		file::create_directory(target_path);
 		for (size_t i = 0; i < 8; i++) {
 			file::copy_file(path + "/internal_links_" + std::to_string(i), target_path + "/internal_links_" + std::to_string(i));
 		}
-		/*
-		utils::thread_pool pool(32);
+		*/
+		utils::thread_pool pool(8);
 		for (size_t i = 0; i < 8; i++) {
 			pool.enqueue([i, path]() {
 				file::archive tar(path + "/internal_links_" + std::to_string(i));
-				tar.untar([](const std::string &filename, const std::string &data) {
-					uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
+				utils::thread_pool pool(4, 10);
+				tar.untar([&pool](const std::string &filename, const std::string &data) {
 
-					std::istringstream ram_reader(data);
+					pool.enqueue([filename, data]() {
+						uint64_t host_hash = std::stoull(filename.substr(0, filename.size() - 5));
 
-					indexer::index_builder<indexer::value_record> idx1("internal_links", host_hash, 1000);
-					indexer::index<indexer::value_record> idx2(&ram_reader, 1000);
+						std::istringstream ram_reader(data);
 
-					try {
-						idx1.merge_with(idx2);
-					} catch (const std::runtime_error &err) {
-						// The file is corrupt. Lets delete it and report.
-						std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
-						idx1.truncate();
-					} catch (const std::bad_alloc &err) {
-						// The file is corrupt. Lets delete it and report.
-						std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
-						idx1.truncate();
-					}
+						indexer::index_builder<indexer::value_record> idx1("internal_links", host_hash, 1000);
+						indexer::index<indexer::value_record> idx2(&ram_reader, 1000);
+
+						try {
+							idx1.merge_with(idx2);
+						} catch (const std::runtime_error &err) {
+							// The file is corrupt. Lets delete it and report.
+							std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
+							idx1.truncate();
+						} catch (const std::bad_alloc &err) {
+							// The file is corrupt. Lets delete it and report.
+							std::cout << "internal_links: " << host_hash << " is corrupt" << std::endl;
+							idx1.truncate();
+						}
+					});
 				});
+				pool.run_all();
 			});
 		}
 		pool.run_all();
 		std::cout << "finished with the merge" << std::endl;
-		*/
 	}
 
 	void merge_hash_table(const std::string &path) {
