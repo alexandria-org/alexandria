@@ -262,7 +262,7 @@ namespace tools {
 		}
 
 		ofstream outfile(config::data_path() + "/edges.txt", ios::trunc);
-		for (const pair<uint32_t, uint32_t> edge : edges) {
+		for (const pair<uint32_t, uint32_t>& edge : edges) {
 			outfile << edge.first << '\t' << edge.second << '\n';
 		}
 		outfile.close();

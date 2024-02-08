@@ -59,7 +59,7 @@ namespace parser {
 
 		string ret_str(ret);
 
-		delete ret;
+		delete[] ret;
 
 		return ret_str;
 	}

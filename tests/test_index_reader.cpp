@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_index_reader1) {
 		BOOST_CHECK(res[1].m_value == 1001);
 		BOOST_CHECK(res[2].m_value == 1002);
 
-		delete buffer;
+		delete[] buffer;
 	}
 
 }

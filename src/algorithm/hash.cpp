@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <cstdint>
+
 #include "hash.h"
 
 namespace algorithm {
