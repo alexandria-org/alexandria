@@ -99,7 +99,7 @@ namespace tools {
 			boost::iostreams::filtering_ostream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(outfile);
-			for (const string row : saved_rows) {
+			for (const string& row : saved_rows) {
 				compress_stream << row << "\n";
 			}
 		}

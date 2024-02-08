@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(test_memory) {
 	memory::update();
 
 	const size_t used2 = memory::allocated_memory();
-	delete some_mem;
+	delete[] some_mem;
 	const size_t used3 = memory::allocated_memory();
 
 	std::cout << "used1: " << used1 << std::endl;

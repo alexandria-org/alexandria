@@ -116,7 +116,7 @@ namespace file {
 			std::string buffer_string(buffer, header.m_len);
 			std::stringstream buffer_stream(buffer_string);
 
-			delete buffer;
+			delete[] buffer;
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
@@ -147,7 +147,7 @@ namespace file {
 			std::string buffer_string(buffer, header.m_len);
 			std::stringstream buffer_stream(buffer_string);
 
-			delete buffer;
+			delete[] buffer;
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
