@@ -47,61 +47,18 @@ using namespace std;
 
 namespace downloader {
 
-	void run_downloader(const string &warc_path, utils::id_allocator<indexer::index_builder<indexer::value_record>> &internal_link_allocator,
-			std::unordered_map<uint64_t, indexer::index_builder<indexer::value_record> *> &internal_link_cache, hash_table2::builder &ht) {
-
-		std::string all_links;
+	void run_downloader(const string &warc_path) {
 
 		warc::parser pp;
-		warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp, &ht, &internal_link_cache, &internal_link_allocator, &all_links](const string &chunk) {
+		warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const string &chunk) {
 			stringstream ss(chunk);
-			pp.parse_stream(ss, [&ht, &internal_link_cache, &internal_link_allocator, &all_links](const string &url_str, const parser::html_parser &html, const std::string &ip, const std::string &date) {
-					URL url(url_str);
-					std::tm t = {};
-					std::istringstream ss(date);
-					ss >> std::get_time(&t, "%Y-%m-%dT%H:%M:%SZ");
-					size_t time = (t.tm_year + 1900) * 10000000000ull + (t.tm_mon + 1) * 100000000ull + (t.tm_mday) * 1000000ull + (t.tm_hour) * 10000ull + (t.tm_min) * 100ull + t.tm_sec;
-
-					uint64_t host_hash = url.host_hash();
-					if (!internal_link_cache.count(host_hash)) {
-						internal_link_cache[host_hash] = internal_link_allocator.get(host_hash, "internal_links", host_hash, 1000);
-					}
-					auto internal_link_builder = internal_link_cache[host_hash];
-
-					const std::string data = (url.str()
-						+ '\t' + html.title()
-						+ '\t' + html.h1()
-						+ '\t' + html.meta()
-						+ '\t' + html.text()
-						+ '\t' + date
-						+ '\t' + ip
-						+ '\n');
-
-					ht.add(url.hash(), data, time);
-
-					for (const auto &link : html.links()) {
-						all_links += (link.host()
-							+ '\t' + link.path()
-							+ '\t' + link.target_host()
-							+ '\t' + link.target_path()
-							+ '\t' + link.text()
-							+ '\t' + (link.nofollow() ? "1" : "0")
-							+ '\n');
-					}
-
-					for (const auto &link : html.internal_links()) {
-						// link is a std::pair<uint64_t, uint64_t> link_from -> link_to
-						// but we store the internal links as link_to -> link_from because the hyper_ball algorithm requires it.
-						// see src/algorithm/hyper_ball.h
-						internal_link_builder->add(link.second, indexer::value_record(link.first));
-					}
-			});
+			pp.parse_stream(ss);
 		});
 
 		LOG_INFO("uploading: " + warc_path);
 		int error;
-		//error = transfer::upload_gz_file(warc::get_result_path(warc_path), pp.result());
-		error = transfer::upload_gz_file(warc::get_link_result_path(warc_path), all_links);
+		error = transfer::upload_gz_file(warc::get_result_path(warc_path), pp.result());
+		error = transfer::upload_gz_file(warc::get_link_result_path(warc_path), pp.link_result());
 
 		if (error) {
 			LOG_INFO("error uploading: " + warc_path);
@@ -137,12 +94,6 @@ namespace downloader {
 
 	void start_downloaders(const std::vector<std::string> &warc_paths) {
 
-		indexer::delete_db_directories("internal_links");
-		indexer::create_db_directories("internal_links");
-
-		indexer::merger::set_mem_limit(0.1);
-		indexer::merger::start_merge_thread();
-
 		const size_t num_threads = 24;
 
 		std::vector<std::vector<std::string>> chunks;
@@ -150,16 +101,11 @@ namespace downloader {
 
 		utils::thread_pool pool(num_threads);
 
-		hash_table2::builder ht("crawl_index", 1019);
-		ht.truncate();
-		utils::id_allocator<indexer::index_builder<indexer::value_record>> internal_link_allocator;
-
 		for (const auto &chunk : chunks) {
-			pool.enqueue([chunk, &ht, &internal_link_allocator] {
-				std::unordered_map<uint64_t, indexer::index_builder<indexer::value_record> *> internal_link_cache;
+			pool.enqueue([chunk] {
 				size_t count = 0;
 				for (const auto &warc_path : chunk) {
-					run_downloader(warc_path, internal_link_allocator, internal_link_cache, ht);
+					run_downloader(warc_path);
 					count++;
 					std::cout << "done with " << warc_path << " done with " << count << "/" << chunk.size() << std::endl;
 				}
@@ -167,8 +113,6 @@ namespace downloader {
 		}
 
 		pool.run_all();
-
-		indexer::merger::stop_merge_thread();
 	}
 
 	void upload_all() {

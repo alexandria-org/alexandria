@@ -56,21 +56,22 @@ namespace warc {
 				+ '\t' + date
 				+ '\t' + ip
 				+ '\n');
-			for (const auto &link : html.links()) {
-				m_links += (link.host()
-					+ '\t' + link.path()
-					+ '\t' + link.target_host()
-					+ '\t' + link.target_path()
-					+ '\t' + link.text()
-					+ '\t' + (link.nofollow() ? "1" : "0")
-					+ '\n');
-			}
+		for (const auto &link : html.links()) {
+			m_links += (link.host()
+				+ '\t' + link.path()
+				+ '\t' + link.target_host()
+				+ '\t' + link.target_path()
+				+ '\t' + link.text()
+				+ '\t' + (link.nofollow() ? "1" : "0")
+				+ '\n');
+		}
 
-			for (const auto &link : html.internal_links()) {
-				// link is a std::pair<uint64_t, uint64_t>
-				m_internal_links.append((char *)&link.first, sizeof(uint64_t));
-				m_internal_links.append((char *)&link.second, sizeof(uint64_t));
-			}
+		// internal links are too messy for us now.
+		/*for (const auto &link : html.internal_links()) {
+			// link is a std::pair<uint64_t, uint64_t>
+			m_internal_links.append((char *)&link.first, sizeof(uint64_t));
+			m_internal_links.append((char *)&link.second, sizeof(uint64_t));
+		}*/
 
 	}
 
