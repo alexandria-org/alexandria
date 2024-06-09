@@ -40,6 +40,7 @@
 #include "indexer/sharded_index.h"
 #include "indexer/level.h"
 #include "indexer/url_level.h"
+#include "transfer/transfer.h"
 
 using namespace std;
 
@@ -53,8 +54,8 @@ void help() {
 
 int main(int argc, const char **argv) {
 
-	logger::start_logger_thread();
-	logger::verbose(true);
+	//logger::start_logger_thread();
+	//logger::verbose(true);
 
 	if (getenv("ALEXANDRIA_CONFIG") != NULL) {
 		config::read_config(getenv("ALEXANDRIA_CONFIG"));
@@ -68,6 +69,35 @@ int main(int argc, const char **argv) {
 	}
 
 	const string arg(argc > 1 ? argv[1] : "");
+
+	if (arg == "--index") {
+
+		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz"};
+		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+
+		file::delete_directory("/mnt/0/full_text/test_index");
+		file::create_directory("/mnt/0/full_text/test_index");
+		{
+			indexer::sharded_index_builder<indexer::url_record> idx("test_index", 13);
+
+			idx.add(123, indexer::url_record(1000));
+			idx.add(123, indexer::url_record(1001));
+			idx.add(124, indexer::url_record(1000));
+
+			idx.append();
+			idx.merge();
+		}
+		transfer::delete_downloaded_files(local_files);
+		{
+			indexer::index<indexer::url_record> idx("test_index", 0, 1000);
+
+			auto res1 = idx.find(123);
+			auto res2 = idx.find(124);
+
+			std::cout << res1[0].m_value << std::endl;
+		}
+	}
+	return 0;
 
 	if (arg == "--split") {
 		tools::run_splitter();
@@ -102,30 +132,14 @@ int main(int argc, const char **argv) {
 		tools::find_links();
 	} else if (arg == "--console") {
 		indexer::console();
-	} else if (arg == "--index-domains") {
-		indexer::index_domains(argv[2]);
-	} else if (arg == "--index-titles") {
-		indexer::index_title_counter(argv[2]);
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
-	} else if (arg == "--index-url-links") {
-		indexer::index_url_links(argv[2]);
 	} else if (arg == "--index-urls") {
 		indexer::index_urls(argv[2]);
-	} else if (arg == "--index-words") {
-		indexer::index_words(argv[2]);
-	} else if (arg == "--index-snippets") {
-		indexer::index_snippets(argv[2]);
 	} else if (arg == "--make-domain-index") {
 		indexer::make_domain_index();
 	} else if (arg == "--make-domain-index-scores") {
 		indexer::make_domain_index_scores();
-	} else if (arg == "--print-info") {
-		indexer::print_info();
-	} else if (arg == "--calc-scores") {
-		indexer::calc_scores();
-	} else if (arg == "--truncate-words") {
-		indexer::truncate_words();
 	} else if (arg == "--truncate-links") {
 		indexer::truncate_links();
 	} else if (arg == "--make-url-bloom") {

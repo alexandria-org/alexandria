@@ -24,58 +24,31 @@
  * SOFTWARE.
  */
 
-#include "search_server.h"
+#include "search_engine.h"
+#include <cmath>
 
-#include <iostream>
-#include "http/server.h"
-#include "indexer/index_manager.h"
-#include "indexer/url_record.h"
-#include "hash_table2/hash_table.h"
-#include "transfer/transfer.h"
-#include "parser/parser.h"
-#include "parser/unicode.h"
-#include "api/result_with_snippet.h"
-#include "api/api_response.h"
-#include "full_text/search_metric.h"
-#include "json.hpp"
+using namespace std;
 
-namespace server {
+namespace search_engine {
 
-	void search_server() {
-
-		indexer::index_manager idx_manager;
-
-		hash_table2::hash_table ht("index_manager");
-
-		cout << "starting server..." << endl;
-
-		::http::server srv([&idx_manager, &ht](const http::request &req) {
-			http::response res;
-
-			URL url = req.url();
-
-			auto query = url.query();
-
-			size_t limit = 1000;
-			if (query.count("limit")) limit = std::stoi(query["limit"]);
-
-			(void)limit;
-
-			if (url.path() == "/favicon.ico") {
-				res.code(404);
-				res.body("404");
-				return res;
-			}
-
-			stringstream body;
-
-			// implement the same search server logic we have on alexandria.org now.
-
-			res.code(200);
-
-			res.body(body.str());
-
-			return res;
-		});
+	void reset_search_metric(struct full_text::search_metric &metric) {
+		metric.m_total_found = 0;
+		metric.m_total_url_links_found = 0;
+		metric.m_total_domain_links_found = 0;
+		metric.m_links_handled = 0;
+		metric.m_link_domain_matches = 0;
+		metric.m_link_url_matches = 0;
 	}
+
+	std::vector<full_text::record> search_deduplicate(storage<full_text::record> *storage,
+		const full_text::index<full_text::record> &index, const vector<full_text::link_record> &links,
+		const vector<full_text::domain_link_record> &domain_links, const string &query, size_t limit, struct full_text::search_metric &metric) {
+
+		vector<full_text::record> complete_result = search_wrapper(storage, index, links, domain_links, query, config::pre_result_limit, metric);
+
+		vector<full_text::record> deduped_result = deduplicate_result_vector<full_text::record>(complete_result, limit);
+
+		return deduped_result;
+	}
+
 }

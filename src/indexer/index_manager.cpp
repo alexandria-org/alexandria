@@ -30,8 +30,6 @@
 #include "url_link/link.h"
 #include "algorithm/algorithm.h"
 #include "utils/thread_pool.hpp"
-#include "domain_level.h"
-#include "url_level.h"
 
 using namespace std;
 
@@ -39,74 +37,61 @@ namespace indexer {
 
 	index_manager::index_manager() {
 
-		m_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, link_record>>("link_index", 4001);
-		m_link_index = std::make_unique<sharded<counted_index, link_record>>("link_index", 4001);
+		m_link_index_builder = std::make_unique<sharded_builder<index_builder, link_record>>("link_index", 4001);
+		m_link_index = std::make_unique<sharded<index, link_record>>("link_index", 4001);
 
-		m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
-		m_domain_link_index = std::make_unique<sharded<counted_index, domain_link_record>>("domain_link_index", 4001);
+		m_domain_link_index_builder = std::make_unique<sharded_builder<index_builder, domain_link_record>>("domain_link_index", 4001);
+		m_domain_link_index = std::make_unique<sharded<index, domain_link_record>>("domain_link_index", 4001);
 
 		m_hash_table = std::make_unique<hash_table2::builder>("index_manager");
-		m_hash_table_words = std::make_unique<hash_table2::builder>("word_hash_table");
 		//m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
 
-		m_fp_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("first_page_title_word_counter", 101);
-
-		m_title_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("title_word_counter", 997);
-		m_title_word_counter = std::make_unique<sharded<counted_index, counted_record>>("title_word_counter", 997);
-
-		m_link_word_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("link_word_counter", 4001);
-		m_link_word_counter = std::make_unique<sharded<counted_index, counted_record>>("link_word_counter", 4001);
-
-		//m_word_index_builder = std::make_unique<sharded_builder<counted_index_builder, counted_record>>("word_index", 256);
-		m_word_index = std::make_unique<sharded<counted_index, counted_record>>("word_index", 256);
-
 		m_domain_info = std::make_unique<sharded_index<domain_record>>("domain_info", 997);
-	}
-
-	index_manager::index_manager(bool only_links) {
-
-		if (only_links) {
-			m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
-		}
-	}
-
-	index_manager::index_manager(bool only_links, bool only_snippets) {
-
-		if (only_links) {
-			m_domain_link_index_builder = std::make_unique<sharded_builder<counted_index_builder, domain_link_record>>("domain_link_index", 4001);
-		}
-		if (only_snippets) {
-			m_hash_table_snippets = std::make_unique<hash_table2::builder>("snippets");
-		}
 	}
 
 	index_manager::~index_manager() {
 	}
 
-	void index_manager::add_level(level *lvl) {
-		create_directories(lvl->get_type());
-		m_levels.push_back(lvl);
-	}
-
-	void index_manager::add_snippet(const snippet &s) {
-		for (level *lvl : m_levels) {
-			lvl->add_snippet(s);
-		}
-	}
-
-	void index_manager::add_document(size_t id, const string &doc) {
-		for (level *lvl : m_levels) {
-			lvl->add_document(id, doc);
-		}
-	}
-
 	void index_manager::add_index_file(const string &local_path) {
-		for (level *lvl : m_levels) {
-			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
-				m_hash_table->add(key, value);
-			}, [this](uint64_t url_hash, uint64_t domain_hash) {
-				//m_url_to_domain->add_url(url_hash, domain_hash);
-			});
+
+		const vector<size_t> cols = {1, 2, 3, 4};
+		const vector<float> scores = {10.0, 3.0, 2.0, 1};
+
+		ifstream infile(local_path, ios::in);
+		string line;
+		std::map<uint64_t, float> word_map;
+		while (getline(infile, line)) {
+			vector<string> col_values;
+			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
+
+			URL url(col_values[0]);
+
+			const uint64_t url_hash = url.hash();
+
+			const float harmonic = domain_stats::harmonic_centrality(url);
+
+			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+
+			url_record record(url_hash);
+			record.url_length(url.path_with_query().size());
+
+			size_t col_idx = 0;
+			for (size_t col : cols) {
+				auto tokens = text::get_tokens(col_values[col]);
+				std::sort(tokens.begin(), tokens.end());
+				auto last = std::unique(tokens.begin(), tokens.end());
+				tokens.erase(last, tokens.end());
+				for (auto token : tokens) {
+					word_map[token] += scores[col_idx] * harmonic;
+				}
+			}
+
+			for (const auto &iter : word_map) {
+				record.m_score = iter.second;
+				m_url_index_builder->add(iter.first, record);
+			}
+
+			word_map.clear();
 		}
 	}
 
@@ -207,141 +192,9 @@ namespace indexer {
 		pool.run_all();
 	}
 
-	void index_manager::add_url_link_file(const string &local_path, const ::algorithm::bloom_filter &urls_to_index) {
-		for (level *lvl : m_levels) {
-			lvl->add_link_file(local_path, urls_to_index);
-		}
-	}
-
-	void index_manager::add_url_link_files_threaded(const vector<string> &local_paths, size_t num_threads, const ::algorithm::bloom_filter &urls_to_index) {
-
-		utils::thread_pool pool(num_threads);
-
-		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path, &urls_to_index]() -> void {
-				add_url_link_file(local_path, urls_to_index);
-			});
-		}
-
-		pool.run_all();
-	}
-
-	void index_manager::add_title_file(const string &local_path) {
-		const size_t title_col = 1;
-
-		ifstream infile(local_path, ios::in);
-		string line;
-		std::map<uint64_t, std::string> word_index;
-		set<uint64_t> tokens;
-		while (getline(infile, line)) {
-			vector<string> col_values;
-			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-			URL url(col_values[0]);
-
-			if (url.path() != "/") continue;
-
-			uint64_t domain_hash = url.host_hash();
-
-			vector<string> words = text::get_full_text_words(col_values[title_col]);
-
-			text::words_to_ngram_hash(words, 3, [&tokens](const uint64_t hash) {
-				tokens.insert(hash);
-			});
-			text::words_to_ngram_hash(words, 3, [&tokens, &word_index](const uint64_t hash, const string &ngram) {
-				tokens.insert(hash);
-
-				if (word_index.count(hash) == 0) {
-					word_index[hash] = ngram;
-				}
-			});
-			for (auto word_hash : tokens) {
-				m_fp_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
-				//m_title_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
-			}
-			tokens.clear();
-		}
-
-		for (const auto &iter : word_index) {
-			m_hash_table_words->add(iter.first, iter.second);
-		}
-	}
-
-	void index_manager::add_title_files_threaded(const vector<string> &local_paths, size_t num_threads) {
-
-		utils::thread_pool pool(num_threads);
-
-		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path]() -> void {
-				add_title_file(local_path);
-			});
-		}
-
-		pool.run_all();
-	}
-
-	void index_manager::add_link_count_file(const string &local_path) {
-
-		ifstream infile(local_path, ios::in);
-		string line;
-		std::map<uint64_t, std::string> word_index;
-		set<uint64_t> tokens;
-		while (getline(infile, line)) {
-			vector<string> col_values;
-			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-			URL source_url(col_values[0], col_values[1]);
-			URL target_url(col_values[2], col_values[3]);
-
-			if (source_url.host_top_domain() == target_url.host_top_domain()) continue;
-
-			const uint64_t domain_hash = target_url.host_hash();
-
-			const string link_text = col_values[4].substr(0, 1000);
-
-			vector<string> words = text::get_full_text_words(link_text);
-
-			text::words_to_ngram_hash(words, 3, [&tokens, &word_index](const uint64_t hash, const string &ngram) {
-				tokens.insert(hash);
-
-				if (word_index.count(hash) == 0) {
-					word_index[hash] = ngram;
-				}
-			});
-			for (auto word_hash : tokens) {
-				m_link_word_builder->add(domain_hash, counted_record(word_hash, 0.0f));
-			}
-			tokens.clear();
-		}
-
-		for (const auto &iter : word_index) {
-			m_hash_table_words->add(iter.first, iter.second);
-		}
-	}
-
-	void index_manager::add_link_count_files_threaded(const vector<string> &local_paths, size_t num_threads) {
-
-		utils::thread_pool pool(num_threads);
-
-		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path]() -> void {
-				add_link_count_file(local_path);
-			});
-		}
-
-		pool.run_all();
-	}
-
-	/*
-	 * Add each url to its own domains index.
-	 */
 	void index_manager::add_url_file(const string &local_path) {
 
-		for (level *lvl : m_levels) {
-			lvl->add_index_file(local_path, [this](uint64_t key, const string &value) {
-			}, [this](uint64_t url_hash, uint64_t domain_hash) {
-			});
-		}
+		
 	}
 
 	void index_manager::add_url_files_threaded(const vector<string> &local_paths, size_t num_threads) {
@@ -357,100 +210,14 @@ namespace indexer {
 		pool.run_all();
 	}
 
-	void index_manager::add_snippet_file(const string &local_path) {
-
-		ifstream infile(local_path, ios::in);
-		string line;
-		vector<string> col_values;
-		while (getline(infile, line)) {
-
-			col_values.clear();
-			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-			URL url(col_values[0]);
-
-			m_hash_table_snippets->add(url.hash(), line);
-		}
-	}
-
-	void index_manager::add_snippet_files_threaded(const vector<string> &local_paths, size_t num_threads) {
-
-		utils::thread_pool pool(num_threads);
-
-		for (auto &local_path : local_paths) {
-			pool.enqueue([this, local_path]() -> void {
-				add_snippet_file(local_path);
-			});
-		}
-
-		pool.run_all();
-
-		m_hash_table_snippets->merge();
-	}
-
-	void index_manager::add_word_file(const string &local_path, const std::set<uint64_t> &words_to_index) {
-
-		const vector<size_t> cols = {1, 2, 3, 4};
-		const vector<size_t> field_multipliers = {10, 3, 2, 1};
-
-		map<uint64_t, size_t> counts;
-
-		ifstream infile(local_path, ios::in);
-		string line;
-		while (getline(infile, line)) {
-
-			vector<string> col_values;
-			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
-
-			URL url(col_values[0]);
-			const uint64_t domain_hash = url.host_hash();
-
-			for (size_t ii = 0; ii < cols.size(); ii++) {
-				size_t col = cols[ii];
-				vector<string> words = text::get_full_text_words(col_values[col]);
-
-				for (const string &word : words) {
-					const uint64_t word_hash = ::algorithm::hash(word);
-					if (words_to_index.find(word_hash) != words_to_index.end()) {
-						counts[word_hash] = field_multipliers[ii];
-					}
-				}
-
-				for (const auto &iter : counts) {
-					m_word_index_builder->add(iter.first, counted_record(domain_hash, 0.0f, iter.second));
-				}
-				counts.clear();
-			}
-
-		}
-	}
-
-	void index_manager::add_word_files_threaded(const vector<string> &local_paths, size_t num_threads, const std::set<uint64_t> &words_to_index) {
-
-
-		LOG_INFO("done... found " + to_string(words_to_index.size()) + " words");
-		LOG_INFO("running add_word_files on " + to_string(local_paths.size()) + " files");
-
-		utils::thread_pool pool(num_threads);
-
-		for (const string &local_path : local_paths) {
-			pool.enqueue([this, local_path, &words_to_index]() -> void {
-				add_word_file(local_path, words_to_index);
-			});
-		}
-
-		pool.run_all();
-
-	}
-
 	void index_manager::merge() {
-		for (level *lvl : m_levels) {
-			lvl->merge();
-		}
-		//m_hash_table->merge();
+
+		m_url_index_builder->append();
+		m_url_index_builder->merge();
 
 		m_link_index_builder->append();
 		m_link_index_builder->merge();
+
 		m_domain_link_index_builder->append();
 		m_domain_link_index_builder->merge();
 
@@ -459,17 +226,8 @@ namespace indexer {
 	void index_manager::optimize() {
 	}
 
-	void index_manager::merge_word() {
-		m_word_index_builder->append();
-		m_word_index_builder->merge();
-	}
-
 	void index_manager::truncate() {
-		for (level *lvl : m_levels) {
-			delete_directories(lvl->get_type());
-			create_directories(lvl->get_type());
-		}
-
+		m_url_index_builder->truncate();
 		truncate_links();
 	}
 
@@ -478,120 +236,9 @@ namespace indexer {
 		m_domain_link_index_builder->truncate();
 	}
 
-	void index_manager::truncate_words() {
-		m_word_index_builder->truncate();
-	}
-
-	void index_manager::clean_up() {
-		for (level *lvl : m_levels) {
-			lvl->clean_up();
-		}
-	}
-
-	void index_manager::calculate_scores_for_level(size_t level_num) {
-		m_levels[level_num]->calculate_scores();
-	}
-
 	std::vector<return_record> index_manager::find(size_t &total_num_results, const string &query) {
 
-		auto domain_formula = [](float score) {
-			return expm1(20.0f * score) / 50.0f;
-		};
-
-		auto domain_formula2 = [](float score) {
-			return 1000*score;
-		};
-
-		std::vector<size_t> tokens;
-		std::vector<size_t> counts;
-
-		vector<string> words = text::get_expanded_full_text_words(query);
-
-		std::map<uint64_t, std::string> token_to_word;
-		std::map<uint64_t, size_t> ngram_len;
-		text::words_to_ngram_hash(words, 3, [&tokens, &token_to_word, &ngram_len](const uint64_t hash, const string &word, size_t len) {
-			tokens.push_back(hash);
-			token_to_word[hash] = word;
-			ngram_len[hash] = len;
-		});
-
-		std::sort(tokens.begin(), tokens.end());
-		auto last = std::unique(tokens.begin(), tokens.end());
-		tokens.erase(last, tokens.end());
-
-		std::vector<roaring::Roaring> bitmaps;
-		{
-			profiler::instance profile_domain_info("fetch token info");
-			for (auto token : tokens) {
-				bitmaps.emplace_back(std::move(m_domain_info->find_bitmap(token)));
-				counts.push_back(bitmaps.back().cardinality());
-			}
-		}
-
-		vector<domain_record> domain_modifiers;
-		for (size_t i = 0; i < counts.size(); i++) {
-			uint64_t token = tokens[i];
-			std::cout << token_to_word[token] << ": " << counts[i] << ", ngram_len = " << ngram_len[token] << std::endl;
-			if (counts[i] < 90000) {
-				m_domain_info->get_records_for_bitmap(bitmaps[i], domain_modifiers);
-			}
-		}
-
-		vector<counted_record> bm25_scores;// = m_word_index->find_sum(text::get_tokens(query), 100000);
-		vector<link_record> links;// = m_link_index->find_intersection(text::get_tokens(query));
-		vector<domain_link_record> domain_links = m_domain_link_index->find_intersection(text::get_tokens(query));
-
-		cout << "found: " << links.size() << " links" << endl;
-		cout << "found: " << domain_links.size() << " domain links" << endl;
-
-		//std::sort(links.begin(), links.end(), link_record::storage_order());
-		std::sort(domain_links.begin(), domain_links.end(), domain_link_record::storage_order());
-		std::sort(domain_modifiers.begin(), domain_modifiers.end());
-
-		// group by target domain.
-		std::vector<domain_link_record> grouped;
-		for (auto rec : domain_links) {
-			if (grouped.size() && grouped.back().storage_equal(rec)) {
-				grouped.back().m_score += domain_formula(rec.m_score);
-			} else {
-				grouped.emplace_back(rec);
-				grouped.back().m_score = domain_formula(rec.m_score);
-			}
-		}
-
-		std::vector<domain_record> grouped2;
-		for (auto rec : domain_modifiers) {
-			if (grouped2.size() && grouped2.back().storage_equal(rec)) {
-				grouped2.back().m_score += domain_formula2(rec.m_score);
-			} else {
-				grouped2.emplace_back(rec);
-				grouped2.back().m_score = domain_formula2(rec.m_score);
-			}
-		}
-
-		if (!std::is_sorted(bm25_scores.begin(), bm25_scores.end())) {
-			throw new runtime_error("bm25 are not sorted");
-		}
-		if (!std::is_sorted(links.begin(), links.end(), link_record::storage_order())) {
-			throw new runtime_error("links are not sorted");
-		}
-		if (!std::is_sorted(domain_links.begin(), domain_links.end(), domain_link_record::storage_order())) {
-			throw new runtime_error("domain_links are not sorted");
-		}
-		if (!std::is_sorted(grouped.begin(), grouped.end(), domain_link_record::storage_order())) {
-			throw new runtime_error("grouped are not sorted");
-		}
-
-		profiler::instance inst("m_levels[0]->find");
-		std::vector<return_record> res = m_levels[0]->find(total_num_results, query, {}, links, grouped, bm25_scores, grouped2);
-		inst.stop();
-
-		// Sort by score.
-		std::sort(res.begin(), res.end(), [](const return_record &a, const return_record &b) {
-			return a.m_score > b.m_score;
-		});
-
-		return res;
+		return {};
 	}
 
 	std::vector<return_record> index_manager::find(const string &query) {
@@ -599,15 +246,4 @@ namespace indexer {
 		return find(total_num_results, query);
 	}
 
-	void index_manager::create_directories(level_type lvl) {
-		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
-		}
-	}
-
-	void index_manager::delete_directories(level_type lvl) {
-		for (size_t i = 0; i < 8; i++) {
-			boost::filesystem::remove_all(config::data_path() + "/" + std::to_string(i) + "/full_text/" + level_to_str(lvl));
-		}
-	}
 }

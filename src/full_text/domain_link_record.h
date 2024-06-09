@@ -24,58 +24,16 @@
  * SOFTWARE.
  */
 
-#include "search_server.h"
+#pragma once
 
-#include <iostream>
-#include "http/server.h"
-#include "indexer/index_manager.h"
-#include "indexer/url_record.h"
-#include "hash_table2/hash_table.h"
-#include "transfer/transfer.h"
-#include "parser/parser.h"
-#include "parser/unicode.h"
-#include "api/result_with_snippet.h"
-#include "api/api_response.h"
-#include "full_text/search_metric.h"
-#include "json.hpp"
+namespace full_text {
 
-namespace server {
+	struct domain_link_record {
 
-	void search_server() {
+		uint64_t m_value;
+		float m_score;
+		uint64_t m_source_domain;
+		uint64_t m_target_domain;
 
-		indexer::index_manager idx_manager;
-
-		hash_table2::hash_table ht("index_manager");
-
-		cout << "starting server..." << endl;
-
-		::http::server srv([&idx_manager, &ht](const http::request &req) {
-			http::response res;
-
-			URL url = req.url();
-
-			auto query = url.query();
-
-			size_t limit = 1000;
-			if (query.count("limit")) limit = std::stoi(query["limit"]);
-
-			(void)limit;
-
-			if (url.path() == "/favicon.ico") {
-				res.code(404);
-				res.body("404");
-				return res;
-			}
-
-			stringstream body;
-
-			// implement the same search server logic we have on alexandria.org now.
-
-			res.code(200);
-
-			res.body(body.str());
-
-			return res;
-		});
-	}
+	};
 }

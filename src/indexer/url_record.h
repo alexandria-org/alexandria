@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#pragma once
+
 #include "generic_record.h"
 
 namespace indexer {
