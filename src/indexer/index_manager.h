@@ -80,11 +80,8 @@ namespace indexer {
 		std::unique_ptr<sharded_builder<index_builder, domain_link_record>> m_domain_link_index_builder;
 		std::unique_ptr<sharded<index, domain_link_record>> m_domain_link_index;
 
-		std::unique_ptr<sharded_index<domain_record>> m_domain_info;
-
-		std::unique_ptr<hash_table2::builder> m_hash_table;
-		std::unique_ptr<hash_table2::builder> m_hash_table_snippets;
-		//std::unique_ptr<full_text::url_to_domain> m_url_to_domain;
+		std::unique_ptr<hash_table2::builder> m_hash_table_builder;
+		std::unique_ptr<hash_table2::hash_table> m_hash_table;
 
 	};
 

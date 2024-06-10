@@ -50,10 +50,19 @@ namespace downloader {
 	void run_downloader(const string &warc_path) {
 
 		warc::parser pp;
-		warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const string &chunk) {
-			stringstream ss(chunk);
-			pp.parse_stream(ss);
-		});
+		for (int retry = 0; retry < 5; retry++) {
+			try {
+				warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const string &chunk) {
+					stringstream ss(chunk);
+					pp.parse_stream(ss);
+				});
+				break;
+			} catch (const std::runtime_error &err) {
+				std::cout << "GOT ERROR: " << err.what() << std::endl;
+				std::cout << "Retrying... try " << retry << std::endl;
+				std::this_thread::sleep_for(std::chrono::seconds(5));
+			}
+		}
 
 		LOG_INFO("uploading: " + warc_path);
 		int error;
@@ -117,7 +126,7 @@ namespace downloader {
 
 	void upload_all() {
 
-		std::string upload_id = std::to_string(common::cur_datetime());
+		/*std::string upload_id = std::to_string(common::cur_datetime());
 
 		// Upload internal links.
 		for (size_t i = 0; i < 8; i++) {
@@ -150,6 +159,7 @@ namespace downloader {
 			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".pos", pos_filename);
 			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".data", data_filename);
 		});
+		*/
 
 	}
 
@@ -174,8 +184,6 @@ namespace downloader {
 		}
 
 		start_downloaders(warc_paths);
-
-		upload_all();
 	}
 }
 

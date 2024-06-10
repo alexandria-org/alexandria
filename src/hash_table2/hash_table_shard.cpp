@@ -48,6 +48,37 @@ namespace hash_table2 {
 
 	}
 
+	bool hash_table_shard::has(uint64_t key) const {
+
+		std::ifstream reader(filename_pos(), std::ios::binary);
+
+		const size_t hash_pos = key % this->m_hash_table_size;
+		reader.seekg(hash_pos * sizeof(size_t));
+
+		// Read page pos.
+		size_t page_pos = SIZE_MAX;
+		reader.read((char *)&page_pos, sizeof(size_t));
+
+		if (page_pos == SIZE_MAX) return false;
+
+		// Read page.
+		size_t page_len;
+		reader.seekg(this->hash_table_byte_size() + page_pos, std::ios::beg);
+		reader.read((char *)&page_len, sizeof(size_t));
+
+		std::vector<std::array<uint64_t, 3>> page(page_len);
+		reader.read((char *)page.data(), page_len * sizeof(std::array<uint64_t, 3>));
+
+		// Find key among pages.
+		for (const auto &page_item : page) {
+			if (page_item[0] == key) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	string hash_table_shard::find(uint64_t key) const {
 		size_t ver;
 		return find(key, ver);

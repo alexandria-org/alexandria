@@ -45,6 +45,11 @@ namespace hash_table2 {
 			~hash_table_shard();
 
 			/*
+			 * Checks if the key exists in the hash table.
+			 * */
+			bool has(uint64_t key) const;
+
+			/*
 			 * Finds a value for the given key. Returns empty string if key is not present.
 			 * */
 			std::string find(uint64_t key) const;

@@ -129,6 +129,48 @@ namespace text {
 		return words;
 	}
 
+	std::vector<std::string> get_full_text_words(const std::string &str) {
+
+		return get_full_text_words(str, 0);
+	}
+
+	std::vector<uint64_t> get_full_text_tokens(const std::string &str, size_t limit) {
+
+		const auto words = get_full_text_words(str, limit);
+		std::vector<uint64_t> ret(words.size());
+
+		std::transform(words.cbegin(), words.cend(), ret.begin(), [](const std::string &word) {
+			return algorithm::hash(word);
+		});
+
+		return ret;
+
+	}
+
+	std::vector<uint64_t> get_full_text_tokens(const std::string &str) {
+
+		return get_full_text_tokens(str, 0);
+
+	}
+
+	std::vector<uint64_t> get_unique_full_text_tokens(const std::string &str, size_t limit) {
+
+		auto vec = get_full_text_tokens(str, 0);
+		std::set<uint64_t> s;
+		const unsigned size = vec.size();
+		for (unsigned i = 0; i < size; ++i) s.insert(vec[i]);
+
+		vec.assign(s.begin(), s.end());
+
+		return vec;
+	}
+
+	std::vector<uint64_t> get_unique_full_text_tokens(const std::string &str) {
+
+		return get_unique_full_text_tokens(str, 0);
+
+	}
+
 	/*
 		This should be the fast way of getting tokens out of a string. It should just read the whole string and
 		store tokens using the str2token hash function.
@@ -204,11 +246,6 @@ namespace text {
 		return snippets;
 	}
 
-	std::vector<std::string> get_full_text_words(const std::string &str) {
-
-		return get_full_text_words(str, 0);
-	}
-
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 		These functions also expand on blend chars.
@@ -270,6 +307,24 @@ namespace text {
 	std::vector<uint64_t> get_expanded_full_text_tokens(const std::string &str) {
 
 		return get_expanded_full_text_tokens(str, 0);
+
+	}
+
+	std::vector<uint64_t> get_unique_expanded_full_text_tokens(const std::string &str, size_t limit) {
+
+		auto vec = get_expanded_full_text_tokens(str, 0);
+		std::set<uint64_t> s;
+		const unsigned size = vec.size();
+		for (unsigned i = 0; i < size; ++i) s.insert(vec[i]);
+
+		vec.assign(s.begin(), s.end());
+
+		return vec;
+	}
+
+	std::vector<uint64_t> get_unique_expanded_full_text_tokens(const std::string &str) {
+
+		return get_unique_expanded_full_text_tokens(str, 0);
 
 	}
 

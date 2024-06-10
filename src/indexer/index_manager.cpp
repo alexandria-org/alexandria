@@ -43,10 +43,9 @@ namespace indexer {
 		m_domain_link_index_builder = std::make_unique<sharded_builder<index_builder, domain_link_record>>("domain_link_index", 4001);
 		m_domain_link_index = std::make_unique<sharded<index, domain_link_record>>("domain_link_index", 4001);
 
-		m_hash_table = std::make_unique<hash_table2::builder>("index_manager");
-		//m_url_to_domain = std::make_unique<full_text::url_to_domain>("index_manager");
+		m_hash_table_builder = std::make_unique<hash_table2::builder>("index_manager");
+		m_hash_table = std::make_unique<hash_table2::hash_table>("index_manager");
 
-		m_domain_info = std::make_unique<sharded_index<domain_record>>("domain_info", 997);
 	}
 
 	index_manager::~index_manager() {
@@ -59,28 +58,35 @@ namespace indexer {
 
 		ifstream infile(local_path, ios::in);
 		string line;
+
+		// word_map holds a word hash (token) => score
 		std::map<uint64_t, float> word_map;
+
 		while (getline(infile, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
+
 			URL url(col_values[0]);
 
 			const uint64_t url_hash = url.hash();
-
 			const float harmonic = domain_stats::harmonic_centrality(url);
 
-			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+			// add to hash table
+			m_hash_table_builder->add(url_hash, line);
 
 			url_record record(url_hash);
 			record.url_length(url.path_with_query().size());
 
+			const std::string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+			const auto site_colon_tokens = text::get_unique_full_text_tokens(site_colon);
+			for (auto token : site_colon_tokens) {
+				word_map[token] += harmonic * 20;
+			}
+
 			size_t col_idx = 0;
 			for (size_t col : cols) {
-				auto tokens = text::get_tokens(col_values[col]);
-				std::sort(tokens.begin(), tokens.end());
-				auto last = std::unique(tokens.begin(), tokens.end());
-				tokens.erase(last, tokens.end());
+				const auto tokens = text::get_unique_expanded_full_text_tokens(col_values[col]);
 				for (auto token : tokens) {
 					word_map[token] += scores[col_idx] * harmonic;
 				}
@@ -107,8 +113,7 @@ namespace indexer {
 
 		pool.run_all();
 
-		//m_url_to_domain->write(0);
-		m_hash_table->merge();
+		m_hash_table_builder->merge();
 
 	}
 
@@ -119,8 +124,7 @@ namespace indexer {
 		string line;
 		size_t added = 0;
 		size_t parsed = 0;
-		vector<string> col_values;
-		set<uint64_t> tokens;
+		std::vector<std::string> col_values;
 		while (getline(infile, line)) {
 
 			col_values.clear();
@@ -130,9 +134,6 @@ namespace indexer {
 
 			parsed++;
 
-			// Check if we have the url
-			//if (!urls_to_index.exists(target_url.hash_input())) continue;
-
 			added++;
 
 			URL source_url(col_values[0], col_values[1]);
@@ -140,30 +141,31 @@ namespace indexer {
 			float target_harmonic = domain_stats::harmonic_centrality(target_url);
 			float source_harmonic = domain_stats::harmonic_centrality(source_url);
 
-			const string link_text = col_values[4].substr(0, 1000);
+			const std::string link_text = col_values[4].substr(0, 1000);
 
 			const url_link::link link(source_url, target_url, source_harmonic, target_harmonic);
 
 			const uint64_t domain_link_hash = source_url.domain_link_hash(target_url, link_text);
-			//const uint64_t link_hash = source_url.link_hash(target_url, link_text);
-			//const bool has_url = true; //urls_to_index.count(target_url.hash());
+			const uint64_t link_hash = source_url.link_hash(target_url, link_text);
+			const bool bloom_has_url = urls_to_index.exists(target_url.hash());
 
-			vector<string> words = text::get_expanded_full_text_words(link_text);
+			std::vector<uint64_t> tokens = text::get_unique_expanded_full_text_tokens(link_text);
 
-			text::words_to_ngram_hash(words, 3, [&tokens](const uint64_t hash) {
-				tokens.insert(hash);
-			});
+			if (bloom_has_url) {
 
-			/*if (has_url) {
-				// Add the url link.
-				link_record link_rec(link_hash, source_harmonic);
-				link_rec.m_source_domain = source_url.hash();
-				link_rec.m_target_hash = target_url.hash();
+				const bool has_url = m_hash_table->has(target_url.hash());
 
-				for (auto token : tokens) {
-					m_link_index_builder->add(token, link_rec);
+				if (has_url) {
+					// Add the url link.
+					link_record link_rec(link_hash, source_harmonic);
+					link_rec.m_source_domain = source_url.hash();
+					link_rec.m_target_hash = target_url.hash();
+
+					for (auto token : tokens) {
+						m_link_index_builder->add(token, link_rec);
+					}
 				}
-			}*/
+			}
 
 			domain_link_record rec(domain_link_hash, source_harmonic);
 			rec.m_source_domain = source_url.host_hash();

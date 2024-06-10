@@ -288,7 +288,7 @@ namespace warc {
 		size_t content_len = transfer::head_content_length(url, error);
 
 		if (error == transfer::ERROR) {
-			LOG_INFO("Could not make HEAD request to: " + url);
+			throw std::runtime_error("Could not make HEAD request to: " + url);
 		}
 
 		const size_t max_parts = 50;
@@ -306,7 +306,7 @@ namespace warc {
 					callback(buffer);
 					break;
 				} else {
-					LOG_INFO("got error response");
+					throw std::runtime_error("Got error response");
 				}
 				retry++;
 			}

@@ -49,6 +49,7 @@ namespace hash_table2 {
 
 		void add(uint64_t key, const std::string &value);
 		void truncate();
+		bool has(uint64_t key);
 		std::string find(uint64_t key);
 		std::string find(uint64_t key, size_t &ver);
 		size_t size() const;
