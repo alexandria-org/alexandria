@@ -50,7 +50,7 @@ namespace downloader {
 	void run_downloader(const string &warc_path) {
 
 		warc::parser pp;
-		for (int retry = 0; retry < 5; retry++) {
+		for (int retry = 0; retry < 3; retry++) {
 			try {
 				warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const string &chunk) {
 					stringstream ss(chunk);
@@ -103,7 +103,7 @@ namespace downloader {
 
 	void start_downloaders(const std::vector<std::string> &warc_paths) {
 
-		const size_t num_threads = 5;
+		const size_t num_threads = 12;
 
 		std::vector<std::vector<std::string>> chunks;
 		algorithm::vector_chunk<std::string>(warc_paths, std::ceil(warc_paths.size() / num_threads) + 1, chunks);
