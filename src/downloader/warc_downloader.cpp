@@ -103,7 +103,7 @@ namespace downloader {
 
 	void start_downloaders(const std::vector<std::string> &warc_paths) {
 
-		const size_t num_threads = 24;
+		const size_t num_threads = 5;
 
 		std::vector<std::vector<std::string>> chunks;
 		algorithm::vector_chunk<std::string>(warc_paths, std::ceil(warc_paths.size() / num_threads) + 1, chunks);
