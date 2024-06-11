@@ -29,13 +29,17 @@
 #include "generic_record.h"
 
 namespace indexer {
+	#pragma pack(4)
 	class url_record : public generic_record {
 
 		public:
+		uint64_t m_domain_hash;
+		uint32_t m_meta;
 
-		url_record() : generic_record() {};
-		url_record(uint64_t value) : generic_record(value) {};
-		url_record(uint64_t value, float score) : generic_record(value, score) {};
+		url_record() : generic_record(), m_domain_hash(0) {};
+		url_record(uint64_t value) : generic_record(value), m_domain_hash(0) {};
+		url_record(uint64_t value, float score) : generic_record(value, score), m_domain_hash(0) {};
+		url_record(uint64_t value, float score, uint64_t domain_hash) : generic_record(value, score), m_domain_hash(domain_hash) {};
 
 		void url_length(uint16_t len) { m_meta = len | (m_meta << 16); };
 		uint16_t url_length(void) const { return m_meta & 0xFFFF; };

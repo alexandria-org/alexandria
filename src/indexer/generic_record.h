@@ -38,7 +38,6 @@ namespace indexer {
 		public:
 		uint64_t m_value;
 		float m_score;
-		uint32_t m_meta;
 
 		explicit generic_record() : m_value(0), m_score(0.0f) {};
 		explicit generic_record(uint64_t value) : m_value(value), m_score(0.0f) {};

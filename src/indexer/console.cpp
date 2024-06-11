@@ -30,7 +30,7 @@
 #include "text/text.h"
 #include "indexer/index_manager.h"
 #include "indexer/sharded.h"
-#include "indexer/counted_index.h"
+#include "indexer/basic_index.h"
 #include "indexer/counted_record.h"
 #include "URL.h"
 #include "transfer/transfer.h"
@@ -147,8 +147,8 @@ namespace indexer {
 
 	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
 
-		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
 
 		const uint64_t word_hash = ::algorithm::hash(query);
 		std::vector<indexer::counted_record> res = word_index.find(word_hash, 100000);
@@ -164,7 +164,7 @@ namespace indexer {
 
 	void cmd_domain_info(index_manager &idx_manager, hash_table2::hash_table &ht, const string &domain, size_t limit, size_t offset) {
 
-		indexer::sharded<indexer::counted_index, indexer::counted_record> idx("title_word_counter", 997);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> idx("title_word_counter", 997);
 
 		const uint64_t domain_hash = ::algorithm::hash(domain);
 		std::vector<indexer::counted_record> res = idx.find(domain_hash);
@@ -183,8 +183,8 @@ namespace indexer {
 
 	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query, const string &domain) {
 
-		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
 
 		const uint64_t word_hash = ::algorithm::hash(query);
 		std::vector<indexer::counted_record> res = word_index.find(word_hash);
@@ -202,7 +202,7 @@ namespace indexer {
 
 	void cmd_word_num(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
 
-		indexer::sharded<indexer::counted_index, indexer::counted_record> word_index("word_index", 256);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
 
 		const uint64_t word_hash = ::algorithm::hash(query);
 		std::vector<indexer::counted_record> res = word_index.find(word_hash);
@@ -311,9 +311,9 @@ namespace indexer {
 		indexer::index_manager idx_manager;
 		hash_table2::hash_table ht("word_hash_table");
 
-		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
+		indexer::sharded<indexer::basic_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> title_counter("title_word_counter", 997);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> link_counter("link_word_counter", 4001);
 
 		cout << "starting server..." << endl;
 
@@ -436,9 +436,9 @@ namespace indexer {
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
 
-		indexer::sharded<indexer::counted_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> title_counter("title_word_counter", 997);
-		indexer::sharded<indexer::counted_index, indexer::counted_record> link_counter("link_word_counter", 4001);
+		indexer::sharded<indexer::basic_index, counted_record> fp_title_counter("first_page_title_word_counter", 101);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> title_counter("title_word_counter", 997);
+		indexer::sharded<indexer::basic_index, indexer::counted_record> link_counter("link_word_counter", 4001);
 
 		merger::start_merge_thread();
 

@@ -70,35 +70,6 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--index") {
-
-		vector<string> warc_paths = {"crawl-data/ALEXANDRIA-MANUAL-01/files/top_domains.txt.gz"};
-		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
-
-		file::delete_directory("/mnt/0/full_text/test_index");
-		file::create_directory("/mnt/0/full_text/test_index");
-		{
-			indexer::sharded_index_builder<indexer::url_record> idx("test_index", 13);
-
-			idx.add(123, indexer::url_record(1000));
-			idx.add(123, indexer::url_record(1001));
-			idx.add(124, indexer::url_record(1000));
-
-			idx.append();
-			idx.merge();
-		}
-		transfer::delete_downloaded_files(local_files);
-		{
-			indexer::index<indexer::url_record> idx("test_index", 0, 1000);
-
-			auto res1 = idx.find(123);
-			auto res2 = idx.find(124);
-
-			std::cout << res1[0].m_value << std::endl;
-		}
-	}
-	return 0;
-
 	if (arg == "--split") {
 		tools::run_splitter();
 	} else if (arg == "--count") {

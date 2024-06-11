@@ -37,11 +37,14 @@ namespace indexer {
 
 	index_manager::index_manager() {
 
-		m_link_index_builder = std::make_unique<sharded_builder<index_builder, link_record>>("link_index", 4001);
-		m_link_index = std::make_unique<sharded<index, link_record>>("link_index", 4001);
+		m_url_index_builder = std::make_unique<sharded_builder<basic_index_builder, url_record>>("url_index", 4001);
+		m_url_index = std::make_unique<sharded<basic_index, url_record>>("url_index", 4001);
 
-		m_domain_link_index_builder = std::make_unique<sharded_builder<index_builder, domain_link_record>>("domain_link_index", 4001);
-		m_domain_link_index = std::make_unique<sharded<index, domain_link_record>>("domain_link_index", 4001);
+		m_link_index_builder = std::make_unique<sharded_builder<basic_index_builder, link_record>>("link_index", 4001);
+		m_link_index = std::make_unique<sharded<basic_index, link_record>>("link_index", 4001);
+
+		m_domain_link_index_builder = std::make_unique<sharded_builder<basic_index_builder, domain_link_record>>("domain_link_index", 4001);
+		m_domain_link_index = std::make_unique<sharded<basic_index, domain_link_record>>("domain_link_index", 4001);
 
 		m_hash_table_builder = std::make_unique<hash_table2::builder>("index_manager");
 		m_hash_table = std::make_unique<hash_table2::hash_table>("index_manager");
@@ -70,12 +73,13 @@ namespace indexer {
 			URL url(col_values[0]);
 
 			const uint64_t url_hash = url.hash();
+			const uint64_t domain_hash = url.host_hash();
 			const float harmonic = domain_stats::harmonic_centrality(url);
 
 			// add to hash table
 			m_hash_table_builder->add(url_hash, line);
 
-			url_record record(url_hash);
+			url_record record(url_hash, 0.0f, domain_hash);
 			record.url_length(url.path_with_query().size());
 
 			const std::string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
@@ -239,6 +243,25 @@ namespace indexer {
 	}
 
 	std::vector<return_record> index_manager::find(size_t &total_num_results, const string &query) {
+
+		total_num_results = 0;
+
+		auto words = text::get_full_text_words(query, config::query_max_words);
+		if (words.size() == 0) return {};
+
+		auto tokens = text::get_full_text_tokens(query, config::query_max_words);
+
+		auto links = m_link_index->find_intersection(tokens, 500000);
+
+		sort(links.begin(), links.end(), [](const auto &a, const auto &b) {
+			return a.m_target_hash < b.m_target_hash;
+		});
+
+		auto domain_links = m_domain_link_index->find_intersection(tokens, 100000);
+
+		/*auto urls = m_url_index->find_intersection(tokens, config::result_limit, [&link_scores, &domain_link_scores](const auto &url_record) {
+			domain_link_scores[url_record.m_domain_hash]
+		});*/
 
 		return {};
 	}

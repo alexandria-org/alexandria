@@ -35,8 +35,8 @@
 #include "hash_table2/builder.h"
 #include "sharded_builder.h"
 #include "sharded.h"
-#include "counted_index_builder.h"
-#include "counted_index.h"
+#include "basic_index_builder.h"
+#include "basic_index.h"
 #include "counted_record.h"
 #include "url_record.h"
 #include "link_record.h"
@@ -71,14 +71,14 @@ namespace indexer {
 
 	private:
 
-		std::unique_ptr<sharded_builder<index_builder, url_record>> m_url_index_builder;
-		std::unique_ptr<sharded<index, url_record>> m_url_index;
+		std::unique_ptr<sharded_builder<basic_index_builder, url_record>> m_url_index_builder;
+		std::unique_ptr<sharded<basic_index, url_record>> m_url_index;
 
-		std::unique_ptr<sharded_builder<index_builder, link_record>> m_link_index_builder;
-		std::unique_ptr<sharded<index, link_record>> m_link_index;
+		std::unique_ptr<sharded_builder<basic_index_builder, link_record>> m_link_index_builder;
+		std::unique_ptr<sharded<basic_index, link_record>> m_link_index;
 
-		std::unique_ptr<sharded_builder<index_builder, domain_link_record>> m_domain_link_index_builder;
-		std::unique_ptr<sharded<index, domain_link_record>> m_domain_link_index;
+		std::unique_ptr<sharded_builder<basic_index_builder, domain_link_record>> m_domain_link_index_builder;
+		std::unique_ptr<sharded<basic_index, domain_link_record>> m_domain_link_index;
 
 		std::unique_ptr<hash_table2::builder> m_hash_table_builder;
 		std::unique_ptr<hash_table2::hash_table> m_hash_table;

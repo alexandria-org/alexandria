@@ -45,11 +45,9 @@ namespace server {
 
 		indexer::index_manager idx_manager;
 
-		hash_table2::hash_table ht("index_manager");
-
 		cout << "starting server..." << endl;
 
-		::http::server srv([&idx_manager, &ht](const http::request &req) {
+		::http::server srv([&idx_manager](const http::request &req) {
 			http::response res;
 
 			URL url = req.url();
@@ -70,6 +68,19 @@ namespace server {
 			stringstream body;
 
 			// implement the same search server logic we have on alexandria.org now.
+			LOG_INFO("Serving request: " + url.path());
+
+			bool deduplicate = true;
+			if (query.find("d") != query.end()) {
+				if (query["d"] == "a") {
+					deduplicate = false;
+				}
+			}
+
+			if (query.find("q") != query.end() && deduplicate) {
+				size_t total_num_results;
+				auto response = idx_manager.find(total_num_results, query["q"]);
+			}
 
 			res.code(200);
 

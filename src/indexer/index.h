@@ -62,13 +62,14 @@ namespace indexer {
 		 * score_mod is applied in storage_order of data_record.
 		 * */
 		std::vector<data_record> find_top(size_t &total_num_results, const std::vector<uint64_t> &keys, size_t n,
-				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
+				std::function<float(const data_record &)> score_mod = {}) const;
 
 		/*
 		 * Overload without total_num_results.
 		 * */
 		std::vector<data_record> find_top(const std::vector<uint64_t> &keys, size_t n,
-				std::function<float(const data_record &)> score_mod = [](const data_record &) { return 0.0f; }) const;
+				std::function<float(const data_record &)> score_mod = {}) const;
+
 
 		
 		/*
@@ -257,9 +258,16 @@ namespace indexer {
 
 		// Apply score modifications.
 		std::vector<uint32_t> ids;
-		for (auto internal_id : intersection) {
-			ids.push_back(internal_id);
-			m_scores[internal_id] = m_records[internal_id].m_score + score_mod(m_records[internal_id]);
+		if (score_mod) {
+			for (auto internal_id : intersection) {
+				ids.push_back(internal_id);
+				m_scores[internal_id] = m_records[internal_id].m_score + score_mod(m_records[internal_id]);
+			}
+		} else {
+			for (auto internal_id : intersection) {
+				ids.push_back(internal_id);
+				m_scores[internal_id] = m_records[internal_id].m_score;
+			}
 		}
 
 		auto ordered = [this](const uint32_t &a, const uint32_t &b) {
