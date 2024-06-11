@@ -14,7 +14,7 @@ cd deps
 
 curl -L https://github.com/nlohmann/json/releases/latest/download/json.hpp > json.hpp
 
-curl https://zlib.net/zlib-1.2.12.tar.gz > zlib-1.2.12.tar.gz
+curl https://zlib.net/fossils/zlib-1.2.12.tar.gz > zlib-1.2.12.tar.gz
 gunzip -f zlib-1.2.12.tar.gz
 tar -xvf zlib-1.2.12.tar
 
