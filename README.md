@@ -5,6 +5,7 @@
 3. [Hash table](/documentation/hash_table.md)
 
 ## Build instructions with docker
+(Note to windows users. You need to run 'git config --global core.autocrlf false' before checking out the repository)
 1. Build docker image
 ```
 docker build . -t alexandria
