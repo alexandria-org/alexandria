@@ -12,7 +12,7 @@ docker build . -t alexandria
 
 2. Run container
 ```
-docker container run --name alexandria -v $PWD:/alexandria -it -d alexandria
+docker container run --name alexandria -v ${PWD}:/alexandria -it -d alexandria
 ```
 3. Attach to container.
 ```
