@@ -732,4 +732,32 @@ BOOST_AUTO_TEST_CASE(remove_record2) {
 
 }
 
+BOOST_AUTO_TEST_CASE(for_each_key) {
+
+	{
+		hash_table2::builder ht("main_index", 1);
+
+		ht.truncate();
+
+		ht.add(100, "data1");
+		ht.add(101, "other data");
+		ht.add(102, "data3");
+
+		ht.merge();
+	}
+
+	{
+		hash_table2::hash_table ht("main_index", 1);
+
+		int num = 0;
+		ht.for_each_key([&num](uint64_t key) {
+			BOOST_CHECK(key == 100 || key == 101 || key == 102);
+			num++;
+		});
+
+		BOOST_CHECK_EQUAL(num, 3);
+	}
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

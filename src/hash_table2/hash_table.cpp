@@ -90,6 +90,12 @@ namespace hash_table2 {
 		}
 	}
 
+	void hash_table::for_each_key(std::function<void(uint64_t)> callback) const {
+		for (const auto &shard : m_shards) {
+			shard->for_each_key(callback);
+		}
+	}
+
 	void hash_table::for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const {
 		for (const auto &shard : m_shards) {
 			callback(shard);

@@ -162,6 +162,23 @@ namespace hash_table2 {
 		}
 	}
 
+	void hash_table_shard::for_each_key(std::function<void(uint64_t)> callback) const {
+		ifstream infile(filename_data(), ios::binary);
+		infile.seekg(0, ios::beg);
+
+		while (!infile.eof()) {
+			size_t key;
+			if (!infile.read((char *)&key, sizeof(size_t))) break;
+			
+			size_t data_len;
+			if (!infile.read((char *)&data_len, sizeof(size_t))) break;
+
+			infile.seekg(data_len, std::ios::cur);
+
+			callback(key);
+		}
+	}
+
 	size_t hash_table_shard::shard_id() const {
 		return m_shard_id;
 	}

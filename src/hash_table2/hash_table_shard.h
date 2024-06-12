@@ -60,9 +60,10 @@ namespace hash_table2 {
 			std::string find(uint64_t key, size_t &ver) const;
 
 			/*
-			 * Applies the given function to all elements in hash table shard. 
+			 * Loop over all elements in hash table shard and call the given function. 
 			 * */
 			void for_each(std::function<void(uint64_t, std::string)>) const;
+			void for_each_key(std::function<void(uint64_t)>) const;
 
 			/*
 			 * Returns the id of the shard.
