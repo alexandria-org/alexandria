@@ -38,23 +38,21 @@
 #include <unordered_set>
 #include <future>
 
-using namespace std;
-
 namespace tools {
 
 	const size_t max_num_batches = 24;
 
-	vector<string> download_batch(const string &batch) {
+	std::vector<std::string> download_batch(const std::string &batch) {
 
-		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-		vector<string> warc_paths;
+		file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+		std::vector<std::string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
-		vector<string> files_to_download;
-		for (const string &str : warc_paths) {
-			string warc_path = str;
+		std::vector<std::string> files_to_download;
+		for (const std::string &str : warc_paths) {
+			std::string warc_path = str;
 			const size_t pos = warc_path.find(".warc.gz");
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				warc_path.replace(pos, 8, ".gz");
 			}
 			files_to_download.push_back(warc_path);
@@ -65,17 +63,17 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	vector<string> download_missing(const string &batch) {
+	std::vector<std::string> download_missing(const std::string &batch) {
 
-		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/missing.paths.gz");
-		vector<string> warc_paths;
+		file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/missing.paths.gz");
+		std::vector<std::string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
-		vector<string> files_to_download;
-		for (const string &str : warc_paths) {
-			string warc_path = str;
+		std::vector<std::string> files_to_download;
+		for (const std::string &str : warc_paths) {
+			std::string warc_path = str;
 			const size_t pos = warc_path.find(".warc.gz");
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				warc_path.replace(pos, 8, ".gz");
 			}
 			files_to_download.push_back(warc_path);
@@ -86,12 +84,12 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	unordered_set<size_t> make_url_set_one_thread(const vector<string> &files) {
+	std::unordered_set<size_t> make_url_set_one_thread(const std::vector<std::string> &files) {
 
-		unordered_set<size_t> result;
-		for (const string &file_path : files) {
-			ifstream infile(file_path);
-			string line;
+		std::unordered_set<size_t> result;
+		for (const std::string &file_path : files) {
+			std::ifstream infile(file_path);
+			std::string line;
 			while (getline(infile, line)) {
 				const url_link::link link(line);
 				result.insert(link.target_url().hash());
@@ -101,26 +99,26 @@ namespace tools {
 		return result;
 	}
 
-	unordered_set<size_t> make_url_set(const vector<string> &files) {
+	std::unordered_set<size_t> make_url_set(const std::vector<std::string> &files) {
 
-		unordered_set<size_t> total_result;
+		std::unordered_set<size_t> total_result;
 		size_t idx = 0;
-		for (const string &file_path : files) {
-			ifstream infile(file_path);
-			string line;
+		for (const std::string &file_path : files) {
+			std::ifstream infile(file_path);
+			std::string line;
 			while (getline(infile, line)) {
 				const url_link::link link(line);
 				total_result.insert(link.target_url().hash());
 			}
-			cout << "size: " << total_result.size() << " done " << (++idx) << "/" << files.size() << endl;
+			std::cout << "size: " << total_result.size() << " done " << (++idx) << "/" << files.size() << std::endl;
 		}
 
 		return total_result;
 	}
 
-	void upload_cache(size_t file_index, size_t thread_id, const string &data, size_t node_id) {
-		const string filename = "crawl-data/NODE-" + to_string(node_id) + "-small/files/" + to_string(thread_id) + "-" + to_string(file_index) + "-" +
-			to_string(profiler::now_micro()) + ".gz";
+	void upload_cache(size_t file_index, size_t thread_id, const std::string &data, size_t node_id) {
+		const std::string filename = "crawl-data/NODE-" + std::to_string(node_id) + "-small/files/" + std::to_string(thread_id) + "-" + std::to_string(file_index) + "-" +
+			std::to_string(profiler::now_micro()) + ".gz";
 
 		int error = transfer::upload_gz_file(filename, data);
 		if (error == transfer::ERROR) {
@@ -128,19 +126,19 @@ namespace tools {
 		}
 	}
 
-	void parse_urls_with_links_thread(const vector<string> &warc_paths, const unordered_set<size_t> &url_set) {
+	void parse_urls_with_links_thread(const std::vector<std::string> &warc_paths, const std::unordered_set<size_t> &url_set) {
 
 		const size_t max_cache_size = 150000;
 		size_t thread_id = common::thread_id();
 		size_t file_index = 1;
 
-		LOG_INFO("url_set.size() == " + to_string(url_set.size()));
+		LOG_INFO("url_set.size() == " + std::to_string(url_set.size()));
 
-		vector<vector<string>> cache(max_num_batches);
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		std::vector<std::vector<std::string>> cache(max_num_batches);
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 
-			string line;
+			std::string line;
 			while (getline(infile, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 
@@ -152,7 +150,7 @@ namespace tools {
 
 			for (size_t node_id = 0; node_id < max_num_batches; node_id++) {
 				if (cache[node_id].size() > max_cache_size) {
-					const string cache_data = boost::algorithm::join(cache[node_id], "\n");
+					const std::string cache_data = boost::algorithm::join(cache[node_id], "\n");
 					cache[node_id].clear();
 					upload_cache(file_index++, thread_id, cache_data, node_id);
 				}
@@ -160,36 +158,36 @@ namespace tools {
 		}
 		for (size_t node_id = 0; node_id < max_num_batches; node_id++) {
 			if (cache[node_id].size() > 0) {
-				const string cache_data = boost::algorithm::join(cache[node_id], "\n");
+				const std::string cache_data = boost::algorithm::join(cache[node_id], "\n");
 				cache[node_id].clear();
 				upload_cache(file_index++, thread_id, cache_data, node_id);
 			}
 		}
 	}
 
-	void upload_urls_with_links(const vector<string> &local_files, const unordered_set<size_t> &url_set) {
+	void upload_urls_with_links(const std::vector<std::string> &local_files, const std::unordered_set<size_t> &url_set) {
 		size_t num_threads = 24;
 
-		vector<vector<string>> thread_input;
+		std::vector<std::vector<std::string>> thread_input;
 		algorithm::vector_chunk(local_files, ceil((double)local_files.size() / num_threads), thread_input);
 
-		vector<thread> threads;
+		std::vector<std::thread> threads;
 
 		for (size_t i = 0; i < thread_input.size(); i++) {
-			threads.emplace_back(thread(parse_urls_with_links_thread, thread_input[i], cref(url_set)));
+			threads.emplace_back(std::thread(parse_urls_with_links_thread, thread_input[i], cref(url_set)));
 		}
 
-		for (thread &one_thread : threads) {
+		for (std::thread &one_thread : threads) {
 			one_thread.join();
 		}
 	}
 
 	void prepare_batch(size_t batch_num) {
 
-		const vector<string> files = download_batch("NODE-" + to_string(batch_num));
-		const vector<string> link_files = download_batch("LINK-" + to_string(batch_num));
+		const std::vector<std::string> files = download_batch("NODE-" + std::to_string(batch_num));
+		const std::vector<std::string> link_files = download_batch("LINK-" + std::to_string(batch_num));
 
-		unordered_set<size_t> url_set = make_url_set(link_files);
+		std::unordered_set<size_t> url_set = make_url_set(link_files);
 		upload_urls_with_links(files, url_set);
 
 		transfer::delete_downloaded_files(link_files);

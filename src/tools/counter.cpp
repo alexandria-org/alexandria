@@ -41,13 +41,11 @@
 #include "file/tsv_file_remote.h"
 #include "common/system.h"
 
-using namespace std;
-
 namespace tools {
 
-	map<string, size_t> count_urls_per_domain(const vector<string> &warc_paths) {
+	std::map<std::string, size_t> count_urls_per_domain(const std::vector<std::string> &warc_paths) {
 
-		const set<string> domains = {
+		const std::set<std::string> domains = {
 			"theinstantpottable.com",
 			"thehighlineboutique.com",
 			"harveyspet.com",
@@ -65,18 +63,18 @@ namespace tools {
 			"personaltelco.net",
 			"helis.com"
 		};
-		vector<string> saved_rows;
+		std::vector<std::string> saved_rows;
 
-		map<string, size_t> counts;
+		std::map<std::string, size_t> counts;
 
 		size_t idx = 0;
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				if (domains.find(url.host()) != domains.end()) {
@@ -86,7 +84,7 @@ namespace tools {
 			}
 
 			if (idx % 100 == 0) {
-				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
 			} 
 
 			idx++;
@@ -95,11 +93,11 @@ namespace tools {
 		// Save rows.
 		if (saved_rows.size() > 0) {
 			boost::filesystem::create_directories(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
-			ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + to_string(common::thread_id()) + ".gz");
+			std::ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + std::to_string(common::thread_id()) + ".gz");
 			boost::iostreams::filtering_ostream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(outfile);
-			for (const string& row : saved_rows) {
+			for (const std::string& row : saved_rows) {
 				compress_stream << row << "\n";
 			}
 		}
@@ -107,46 +105,46 @@ namespace tools {
 		return counts;
 	}
 
-	void run_counter_per_domain(const string &batch) {
+	void run_counter_per_domain(const std::string &batch) {
 
 		const size_t num_threads = 12;
 
-		vector<string> files;
-		vector<string> link_files;
+		std::vector<std::string> files;
+		std::vector<std::string> link_files;
 
-		const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+		const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-		ifstream infile(file_name);
+		std::ifstream infile(file_name);
 
 		boost::iostreams::filtering_istream decompress_stream;
 		decompress_stream.push(boost::iostreams::gzip_decompressor());
 		decompress_stream.push(infile);
 
-		string line;
+		std::string line;
 		while (getline(decompress_stream, line)) {
-			string warc_path = config::data_path() + "/" + line;
+			std::string warc_path = config::data_path() + "/" + line;
 			const size_t pos = warc_path.find(".warc.gz");
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				warc_path.replace(pos, 8, ".gz");
 			}
 
 			files.push_back(warc_path);
 		}
 
-		vector<vector<string>> thread_input;
+		std::vector<std::vector<std::string>> thread_input;
 		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
 		/*
 		Run url counters
 		*/
-		vector<future<map<string, size_t>>> futures;
+		std::vector<std::future<std::map<std::string, size_t>>> futures;
 		for (size_t i = 0; i < num_threads && i < thread_input.size(); i++) {
-			futures.emplace_back(std::async(launch::async, count_urls_per_domain, thread_input[i]));
+			futures.emplace_back(std::async(std::launch::async, count_urls_per_domain, thread_input[i]));
 		}
 
-		map<string, size_t> all_counts;
+		std::map<std::string, size_t> all_counts;
 		for (auto &future : futures) {
-			map<string, size_t> result = future.get();
+			std::map<std::string, size_t> result = future.get();
 			for (const auto &iter : result) {
 				all_counts[iter.first] += iter.second;
 			}
@@ -155,29 +153,29 @@ namespace tools {
 		futures.clear();
 
 		for (const auto &iter : all_counts) {
-			cout << iter.first << "\t" << iter.second << endl;
+			std::cout << iter.first << "\t" << iter.second << std::endl;
 		}
 	}
 
-	algorithm::hyper_log_log *count_urls(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log *count_urls(const std::vector<std::string> &warc_paths) {
 
 		algorithm::hyper_log_log *counter = new algorithm::hyper_log_log();
 
 		size_t idx = 0;
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				counter->insert(url.hash());
 			}
 
 			if (idx % 100 == 0) {
-				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
 			} 
 
 			idx++;
@@ -186,25 +184,25 @@ namespace tools {
 		return counter;
 	}
 
-	algorithm::hyper_log_log *count_links(const vector<string> &warc_paths) {
+	algorithm::hyper_log_log *count_links(const std::vector<std::string> &warc_paths) {
 
 		algorithm::hyper_log_log *counter = new algorithm::hyper_log_log();
 
 		size_t idx = 0;
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
 				counter->insert(link.target_url().hash());
 			}
 
 			if (idx % 100 == 0) {
-				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
 			} 
 
 			idx++;
@@ -217,24 +215,24 @@ namespace tools {
 
 		const size_t num_threads = 12;
 
-		vector<string> files;
-		vector<string> link_files;
+		std::vector<std::string> files;
+		std::vector<std::string> link_files;
 
-		for (const string &batch : config::batches) {
+		for (const std::string &batch : config::batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".gz");
 				}
 
@@ -242,22 +240,22 @@ namespace tools {
 			}
 		}
 
-		for (const string &batch : config::link_batches) {
+		for (const std::string &batch : config::link_batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".links.gz");
 				}
 
@@ -265,20 +263,20 @@ namespace tools {
 			}
 		}
 
-		vector<vector<string>> thread_input;
+		std::vector<std::vector<std::string>> thread_input;
 		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
-		vector<vector<string>> link_thread_input;
+		std::vector<std::vector<std::string>> link_thread_input;
 		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
-		mutex write_file_mutex;
+		std::mutex write_file_mutex;
 
 		/*
 		Run url counters
 		*/
-		vector<future<algorithm::hyper_log_log *>> futures;
+		std::vector<std::future<algorithm::hyper_log_log *>> futures;
 		for (size_t i = 0; i < num_threads && i < thread_input.size(); i++) {
-			futures.emplace_back(std::async(launch::async, count_urls, thread_input[i]));
+			futures.emplace_back(std::async(std::launch::async, count_urls, thread_input[i]));
 		}
 
 		algorithm::hyper_log_log url_counter;
@@ -294,7 +292,7 @@ namespace tools {
 		Run link counters
 		*/
 		for (size_t i = 0; i < num_threads && i < link_thread_input.size(); i++) {
-			futures.emplace_back(std::async(launch::async, count_links, link_thread_input[i]));
+			futures.emplace_back(std::async(std::launch::async, count_links, link_thread_input[i]));
 		}
 
 		algorithm::hyper_log_log link_counter;
@@ -304,21 +302,21 @@ namespace tools {
 			delete result;
 		}
 
-		cout << "Uniq urls: " << url_counter.count() << endl;
-		cout << "Uniq links: " << link_counter.count() << endl;
+		std::cout << "Uniq urls: " << url_counter.count() << std::endl;
+		std::cout << "Uniq links: " << link_counter.count() << std::endl;
 	}
 
-	vector<string> download_link_batch(const string &batch, size_t limit, size_t offset) {
+	std::vector<std::string> download_link_batch(const std::string &batch, size_t limit, size_t offset) {
 		
-		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-		vector<string> warc_paths;
+		file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+		std::vector<std::string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
-		vector<string> files_to_download;
+		std::vector<std::string> files_to_download;
 		for (size_t i = offset; i < warc_paths.size() && i < (offset + limit); i++) {
-			string warc_path = warc_paths[i];
+			std::string warc_path = warc_paths[i];
 			const size_t pos = warc_path.find(".warc.gz");
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				warc_path.replace(pos, 8, ".links.gz");
 			}
 			files_to_download.push_back(warc_path);
