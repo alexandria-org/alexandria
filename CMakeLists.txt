@@ -1,4 +1,6 @@
 
+set(CMAKE_BUILD_TYPE Release)
+
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_C_COMPILER /usr/bin/gcc-10)
 set(CMAKE_CXX_COMPILER /usr/bin/g++-10)

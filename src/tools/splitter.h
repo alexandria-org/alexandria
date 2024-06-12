@@ -29,7 +29,8 @@
 namespace tools {
 
 	void run_splitter();
-	void run_splitter_with_links();
+	void run_split_urls_with_direct_links();
+	void run_split_links_with_relevant_domains();
 
 }
 
