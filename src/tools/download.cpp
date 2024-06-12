@@ -65,6 +65,27 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
+	vector<string> download_missing(const string &batch) {
+
+		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/missing.paths.gz");
+		vector<string> warc_paths;
+		warc_paths_file.read_column_into(0, warc_paths);
+
+		vector<string> files_to_download;
+		for (const string &str : warc_paths) {
+			string warc_path = str;
+			const size_t pos = warc_path.find(".warc.gz");
+			if (pos != string::npos) {
+				warc_path.replace(pos, 8, ".gz");
+			}
+			files_to_download.push_back(warc_path);
+
+			//if (files_to_download.size() == 100) break;
+		}
+
+		return transfer::download_gz_files_to_disk(files_to_download);
+	}
+
 	unordered_set<size_t> make_url_set_one_thread(const vector<string> &files) {
 
 		unordered_set<size_t> result;
