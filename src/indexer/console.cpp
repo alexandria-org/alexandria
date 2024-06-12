@@ -507,66 +507,14 @@ namespace indexer {
 
 	void make_url_bloom_filter() {
 
+		hash_table2::hash_table ht("index_manager");
+
 		::algorithm::bloom_filter urls_to_index(625000027);
 
-		ifstream infile("/root/urls.txt");
-		std::string line;
-		size_t num = 0;
-		while (getline(infile, line)) {
-			URL url(line);
-			urls_to_index.insert(url.hash_input());
-			num++;
-			if (num % 1000000 == 0) cout << num << endl;
-		}
+		ht.for_each_key([&urls_to_index](uint64_t key) {
+			urls_to_index.insert(key);
+		});
 
-		if (urls_to_index.exists("ukcafe.canto.com/v/medialibrary")) {
-			cout << "it exists 1" << endl;
-		}
-
-		urls_to_index.write_file(config::data_path() + "/0/urls.bloom");
-
-		::algorithm::bloom_filter urls_to_index2(625000027);
-		urls_to_index2.read_file(config::data_path() + "/0/urls.bloom");
-
-		if (urls_to_index2.exists("ukcafe.canto.com/v/medialibrary")) {
-			cout << "it exists 2" << endl;
-		}
-
-
-	}
-
-	void optimize_urls() {
-		std::ifstream infile("/root/all_domain_hashes.data", std::ios::binary);
-		uint64_t tmp_domain_hash;
-		std::set<uint64_t> domain_hashes;
-		while (infile.read((char *)&tmp_domain_hash, sizeof(uint64_t))) {
-			domain_hashes.insert(tmp_domain_hash);
-		}
-
-		std::cout << "read " << domain_hashes.size() << " domain hashes" << std::endl;
-
-		std::cout << "here are the first 10" << endl;
-		size_t idx = 0;
-		for (const uint64_t domain_hash : domain_hashes) {
-			if (idx++ >= 10) break;
-			std::cout << domain_hash << std::endl;
-		}
-
-		utils::thread_pool pool(32);
-		size_t hash_index = 0;
-		for (const uint64_t domain_hash : domain_hashes) {
-			pool.enqueue([domain_hash, hash_index]() {
-				index_builder<url_record> builder("url", domain_hash, 1000);
-				builder.optimize();
-				if (hash_index % 1000 == 999) {
-					std::cout << "done with " << hash_index << std::endl;
-				}
-			});
-
-			hash_index++;
-		}
-
-		pool.run_all();
 	}
 
 }

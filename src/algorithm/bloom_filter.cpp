@@ -57,6 +57,10 @@ namespace algorithm {
 		}
 	}
 
+	void bloom_filter::insert(uint64_t item) {
+		insert(std::to_string(item));
+	}
+
 	void bloom_filter::commit() {
 	}
 

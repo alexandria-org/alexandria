@@ -56,23 +56,7 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (argc == 2 && arg == "domain_info") {
-
-		indexer::domain_info_server();
-
-	}
-
-	if (argc == 2 && arg == "url_server") {
-
-		server::url_server();
-
-	}
-
-	if (argc == 2 && arg == "search_server") {
-
-		server::search_server();
-
-	}
+	server::search_server();
 
 	logger::join_logger_thread();
 

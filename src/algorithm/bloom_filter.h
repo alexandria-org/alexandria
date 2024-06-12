@@ -38,6 +38,7 @@ namespace algorithm {
 			bloom_filter(size_t dim);
 
 			void insert(const std::string &item);
+			void insert(uint64_t item);
 			void commit();
 			bool exists(const std::string &item) const;
 			bool exists(uint64_t data) const;
