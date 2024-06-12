@@ -5,34 +5,32 @@
 3. [Hash table](/documentation/hash_table.md)
 
 ## Build instructions with docker
+1. Checkout repo
 WINDOWS USERS: You need to run 'git config --global core.autocrlf false' before checking out the repository
-1. Build docker image
+```
+git clone git@github.com:alexandria-org/alexandria.git
+```
+2. Build docker image
 ```
 docker build . -t alexandria
 ```
-
-2. Run container
+3. Run container
 ```
 docker container run --name alexandria -v ${PWD}:/alexandria -it -d alexandria
 ```
-3. Attach to container.
+4. Attach to container.
 ```
 docker exec -it alexandria /bin/bash
 ```
-4. Navigate to directory
+5. Navigate to directory
 ```
 cd /alexandria
 ```
-5. Initialize docker
+6. Initialize docker
 ```
 scripts/init-docker.sh
 ```
-5. Download and build dependencies.
-```
-scripts/download-deps.sh
-scripts/build-deps.sh
-```
-6. Configure with cmake and build tests.
+7. Configure with cmake and build tests.
 ```
 mkdir build; cd build; 
 
