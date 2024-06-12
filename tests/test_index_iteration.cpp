@@ -28,8 +28,8 @@
 #include <mutex>
 #include "indexer/sharded_builder.h"
 #include "indexer/sharded.h"
-#include "indexer/counted_index_builder.h"
-#include "indexer/counted_index.h"
+#include "indexer/basic_index_builder.h"
+#include "indexer/basic_index.h"
 #include "indexer/counted_record.h"
 
 using namespace std;
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_SUITE(test_index_iteration)
 BOOST_AUTO_TEST_CASE(test_index_iteration) {
 
 	{
-		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> idx("test_index", 10);
+		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> idx("test_index", 10);
 		idx.truncate();
 
 		idx.add(100, indexer::counted_record(1000));
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(test_index_iteration) {
 		idx.merge();
 	}
 
-	indexer::sharded<indexer::counted_index, indexer::counted_record> idx("test_index", 10);
+	indexer::sharded<indexer::basic_index, indexer::counted_record> idx("test_index", 10);
 
 	std::vector<uint64_t> found_keys;
 	std::vector<uint64_t> found_values;
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(test_index_iteration) {
 BOOST_AUTO_TEST_CASE(test_index_iteration2) {
 
 	{
-		indexer::sharded_builder<indexer::counted_index_builder, indexer::counted_record> idx("test_index", 10);
+		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> idx("test_index", 10);
 		idx.truncate();
 
 		for (size_t i = 1; i <= 10000; i++) {
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(test_index_iteration2) {
 		idx.merge();
 	}
 
-	indexer::sharded<indexer::counted_index, indexer::counted_record> idx("test_index", 10);
+	indexer::sharded<indexer::basic_index, indexer::counted_record> idx("test_index", 10);
 
 	std::map<uint64_t, std::vector<size_t>> records;
 	std::mutex lock;

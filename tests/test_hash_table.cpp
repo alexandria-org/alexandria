@@ -68,6 +68,8 @@ BOOST_AUTO_TEST_CASE(single_shard_add) {
 	{
 		hash_table2::hash_table_shard idx("test_index", 0);
 
+		BOOST_CHECK(idx.has(123));
+		BOOST_CHECK(!idx.has(1234));
 		BOOST_CHECK_EQUAL(idx.find(123), "hello world");
 	}
 

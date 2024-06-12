@@ -56,7 +56,7 @@ namespace indexer {
 		 * Find intersection of multiple keys
 		 * Returns vector with records in storage order.
 		 * */
-		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys) const;
+		std::vector<data_record> find_intersection(const std::vector<uint64_t> &keys, size_t limit = 0) const;
 
 		/*
 		 * Find each key in keys and records with same m_value each key only returns top 'limit' number of results.
@@ -118,7 +118,7 @@ namespace indexer {
 	}
 
 	template<template<typename> typename index_type, typename data_record>
-	std::vector<data_record> sharded<index_type, data_record>::find_intersection(const std::vector<uint64_t> &keys) const {
+	std::vector<data_record> sharded<index_type, data_record>::find_intersection(const std::vector<uint64_t> &keys, size_t limit) const {
 
 		std::vector<std::unique_ptr<data_record[]>> results;
 		std::vector<size_t> num_results;
@@ -134,6 +134,13 @@ namespace indexer {
 		}
 
 		std::vector<data_record> ret = ::algorithm::intersection(results, num_results);
+
+		if (ret.size() > limit) {
+			std::nth_element(ret.begin(), ret.begin () + (limit - 1), ret.end(), [](const auto &a, const auto &b) {
+				return a.m_score > b.m_score;
+			});
+			ret.resize(limit);
+		}
 
 		return ret;
 	}

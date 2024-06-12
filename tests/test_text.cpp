@@ -79,6 +79,22 @@ BOOST_AUTO_TEST_CASE(get_tokens2) {
 	BOOST_CHECK(tokens == targets);
 }
 
+BOOST_AUTO_TEST_CASE(get_tokens3) {
+	vector<uint64_t> tokens = text::get_expanded_full_text_tokens("Test. Ing! the    test   +func-tion+");
+
+	vector<uint64_t> targets = {
+		algorithm::hash("test"),
+		algorithm::hash("ing"),
+		algorithm::hash("the"),
+		algorithm::hash("test"),
+		algorithm::hash("+func-tion+"),
+		algorithm::hash("+func"),
+		algorithm::hash("tion+"),
+	};
+
+	BOOST_CHECK(tokens == targets);
+}
+
 BOOST_AUTO_TEST_CASE(get_snippets) {
 	{
 		vector<string> snippets = text::get_snippets("A small text that should fit in one snippet");

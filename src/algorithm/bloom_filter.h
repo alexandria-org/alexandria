@@ -40,6 +40,7 @@ namespace algorithm {
 			void insert(const std::string &item);
 			void commit();
 			bool exists(const std::string &item) const;
+			bool exists(uint64_t data) const;
 			size_t size() const { return m_dim * sizeof(uint64_t); }
 			const char *data() const;
 			void read(char *data, size_t len);

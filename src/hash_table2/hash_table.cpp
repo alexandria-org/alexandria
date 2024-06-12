@@ -63,6 +63,10 @@ namespace hash_table2 {
 		}
 	}
 
+	bool hash_table::has(uint64_t key) {
+		return m_shards[key % m_shards.size()]->has(key);
+	}
+
 	string hash_table::find(uint64_t key) {
 		size_t ver = 0;
 		return find(key, ver);

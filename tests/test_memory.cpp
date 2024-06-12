@@ -28,7 +28,7 @@
 #include "memory/memory.h"
 #include "memory/debugger.h"
 #include "indexer/index_builder.h"
-#include "indexer/counted_index_builder.h"
+#include "indexer/basic_index_builder.h"
 #include "indexer/url_level.h"
 #include "indexer/domain_link_record.h"
 
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_indexer_memory) {
 	memuse1 = memory::allocated_memory();
 
 	{
-		indexer::counted_index_builder<indexer::domain_link_record> idx("domain_link_index", 97ull);
+		indexer::basic_index_builder<indexer::domain_link_record> idx("domain_link_index", 97ull);
 
 		memuse2 = memory::allocated_memory();
 		idx.append();

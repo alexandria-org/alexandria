@@ -72,6 +72,10 @@ namespace algorithm {
 		return true;
 	}
 
+	bool bloom_filter::exists(uint64_t data) const {
+		return exists(std::to_string(data));
+	}
+
 	void bloom_filter::read(char *data, size_t len) {
 		memcpy((char *)m_bitmap.get(), data, len);
 	}

@@ -24,43 +24,31 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "search_engine.h"
+#include <cmath>
 
-#include <iostream>
-#include <thread>
-#include <vector>
-#include <map>
+using namespace std;
 
-#include "config.h"
-#include "hash_table_shard.h"
+namespace search_engine {
 
-namespace hash_table2 {
+	void reset_search_metric(struct full_text::search_metric &metric) {
+		metric.m_total_found = 0;
+		metric.m_total_url_links_found = 0;
+		metric.m_total_domain_links_found = 0;
+		metric.m_links_handled = 0;
+		metric.m_link_domain_matches = 0;
+		metric.m_link_url_matches = 0;
+	}
 
-	class hash_table_shard;
+	std::vector<full_text::record> search_deduplicate(storage<full_text::record> *storage,
+		const full_text::index<full_text::record> &index, const vector<full_text::link_record> &links,
+		const vector<full_text::domain_link_record> &domain_links, const string &query, size_t limit, struct full_text::search_metric &metric) {
 
-	class hash_table {
+		vector<full_text::record> complete_result = search_wrapper(storage, index, links, domain_links, query, config::pre_result_limit, metric);
 
-	public:
+		vector<full_text::record> deduped_result = deduplicate_result_vector<full_text::record>(complete_result, limit);
 
-		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards,
-				size_t hash_table_size = 1000000,
-				const std::string &data_path = config::data_path() + "/{shard_id_mod_8}/hash_table");
-		~hash_table();
-
-		void add(uint64_t key, const std::string &value);
-		void truncate();
-		bool has(uint64_t key);
-		std::string find(uint64_t key);
-		std::string find(uint64_t key, size_t &ver);
-		size_t size() const;
-		void for_each(std::function<void(uint64_t, const std::string &)> callback) const;
-		void for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const;
-
-	private:
-
-		std::vector<hash_table_shard *> m_shards;
-		const std::string m_db_name;
-
-	};
+		return deduped_result;
+	}
 
 }

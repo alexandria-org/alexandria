@@ -26,41 +26,14 @@
 
 #pragma once
 
-#include <iostream>
-#include <thread>
-#include <vector>
-#include <map>
+namespace full_text {
 
-#include "config.h"
-#include "hash_table_shard.h"
+	struct link_record {
 
-namespace hash_table2 {
-
-	class hash_table_shard;
-
-	class hash_table {
-
-	public:
-
-		explicit hash_table(const std::string &db_name, size_t num_shards = config::ht_num_shards,
-				size_t hash_table_size = 1000000,
-				const std::string &data_path = config::data_path() + "/{shard_id_mod_8}/hash_table");
-		~hash_table();
-
-		void add(uint64_t key, const std::string &value);
-		void truncate();
-		bool has(uint64_t key);
-		std::string find(uint64_t key);
-		std::string find(uint64_t key, size_t &ver);
-		size_t size() const;
-		void for_each(std::function<void(uint64_t, const std::string &)> callback) const;
-		void for_each_shard(std::function<void(const hash_table_shard *shard)> callback) const;
-
-	private:
-
-		std::vector<hash_table_shard *> m_shards;
-		const std::string m_db_name;
+		uint64_t m_value;
+		float m_score;
+		uint64_t m_source_domain;
+		uint64_t m_target_hash;
 
 	};
-
 }

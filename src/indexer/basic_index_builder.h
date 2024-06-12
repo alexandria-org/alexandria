@@ -47,18 +47,18 @@
 namespace indexer {
 
 	template<typename data_record>
-	class counted_index_builder : public index_base<data_record>{
+	class basic_index_builder : public index_base<data_record>{
 	private:
 		// Non copyable
-		counted_index_builder(const counted_index_builder &);
-		counted_index_builder& operator=(const counted_index_builder &);
+		basic_index_builder(const basic_index_builder &);
+		basic_index_builder& operator=(const basic_index_builder &);
 	public:
 
-		counted_index_builder(const std::string &file_name);
-		counted_index_builder(const std::string &db_name, size_t id);
-		counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
-		counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
-		~counted_index_builder();
+		basic_index_builder(const std::string &file_name);
+		basic_index_builder(const std::string &db_name, size_t id);
+		basic_index_builder(const std::string &db_name, size_t id, size_t hash_table_size);
+		basic_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results);
+		~basic_index_builder();
 
 		void add(uint64_t key, const data_record &record);
 		size_t cache_size() const;
@@ -109,7 +109,7 @@ namespace indexer {
 	};
 
 	template<typename data_record>
-	counted_index_builder<data_record>::counted_index_builder(const std::string &file_name)
+	basic_index_builder<data_record>::basic_index_builder(const std::string &file_name)
 	: index_base<data_record>(), m_file_name(file_name), m_id(0),
 		m_max_results(config::ft_max_results_per_section)
 	{
@@ -118,33 +118,33 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id)
+	basic_index_builder<data_record>::basic_index_builder(const std::string &db_name, size_t id)
 	: index_base<data_record>(), m_db_name(db_name), m_id(id), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {merge();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
-	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
+	basic_index_builder<data_record>::basic_index_builder(const std::string &db_name, size_t id, size_t hash_table_size)
 	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id), m_max_results(config::ft_max_results_per_section) {
 		merger::register_merger((size_t)this, [this]() {append();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
-	counted_index_builder<data_record>::counted_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
+	basic_index_builder<data_record>::basic_index_builder(const std::string &db_name, size_t id, size_t hash_table_size, size_t max_results)
 	: index_base<data_record>(hash_table_size), m_db_name(db_name), m_id(id), m_max_results(max_results) {
 		merger::register_merger((size_t)this, [this]() {append();});
 		merger::register_appender((size_t)this, [this]() {append();}, [this]() { return cache_size(); });
 	}
 
 	template<typename data_record>
-	counted_index_builder<data_record>::~counted_index_builder() {
+	basic_index_builder<data_record>::~basic_index_builder() {
 		merger::deregister_merger((size_t)this);
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::add(uint64_t key, const data_record &record) {
+	void basic_index_builder<data_record>::add(uint64_t key, const data_record &record) {
 
 		indexer::merger::lock();
 
@@ -164,12 +164,12 @@ namespace indexer {
 	 * Returns the allocated size of the cache (m_key_cache and m_record_cache).
 	 * */
 	template<typename data_record>
-	size_t counted_index_builder<data_record>::cache_size() const {
+	size_t basic_index_builder<data_record>::cache_size() const {
 		return m_key_cache.capacity() * sizeof(uint64_t) + m_record_cache.capacity() * sizeof(data_record);
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::append() {
+	void basic_index_builder<data_record>::append() {
 
 		assert(m_record_cache.size() == m_key_cache.size());
 
@@ -195,7 +195,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::merge() {
+	void basic_index_builder<data_record>::merge() {
 
 		{
 			read_append_cache();
@@ -210,7 +210,7 @@ namespace indexer {
 		Transforms all the bitmaps in the index. Basically generating new bitmaps with the transform applied.
 	*/
 	template<typename data_record>
-	void counted_index_builder<data_record>::transform(const std::function<data_record(const data_record &, size_t)> &transform) {
+	void basic_index_builder<data_record>::transform(const std::function<data_record(const data_record &, size_t)> &transform) {
 
 		read_data_to_cache();
 
@@ -226,7 +226,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::sort_by(const std::function<bool(const data_record &a, const data_record &b)> comp) {
+	void basic_index_builder<data_record>::sort_by(const std::function<bool(const data_record &a, const data_record &b)> comp) {
 		read_data_to_cache();
 
 		for (auto &iter : m_cache) {
@@ -241,7 +241,7 @@ namespace indexer {
 		Deletes ALL data from this shard.
 	*/
 	template<typename data_record>
-	void counted_index_builder<data_record>::truncate() {
+	void basic_index_builder<data_record>::truncate() {
 		create_directories();
 		truncate_cache_files();
 
@@ -253,7 +253,7 @@ namespace indexer {
 		Deletes all data from caches.
 	*/
 	template<typename data_record>
-	void counted_index_builder<data_record>::truncate_cache_files() {
+	void basic_index_builder<data_record>::truncate_cache_files() {
 
 		reset_cache_variables();
 
@@ -262,7 +262,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::create_directories() {
+	void basic_index_builder<data_record>::create_directories() {
 		for (size_t i = 0; i < 8; i++) {
 			boost::filesystem::create_directories(config::data_path() + "/" + std::to_string(i) + "/full_text/" +
 				m_db_name);
@@ -270,7 +270,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::read_append_cache() {
+	void basic_index_builder<data_record>::read_append_cache() {
 
 		// Read the current file.
 		read_data_to_cache();
@@ -334,7 +334,7 @@ namespace indexer {
 	 * Reads the file into RAM.
 	 * */
 	template<typename data_record>
-	void counted_index_builder<data_record>::read_data_to_cache() {
+	void basic_index_builder<data_record>::read_data_to_cache() {
 
 		reset_cache_variables();
 
@@ -351,14 +351,14 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::sort_cache() {
+	void basic_index_builder<data_record>::sort_cache() {
 		for (auto &iter : m_cache) {
 			sort_record_list(iter.first, iter.second);
 		}
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
+	void basic_index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
 
 		(void)key;
 		// Sort records.
@@ -388,12 +388,12 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::reset_cache_variables() {
+	void basic_index_builder<data_record>::reset_cache_variables() {
 		m_cache = std::map<uint64_t, vector<data_record>>{};
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::save_file() {
+	void basic_index_builder<data_record>::save_file() {
 
 		//profiler::instance prof("index_builder::save_file");
 
@@ -421,7 +421,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
+	void basic_index_builder<data_record>::write_key(std::ofstream &key_writer, uint64_t key, size_t page_pos) {
 		if (this->m_hash_table_size > 0) {
 			assert(key < this->m_hash_table_size);
 			key_writer.seekp(key * sizeof(uint64_t));
@@ -433,7 +433,7 @@ namespace indexer {
 	 * Writes the page with keys, appending it to the file stream writer.
 	 * */
 	template<typename data_record>
-	size_t counted_index_builder<data_record>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
+	size_t basic_index_builder<data_record>::write_page(std::ofstream &writer, const std::vector<uint64_t> &keys) {
 
 		writer.seekp(0, ios::end);
 
@@ -474,7 +474,7 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	void counted_index_builder<data_record>::reset_key_map(std::ofstream &key_writer) {
+	void basic_index_builder<data_record>::reset_key_map(std::ofstream &key_writer) {
 		key_writer.seekp(0);
 		uint64_t data = SIZE_MAX;
 		for (size_t i = 0; i < this->m_hash_table_size; i++) {
@@ -483,26 +483,26 @@ namespace indexer {
 	}
 
 	template<typename data_record>
-	std::string counted_index_builder<data_record>::mountpoint() const {
+	std::string basic_index_builder<data_record>::mountpoint() const {
 		return std::to_string(m_id % 8);
 	}
 
 	template<typename data_record>
-	std::string counted_index_builder<data_record>::cache_filename() const {
+	std::string basic_index_builder<data_record>::cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache";
 		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
 			".cache";
 	}
 
 	template<typename data_record>
-	std::string counted_index_builder<data_record>::key_cache_filename() const {
+	std::string basic_index_builder<data_record>::key_cache_filename() const {
 		if (m_file_name != "") return m_file_name + ".cache.keys";
 		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
 			".cache.keys";
 	}
 
 	template<typename data_record>
-	std::string counted_index_builder<data_record>::target_filename() const {
+	std::string basic_index_builder<data_record>::target_filename() const {
 		if (m_file_name != "") return m_file_name + ".data";
 		return config::data_path() + "/" + mountpoint() + "/full_text/" + m_db_name + "/" + std::to_string(m_id) +
 			".data";

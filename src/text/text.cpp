@@ -26,8 +26,6 @@
 
 #include "text.h"
 
-using namespace std;
-
 namespace text {
 
 	bool is_clean_char(const char *ch, size_t multibyte_len) {
@@ -39,7 +37,7 @@ namespace text {
 		return false;
 	}
 
-	bool is_clean_word(const string &s) {
+	bool is_clean_word(const std::string &s) {
 		const char *str = s.c_str();
 		size_t len = s.size();
 		for (size_t i = 0; i < len; ) {
@@ -57,8 +55,8 @@ namespace text {
 		return true;
 	}
 
-	string clean_word(const string &s) {
-		string result;
+	std::string clean_word(const std::string &s) {
+		std::string result;
 		const char *str = s.c_str();
 		size_t len = s.size();
 		for (size_t i = 0; i < len; ) {
@@ -79,16 +77,16 @@ namespace text {
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 	*/
-	vector<string> get_words(const string &str, size_t limit) {
+	std::vector<std::string> get_words(const std::string &str, size_t limit) {
 
-		const string word_boundary = " \t,|!";
+		const std::string word_boundary = " \t,|!";
 
-		string str_lc = lower_case(str);
+		std::string str_lc = lower_case(str);
 
-		vector<string> raw_words, words;
+		std::vector<std::string> raw_words, words;
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
-		for (string &word : raw_words) {
+		for (std::string &word : raw_words) {
 			trim_both_inplace(word);
 			if (is_clean_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
@@ -100,7 +98,7 @@ namespace text {
 		return words;
 	}
 
-	vector<string> get_words(const string &str) {
+	std::vector<std::string> get_words(const std::string &str) {
 
 		return get_words(str, 0);
 	}
@@ -108,16 +106,16 @@ namespace text {
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 	*/
-	vector<string> get_full_text_words(const string &str, size_t limit) {
+	std::vector<std::string> get_full_text_words(const std::string &str, size_t limit) {
 
-		const string word_boundary = " \t,|!";
+		const std::string word_boundary = " \t,|!";
 
-		string str_lc = lower_case(str);
+		std::string str_lc = lower_case(str);
 
-		vector<string> raw_words, words;
+		std::vector<std::string> raw_words, words;
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
-		for (string &word : raw_words) {
+		for (std::string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
 				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
@@ -131,13 +129,55 @@ namespace text {
 		return words;
 	}
 
+	std::vector<std::string> get_full_text_words(const std::string &str) {
+
+		return get_full_text_words(str, 0);
+	}
+
+	std::vector<uint64_t> get_full_text_tokens(const std::string &str, size_t limit) {
+
+		const auto words = get_full_text_words(str, limit);
+		std::vector<uint64_t> ret(words.size());
+
+		std::transform(words.cbegin(), words.cend(), ret.begin(), [](const std::string &word) {
+			return algorithm::hash(word);
+		});
+
+		return ret;
+
+	}
+
+	std::vector<uint64_t> get_full_text_tokens(const std::string &str) {
+
+		return get_full_text_tokens(str, 0);
+
+	}
+
+	std::vector<uint64_t> get_unique_full_text_tokens(const std::string &str, size_t limit) {
+
+		auto vec = get_full_text_tokens(str, 0);
+		std::set<uint64_t> s;
+		const unsigned size = vec.size();
+		for (unsigned i = 0; i < size; ++i) s.insert(vec[i]);
+
+		vec.assign(s.begin(), s.end());
+
+		return vec;
+	}
+
+	std::vector<uint64_t> get_unique_full_text_tokens(const std::string &str) {
+
+		return get_unique_full_text_tokens(str, 0);
+
+	}
+
 	/*
 		This should be the fast way of getting tokens out of a string. It should just read the whole string and
 		store tokens using the str2token hash function.
 	*/
-	vector<uint64_t> get_tokens(const string &str, std::function<uint64_t(std::string)> str2token) {
+	std::vector<uint64_t> get_tokens(const std::string &str, std::function<uint64_t(std::string)> str2token) {
 		const char *word_boundary = " \t,|!";
-		string cur_token;
+		std::string cur_token;
 		std::vector<uint64_t> tokens;
 		for (const char &ch : str) {
 			// If is word boundary.
@@ -164,16 +204,16 @@ namespace text {
 		return tokens;
 	}
 
-	vector<uint64_t> get_tokens(const string &str) {
+	std::vector<uint64_t> get_tokens(const std::string &str) {
 		return get_tokens(str, algorithm::hash);
 	}
 
-	vector<string> get_snippets(const string &str) {
+	std::vector<std::string> get_snippets(const std::string &str) {
 		const size_t snippet_len = 300;
 		const char *word_boundary = " \t,|!";
-		string cur_snippet;
-		string cur_token;
-		vector<string> snippets;
+		std::string cur_snippet;
+		std::string cur_token;
+		std::vector<std::string> snippets;
 		for (const char &ch : str) {
 			// If is word boundary.
 			if (strchr(word_boundary, ch)) {
@@ -206,26 +246,21 @@ namespace text {
 		return snippets;
 	}
 
-	vector<string> get_full_text_words(const string &str) {
-
-		return get_full_text_words(str, 0);
-	}
-
 	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 		These functions also expand on blend chars.
 	*/
-	vector<string> get_expanded_full_text_words(const string &str, size_t limit) {
+	std::vector<std::string> get_expanded_full_text_words(const std::string &str, size_t limit) {
 
-		const string word_boundary = " \t,|!";
-		const string blend_chars = ".-:";
+		const std::string word_boundary = " \t,|!";
+		const std::string blend_chars = ".-:";
 
-		string str_lc = lower_case(str);
+		std::string str_lc = lower_case(str);
 
-		vector<string> raw_words, words, blended;
+		std::vector<std::string> raw_words, words, blended;
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
-		for (string &word : raw_words) {
+		for (std::string &word : raw_words) {
 			if (parser::unicode::is_valid(word)) {
 				trim_both_inplace(word);
 				if (word.size() <= CC_MAX_WORD_LEN && word.size() > 0) {
@@ -235,7 +270,7 @@ namespace text {
 
 					boost::split(blended, word, boost::is_any_of(blend_chars));
 					if (blended.size() > 1) {
-						for (string &blended_word : blended) {
+						for (std::string &blended_word : blended) {
 							trim_both_inplace(blended_word);
 							words.push_back(blended_word);
 							if (limit && words.size() == limit) break;
@@ -249,24 +284,63 @@ namespace text {
 		return words;
 	}
 
-	vector<string> get_expanded_full_text_words(const string &str) {
+	std::vector<std::string> get_expanded_full_text_words(const std::string &str) {
 
 		return get_expanded_full_text_words(str, 0);
 	}
 
 	/*
+	 * Exactly the same algorithm as above but returns tokens.
+	 * */
+	std::vector<uint64_t> get_expanded_full_text_tokens(const std::string &str, size_t limit) {
+
+		const auto words = get_expanded_full_text_words(str, limit);
+		std::vector<uint64_t> ret(words.size());
+
+		std::transform(words.cbegin(), words.cend(), ret.begin(), [](const std::string &word) {
+			return algorithm::hash(word);
+		});
+
+		return ret;
+	}
+
+	std::vector<uint64_t> get_expanded_full_text_tokens(const std::string &str) {
+
+		return get_expanded_full_text_tokens(str, 0);
+
+	}
+
+	std::vector<uint64_t> get_unique_expanded_full_text_tokens(const std::string &str, size_t limit) {
+
+		auto vec = get_expanded_full_text_tokens(str, 0);
+		std::set<uint64_t> s;
+		const unsigned size = vec.size();
+		for (unsigned i = 0; i < size; ++i) s.insert(vec[i]);
+
+		vec.assign(s.begin(), s.end());
+
+		return vec;
+	}
+
+	std::vector<uint64_t> get_unique_expanded_full_text_tokens(const std::string &str) {
+
+		return get_unique_expanded_full_text_tokens(str, 0);
+
+	}
+
+	/*
 		Returns a vector of words lower case, punctuation trimmed and less or equal than CC_MAX_WORD_LEN length.
 	*/
-	vector<string> get_words_without_stopwords(const string &str, size_t limit) {
+	std::vector<std::string> get_words_without_stopwords(const std::string &str, size_t limit) {
 
-		const string word_boundary = " \t,|!,";
+		const std::string word_boundary = " \t,|!,";
 
-		string str_lc = lower_case(str);
+		std::string str_lc = lower_case(str);
 
-		vector<string> raw_words, words;
+		std::vector<std::string> raw_words, words;
 		boost::split(raw_words, str_lc, boost::is_any_of(word_boundary));
 
-		for (string &word : raw_words) {
+		for (std::string &word : raw_words) {
 			trim_both_inplace(word);
 			if (is_clean_word(word) && !stopwords::is_stop_word(word) && word.size() <= CC_MAX_WORD_LEN &&
 					word.size() > 0) {
@@ -278,7 +352,7 @@ namespace text {
 		return words;
 	}
 
-	vector<string> get_words_without_stopwords(const string &str) {
+	std::vector<std::string> get_words_without_stopwords(const std::string &str) {
 
 		return get_words_without_stopwords(str, 0);
 	}
@@ -328,26 +402,26 @@ namespace text {
 		}
 	}
 
-	std::map<std::string, size_t> get_word_counts(const string &text) {
-		vector<string> words = get_full_text_words(text);
-		map<string, size_t> counts;
-		for (const string &word : words) {
+	std::map<std::string, size_t> get_word_counts(const std::string &text) {
+		std::vector<std::string> words = get_full_text_words(text);
+		std::map<std::string, size_t> counts;
+		for (const std::string &word : words) {
 			counts[word]++;
 		}
 
 		return counts;
 	}
 
-	std::map<std::string, float> get_word_frequency(const string &text) {
-		vector<string> words = get_full_text_words(text);
-		map<string, size_t> counts;
+	std::map<std::string, float> get_word_frequency(const std::string &text) {
+		std::vector<std::string> words = get_full_text_words(text);
+		std::map<std::string, size_t> counts;
 		size_t total = 0;
-		for (const string &word : words) {
+		for (const std::string &word : words) {
 			counts[word]++;
 			total++;
 		}
 
-		map<string, float> freq;
+		std::map<std::string, float> freq;
 		for (const auto &iter : counts) {
 			freq[iter.first] = (float)iter.second / total;
 		}

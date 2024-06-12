@@ -25,20 +25,20 @@
  */
 
 #include <boost/test/unit_test.hpp>
-#include "indexer/counted_index_builder.h"
-#include "indexer/counted_index.h"
+#include "indexer/basic_index_builder.h"
+#include "indexer/basic_index.h"
 #include "indexer/counted_record.h"
 #include "indexer/sharded_builder.h"
 #include "indexer/sharded.h"
 
 using namespace indexer;
 
-BOOST_AUTO_TEST_SUITE(test_counted_index_builder)
+BOOST_AUTO_TEST_SUITE(test_basic_index_builder)
 
 BOOST_AUTO_TEST_CASE(test_case_1) {
 
 	{
-		counted_index_builder<counted_record> idx("test_index", 0);
+		basic_index_builder<counted_record> idx("test_index", 0);
 
 		idx.truncate();
 
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(test_case_1) {
 	}
 
 	{
-		counted_index<counted_record> idx("test_index", 0);
+		basic_index<counted_record> idx("test_index", 0);
 
 		std::vector<counted_record> res = idx.find(101);
 		BOOST_REQUIRE(res.size() == 1);
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(test_case_1) {
 BOOST_AUTO_TEST_CASE(test_case_2) {
 
 	{
-		counted_index_builder<counted_record> idx("test_index", 0);
+		basic_index_builder<counted_record> idx("test_index", 0);
 
 		idx.truncate();
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(test_case_2) {
 	}
 
 	{
-		counted_index<counted_record> idx("test_index", 0);
+		basic_index<counted_record> idx("test_index", 0);
 
 		std::vector<counted_record> res = idx.find(101);
 		BOOST_REQUIRE(res.size() == 1);
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(test_case_2) {
 BOOST_AUTO_TEST_CASE(test_case_3) {
 
 	{
-		counted_index_builder<counted_record> idx("test_index", 0);
+		basic_index_builder<counted_record> idx("test_index", 0);
 
 		idx.truncate();
 
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(test_case_3) {
 	}
 
 	{
-		counted_index<counted_record> idx("test_index", 0);
+		basic_index<counted_record> idx("test_index", 0);
 
 		std::vector<counted_record> res = idx.find(101);
 		BOOST_REQUIRE(res.size() == 2);
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(test_case_3) {
 BOOST_AUTO_TEST_CASE(test_case_4) {
 
 	{
-		sharded_builder<counted_index_builder, counted_record> idx("test_index", 10);
+		sharded_builder<basic_index_builder, counted_record> idx("test_index", 10);
 
 		idx.truncate();
 
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(test_case_4) {
 	}
 
 	{
-		sharded<counted_index, counted_record> idx("test_index", 10);
+		sharded<basic_index, counted_record> idx("test_index", 10);
 
 		std::vector<counted_record> res = idx.find(101);
 		BOOST_REQUIRE(res.size() == 2);

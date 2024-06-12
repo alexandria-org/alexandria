@@ -183,7 +183,7 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-BIG/warc.paths";
+			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + "-small/warc.paths";
 			ofstream outfile(filename, ios::app);
 			for (const string &file : file_names[node_id]) {
 				outfile << file << "\n";
