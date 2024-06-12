@@ -79,7 +79,23 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
 	} else if (arg == "--split-with-links") {
-		tools::run_splitter_with_links();
+
+		/*
+		 * split with links takes all the URL batches and splits them into smaller NODE-{node id} folders
+		 * with links means it only takes URLs with direct links in them. this is a major
+		 * optimization and makes our target index much much smaller.
+		 *
+		 * */
+		tools::run_split_urls_with_direct_links();
+	} else if (arg == "--split-links") {
+
+		/*
+		 * split links should run after --split-with-links because it takes all the link batches and splits
+		 * them into LINK-{node id} folders but it ONLY takes links with target domain that is present in the
+		 * URL files stored in the NODE- folders.
+		 *
+		 * */
+		tools::run_split_links_with_relevant_domains();
 	} else if (arg == "--download-batch") {
 		tools::download_batch(string(argv[2]));
 	} else if (arg == "--download-missing") {
