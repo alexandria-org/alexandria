@@ -16,22 +16,21 @@
 #include "URL.h"
 #include "common/system.h"
 
-using namespace std;
-
 namespace tools {
 
 	const std::string s_suffix = "-small";
 
 	// File structure is [data_path]/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
-	string write_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
-		const string filename = "crawl-data/NODE-" + to_string(node_id) + s_suffix + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
-		ofstream outfile(config::data_path() + "/" + filename, ios::trunc | ios::binary);
+	std::string write_cache(size_t file_index, size_t thread_id, std::vector<std::string> &lines, size_t node_id) {
+
+		const std::string filename = "crawl-data/NODE-" + std::to_string(node_id) + s_suffix + "/files/" + std::to_string(thread_id) + "-" + std::to_string(file_index) + ".gz";
+		std::ofstream outfile(config::data_path() + "/" + filename, std::ios::trunc | std::ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
 		compress_stream.push(boost::iostreams::gzip_compressor());
 		compress_stream.push(outfile);
 
-		for (const string &line : lines) {
+		for (const std::string &line : lines) {
 			compress_stream << line << "\n";
 		}
 		lines.clear();
@@ -39,36 +38,39 @@ namespace tools {
 	}
 
 	// File structure is [DATA_PATH]/crawl-data/NODE-[node_id]/files/thread_id-file_index.gz
-	string write_link_cache(size_t file_index, size_t thread_id, vector<string> &lines, size_t node_id) {
-		const string filename = "crawl-data/LINK-" + to_string(node_id) + s_suffix + "/files/" + to_string(thread_id) + "-" + to_string(file_index) + ".gz";
-		ofstream outfile(config::data_path() + "/" + filename, ios::trunc | ios::binary);
+	std::string write_link_cache(size_t file_index, size_t thread_id, std::vector<std::string> &lines, size_t node_id) {
+
+		const std::string filename = "crawl-data/LINK-" + std::to_string(node_id) + s_suffix + "/files/" + std::to_string(thread_id) + "-" + std::to_string(file_index) + ".gz";
+		std::ofstream outfile(config::data_path() + "/" + filename, std::ios::trunc | std::ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
 		compress_stream.push(boost::iostreams::gzip_compressor());
 		compress_stream.push(outfile);
 
-		for (const string &line : lines) {
+		for (const std::string &line : lines) {
 			compress_stream << line << "\n";
 		}
 		lines.clear();
 		return filename;
 	}
 
-	void splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
+	void splitter(const std::vector<std::string> &warc_paths, std::mutex &write_file_mutex) {
 
 		const size_t max_cache_size = 10000;
 		size_t thread_id = common::thread_id();
 		size_t file_index = 1;
 
-		vector<vector<string>> file_names(config::nodes_in_cluster);
-		vector<vector<string>> cache(config::nodes_in_cluster);
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		using vec2d_str = std::vector<std::vector<std::string>>;
+
+		vec2d_str file_names(config::nodes_in_cluster);
+		vec2d_str cache(config::nodes_in_cluster);
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				const size_t node_id = url.index_on_node();
@@ -87,35 +89,37 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + s_suffix + "/warc.paths";
-			ofstream outfile(filename, ios::app);
-			for (const string &file : file_names[node_id]) {
+			const std::string filename = config::data_path() + "/crawl-data/NODE-" + std::to_string(node_id) + s_suffix + "/warc.paths";
+			std::ofstream outfile(filename, std::ios::app);
+			for (const std::string &file : file_names[node_id]) {
 				outfile << file << "\n";
 			}
 		}
 		write_file_mutex.unlock();
 	}
 
-	void link_splitter(const vector<string> &warc_paths, mutex &write_file_mutex) {
+	void link_splitter(const std::vector<std::string> &warc_paths, std::mutex &write_file_mutex) {
 
 		const size_t max_cache_size = 1000000;
 		size_t thread_id = common::thread_id();
 		size_t file_index = 1;
+		
+		using vec2d_str = std::vector<std::vector<std::string>>;
 
-		vector<vector<string>> file_names(config::nodes_in_cluster);
-		vector<vector<string>> cache(config::nodes_in_cluster);
+		vec2d_str file_names(config::nodes_in_cluster);
+		vec2d_str cache(config::nodes_in_cluster);
 		size_t done = 0;
-		for (const string &warc_path : warc_paths) {
+		for (const std::string &warc_path : warc_paths) {
 
-			cout << "done " << done << "/" << warc_paths.size() << endl;
+			std::cout << "done " << done << "/" << warc_paths.size() << std::endl;
 			done++;
 
-			ifstream infile(warc_path);
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
 				const size_t node_id = link.index_on_node();
@@ -134,32 +138,32 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = config::data_path() + "/crawl-data/LINK-" + to_string(node_id) + s_suffix + "/warc.paths";
-			ofstream outfile(filename, ios::app);
-			for (const string &file : file_names[node_id]) {
+			const auto filename = config::data_path() + "/crawl-data/LINK-" + std::to_string(node_id) + s_suffix + "/warc.paths";
+			std::ofstream outfile(filename, std::ios::app);
+			for (const std::string &file : file_names[node_id]) {
 				outfile << file << "\n";
 			}
 		}
 		write_file_mutex.unlock();
 	}
 
-	void splitter_with_urls(const unordered_set<size_t> &urls, const vector<string> &warc_paths, mutex &write_file_mutex) {
+	void splitter_with_urls(const std::unordered_set<size_t> &urls, const std::vector<std::string> &warc_paths, std::mutex &write_file_mutex) {
 
 		const size_t max_cache_size = 150000;
 		size_t thread_id = common::thread_id();
 		size_t file_index = 1;
 
-		vector<vector<string>> file_names(config::nodes_in_cluster);
-		vector<vector<string>> cache(config::nodes_in_cluster);
+		std::vector<std::vector<std::string>> file_names(config::nodes_in_cluster);
+		std::vector<std::vector<std::string>> cache(config::nodes_in_cluster);
 		size_t idx = 0;
-		for (const string &warc_path : warc_paths) {
-			cout << warc_path << endl;
-			ifstream infile(warc_path);
+		for (const std::string &warc_path : warc_paths) {
+			std::cout << warc_path << std::endl;
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				if (urls.count(url.hash())) {
@@ -175,7 +179,7 @@ namespace tools {
 			}
 
 			if (idx % 100 == 0) {
-				cout << warc_path << " done " << idx << "/" << warc_paths.size() << endl;
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
 			} 
 			idx++;
 		}
@@ -185,25 +189,25 @@ namespace tools {
 
 		write_file_mutex.lock();
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			const string filename = config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + s_suffix + "/warc.paths";
-			ofstream outfile(filename, ios::app);
-			for (const string &file : file_names[node_id]) {
+			const std::string filename = config::data_path() + "/crawl-data/NODE-" + std::to_string(node_id) + s_suffix + "/warc.paths";
+			std::ofstream outfile(filename, std::ios::app);
+			for (const std::string &file : file_names[node_id]) {
 				outfile << file << "\n";
 			}
 		}
 		write_file_mutex.unlock();
 	}
 
-	unordered_set<size_t> build_link_set(const vector<string> &warc_paths, size_t hash_min, size_t hash_max) {
+	std::unordered_set<size_t> build_link_set(const std::vector<std::string> &warc_paths, size_t hash_min, size_t hash_max) {
 
-		unordered_set<size_t> result;
-		for (const string &warc_path : warc_paths) {
-			ifstream infile(warc_path);
+		std::unordered_set<size_t> result;
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
 				const size_t hash = link.target_url().hash();
@@ -219,12 +223,12 @@ namespace tools {
 	void create_warc_directories() {
 		// Create directories.
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + s_suffix);
-			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + to_string(node_id) + s_suffix + "/files");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + std::to_string(node_id) + s_suffix);
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/NODE-" + std::to_string(node_id) + s_suffix + "/files");
 		}
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
-			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + to_string(node_id));
-			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + to_string(node_id) + "/files");
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + std::to_string(node_id));
+			boost::filesystem::create_directories(config::data_path() + "/crawl-data/LINK-" + std::to_string(node_id) + "/files");
 		}
 	}
 
@@ -234,25 +238,25 @@ namespace tools {
 
 		const size_t num_threads = 12;
 
-		vector<thread> threads;
-		vector<string> files;
-		vector<string> link_files;
+		std::vector<std::thread> threads;
+		std::vector<std::string> files;
+		std::vector<std::string> link_files;
 
-		for (const string &batch : config::batches) {
+		for (const std::string &batch : config::batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".gz");
 				}
 
@@ -260,22 +264,22 @@ namespace tools {
 			}
 		}
 
-		for (const string &batch : config::link_batches) {
+		for (const auto &batch : config::link_batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const auto file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				auto warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".links.gz");
 				}
 
@@ -283,22 +287,22 @@ namespace tools {
 			}
 		}
 
-		vector<vector<string>> thread_input;
+		std::vector<std::vector<std::string>> thread_input;
 		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
-		vector<vector<string>> link_thread_input;
+		std::vector<std::vector<std::string>> link_thread_input;
 		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
-		mutex write_file_mutex;
+		std::mutex write_file_mutex;
 
 		/*
 		Run splitter threads
 		*/
 		for (size_t i = 0; i < thread_input.size(); i++) {
-			threads.emplace_back(thread(splitter, thread_input[i], ref(write_file_mutex)));
+			threads.emplace_back(std::thread(splitter, thread_input[i], ref(write_file_mutex)));
 		}
 
-		for (thread &one_thread : threads) {
+		for (std::thread &one_thread : threads) {
 			one_thread.join();
 		}
 
@@ -316,29 +320,29 @@ namespace tools {
 		*/
 	}
 
-	void run_url_splitter_on_urls_in_set(const unordered_set<size_t> &urls) {
+	void run_url_splitter_on_urls_in_set(const std::unordered_set<size_t> &urls) {
 
 		tools::create_warc_directories();
 
 		const size_t num_threads = 12;
 
-		vector<thread> threads;
-		vector<string> files;
-		for (const string &batch : config::batches) {
+		std::vector<std::thread> threads;
+		std::vector<std::string> files;
+		for (const auto &batch : config::batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const auto file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				auto warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".gz");
 				}
 
@@ -348,19 +352,19 @@ namespace tools {
 			}
 		}
 
-		vector<vector<string>> thread_input;
+		std::vector<std::vector<std::string>> thread_input;
 		algorithm::vector_chunk(files, ceil((double)files.size() / num_threads), thread_input);
 
-		mutex write_file_mutex;
+		std::mutex write_file_mutex;
 
 		/*
 		Run splitter threads
 		*/
 		for (size_t i = 0; i < thread_input.size(); i++) {
-			threads.emplace_back(thread(splitter_with_urls, cref(urls), cref(thread_input[i]), ref(write_file_mutex)));
+			threads.emplace_back(std::thread(splitter_with_urls, std::cref(urls), std::cref(thread_input[i]), ref(write_file_mutex)));
 		}
 
-		for (thread &one_thread : threads) {
+		for (std::thread &one_thread : threads) {
 			one_thread.join();
 		}
 
@@ -368,27 +372,27 @@ namespace tools {
 
 	void run_splitter_with_links_interval(size_t hash_min, size_t hash_max) {
 
-		cout << "running run_splitter_with_links_interval with hash_min: " << hash_min << " hash_max: " << hash_max << endl;
+		std::cout << "running run_splitter_with_links_interval with hash_min: " << hash_min << " hash_max: " << hash_max << std::endl;
 
 		const size_t num_threads = 12;
 
-		vector<string> link_files;
-		for (const string &batch : config::link_batches) {
+		std::vector<std::string> link_files;
+		for (const auto &batch : config::link_batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".links.gz");
 				}
 
@@ -398,22 +402,22 @@ namespace tools {
 
 		std::cout << "num_files: " << link_files.size() << std::endl;
 
-		vector<vector<string>> link_thread_input;
+		std::vector<std::vector<std::string>> link_thread_input;
 		algorithm::vector_chunk(link_files, ceil((double)link_files.size() / num_threads), link_thread_input);
 
-		vector<future<unordered_set<size_t>>> futures;
+		std::vector<std::future<std::unordered_set<size_t>>> futures;
 
 		for (size_t i = 0; i < link_thread_input.size(); i++) {
-			futures.emplace_back(std::async(launch::async, build_link_set, link_thread_input[i], hash_min, hash_max));
+			futures.emplace_back(std::async(std::launch::async, build_link_set, link_thread_input[i], hash_min, hash_max));
 		}
 
-		unordered_set<size_t> total_result;
+		std::unordered_set<size_t> total_result;
 		for (auto &fut : futures) {
-			unordered_set<size_t> result = fut.get();
+			auto result = fut.get();
 			total_result.insert(result.begin(), result.end());
 		}
 
-		cout << "size: " << total_result.size() << endl;
+		std::cout << "size: " << total_result.size() << std::endl;
 
 		run_url_splitter_on_urls_in_set(total_result);
 	}

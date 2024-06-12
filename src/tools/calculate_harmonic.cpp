@@ -17,22 +17,20 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using namespace std;
-
 namespace tools {
 
-	unordered_map<uint64_t, string> run_uniq_host(const vector<string> files) {
+	std::unordered_map<uint64_t, std::string> run_uniq_host(const std::vector<std::string> files) {
 
-		unordered_map<uint64_t, string> hosts;
+		std::unordered_map<uint64_t, std::string> hosts;
 
-		for (const string &warc_path : files) {
+		for (const std::string &warc_path : files) {
 
-			ifstream infile(warc_path);
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const URL url(line.substr(0, line.find("\t")));
 				uint64_t host_hash = url.host_hash();
@@ -46,23 +44,23 @@ namespace tools {
 	}
 
 	struct pair_hash {
-		inline size_t operator() (const pair<uint32_t, uint32_t> &p) const {
+		inline size_t operator() (const std::pair<uint32_t, uint32_t> &p) const {
 			return (uint64_t)p.first << 32 | (uint64_t)p.second;
 		}
 	};
 
-	unordered_set<pair<uint32_t, uint32_t>, pair_hash> run_uniq_link(const vector<string> files, const unordered_map<uint64_t, uint32_t> &hosts) {
+	std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash> run_uniq_link(const std::vector<std::string> files, const std::unordered_map<uint64_t, uint32_t> &hosts) {
 
-		unordered_set<pair<uint32_t, uint32_t>, pair_hash> edges;
+		std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash> edges;
 
-		for (const string &warc_path : files) {
+		for (const std::string &warc_path : files) {
 
-			ifstream infile(warc_path);
+			std::ifstream infile(warc_path);
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
 
@@ -73,7 +71,7 @@ namespace tools {
 				const size_t target_count = hosts.count(target_hash);
 				if (source_count && target_count) {
 					// Link between two hosts in the host map.
-					edges.insert(make_pair(hosts.at(source_hash), hosts.at(target_hash)));
+					edges.insert(std::make_pair(hosts.at(source_hash), hosts.at(target_hash)));
 				}
 			}
 		}
@@ -85,22 +83,22 @@ namespace tools {
 
 		const size_t num_threads = 12;
 
-		vector<string> files;
-		for (const string &batch : config::batches) {
+		std::vector<std::string> files;
+		for (const std::string &batch : config::batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".gz");
 				}
 
@@ -108,34 +106,34 @@ namespace tools {
 			}
 		}
 
-		vector<vector<string>> chunks;
-		algorithm::vector_chunk<string>(files, files.size() / (num_threads * 200), chunks);
+		std::vector<std::vector<std::string>> chunks;
+		algorithm::vector_chunk<std::string>(files, files.size() / (num_threads * 200), chunks);
 
 		ThreadPool pool(num_threads);
-		vector<future<unordered_map<uint64_t, string>>> results;
+		std::vector<std::future<std::unordered_map<uint64_t, std::string>>> results;
 
-		for (const vector<string> &chunk : chunks) {
+		for (const std::vector<std::string> &chunk : chunks) {
 
 			results.emplace_back(pool.enqueue([chunk] {
 				return run_uniq_host(chunk);
 			}));
 		}
 
-		unordered_map<uint64_t, string> hosts;
+		std::unordered_map<uint64_t, std::string> hosts;
 		size_t idx = 0;
-		cout.precision(2);
+		std::cout.precision(2);
 		for (auto &result : results) {
-			const unordered_map<uint64_t, string> result_map = result.get();
+			const std::unordered_map<uint64_t, std::string> result_map = result.get();
 			for (const auto &iter : result_map) {
 				hosts[iter.first] = iter.second;
 			}
 			const double percent = (100.0*(double)idx/results.size());
-			cout << "hosts contains " << hosts.size() << " elements " << percent << "% done" << endl;
+			std::cout << "hosts contains " << hosts.size() << " elements " << percent << "% done" << std::endl;
 			idx++;
 		}
 
 		idx = 0;
-		ofstream outfile(config::data_path() + "/hosts.txt", ios::trunc);
+		std::ofstream outfile(config::data_path() + "/hosts.txt", std::ios::trunc);
 		for (const auto &iter : hosts) {
 			outfile << idx << '\t' << iter.first << '\t' << iter.second << '\n';
 			idx++;
@@ -143,59 +141,59 @@ namespace tools {
 		outfile.close();
 	}
 
-	unordered_map<uint64_t, uint32_t> read_hosts_file() {
+	std::unordered_map<uint64_t, uint32_t> read_hosts_file() {
 
 		// Load the hosts
-		ifstream infile(config::data_path() + "/hosts.txt");
+		std::ifstream infile(config::data_path() + "/hosts.txt");
 
-		unordered_map<uint64_t, uint32_t> ret;
+		std::unordered_map<uint64_t, uint32_t> ret;
 
-		string line;
+		std::string line;
 		while (getline(infile, line)) {
-			vector<string> parts;
+			std::vector<std::string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of("\t"));
 
-			uint32_t id = stoi(parts[0]);
-			uint64_t hash = stoull(parts[1]);
+			uint32_t id = std::stoi(parts[0]);
+			uint64_t hash = std::stoull(parts[1]);
 			ret[hash] = id;
 		}
 
 		return ret;
 	}
 
-	vector<uint32_t> read_hosts_file_vec() {
+	std::vector<uint32_t> read_hosts_file_vec() {
 
 		// Load the hosts
-		ifstream infile(config::data_path() + "/hosts.txt");
+		std::ifstream infile(config::data_path() + "/hosts.txt");
 
-		vector<uint32_t> ret;
+		std::vector<uint32_t> ret;
 
-		string line;
+		std::string line;
 		while (getline(infile, line)) {
-			vector<string> parts;
+			std::vector<std::string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of("\t"));
 
-			uint32_t id = stoi(parts[0]);
+			uint32_t id = std::stoi(parts[0]);
 			ret.push_back(id);
 		}
 
 		return ret;
 	}
 
-	vector<uint32_t> *read_edge_file(size_t vlen) {
+	std::vector<uint32_t> *read_edge_file(size_t vlen) {
 
 		// Load the hosts
-		ifstream infile(config::data_path() + "/edges.txt");
+		std::ifstream infile(config::data_path() + "/edges.txt");
 
-		vector<uint32_t> *edge_map = new vector<uint32_t>[vlen];
+		std::vector<uint32_t> *edge_map = new std::vector<uint32_t>[vlen];
 
-		string line;
+		std::string line;
 		while (getline(infile, line)) {
-			vector<string> parts;
+			std::vector<std::string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of("\t"));
 
-			uint32_t from = stoi(parts[0]); // I think we are counting from 0 now but from 1 when we created the edge file.
-			uint32_t to = stoi(parts[1]);
+			uint32_t from = std::stoi(parts[0]); // I think we are counting from 0 now but from 1 when we created the edge file.
+			uint32_t to = std::stoi(parts[1]);
 			edge_map[to].push_back(from);
 		}
 
@@ -206,27 +204,27 @@ namespace tools {
 
 		const size_t num_threads = 12;
 
-		unordered_map<uint64_t, uint32_t> hosts = read_hosts_file();
+		std::unordered_map<uint64_t, uint32_t> hosts = read_hosts_file();
 
-		cout << "loaded " << hosts.size() << " hosts" << endl;
+		std::cout << "loaded " << hosts.size() << " hosts" << std::endl;
 
-		vector<string> files;
-		for (const string &batch : config::link_batches) {
+		std::vector<std::string> files;
+		for (const std::string &batch : config::link_batches) {
 
-			const string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
+			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
 
-			ifstream infile(file_name);
+			std::ifstream infile(file_name);
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			string line;
+			std::string line;
 			while (getline(decompress_stream, line)) {
-				string warc_path = config::data_path() + "/" + line;
+				std::string warc_path = config::data_path() + "/" + line;
 				const size_t pos = warc_path.find(".warc.gz");
 
-				if (pos != string::npos) {
+				if (pos != std::string::npos) {
 					warc_path.replace(pos, 8, ".links.gz");
 				}
 
@@ -234,35 +232,35 @@ namespace tools {
 			}
 		}
 
-		vector<vector<string>> chunks;
-		algorithm::vector_chunk<string>(files, files.size() / (num_threads * 500), chunks);
+		std::vector<std::vector<std::string>> chunks;
+		algorithm::vector_chunk<std::string>(files, files.size() / (num_threads * 500), chunks);
 
 		ThreadPool pool(num_threads);
-		vector<future<unordered_set<pair<uint32_t, uint32_t>, pair_hash>>> results;
+		std::vector<std::future<std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash>>> results;
 
-		for (const vector<string> &chunk : chunks) {
+		for (const std::vector<std::string> &chunk : chunks) {
 			results.emplace_back(pool.enqueue([chunk, &hosts] {
 				return run_uniq_link(chunk, hosts);
 			}));
 		}
 
-		unordered_set<pair<uint32_t, uint32_t>, pair_hash> edges;
+		std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash> edges;
 		size_t idx = 0;
-		cout.precision(2);
+		std::cout.precision(2);
 		for (auto &result : results) {
-			const unordered_set<pair<uint32_t, uint32_t>, pair_hash> result_set = result.get();
+			const std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash> result_set = result.get();
 			size_t idasd = 0;
-			for (const pair<uint32_t, uint32_t> &edge : result_set) {
+			for (const std::pair<uint32_t, uint32_t> &edge : result_set) {
 				edges.insert(edge);
 				idasd++;
 			}
 			const double percent = (100.0*(double)idx/results.size());
-			cout << "edges contains " << edges.size() << " elements " << percent << "% done" << endl;
+			std::cout << "edges contains " << edges.size() << " elements " << percent << "% done" << std::endl;
 			idx++;
 		}
 
-		ofstream outfile(config::data_path() + "/edges.txt", ios::trunc);
-		for (const pair<uint32_t, uint32_t>& edge : edges) {
+		std::ofstream outfile(config::data_path() + "/edges.txt", std::ios::trunc);
+		for (const std::pair<uint32_t, uint32_t>& edge : edges) {
 			outfile << edge.first << '\t' << edge.second << '\n';
 		}
 		outfile.close();
@@ -272,23 +270,23 @@ namespace tools {
 
 		const size_t num_threads = 8;
 
-		vector<uint32_t> hosts = read_hosts_file_vec();
-		const vector<uint32_t> *edge_map = read_edge_file(hosts.size());
+		std::vector<uint32_t> hosts = read_hosts_file_vec();
+		const std::vector<uint32_t> *edge_map = read_edge_file(hosts.size());
 
-		cout << "loaded " << hosts.size() << " hosts" << endl;
+		std::cout << "loaded " << hosts.size() << " hosts" << std::endl;
 
-		cout << "running harmonic centrality algorithm on " << num_threads << " threads" << endl;
+		std::cout << "running harmonic centrality algorithm on " << num_threads << " threads" << std::endl;
 
 		//vector<double> harmonic = algorithm::harmonic_centrality_threaded(hosts.size(), edge_map, 3, num_threads);
 
-		vector<double> harmonic = algorithm::hyper_ball(hosts.size(), edge_map);
+		std::vector<double> harmonic = algorithm::hyper_ball(hosts.size(), edge_map);
 
 		delete [] edge_map;
 
 		// Save harmonic centrality.
-		ofstream outfile(config::data_path() + "/harmonic.txt", ios::trunc);
+		std::ofstream outfile(config::data_path() + "/harmonic.txt", std::ios::trunc);
 		for (size_t i = 0; i < hosts.size(); i++) {
-			outfile << fixed << hosts[i] << '\t' << harmonic[i] << '\n';
+			outfile << std::fixed << hosts[i] << '\t' << harmonic[i] << '\n';
 		}
 
 	}
