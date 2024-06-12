@@ -57,5 +57,5 @@ chown -R www-data:www-data /var/www/html/node0003.alexandria.org
 
 /etc/init.d/nginx restart
 
-./scripts/download-deps.sh
-./scripts/build-deps.sh
+./download-deps.sh
+./build-deps.sh
