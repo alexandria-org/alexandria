@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <functional>
+
 #include "intersection.h"
 
 namespace algorithm {

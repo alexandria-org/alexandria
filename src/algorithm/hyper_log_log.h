@@ -30,6 +30,7 @@
 #include <cstring>
 #include <algorithm>
 #include <iostream>
+#include <vector>
 
 namespace algorithm {
 
