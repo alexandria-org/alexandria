@@ -98,8 +98,6 @@ int main(int argc, const char **argv) {
 		tools::run_split_links_with_relevant_domains();
 	} else if (arg == "--download-batch") {
 		tools::download_batch(string(argv[2]));
-	} else if (arg == "--download-missing") {
-		tools::download_missing(string(argv[2]));
 	} else if (arg == "--prepare-batch") {
 		tools::prepare_batch(stoull(string(argv[2])));
 	} else if (arg == "--harmonic-hosts") {

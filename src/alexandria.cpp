@@ -70,6 +70,8 @@ int main(int argc, const char **argv) {
 
 	if (arg == "--downloader" && argc > 4) {
 		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
+	} else if (arg == "--downloader-missing" && argc > 4) {
+		downloader::warc_downloader_missing(string(argv[2]), std::stoull(argv[3]), std::stoull(argv[4]));
 	} else if (arg == "--downloader-merge") {
 		downloader::merge_downloader();
 	} else if (arg == "--hash-table-url" && argc > 2) {

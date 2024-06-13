@@ -63,27 +63,6 @@ namespace tools {
 		return transfer::download_gz_files_to_disk(files_to_download);
 	}
 
-	std::vector<std::string> download_missing(const std::string &batch) {
-
-		file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/missing.paths.gz");
-		std::vector<std::string> warc_paths;
-		warc_paths_file.read_column_into(0, warc_paths);
-
-		std::vector<std::string> files_to_download;
-		for (const std::string &str : warc_paths) {
-			std::string warc_path = str;
-			const size_t pos = warc_path.find(".warc.gz");
-			if (pos != std::string::npos) {
-				warc_path.replace(pos, 8, ".gz");
-			}
-			files_to_download.push_back(warc_path);
-
-			//if (files_to_download.size() == 100) break;
-		}
-
-		return transfer::download_gz_files_to_disk(files_to_download);
-	}
-
 	std::unordered_set<size_t> make_url_set_one_thread(const std::vector<std::string> &files) {
 
 		std::unordered_set<size_t> result;
