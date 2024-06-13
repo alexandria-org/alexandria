@@ -1,15 +1,17 @@
 
 ## Coding rules
-1. Never put "using namespace..." in header files.
-2. Prefix class member variables with m_, this way you know you are using a member or local variable.
-3. All namespaces, classes, functions and variables should be lower_case.
-4. All files within a sub-directory must declare everything within a namespace with the same name as the directory. For example src/file/tsv_file.h must declare everything within the namespace file::
-5. Prefer smart pointers over regular pointers.
-6. Prefer if statements over switch statements.
+1. Indent with tabs.
+2. Use auto for variable declarations when possible.
+3. Never put "using namespace std" in any file.
+4. Prefix class member variables with m_, this way you know you are using a member or local variable.
+5. All namespaces, classes, functions and variables should be lower_case.
+6. All files within a sub-directory must declare everything within a namespace with the same name as the directory. For example src/file/tsv_file.h must declare everything within the namespace file::
+7. Prefer smart pointers over regular pointers.
+8. Prefer if statements over switch statements.
 
 ## Indentation examples
 
-Indent with tabs.
+Indent with tabs!
 
 ### pointers
 ```c++
