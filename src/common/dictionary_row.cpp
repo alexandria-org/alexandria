@@ -26,8 +26,6 @@
 
 #include "dictionary_row.h"
 
-using namespace std;
-
 namespace common {
 
 	dictionary_row::dictionary_row() {
@@ -37,12 +35,12 @@ namespace common {
 		m_columns = row.m_columns;
 	}
 
-	dictionary_row::dictionary_row(const string &row) {
-		stringstream stream(row);
+	dictionary_row::dictionary_row(const std::string &row) {
+		std::stringstream stream(row);
 		read_stream(stream);
 	}
 
-	dictionary_row::dictionary_row(stringstream &stream) {
+	dictionary_row::dictionary_row(std::stringstream &stream) {
 		read_stream(stream);
 	}
 
@@ -62,15 +60,15 @@ namespace common {
 		return m_columns[column];
 	}
 
-	void dictionary_row::read_stream(stringstream &stream) {
-		string col;
+	void dictionary_row::read_stream(std::stringstream &stream) {
+		std::string col;
 		int i = 0;
-		while (getline(stream, col, '\t')) {
+		while (std::getline(stream, col, '\t')) {
 			try {
 				m_columns.push_back(stod(col));
-			} catch(const invalid_argument &error) {
+			} catch(const std::invalid_argument &error) {
 
-			} catch(const out_of_range &error) {
+			} catch(const std::out_of_range &error) {
 			}
 			i++;
 		}

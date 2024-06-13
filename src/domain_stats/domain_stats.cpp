@@ -31,8 +31,6 @@
 #include "logger/logger.h"
 #include "common/system.h"
 
-using namespace std;
-
 namespace domain_stats {
 
 	common::dictionary domain_data;

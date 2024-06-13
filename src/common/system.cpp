@@ -27,25 +27,23 @@
 #include "system.h"
 #include <thread>
 
-using namespace std;
-
 namespace common {
 
 	bool is_dev() {
-		if (getenv("ALEXANDRIA_LIVE") != NULL && stoi(getenv("ALEXANDRIA_LIVE")) > 0) {
+		if (getenv("ALEXANDRIA_LIVE") != NULL && std::stoi(getenv("ALEXANDRIA_LIVE")) > 0) {
 			return false;
 		}
 		return true;
 	}
 
-	string domain_index_filename() {
+	std::string domain_index_filename() {
 		if (is_dev()) {
 			return "/dev_files/domain_info.tsv";
 		}
 		return "/files/domain_info.tsv";
 	}
 
-	string dictionary_filename() {
+	std::string dictionary_filename() {
 		if (is_dev()) {
 			return "/dev_files/dictionary.tsv";
 		}
@@ -53,7 +51,7 @@ namespace common {
 	}
 
 	size_t thread_id() {
-		return hash<thread::id>{}(this_thread::get_id());
+		return std::hash<std::thread::id>{}(std::this_thread::get_id());
 	}
 
 }

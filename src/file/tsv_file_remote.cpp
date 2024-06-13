@@ -33,17 +33,16 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-using namespace std;
-using namespace boost::iostreams;
+//using namespace boost::iostreams;
 
 namespace file {
 
-	tsv_file_remote::tsv_file_remote(const string &file_name) {
+	tsv_file_remote::tsv_file_remote(const std::string &file_name) {
 		// Check if the file exists.
 
 		m_file_name = file_name;
 
-		ifstream infile(get_path());
+		std::ifstream infile(get_path());
 
 		if (download_file() == transfer::OK) {
 			set_file_name(get_path());
@@ -56,7 +55,7 @@ namespace file {
 		
 	}
 
-	string tsv_file_remote::get_path() const {
+	std::string tsv_file_remote::get_path() const {
 		return config::data_path() + "/0/" + m_file_name;
 	}
 
@@ -71,7 +70,7 @@ namespace file {
 		LOG_INFO("Downloading file with key: " + m_file_name);
 
 		create_directory();
-		ofstream outfile(get_path(), ios::trunc);
+		std::ofstream outfile(get_path(), std::ios::trunc);
 
 		int error = transfer::ERROR;
 		if (outfile.good()) {

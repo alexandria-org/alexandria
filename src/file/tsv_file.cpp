@@ -27,15 +27,13 @@
 #include "tsv_file.h"
 #include <exception>
 
-using namespace std;
-
 namespace file {
 
 	tsv_file::tsv_file() {
 
 	}
 
-	tsv_file::tsv_file(const string &file_name) {
+	tsv_file::tsv_file(const std::string &file_name) {
 		set_file_name(file_name);
 	}
 
@@ -43,35 +41,35 @@ namespace file {
 		m_file.close();
 	}
 
-	string tsv_file::find(const string &key) {
+	std::string tsv_file::find(const std::string &key) {
 		size_t pos = binary_find_position(m_file_size, 0, key);
-		if (pos == string::npos) {
+		if (pos == std::string::npos) {
 			return "";
 		}
 
 		m_file.seekg(pos, m_file.beg);
 		
 
-		string line;
+		std::string line;
 		getline(m_file, line);
 
 		return line;
 	}
 
-	size_t tsv_file::find_first_position(const string &key) {
+	size_t tsv_file::find_first_position(const std::string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position(m_file_size, 0, key);
-		if (pos == string::npos) return string::npos;
+		if (pos == std::string::npos) return std::string::npos;
 		// pos is the position of one item. but we need the first one.
 		size_t jump = 1000;
 		while (pos > jump) {
 			m_file.seekg(pos - jump, m_file.beg);
 			// read next line.
-			string line;
+			std::string line;
 			getline(m_file, line);
 			getline(m_file, line);
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key < key) {
 				// We jamp too far.
 				break;
@@ -83,33 +81,33 @@ namespace file {
 		// The first occurance is between pos - jump and pos - (jump/2)
 		// Linear search.
 		m_file.seekg(pos - jump, m_file.beg);
-		string line;
+		std::string line;
 		if (pos > jump) {
 			getline(m_file, line);
 		}
 		while (getline(m_file, line)) {
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key == key) {
 				return (size_t)m_file.tellg() - (line.size() + 1u);
 			}
 		}
-		return string::npos;
+		return std::string::npos;
 	}
 
-	size_t tsv_file::find_last_position(const string &key) {
+	size_t tsv_file::find_last_position(const std::string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position(m_file_size, 0, key);
-		if (pos == string::npos) return string::npos;
+		if (pos == std::string::npos) return std::string::npos;
 		// pos is the position of one item. but we need the last one.
 		size_t jump = 1000;
 		while (pos + jump < m_file_size) {
 			m_file.seekg(pos + jump, m_file.beg);
 			// read next line.
-			string line;
+			std::string line;
 			getline(m_file, line);
 			getline(m_file, line);
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key > key) {
 				// We jamp too far.
 				break;
@@ -125,12 +123,12 @@ namespace file {
 		// Linear search.
 		m_file.seekg(pos + jump, m_file.beg);
 		size_t ret_pos = pos + jump;
-		string line;
+		std::string line;
 		getline(m_file, line);
 		size_t last_line_length = line.size() + 1u;
 		ret_pos += line.size() + 1u;
 		while (getline(m_file, line)) {
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key > key) {
 				return ret_pos - last_line_length;
 			}
@@ -140,7 +138,7 @@ namespace file {
 		return ret_pos - last_line_length;
 	}
 
-	size_t tsv_file::find_next_position(const string &key) {
+	size_t tsv_file::find_next_position(const std::string &key) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		const size_t pos = binary_find_position_any(m_file_size, 0, key);
@@ -150,10 +148,10 @@ namespace file {
 		while (pos + jump < m_file_size) {
 			m_file.seekg(pos + jump, m_file.beg);
 			// read next line.
-			string line;
+			std::string line;
 			getline(m_file, line);
 			getline(m_file, line);
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key > key) {
 				// We jamp too far.
 				break;
@@ -169,11 +167,11 @@ namespace file {
 		// Linear search.
 		m_file.seekg(pos + jump, m_file.beg);
 		size_t ret_pos = pos + jump;
-		string line;
+		std::string line;
 		getline(m_file, line);
 		ret_pos += line.size() + 1u;
 		while (getline(m_file, line)) {
-			string jump_key = line.substr(0, line.find("\t"));
+			auto jump_key = line.substr(0, line.find("\t"));
 			if (jump_key > key) {
 				return ret_pos;
 			}
@@ -182,15 +180,15 @@ namespace file {
 		return m_file_size;
 	}
 
-	map<string, string> tsv_file::find_all(const set<string> &keys) {
+	std::map<std::string, std::string> tsv_file::find_all(const std::set<std::string> &keys) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 		size_t pos = 0;
-		map<string, string> result;
-		string line;
-		for (const string &key : keys) {
+		std::map<std::string, std::string> result;
+		std::string line;
+		for (const auto &key : keys) {
 			pos = binary_find_position(m_file_size, pos, key);
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				m_file.seekg(pos, m_file.beg);
 				getline(m_file, line);
 				result[key] = line;
@@ -202,20 +200,20 @@ namespace file {
 		return result;
 	}
 
-	size_t tsv_file::read_column_into(int column, set<string> &container) {
+	size_t tsv_file::read_column_into(int column, std::set<std::string> &container) {
 		(void)column;
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
 		if (!m_file.is_open()) {
-			throw runtime_error("File is not open any more: " + m_file_name);
+			throw std::runtime_error("File is not open any more: " + m_file_name);
 		}
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			container.insert(col);
 			rows_read++;
@@ -224,20 +222,20 @@ namespace file {
 		return rows_read;
 	}
 
-	size_t tsv_file::read_column_into(int column, set<string> &container, size_t limit) {
+	size_t tsv_file::read_column_into(int column, std::set<std::string> &container, size_t limit) {
 		(void)limit;
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
 		if (!m_file.is_open()) {
-			throw runtime_error("File is not open any more: " + m_file_name);
+			throw std::runtime_error("File is not open any more: " + m_file_name);
 		}
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			container.insert(col);
 			rows_read++;
@@ -247,19 +245,19 @@ namespace file {
 		return rows_read;
 	}
 
-	size_t tsv_file::read_column_into(int column, set<string> &container, size_t limit, size_t offset) {
+	size_t tsv_file::read_column_into(int column, std::set<std::string> &container, size_t limit, size_t offset) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
 		if (!m_file.is_open()) {
-			throw runtime_error("File is not open any more: " + m_file_name);
+			throw std::runtime_error("File is not open any more: " + m_file_name);
 		}
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			if (rows_read >= offset) {
 				container.insert(col);
@@ -285,21 +283,21 @@ namespace file {
 		return m_file.is_open();
 	}
 
-	string tsv_file::get_line() {
-		string line;
+	std::string tsv_file::get_line() {
+		std::string line;
 		getline(m_file, line);
 		return line;
 	}
 
-	size_t tsv_file::read_column_into(int column, vector<string> &container) {
+	size_t tsv_file::read_column_into(int column, std::vector<std::string> &container) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			container.push_back(col);
 			rows_read++;
@@ -308,15 +306,15 @@ namespace file {
 		return rows_read;
 	}
 
-	size_t tsv_file::read_column_into(int column, vector<string> &container, size_t limit) {
+	size_t tsv_file::read_column_into(int column, std::vector<std::string> &container, size_t limit) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			container.push_back(col);
 			rows_read++;
@@ -326,15 +324,15 @@ namespace file {
 		return rows_read;
 	}
 
-	size_t tsv_file::read_column_into(int column, vector<string> &container, size_t limit, size_t offset) {
+	size_t tsv_file::read_column_into(int column, std::vector<std::string> &container, size_t limit, size_t offset) {
 		m_file.clear();
 		m_file.seekg(0, m_file.beg);
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(m_file, line)) {
-			stringstream ss(line);
-			string col;
+			std::stringstream ss(line);
+			std::string col;
 			ss >> col;
 			if (rows_read >= offset) {
 				container.push_back(col);
@@ -348,9 +346,9 @@ namespace file {
 		return rows_read;
 	}
 
-	size_t tsv_file::binary_find_position(size_t file_size, size_t offset, const string &key) {
+	size_t tsv_file::binary_find_position(size_t file_size, size_t offset, const std::string &key) {
 
-		string line;
+		std::string line;
 
 		if (file_size - offset < 750) {
 			// Make linear search.
@@ -363,7 +361,7 @@ namespace file {
 				}
 			}
 
-			return string::npos;
+			return std::string::npos;
 		}
 
 		size_t pivot_len_1 = (file_size - offset) / 2;
@@ -374,7 +372,7 @@ namespace file {
 
 		getline(m_file, line);
 		getline(m_file, line);
-		string pivot_key = line.substr(0, line.find("\t"));
+		auto pivot_key = line.substr(0, line.find("\t"));
 
 		if (key < pivot_key) {
 			return binary_find_position(offset + pivot_len_1, offset, key);
@@ -385,9 +383,9 @@ namespace file {
 		return (size_t)m_file.tellg() - (line.size() + 1u);
 	}
 
-	size_t tsv_file::binary_find_position_any(size_t file_size, size_t offset, const string &key) {
+	size_t tsv_file::binary_find_position_any(size_t file_size, size_t offset, const std::string &key) {
 
-		string line;
+		std::string line;
 
 		if (file_size - offset < 750) {
 			// Make linear search.
@@ -395,7 +393,7 @@ namespace file {
 			size_t bytes_read = 0;
 			while (getline(m_file, line) && bytes_read <= file_size - offset) {
 				bytes_read += (line.size() + 1u);
-				const string this_key = line.substr(0, line.find("\t"));
+				const auto this_key = line.substr(0, line.find("\t"));
 				if (this_key >= key) {
 					return (size_t)m_file.tellg() - (line.size() + 1u);
 				}
@@ -412,7 +410,7 @@ namespace file {
 
 		getline(m_file, line);
 		getline(m_file, line);
-		string pivot_key = line.substr(0, line.find("\t"));
+		auto pivot_key = line.substr(0, line.find("\t"));
 
 		if (key < pivot_key) {
 			return binary_find_position(offset + pivot_len_1, offset, key);
@@ -423,7 +421,7 @@ namespace file {
 		return (size_t)m_file.tellg() - (line.size() + 1u);
 	}
 
-	void tsv_file::set_file_name(const string &file_name) {
+	void tsv_file::set_file_name(const std::string &file_name) {
 
 		m_file_name = file_name;
 		m_original_file_name = file_name;
@@ -431,7 +429,7 @@ namespace file {
 		m_file.open(m_file_name);
 
 		if (!m_file.is_open()) {
-			throw runtime_error("Could not open file: " + m_file_name + " error: " + strerror(errno));
+			throw std::runtime_error("Could not open file: " + m_file_name + " error: " + strerror(errno));
 		}
 
 		m_file.seekg(0, m_file.end);

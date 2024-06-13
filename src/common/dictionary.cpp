@@ -48,9 +48,9 @@ namespace common {
 
 	void dictionary::load_tsv(file::tsv_file &tsv_file) {
 		while (!tsv_file.eof()) {
-			string line = tsv_file.get_line();
-			stringstream ss(line);
-			string col;
+			auto line = tsv_file.get_line();
+			std::stringstream ss(line);
+			std::string col;
 			getline(ss, col, '\t');
 
 			if (col.size()) {
@@ -65,7 +65,7 @@ namespace common {
 		}
 	}
 
-	unordered_map<size_t, dictionary_row>::const_iterator dictionary::find(const string &key) const {
+	unordered_map<size_t, dictionary_row>::const_iterator dictionary::find(const std::string &key) const {
 		return m_rows.find(::algorithm::hash(key));
 	}
 
@@ -81,11 +81,11 @@ namespace common {
 		return m_rows.end();
 	}
 
-	bool dictionary::has_key(const string &key) const {
+	bool dictionary::has_key(const std::string &key) const {
 		return find(key) != end();
 	}
 
-	void dictionary::handle_collision(size_t key, const string &col) {
-		LOG_ERROR("Collision: " + to_string(key) + " " + col);
+	void dictionary::handle_collision(size_t key, const std::string &col) {
+		LOG_ERROR("Collision: " + std::to_string(key) + " " + col);
 	}
 }

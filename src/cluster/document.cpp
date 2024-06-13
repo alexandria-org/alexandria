@@ -29,15 +29,13 @@
 #include "text/text.h"
 #include "URL.h"
 
-using namespace std;
-
 namespace cluster {
 
 	document::document() 
 	: m_name("unnamed document"){
 	}
 
-	document::document(const string &name)
+	document::document(const std::string &name)
 	: m_name(name) {
 
 	}
@@ -46,18 +44,18 @@ namespace cluster {
 
 	}
 
-	void document::read_text(const string &text) {
-		const vector<string> words = text::get_words(text, 0);
+	void document::read_text(const std::string &text) {
+		const std::vector<std::string> words = text::get_words(text, 0);
 
-		for (const string &word : words) {
+		for (const auto &word : words) {
 			m_counts[algorithm::hash(word)]++;
 		}
 	}
 
-	void read_text_to_corpus(corpus &corp, const string &text) {
-		const vector<string> words = text::get_words(text, 0);
+	void read_text_to_corpus(corpus &corp, const std::string &text) {
+		const std::vector<std::string> words = text::get_words(text, 0);
 
-		for (const string &word : words) {
+		for (const auto &word : words) {
 			size_t key = algorithm::hash(word);
 			corp.counts[key]++;
 			if (corp.words.count(key) == 0) {
@@ -66,14 +64,14 @@ namespace cluster {
 		}
 	}
 
-	void read_corpus(corpus &corp, documents &documents, stringstream &tsv) {
-		string line;
+	void read_corpus(corpus &corp, documents &documents, std::stringstream &tsv) {
+		std::string line;
 		while (getline(tsv, line)) {
 			const size_t pos = line.find('\t');
-			if (pos == string::npos) continue;
+			if (pos == std::string::npos) continue;
 
 			URL url(line.substr(0, pos));
-			const string doc_text = line.substr(pos);
+			const std::string doc_text = line.substr(pos);
 
 			const size_t key = url.host_hash();
 
@@ -82,14 +80,14 @@ namespace cluster {
 			}
 			documents[key].read_text(doc_text);
 			if (key == algorithm::hash("annicaviklund.se")) {
-				cout << doc_text << endl;
+				std::cout << doc_text << std::endl;
 			}
 			read_text_to_corpus(corp, doc_text);
 		}
 	}
 
 	void print_document(corpus &corp, const document &document) {
-		vector<pair<size_t, size_t>> keys;
+		std::vector<std::pair<size_t, size_t>> keys;
 		for (const auto &iter : document.m_counts) {
 			keys.emplace_back(iter.first, iter.second);
 		}
@@ -99,8 +97,8 @@ namespace cluster {
 		});
 
 		size_t len = keys.size();
-		for (size_t i = 0; i < min(100ul, len); i++) {
-			cout << corp.words[keys[i].first] << " = " << keys[i].second << endl;
+		for (size_t i = 0; i < std::min(100ul, len); i++) {
+			std::cout << corp.words[keys[i].first] << " = " << keys[i].second << std::endl;
 		}
 	}
 }

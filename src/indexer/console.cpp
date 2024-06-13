@@ -42,32 +42,30 @@
 #include "http/server.h"
 #include "json.hpp"
 
-using namespace std;
-
 namespace indexer {
 
-	void cmd_index(index_manager &idx_manager, const vector<string> &args) {
+	void cmd_index(index_manager &idx_manager, const std::vector<std::string> &args) {
 		if (args.size() < 2) return;
 
 		merger::start_merge_thread();
 
-		const string batch = args[1];
+		const auto batch = args[1];
 		size_t limit = 0;
 		if (args.size() > 2) limit = stoull(args[2]);
 
-		file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-		vector<string> warc_paths;
+		file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+		std::vector<std::string> warc_paths;
 		warc_paths_file.read_column_into(0, warc_paths);
 
 		if (limit && warc_paths.size() > limit) warc_paths.resize(limit);
 
-		for (string &path : warc_paths) {
+		for (auto &path : warc_paths) {
 			const size_t pos = path.find(".warc.gz");
-			if (pos != string::npos) {
+			if (pos != std::string::npos) {
 				path.replace(pos, 8, ".gz");
 			}
 		}
-		std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+		auto local_files = transfer::download_gz_files_to_disk(warc_paths);
 		cout << "starting indexer" << endl;
 		idx_manager.add_index_files_threaded(local_files, 24);
 		cout << "done with indexer" << endl;
@@ -76,7 +74,7 @@ namespace indexer {
 		merger::stop_merge_thread();
 	}
 
-	void cmd_search(index_manager &idx_manager, hash_table2::hash_table &ht, hash_table2::hash_table &url_ht, const string &query) {
+	void cmd_search(index_manager &idx_manager, hash_table2::hash_table &ht, hash_table2::hash_table &url_ht, const std::string &query) {
 
 		profiler::instance prof("domain search");
 		std::vector<indexer::return_record> res = idx_manager.find(query);
@@ -91,7 +89,7 @@ namespace indexer {
 		std::vector<uint64_t> domain_hashes;
 
 		for (indexer::return_record &rec : res) {
-			const string host = ht.find(rec.m_value);
+			const auto host = ht.find(rec.m_value);
 			domain_hashes.push_back(rec.m_value);
 
 			cout << setw(50) << host;
@@ -103,11 +101,11 @@ namespace indexer {
 
 		cout << "sending " << domain_hashes.size() << " domain hashes" << endl;
 
-		http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(query), string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
+		http::response http_res = transfer::post("http://65.108.132.103/?q=" + parser::urlencode(query), std::string((char *)domain_hashes.data(), domain_hashes.size() * sizeof(uint64_t)));
 
-		const string url_res = http_res.body();
+		const auto url_res = http_res.body();
 
-		stringstream ss(url_res);
+		std::stringstream ss(url_res);
 
 		std::map<uint64_t, std::vector<url_record>> results;
 		while (!ss.eof()) {
@@ -127,13 +125,13 @@ namespace indexer {
 
 		for (auto domain_hash : domain_hashes) {
 			for (const auto &url_record : results[domain_hash]) {
-				const std::string &line = url_ht.find(url_record.m_value);
+				const auto &line = url_ht.find(url_record.m_value);
 				std::vector<std::string> cols;
 
 				boost::algorithm::split(cols, line, boost::is_any_of("\t"));
-				const std::string url = cols[0];
-				const std::string title = cols[1];
-				const std::string snippet = cols[4];
+				const auto url = cols[0];
+				const auto title = cols[1];
+				const auto snippet = cols[4];
 
 				std::cout << url << std::endl;
 			}
@@ -145,7 +143,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
+	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const std::string &query) {
 
 		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
 		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
@@ -155,14 +153,14 @@ namespace indexer {
 
 		size_t pos = 0;
 		for (auto &rec : res) {
-			const string host = ht.find(rec.m_value);
+			const auto host = ht.find(rec.m_value);
 			cout << host << ": " << rec.m_count << " score: " << rec.m_score << " pos: " << pos << " m_value: " << rec.m_value << " doc_size: " << word_index_builder.document_size(rec.m_value) << endl;
 			pos++;
 		}
 
 	}
 
-	void cmd_domain_info(index_manager &idx_manager, hash_table2::hash_table &ht, const string &domain, size_t limit, size_t offset) {
+	void cmd_domain_info(index_manager &idx_manager, hash_table2::hash_table &ht, const std::string &domain, size_t limit, size_t offset) {
 
 		indexer::sharded<indexer::basic_index, indexer::counted_record> idx("title_word_counter", 997);
 
@@ -173,7 +171,7 @@ namespace indexer {
 
 		size_t pos = 0;
 		for (auto &rec : res) {
-			const string word = ht.find(rec.m_value);
+			const auto word = ht.find(rec.m_value);
 			cout << word << ": " << rec.m_count << endl;
 			if (pos >= limit) break;
 			pos++;
@@ -181,7 +179,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query, const string &domain) {
+	void cmd_word(index_manager &idx_manager, hash_table2::hash_table &ht, const std::string &query, const std::string &domain) {
 
 		indexer::sharded_builder<indexer::basic_index_builder, indexer::counted_record> word_index_builder("word_index", 256);
 		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
@@ -191,7 +189,7 @@ namespace indexer {
 
 		size_t pos = 0;
 		for (auto &rec : res) {
-			const string host = ht.find(rec.m_value);
+			const auto host = ht.find(rec.m_value);
 			if (host == domain) {
 				cout << host << ": " << rec.m_count << " score: " << rec.m_score << " pos: " << pos << " m_value: " << rec.m_value << " doc_size: " << word_index_builder.document_size(rec.m_value) << endl;
 			}
@@ -200,7 +198,7 @@ namespace indexer {
 
 	}
 
-	void cmd_word_num(index_manager &idx_manager, hash_table2::hash_table &ht, const string &query) {
+	void cmd_word_num(index_manager &idx_manager, hash_table2::hash_table &ht, const std::string &query) {
 
 		indexer::sharded<indexer::basic_index, indexer::counted_record> word_index("word_index", 256);
 
@@ -211,19 +209,19 @@ namespace indexer {
 
 	}
 
-	void cmd_harmonic(const vector<string> &args) {
+	void cmd_harmonic(const std::vector<std::string> &args) {
 		if (args.size() < 2) return;
 		float harmonic = domain_stats::harmonic_centrality(URL(args[1]));
 		cout << "url: " << args[1] << " has harmonic centrality " << harmonic << endl;
 	}
 
-	vector<string> input_to_args(const string &input) {
-		const string word_boundary = " \t,|!";
+	std::vector<std::string> input_to_args(const std::string &input) {
+		const auto word_boundary = " \t,|!";
 
-		vector<string> raw_words, words;
+		std::vector<std::string> raw_words, words;
 		boost::split(raw_words, input, boost::is_any_of(word_boundary));
 
-		for (string &word : raw_words) {
+		for (auto &word : raw_words) {
 			if (word.size()) {
 				words.push_back(word);
 			}
@@ -235,7 +233,7 @@ namespace indexer {
 	void console() {
 	}
 
-	void index_links(const string &batch) {
+	void index_links(const std::string &batch) {
 
 		domain_stats::download_domain_stats();
 		LOG_INFO("Done download_domain_stats");
@@ -250,13 +248,13 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-			vector<string> warc_paths;
+			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+			std::vector<std::string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
 			if (warc_paths.size() == 0) break;
 
-			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			auto local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
 			idx_manager.add_link_files_threaded(local_files, 32, urls_to_index);
 			cout << "done with indexer" << endl;
@@ -268,7 +266,7 @@ namespace indexer {
 		}
 	}
 
-	void index_urls(const string &batch) {
+	void index_urls(const std::string &batch) {
 
 		size_t limit = 1000;
 		size_t offset = 0;
@@ -277,13 +275,13 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			file::tsv_file_remote warc_paths_file(string("crawl-data/") + batch + "/warc.paths.gz");
-			vector<string> warc_paths;
+			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+			std::vector<std::string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
 			if (warc_paths.size() == 0) break;
 
-			std::vector<std::string> local_files = transfer::download_gz_files_to_disk(warc_paths);
+			auto local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
 			idx_manager.add_url_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
@@ -336,12 +334,12 @@ namespace indexer {
 				return res;
 			}
 
-			stringstream body;
+			std::stringstream body;
 
-			string domain = url.path();
+			auto domain = url.path();
 			domain.erase(0, 1);
 
-			const string reverse_domain = url.host_reverse(domain);
+			const auto reverse_domain = url.host_reverse(domain);
 
 			body << "<html><head><meta http-equiv='Content-type' content='text/html; charset=utf-8'></head><body>";
 
@@ -352,9 +350,9 @@ namespace indexer {
 			body << "<pre>";
 
 			const uint64_t domain_hash = ::algorithm::hash(domain);
-			std::vector<indexer::counted_record> fp_results = fp_title_counter.find(domain_hash);
-			std::vector<indexer::counted_record> results = title_counter.find(domain_hash);
-			std::vector<indexer::counted_record> link_results = link_counter.find(domain_hash);
+			auto fp_results = fp_title_counter.find(domain_hash);
+			auto results = title_counter.find(domain_hash);
+			auto link_results = link_counter.find(domain_hash);
 
 			sort(fp_results.begin(), fp_results.end(), indexer::counted_record::truncate_order());
 			sort(results.begin(), results.end(), indexer::counted_record::truncate_order());
@@ -367,7 +365,7 @@ namespace indexer {
 			body << "<div class=lefter>";
 			body << "<pre class=green>";
 			for (auto &rec : fp_results) {
-				const string word = ht.find(rec.m_value);
+				const auto word = ht.find(rec.m_value);
 				body << word << ": " << rec.m_count << endl;
 			}
 			body << "</pre>";
@@ -376,7 +374,7 @@ namespace indexer {
 			size_t offset_start = 0;
 			for (auto &rec : results) {
 				if (rec.m_count >= threshold * 0.8) {
-					const string word = ht.find(rec.m_value);
+					const auto word = ht.find(rec.m_value);
 					body << word << ": " << rec.m_count << endl;
 					offset_start++;
 				} else {
@@ -391,7 +389,7 @@ namespace indexer {
 			size_t pos = 0;
 			for (auto &rec : results) {
 				if (pos >= offset) {
-					const string word = ht.find(rec.m_value);
+					const auto word = ht.find(rec.m_value);
 					body << word << ": " << rec.m_count << endl;
 				}
 				if (pos >= limit + offset) break;
@@ -403,7 +401,7 @@ namespace indexer {
 			pos = 0;
 			for (auto &rec : link_results) {
 				if (pos >= original_offset) {
-					const string word = ht.find(rec.m_value);
+					const auto word = ht.find(rec.m_value);
 					body << word << ": " << rec.m_count << endl;
 				}
 				if (pos >= limit + original_offset) break;
@@ -495,8 +493,8 @@ namespace indexer {
 
 		idx.for_each_record([&ht](domain_record &rec) {
 			URL u;
-			const string domain = ht.find(rec.m_value);
-			const string domain_reverse = u.host_reverse(domain);
+			const auto domain = ht.find(rec.m_value);
+			const auto domain_reverse = u.host_reverse(domain);
 
 			float harmonic = domain_stats::harmonic_centrality(domain_reverse);
 

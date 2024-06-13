@@ -43,17 +43,15 @@
 #include "indexer/value_record.h"
 #include "indexer/merger.h"
 
-using namespace std;
-
 namespace downloader {
 
-	void run_downloader(const string &warc_path) {
+	void run_downloader(const std::string &warc_path) {
 
 		warc::parser pp;
 		for (int retry = 0; retry < 3; retry++) {
 			try {
-				warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const string &chunk) {
-					stringstream ss(chunk);
+				warc::multipart_download("http://data.commoncrawl.org/" + warc_path, [&pp](const std::string &chunk) {
+					std::stringstream ss(chunk);
 					pp.parse_stream(ss);
 				});
 				break;
@@ -75,18 +73,18 @@ namespace downloader {
 
 	}
 
-	vector<string> download_warc_paths() {
+	std::vector<std::string> download_warc_paths() {
 		int error;
-		string content = transfer::file_to_string("nodes/" + config::node + "/warc.paths", error);
+		auto content = transfer::file_to_string("nodes/" + config::node + "/warc.paths", error);
 		if (error == transfer::ERROR) return {};
 
 		content = text::trim(content);
 
-		vector<string> raw_warc_paths;
+		std::vector<std::string> raw_warc_paths;
 		boost::algorithm::split(raw_warc_paths, content, boost::is_any_of("\n"));
 
-		vector<string> warc_paths;
-		for (const string &warc_path : raw_warc_paths) {
+		std::vector<std::string> warc_paths;
+		for (const auto &warc_path : raw_warc_paths) {
 			if (text::trim(warc_path).size()) {
 				warc_paths.push_back(text::trim(warc_path));
 			}
@@ -95,8 +93,8 @@ namespace downloader {
 		return warc_paths;
 	}
 
-	bool upload_warc_paths(const vector<string> &warc_paths) {
-		string content = boost::algorithm::join(warc_paths, "\n");
+	bool upload_warc_paths(const std::vector<std::string> &warc_paths) {
+		auto content = boost::algorithm::join(warc_paths, "\n");
 		int error = transfer::upload_file("nodes/" + config::node + "/warc.paths", content);
 		return error == transfer::OK;
 	}
@@ -126,7 +124,7 @@ namespace downloader {
 
 	void upload_all() {
 
-		/*std::string upload_id = std::to_string(common::cur_datetime());
+		/*auto upload_id = std::to_string(common::cur_datetime());
 
 		// Upload internal links.
 		for (size_t i = 0; i < 8; i++) {
@@ -140,7 +138,7 @@ namespace downloader {
 			});
 			pool.run_all();
 
-			const std::string filename = "internal_links_" + std::to_string(i);
+			const auto filename = "internal_links_" + std::to_string(i);
 			file::archive tar(filename);
 			tar.read_dir(config::data_path() + "/" + std::to_string(i) + "/full_text/internal_links");
 
@@ -152,9 +150,9 @@ namespace downloader {
 		hash_table2::hash_table ht("crawl_index", 1019);
 		ht.for_each_shard([upload_id](auto shard) {
 
-			const std::string pos_filename = shard->filename_pos();
-			const std::string data_filename = shard->filename_data();
-			const std::string target_filename = std::to_string(shard->shard_id());
+			const auto pos_filename = shard->filename_pos();
+			const auto data_filename = shard->filename_data();
+			const auto target_filename = std::to_string(shard->shard_id());
 
 			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".pos", pos_filename);
 			transfer::upload_file_from_disk("downloader/" + config::node + "/" + upload_id + "/ht/" + target_filename + ".data", data_filename);
@@ -168,7 +166,7 @@ namespace downloader {
 		std::vector<std::string> warc_paths;
 
 		int error;
-		std::string content = transfer::gz_file_to_string(warc_paths_url, error);
+		auto content = transfer::gz_file_to_string(warc_paths_url, error);
 
 		std::stringstream ss(content);
 

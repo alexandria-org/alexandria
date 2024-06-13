@@ -34,11 +34,9 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-using namespace std;
-
 namespace hash_table2 {
 
-	hash_table_shard::hash_table_shard(const string &db_name, size_t shard_id, size_t hash_table_size,
+	hash_table_shard::hash_table_shard(const std::string &db_name, size_t shard_id, size_t hash_table_size,
 			const std::string &data_path)
 	: hash_table_shard_base(db_name, shard_id, hash_table_size, data_path)
 	{
@@ -79,12 +77,12 @@ namespace hash_table2 {
 		return false;
 	}
 
-	string hash_table_shard::find(uint64_t key) const {
+	std::string hash_table_shard::find(uint64_t key) const {
 		size_t ver;
 		return find(key, ver);
 	}
 
-	string hash_table_shard::find(uint64_t key, size_t &ver) const {
+	std::string hash_table_shard::find(uint64_t key, size_t &ver) const {
 
 		std::ifstream reader(filename_pos(), std::ios::binary);
 
@@ -120,8 +118,8 @@ namespace hash_table2 {
 	}
 
 	void hash_table_shard::for_each(std::function<void(uint64_t, std::string)> callback) const {
-		ifstream infile(filename_data(), ios::binary);
-		infile.seekg(0, ios::beg);
+		std::ifstream infile(filename_data(), std::ios::binary);
+		infile.seekg(0, std::ios::beg);
 
 		while (!infile.eof()) {
 			size_t key;
@@ -147,13 +145,13 @@ namespace hash_table2 {
 			char *buffer = buffer_allocator.get();
 
 			infile.read(buffer, data_len);
-			stringstream ss(string(buffer, data_len));
+			std::stringstream ss(std::string(buffer, data_len));
 
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(ss);
 
-			stringstream decompressed;
+			std::stringstream decompressed;
 			decompressed << decompress_stream.rdbuf();
 
 			const std::string value = decompressed.str();
@@ -163,8 +161,8 @@ namespace hash_table2 {
 	}
 
 	void hash_table_shard::for_each_key(std::function<void(uint64_t)> callback) const {
-		ifstream infile(filename_data(), ios::binary);
-		infile.seekg(0, ios::beg);
+		std::ifstream infile(filename_data(), std::ios::binary);
+		infile.seekg(0, std::ios::beg);
 
 		while (!infile.eof()) {
 			size_t key;
@@ -189,15 +187,15 @@ namespace hash_table2 {
 	}
 
 	size_t hash_table_shard::file_size() const {
-		std::ifstream infile(filename_data(), ios::binary);
+		std::ifstream infile(filename_data(), std::ios::binary);
 		infile.seekg(0, std::ios::end);
 		return infile.tellg();
 	}
 
-	string hash_table_shard::data_at_position(size_t pos) const {
+	std::string hash_table_shard::data_at_position(size_t pos) const {
 
-		ifstream infile(filename_data(), ios::binary);
-		infile.seekg(pos, ios::beg);
+		std::ifstream infile(filename_data(), std::ios::binary);
+		infile.seekg(pos, std::ios::beg);
 
 		// Read key
 		uint64_t read_key;
@@ -218,13 +216,13 @@ namespace hash_table2 {
 		char *buffer = buffer_allocator.get();
 
 		infile.read(buffer, data_len);
-		stringstream ss(string(buffer, data_len));
+		std::stringstream ss(std::string(buffer, data_len));
 
 		boost::iostreams::filtering_istream decompress_stream;
 		decompress_stream.push(boost::iostreams::gzip_decompressor());
 		decompress_stream.push(ss);
 
-		stringstream decompressed;
+		std::stringstream decompressed;
 		decompressed << decompress_stream.rdbuf();
 
 		return decompressed.str();

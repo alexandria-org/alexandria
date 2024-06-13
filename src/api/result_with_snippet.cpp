@@ -27,16 +27,14 @@
 #include "result_with_snippet.h"
 #include "text/text.h"
 
-using namespace std;
-
 namespace api {
 
-	result_with_snippet::result_with_snippet(const string &tsv_data, const indexer::return_record &res)
+	result_with_snippet::result_with_snippet(const std::string &tsv_data, const indexer::return_record &res)
 	: m_score(res.m_score), m_domain_hash(res.m_domain_hash) {
 		size_t pos_start = 0;
 		size_t pos_end = 0;
 		size_t col_num = 0;
-		while (pos_end != string::npos) {
+		while (pos_end != std::string::npos) {
 			pos_end = tsv_data.find('\t', pos_start);
 			const size_t len = pos_end - pos_start;
 			if (col_num == 0) {
@@ -64,8 +62,8 @@ namespace api {
 
 	}
 
-	string result_with_snippet::make_snippet(const string &text) const {
-		string response = text.substr(0, 140);
+	std::string result_with_snippet::make_snippet(const std::string &text) const {
+		std::string response = text.substr(0, 140);
 		text::trim(response);
 		if (response.size() >= 140) response += "...";
 		return response;

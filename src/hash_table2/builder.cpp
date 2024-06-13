@@ -27,11 +27,9 @@
 #include "builder.h"
 #include "utils/thread_pool.hpp"
 
-using namespace std;
-
 namespace hash_table2 {
 
-	builder::builder(const string &db_name, size_t num_shards, size_t hash_table_size,
+	builder::builder(const std::string &db_name, size_t num_shards, size_t hash_table_size,
 			const std::string &data_path)
 	: m_db_name(db_name) {
 		for (size_t i = 0; i < num_shards; i++) {

@@ -29,11 +29,9 @@
 #include "hash_table_shard_builder.h"
 #include "logger/logger.h"
 
-using namespace std;
-
 namespace hash_table2 {
 
-	hash_table::hash_table(const string &db_name, size_t num_shards, size_t hash_table_size, const std::string &data_path)
+	hash_table::hash_table(const std::string &db_name, size_t num_shards, size_t hash_table_size, const std::string &data_path)
 	: m_db_name(db_name)
 	{
 		for (size_t shard_id = 0; shard_id < num_shards; shard_id++) {
@@ -48,7 +46,7 @@ namespace hash_table2 {
 		}
 	}
 
-	void hash_table::add(uint64_t key, const string &value) {
+	void hash_table::add(uint64_t key, const std::string &value) {
 
 		const size_t shard_id = key % m_shards.size();
 		hash_table_shard_builder builder(m_db_name, shard_id);
@@ -67,7 +65,7 @@ namespace hash_table2 {
 		return m_shards[key % m_shards.size()]->has(key);
 	}
 
-	string hash_table::find(uint64_t key) {
+	std::string hash_table::find(uint64_t key) {
 		size_t ver = 0;
 		return find(key, ver);
 	}

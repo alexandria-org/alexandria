@@ -30,38 +30,36 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string.hpp>
 
-using namespace std;
-
 namespace file {
 
 	gz_tsv_file::gz_tsv_file() {
 
 	}
 
-	gz_tsv_file::gz_tsv_file(const string &file_name) {
+	gz_tsv_file::gz_tsv_file(const std::string &file_name) {
 		m_file_name = file_name;
 
-		ifstream infile(m_file_name);
+		std::ifstream infile(m_file_name);
 
 		if (infile.is_open()) {
 			boost::iostreams::filtering_istream decompress_stream;
 			decompress_stream.push(boost::iostreams::gzip_decompressor());
 			decompress_stream.push(infile);
 
-			m_data = string(istreambuf_iterator<char>(decompress_stream), {});
+			m_data = std::string(std::istreambuf_iterator<char>(decompress_stream), {});
 		}
 	}
 
 	gz_tsv_file::~gz_tsv_file() {
 	}
 
-	size_t gz_tsv_file::read_column_into(size_t column, vector<string> &container) {
-		stringstream ss(m_data);
+	size_t gz_tsv_file::read_column_into(size_t column, std::vector<std::string> &container) {
+		std::stringstream ss(m_data);
 
-		string line;
+		std::string line;
 		size_t rows_read = 0;
 		while (getline(ss, line)) {
-			vector<string> cols;
+			std::vector<std::string> cols;
 			boost::algorithm::split(cols, line, boost::is_any_of("\t"));
 			if (cols.size() > column) {
 				container.push_back(cols[column]);

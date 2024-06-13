@@ -28,12 +28,10 @@
 #include "hash_table_helper.h"
 #include "logger/logger.h"
 
-using namespace std;
-
 namespace hash_table_helper {
 
-	void truncate(const string &hash_table_name) {
-		vector<hash_table2::hash_table_shard_builder *> shards = create_shard_builders(hash_table_name);
+	void truncate(const std::string &hash_table_name) {
+		std::vector<hash_table2::hash_table_shard_builder *> shards = create_shard_builders(hash_table_name);
 
 		for (auto shard : shards) {
 			shard->truncate();
@@ -42,8 +40,8 @@ namespace hash_table_helper {
 		delete_shard_builders(shards);
 	}
 
-	vector<hash_table2::hash_table_shard_builder *> create_shard_builders(const string &hash_table_name) {
-		vector<hash_table2::hash_table_shard_builder *> shards;
+	std::vector<hash_table2::hash_table_shard_builder *> create_shard_builders(const std::string &hash_table_name) {
+		std::vector<hash_table2::hash_table_shard_builder *> shards;
 		for (size_t shard_id = 0; shard_id < config::ht_num_shards; shard_id++) {
 			shards.push_back(new hash_table2::hash_table_shard_builder(hash_table_name, shard_id));
 		}
@@ -51,7 +49,7 @@ namespace hash_table_helper {
 		return shards;
 	}
 
-	void delete_shard_builders(vector<hash_table2::hash_table_shard_builder *> &shards) {
+	void delete_shard_builders(std::vector<hash_table2::hash_table_shard_builder *> &shards) {
 		for (auto shard : shards) {
 			delete shard;
 		}

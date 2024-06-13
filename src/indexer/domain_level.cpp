@@ -29,8 +29,6 @@
 #include "domain_stats/domain_stats.h"
 #include "sharded_index.h"
 
-using namespace std;
-
 namespace indexer {
 
 	domain_level::domain_level() {
@@ -47,9 +45,9 @@ namespace indexer {
 		}
 	}
 
-	void domain_level::add_document(size_t id, const string &doc) {
-		std::vector<std::string> words = text::get_full_text_words(doc);
-		for (std::string &word : words) {
+	void domain_level::add_document(size_t id, const std::string &doc) {
+		auto words = text::get_full_text_words(doc);
+		for (const auto &word : words) {
 			m_builder->add(::algorithm::hash(word), domain_record(id));
 		}
 	}
@@ -58,13 +56,13 @@ namespace indexer {
 		std::function<void(uint64_t, const std::string &)> add_data,
 		std::function<void(uint64_t, uint64_t)> add_url) {
 
-		const vector<size_t> cols = {1, 2, 3, 4};
-		const vector<float> scores = {10.0, 3.0, 2.0, 1};
+		const std::vector<size_t> cols = {1, 2, 3, 4};
+		const std::vector<float> scores = {10.0, 3.0, 2.0, 1};
 
 		ifstream infile(local_path, ios::in);
-		string line;
+		std::string line;
 		while (getline(infile, line)) {
-			vector<string> col_values;
+			std::vector<std::string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
 
 			URL url(col_values[0]);
@@ -75,13 +73,13 @@ namespace indexer {
 			add_url(url.hash(), domain_hash);
 			add_data(url.host_hash(), url.host());
 
-			const string h = url.host();
+			const auto h = url.host();
 
-			const string site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
+			const auto site_colon = "site:" + url.host() + " site:www." + url.host() + " " + url.host() + " " + url.domain_without_tld();
 
 			for (size_t col : cols) {
-				vector<string> words = text::get_full_text_words(col_values[col]);
-				for (const string &word : words) {
+				auto words = text::get_full_text_words(col_values[col]);
+				for (const auto &word : words) {
 					m_builder->add(::algorithm::hash(word), domain_record(domain_hash, harmonic));
 				}
 			}
@@ -107,14 +105,14 @@ namespace indexer {
 		m_search_index = std::make_unique<sharded_index<domain_record>>("domain", 1024);
 	}
 
-	std::vector<return_record> domain_level::find(size_t &total_num_results, const string &query, const std::vector<size_t> &keys,
-		const vector<link_record> &links, const vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores,
+	std::vector<return_record> domain_level::find(size_t &total_num_results, const std::string &query, const std::vector<size_t> &keys,
+		const std::vector<link_record> &links, const std::vector<domain_link_record> &domain_links, const std::vector<counted_record> &scores,
 		const std::vector<domain_record> &domain_modifiers) {
 
 		(void)keys;
 		(void)links;
 
-		std::vector<std::string> words = text::get_full_text_words(query);
+		auto words = text::get_full_text_words(query);
 		std::vector<uint64_t> tokens(words.size());
 		std::transform(words.begin(), words.end(), tokens.begin(), ::algorithm::hash);
 
@@ -161,7 +159,7 @@ namespace indexer {
 		return intersected;
 	}
 
-	size_t domain_level::apply_domain_links(const vector<domain_link_record> &links, vector<return_record> &results) {
+	size_t domain_level::apply_domain_links(const std::vector<domain_link_record> &links, std::vector<return_record> &results) {
 		if (links.size() == 0) return 0;
 
 		size_t applied_links = 0;

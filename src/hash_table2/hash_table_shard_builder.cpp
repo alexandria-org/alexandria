@@ -34,11 +34,9 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-using namespace std;
-
 namespace hash_table2 {
 
-	hash_table_shard_builder::hash_table_shard_builder(const string &db_name, size_t shard_id, size_t hash_table_size,
+	hash_table_shard_builder::hash_table_shard_builder(const std::string &db_name, size_t shard_id, size_t hash_table_size,
 		const std::string &data_path)
 	: hash_table_shard_base(db_name, shard_id, hash_table_size, data_path)
 	{
@@ -50,7 +48,7 @@ namespace hash_table2 {
 		indexer::merger::deregister_merger((size_t)this);
 	}
 
-	void hash_table_shard_builder::add(uint64_t key, const string &value, size_t version) {
+	void hash_table_shard_builder::add(uint64_t key, const std::string &value, size_t version) {
 		indexer::merger::lock();
 
 		std::lock_guard guard(m_lock);
@@ -86,16 +84,16 @@ namespace hash_table2 {
 			outfile.write((char *)&version, sizeof(size_t));
 
 			// Compress data
-			stringstream ss(iter.second);
+			std::stringstream ss(iter.second);
 
 			boost::iostreams::filtering_istream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(ss);
 
-			stringstream compressed;
+			std::stringstream compressed;
 			compressed << compress_stream.rdbuf();
 
-			string compressed_string(compressed.str());
+			std::string compressed_string(compressed.str());
 
 			const size_t data_len = compressed_string.size();
 			outfile.write((char *)&data_len, sizeof(size_t));
@@ -142,7 +140,7 @@ namespace hash_table2 {
 			if (!infile.read((char *)&data_len, sizeof(size_t))) break;
 
 			if (data_len > buffer_len) {
-				LOG_INFO("data_len " + to_string(data_len) + "is larger than buffer_len " + to_string(buffer_len) + " in file " + filename_data());
+				LOG_INFO("data_len " + std::to_string(data_len) + "is larger than buffer_len " + std::to_string(buffer_len) + " in file " + filename_data());
 				infile.seekg(data_len, ios::cur);
 				continue;
 			} else {

@@ -30,12 +30,11 @@
 #include "parser/unicode.h"
 #include "json.hpp"
 
-using namespace std;
 using json = nlohmann::ordered_json;
 
 namespace api {
 
-	api_response::api_response(vector<result_with_snippet> &results, const struct full_text::search_metric &metric, double profile) {
+	api_response::api_response(std::vector<result_with_snippet> &results, const struct full_text::search_metric &metric, double profile) {
 
 		json message;
 
@@ -47,8 +46,8 @@ namespace api {
 			json_result["title"] = parser::unicode::encode(result.title());
 			json_result["snippet"] = parser::unicode::encode(result.snippet());
 			json_result["score"] = result.score();
-			json_result["domain_hash"] = to_string(result.domain_hash());
-			json_result["url_hash"] = to_string(result.url().hash());
+			json_result["domain_hash"] = std::to_string(result.domain_hash());
+			json_result["url_hash"] = std::to_string(result.url().hash());
 
 			result_array.push_back(json_result);
 		}
@@ -71,7 +70,7 @@ namespace api {
 
 	}
 
-	ostream &operator<<(ostream &os, const api_response &api_response) {
+	std::ostream &operator<<(std::ostream &os, const api_response &api_response) {
 		os << api_response.m_response;
 		return os;
 	}

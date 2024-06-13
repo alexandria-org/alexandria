@@ -29,18 +29,16 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
-using namespace std;
-
 namespace file {
 
-	string read_test_file(const string &file_name) {
+	std::string read_test_file(const std::string &file_name) {
 
-		ifstream file(config::test_data_path + file_name);
+		std::ifstream file(config::test_data_path + file_name);
 		if (file.is_open()) {
-			string ret;
-			file.seekg(0, ios::end);
+			std::string ret;
+			file.seekg(0, std::ios::end);
 			ret.resize(file.tellg());
-			file.seekg(0, ios::beg);
+			file.seekg(0, std::ios::beg);
 			file.read(&ret[0], ret.size());
 			file.close();
 			return ret;
@@ -52,14 +50,14 @@ namespace file {
 		boost::filesystem::rename(old_path, new_path);
 	}
 
-	void copy_file(const string &source, const string &dest) {
-		ifstream infile(source, ios::binary);
-		ofstream outfile(dest, ios::binary | ios::trunc);
+	void copy_file(const std::string &source, const std::string &dest) {
+		std::ifstream infile(source, std::ios::binary);
+		std::ofstream outfile(dest, std::ios::binary | std::ios::trunc);
 
 		outfile << infile.rdbuf();
 	}
 
-	void delete_file(const string &file) {
+	void delete_file(const std::string &file) {
 		boost::filesystem::remove(file);
 	}
 
