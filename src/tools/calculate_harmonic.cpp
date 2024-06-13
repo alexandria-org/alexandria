@@ -1,5 +1,6 @@
 
 #include "calculate_harmonic.h"
+#include "splitter.h"
 
 #include "config.h"
 #include "url_link/link.h"
@@ -81,35 +82,12 @@ namespace tools {
 
 	void calculate_harmonic_hosts() {
 
-		const size_t num_threads = 12;
-
-		std::vector<std::string> files;
-		for (const std::string &batch : config::batches) {
-
-			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
-
-			std::ifstream infile(file_name);
-
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(infile);
-
-			std::string line;
-			while (getline(decompress_stream, line)) {
-				std::string warc_path = config::data_path() + "/" + line;
-				const size_t pos = warc_path.find(".warc.gz");
-				if (pos != std::string::npos) {
-					warc_path.replace(pos, 8, ".gz");
-				}
-
-				files.push_back(warc_path);
-			}
-		}
+		auto files = generate_list_with_target_url_files();
 
 		std::vector<std::vector<std::string>> chunks;
-		algorithm::vector_chunk<std::string>(files, files.size() / (num_threads * 200), chunks);
+		algorithm::vector_chunk<std::string>(files, files.size() / (s_num_threads * 200), chunks);
 
-		ThreadPool pool(num_threads);
+		ThreadPool pool(s_num_threads);
 		std::vector<std::future<std::unordered_map<uint64_t, std::string>>> results;
 
 		for (const std::vector<std::string> &chunk : chunks) {
@@ -180,12 +158,12 @@ namespace tools {
 		return ret;
 	}
 
-	std::vector<uint32_t> *read_edge_file(size_t vlen) {
+	std::unique_ptr<std::vector<uint32_t>[]> read_edge_file(size_t vlen) {
 
 		// Load the hosts
 		std::ifstream infile(config::data_path() + "/edges.txt");
 
-		std::vector<uint32_t> *edge_map = new std::vector<uint32_t>[vlen];
+		auto edge_map = std::make_unique<std::vector<uint32_t>[]>(vlen);
 
 		std::string line;
 		while (getline(infile, line)) {
@@ -202,40 +180,16 @@ namespace tools {
 
 	void calculate_harmonic_links() {
 
-		const size_t num_threads = 12;
-
 		std::unordered_map<uint64_t, uint32_t> hosts = read_hosts_file();
 
 		std::cout << "loaded " << hosts.size() << " hosts" << std::endl;
 
-		std::vector<std::string> files;
-		for (const std::string &batch : config::link_batches) {
-
-			const std::string file_name = config::data_path() + "/crawl-data/" + batch + "/warc.paths.gz";
-
-			std::ifstream infile(file_name);
-
-			boost::iostreams::filtering_istream decompress_stream;
-			decompress_stream.push(boost::iostreams::gzip_decompressor());
-			decompress_stream.push(infile);
-
-			std::string line;
-			while (getline(decompress_stream, line)) {
-				std::string warc_path = config::data_path() + "/" + line;
-				const size_t pos = warc_path.find(".warc.gz");
-
-				if (pos != std::string::npos) {
-					warc_path.replace(pos, 8, ".links.gz");
-				}
-
-				files.push_back(warc_path);
-			}
-		}
+		auto files = generate_list_with_target_link_files();
 
 		std::vector<std::vector<std::string>> chunks;
-		algorithm::vector_chunk<std::string>(files, files.size() / (num_threads * 500), chunks);
+		algorithm::vector_chunk<std::string>(files, files.size() / (s_num_threads * 500), chunks);
 
-		ThreadPool pool(num_threads);
+		ThreadPool pool(s_num_threads);
 		std::vector<std::future<std::unordered_set<std::pair<uint32_t, uint32_t>, pair_hash>>> results;
 
 		for (const std::vector<std::string> &chunk : chunks) {
@@ -268,20 +222,18 @@ namespace tools {
 
 	void calculate_harmonic() {
 
-		const size_t num_threads = 8;
-
 		std::vector<uint32_t> hosts = read_hosts_file_vec();
-		const std::vector<uint32_t> *edge_map = read_edge_file(hosts.size());
+		auto edge_map = read_edge_file(hosts.size());
 
 		std::cout << "loaded " << hosts.size() << " hosts" << std::endl;
 
-		std::cout << "running harmonic centrality algorithm on " << num_threads << " threads" << std::endl;
+		std::cout << "running harmonic centrality algorithm on " << s_num_threads << " threads" << std::endl;
 
 		//vector<double> harmonic = algorithm::harmonic_centrality_threaded(hosts.size(), edge_map, 3, num_threads);
 
 		std::vector<double> harmonic = algorithm::hyper_ball(hosts.size(), edge_map);
 
-		delete [] edge_map;
+		edge_map.reset(nullptr);
 
 		// Save harmonic centrality.
 		std::ofstream outfile(config::data_path() + "/harmonic.txt", std::ios::trunc);

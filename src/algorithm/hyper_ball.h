@@ -35,8 +35,8 @@
 
 namespace algorithm {
 
-	template <typename iterable_type>
-	bool hyper_ball_worker(double t, size_t v_begin, size_t v_end, const iterable_type *edge_map,
+	template <typename edge_map_type>
+	bool hyper_ball_worker(double t, size_t v_begin, size_t v_end, const edge_map_type &edge_map,
 			std::vector<hyper_log_log> &c, std::vector<hyper_log_log> &a, std::vector<double> &harmonic) {
 
 		bool counter_changed = false;
@@ -61,14 +61,14 @@ namespace algorithm {
 
 	/*
 	 * n is the number of vertices in graph.
-	 * edge_map is pointing to an array of size n.
+	 * edge_map is pointing to a static array of size n.
 	 * each item in edge_map is a vector of variable size.
 	 * each vector edge_map[m] contains values between 0 and n-1 indicating edge between m and edge_map[m].
 	 * NOTE direction of edge in edge map has to be EDGE_FROM -> EDGE_TO.
 	 * so for vertex m, n = edge_map[m] indicates directed edge from n to m
 	 * */
-	template <typename iterable_type>
-	std::vector<double> hyper_ball(uint32_t n, const iterable_type *edge_map) {
+	template <typename edge_map_type>
+	std::vector<double> hyper_ball(uint32_t n, const edge_map_type &edge_map) {
 
 		if (n == 0) return {};
 
@@ -88,7 +88,7 @@ namespace algorithm {
 			for (size_t i = 0; i < num_threads; i++) {
 				const size_t v_begin = i * items_per_thread;
 				const size_t v_end = (i == num_threads - 1) ? n : (i + 1) * items_per_thread;
-				auto fut = std::async(hyper_ball_worker<iterable_type>, t, v_begin, v_end, edge_map, ref(c), ref(a), ref(harmonic));
+				auto fut = std::async(hyper_ball_worker<edge_map_type>, t, v_begin, v_end, std::cref(edge_map), std::ref(c), std::ref(a), std::ref(harmonic));
 				threads.emplace_back(std::move(fut));
 			}
 

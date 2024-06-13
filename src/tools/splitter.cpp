@@ -18,9 +18,6 @@
 
 namespace tools {
 
-	const std::string s_suffix = "-small";
-	const size_t s_num_threads = 12;
-
 	std::vector<std::string> target_url_batches() {
 		std::vector<std::string> batches;
 		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {

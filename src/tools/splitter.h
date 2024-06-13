@@ -26,7 +26,21 @@
 
 #pragma once
 
+#include <iostream>
+#include <vector>
+
 namespace tools {
+
+	const std::string s_suffix = "-small";
+	const size_t s_num_threads = 12;
+
+	std::vector<std::string> target_url_batches();
+	std::vector<std::string> target_link_batches();
+
+	std::vector<std::string> generate_list_with_url_files();
+	std::vector<std::string> generate_list_with_link_files();
+	std::vector<std::string> generate_list_with_target_url_files();
+	std::vector<std::string> generate_list_with_target_link_files();
 
 	void run_splitter();
 	void run_split_urls_with_direct_links();
