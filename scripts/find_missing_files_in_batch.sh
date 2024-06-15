@@ -19,6 +19,9 @@ for raw_file in $files; do
 			echo "The file '$file' exists and is small."
 			echo $raw_file >> $missing_files_path
 		fi
+	else
+		echo "The file '$file' does not exist."
+		echo $raw_file >> $missing_files_path
 	fi
 done
 
