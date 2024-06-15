@@ -163,23 +163,20 @@ namespace scraper {
 	}
 
 	void scraper_store::internal_upload_results(const string &all_results, const string &all_link_results) {
-		const string thread_hash = to_string(common::thread_id());
-		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + thread_hash + "-" + to_string(common::cur_datetime()) + "-" +
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/files/" + common::uuid() + "-" + to_string(common::cur_datetime()) + "-" +
 			to_string(m_file_index++) + ".warc.gz";
 		try_upload_until_complete(warc::get_result_path(warc_path), all_results);
 		try_upload_until_complete(warc::get_link_result_path(warc_path), all_link_results);
 	}
 
 	void scraper_store::internal_upload_non_200_results(const string &all_results) {
-		const string thread_hash = to_string(common::thread_id());
-		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + thread_hash + "-" + to_string(common::cur_datetime()) +
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/non-200-responses/" + common::uuid() + "-" + to_string(common::cur_datetime()) +
 			"-" + to_string(m_file_index++) + ".warc.gz";
 		try_upload_until_complete(warc::get_result_path(warc_path), all_results);
 	}
 
 	void scraper_store::internal_upload_curl_errors(const string &all_results) {
-		const string thread_hash = to_string(common::thread_id());
-		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/curl-errors/" + thread_hash + "-" + to_string(common::cur_datetime()) +
+		const string warc_path = "crawl-data/ALEXANDRIA-SCRAPER-01/curl-errors/" + common::uuid() + "-" + to_string(common::cur_datetime()) +
 			"-" + to_string(m_file_index++) + ".warc.gz";
 		try_upload_until_complete(warc::get_result_path(warc_path), all_results);
 	}

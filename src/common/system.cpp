@@ -53,10 +53,6 @@ namespace common {
 		return "/files/dictionary.tsv";
 	}
 
-	size_t thread_id() {
-		return std::hash<std::thread::id>{}(std::this_thread::get_id());
-	}
-
 	std::string uuid() {
 		// Create a random UUID
 		boost::uuids::uuid uuid = boost::uuids::random_generator()();

@@ -93,7 +93,7 @@ namespace tools {
 		// Save rows.
 		if (saved_rows.size() > 0) {
 			boost::filesystem::create_directories(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/");
-			std::ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + std::to_string(common::thread_id()) + ".gz");
+			std::ofstream outfile(config::data_path() + "/crawl-data/ALEXANDRIA-TEST-SIZES/files/" + common::uuid() + ".gz");
 			boost::iostreams::filtering_ostream compress_stream;
 			compress_stream.push(boost::iostreams::gzip_compressor());
 			compress_stream.push(outfile);

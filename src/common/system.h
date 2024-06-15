@@ -33,7 +33,6 @@ namespace common {
 	bool is_dev();
 	std::string domain_index_filename();
 	std::string dictionary_filename();
-	size_t thread_id();
 	std::string uuid();
 
 }

@@ -20,13 +20,12 @@ namespace tools {
 
 	void find_links_for_hosts_chunk(const std::set<size_t> &host_hashes, const std::vector<std::string> &files) {
 
-		size_t thread_id = common::thread_id();
 		size_t links_written = 0;
 		const size_t links_per_file = 1000000;
 
 		std::ofstream outfile;
 
-		outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + std::to_string(thread_id) + "_" + std::to_string(links_written) + "-" +
+		outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + common::uuid() + "_" + std::to_string(links_written) + "-" +
 			std::to_string(links_written + links_per_file) + ".gz", std::ios::binary);
 
 		boost::iostreams::filtering_ostream compress_stream;
@@ -58,7 +57,7 @@ namespace tools {
 						compress_stream.strict_sync();
 						compress_stream.pop();
 						outfile.close();
-						outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + std::to_string(thread_id) +
+						outfile.open(config::data_path() + "/crawl-data/SMALL-LINK-MIX/files/" + common::uuid() +
 							"_" + std::to_string(links_written) + "-" + std::to_string(links_written + links_per_file) + ".gz",
 							std::ios::binary);
 						compress_stream.push(outfile);

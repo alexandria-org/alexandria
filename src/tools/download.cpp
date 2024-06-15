@@ -95,8 +95,11 @@ namespace tools {
 		return total_result;
 	}
 
-	void upload_cache(size_t file_index, size_t thread_id, const std::string &data, size_t node_id) {
-		const std::string filename = "crawl-data/NODE-" + std::to_string(node_id) + "-small/files/" + std::to_string(thread_id) + "-" + std::to_string(file_index) + "-" +
+	void upload_cache(size_t file_index, const std::string &data, size_t node_id) {
+
+		auto uuid = common::uuid();
+
+		const std::string filename = "crawl-data/NODE-" + std::to_string(node_id) + "-small/files/" + uuid + "-" + std::to_string(file_index) + "-" +
 			std::to_string(profiler::now_micro()) + ".gz";
 
 		int error = transfer::upload_gz_file(filename, data);
@@ -108,7 +111,6 @@ namespace tools {
 	void parse_urls_with_links_thread(const std::vector<std::string> &warc_paths, const std::unordered_set<size_t> &url_set) {
 
 		const size_t max_cache_size = 150000;
-		size_t thread_id = common::thread_id();
 		size_t file_index = 1;
 
 		LOG_INFO("url_set.size() == " + std::to_string(url_set.size()));
@@ -131,7 +133,7 @@ namespace tools {
 				if (cache[node_id].size() > max_cache_size) {
 					const std::string cache_data = boost::algorithm::join(cache[node_id], "\n");
 					cache[node_id].clear();
-					upload_cache(file_index++, thread_id, cache_data, node_id);
+					upload_cache(file_index++, cache_data, node_id);
 				}
 			}
 		}
@@ -139,7 +141,7 @@ namespace tools {
 			if (cache[node_id].size() > 0) {
 				const std::string cache_data = boost::algorithm::join(cache[node_id], "\n");
 				cache[node_id].clear();
-				upload_cache(file_index++, thread_id, cache_data, node_id);
+				upload_cache(file_index++, cache_data, node_id);
 			}
 		}
 	}
