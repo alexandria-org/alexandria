@@ -26,6 +26,9 @@
 
 #include "system.h"
 #include <thread>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace common {
 
@@ -52,6 +55,13 @@ namespace common {
 
 	size_t thread_id() {
 		return std::hash<std::thread::id>{}(std::this_thread::get_id());
+	}
+
+	std::string uuid() {
+		// Create a random UUID
+		boost::uuids::uuid uuid = boost::uuids::random_generator()();
+		// Convert UUID to string and return
+		return boost::uuids::to_string(uuid);
 	}
 
 }
