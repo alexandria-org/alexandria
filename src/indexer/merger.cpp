@@ -166,6 +166,9 @@ namespace indexer {
 
 		void start_merge_thread() {
 			merge_thread_is_running = true;
+			if (merge_thread_obj.joinable()) {
+				throw std::runtime_error("Trying to start already started merge thread. Not allowed.");
+			}
 			merge_thread_obj = std::move(thread(merge_thread));
 		}
 

@@ -65,6 +65,7 @@ namespace indexer {
 		// word_map holds a word hash (token) => score
 		std::map<uint64_t, float> word_map;
 
+		size_t num_added = 0;
 		while (getline(infile, line)) {
 			vector<string> col_values;
 			boost::algorithm::split(col_values, line, boost::is_any_of("\t"));
@@ -99,10 +100,12 @@ namespace indexer {
 			for (const auto &iter : word_map) {
 				record.m_score = iter.second;
 				m_url_index_builder->add(iter.first, record);
+				num_added++;
 			}
 
 			word_map.clear();
 		}
+		std::cout << "num added: " << num_added << std::endl;
 	}
 
 	void index_manager::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {

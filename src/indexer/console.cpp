@@ -266,7 +266,7 @@ namespace indexer {
 		}
 	}
 
-	void index_urls(const std::string &batch) {
+	void index_url_batch(const std::string &batch) {
 
 		size_t limit = 1000;
 		size_t offset = 0;
@@ -275,15 +275,19 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths");
 			std::vector<std::string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
-			if (warc_paths.size() == 0) break;
+			if (warc_paths.size() == 0) {
+				merger::stop_merge_thread();
+				break;
+			}
 
+			cout << "downloading " << warc_paths.size() << " to disc" << endl;
 			auto local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
-			idx_manager.add_url_files_threaded(local_files, 32);
+			idx_manager.add_index_files_threaded(local_files, 32);
 			cout << "done with indexer" << endl;
 			transfer::delete_downloaded_files(local_files);
 
@@ -292,6 +296,16 @@ namespace indexer {
 			offset += limit;
 		}
 		profiler::print_report();
+	}
+
+	void index_urls() {
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+		
+		for (const std::string &batch : config::batches) {
+			index_url_batch(batch);
+		}
 	}
 
 	void truncate_links() {

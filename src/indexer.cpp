@@ -122,7 +122,7 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--index-links") {
 		indexer::index_links(argv[2]);
 	} else if (arg == "--index-urls") {
-		indexer::index_urls(argv[2]);
+		indexer::index_urls();
 	} else if (arg == "--make-domain-index") {
 		indexer::make_domain_index();
 	} else if (arg == "--make-domain-index-scores") {

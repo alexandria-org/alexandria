@@ -32,7 +32,7 @@ namespace indexer {
 
 	void console();
 	void index_links(const std::string &batch);
-	void index_urls(const std::string &batch);
+	void index_urls();
 	void truncate_links();
 	void domain_info_server();
 	void search_server();
