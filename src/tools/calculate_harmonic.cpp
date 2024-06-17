@@ -17,6 +17,7 @@
 #include <boost/algorithm/string.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <iomanip>
 
 namespace tools {
 
@@ -85,7 +86,7 @@ namespace tools {
 		auto files = generate_list_with_target_url_files();
 
 		std::vector<std::vector<std::string>> chunks;
-		algorithm::vector_chunk<std::string>(files, files.size() / (s_num_threads * 200), chunks);
+		algorithm::vector_chunk<std::string>(files, files.size() / s_num_threads, chunks);
 
 		ThreadPool pool(s_num_threads);
 		std::vector<std::future<std::unordered_map<uint64_t, std::string>>> results;
@@ -158,6 +159,25 @@ namespace tools {
 		return ret;
 	}
 
+	std::map<uint32_t, std::string> read_hosts_file_with_names() {
+
+		// Load the hosts
+		std::ifstream infile(config::data_path() + "/hosts.txt");
+
+		std::map<uint32_t, std::string> ret;
+
+		std::string line;
+		while (getline(infile, line)) {
+			std::vector<std::string> parts;
+			boost::algorithm::split(parts, line, boost::is_any_of("\t"));
+
+			uint32_t id = std::stoi(parts[0]);
+			ret[id] = parts[2];
+		}
+
+		return ret;
+	}
+
 	std::unique_ptr<std::vector<uint32_t>[]> read_edge_file(size_t vlen) {
 
 		// Load the hosts
@@ -225,6 +245,8 @@ namespace tools {
 		std::vector<uint32_t> hosts = read_hosts_file_vec();
 		auto edge_map = read_edge_file(hosts.size());
 
+		const size_t num_hosts = hosts.size();
+
 		std::cout << "loaded " << hosts.size() << " hosts" << std::endl;
 
 		std::cout << "running harmonic centrality algorithm on " << s_num_threads << " threads" << std::endl;
@@ -235,10 +257,13 @@ namespace tools {
 
 		edge_map.reset(nullptr);
 
+		std::map<uint32_t, std::string> host_names = read_hosts_file_with_names();
+
 		// Save harmonic centrality.
 		std::ofstream outfile(config::data_path() + "/harmonic.txt", std::ios::trunc);
 		for (size_t i = 0; i < hosts.size(); i++) {
-			outfile << std::fixed << hosts[i] << '\t' << harmonic[i] << '\n';
+			const double harmonic_float = harmonic[i] / num_hosts;
+			outfile << std::setprecision(15) << host_names.at(hosts[i]) << '\t' << harmonic_float << '\n';
 		}
 
 	}
