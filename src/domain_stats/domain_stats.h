@@ -33,5 +33,4 @@ namespace domain_stats {
 	void download_domain_stats();
 	float harmonic_centrality(const URL &url);
 	float harmonic_centrality(const std::string &domain);
-	float harmonic_centrality(const uint64_t domain_hash);
 }

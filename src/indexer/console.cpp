@@ -353,12 +353,10 @@ namespace indexer {
 			auto domain = url.path();
 			domain.erase(0, 1);
 
-			const auto reverse_domain = url.host_reverse(domain);
-
 			body << "<html><head><meta http-equiv='Content-type' content='text/html; charset=utf-8'></head><body>";
 
 			body << "<h1>" << domain << "</h1>" << endl;
-			body << "<h3>harmonic: " << domain_stats::harmonic_centrality(reverse_domain) << "</h3>" << endl;
+			body << "<h3>harmonic: " << domain_stats::harmonic_centrality(domain) << "</h3>" << endl;
 			body << "<h3>hash: " << ::algorithm::hash(domain) << "</h3>" << endl;
 
 			body << "<pre>";
@@ -508,9 +506,8 @@ namespace indexer {
 		idx.for_each_record([&ht](domain_record &rec) {
 			URL u;
 			const auto domain = ht.find(rec.m_value);
-			const auto domain_reverse = u.host_reverse(domain);
 
-			float harmonic = domain_stats::harmonic_centrality(domain_reverse);
+			float harmonic = domain_stats::harmonic_centrality(domain);
 
 			rec.m_score = harmonic;
 		});

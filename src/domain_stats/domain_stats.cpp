@@ -43,32 +43,20 @@ namespace domain_stats {
 	}
 
 	float harmonic_centrality(const URL &url) {
-		return harmonic_centrality(url.host_reverse());
+		return harmonic_centrality(url.host());
 	}
 
-	float harmonic_centrality(const std::string &reverse_host) {
+	float harmonic_centrality(const std::string &host) {
 
-		const auto iter = domain_data.find(reverse_host);
+		const auto iter = domain_data.find(host);
 
 		float harmonic = 0.0f;
 		if (iter != domain_data.end()) {
 			const common::dictionary_row row = iter->second;
-			harmonic = row.get_float(1);
+			harmonic = row.get_float(0);
 		}
 
 		return harmonic;
 	}
 
-	float harmonic_centrality(uint64_t domain_hash) {
-
-		const auto iter = domain_data.find(domain_hash);
-
-		float harmonic = 0.0f;
-		if (iter != domain_data.end()) {
-			const common::dictionary_row row = iter->second;
-			harmonic = row.get_float(1);
-		}
-
-		return harmonic;
-	}
 }
