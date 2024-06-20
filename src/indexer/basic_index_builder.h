@@ -360,7 +360,6 @@ namespace indexer {
 	template<typename data_record>
 	void basic_index_builder<data_record>::sort_record_list(uint64_t key, std::vector<data_record> &records) {
 
-		(void)key;
 		// Sort records.
 		std::sort(records.begin(), records.end());
 
@@ -373,15 +372,17 @@ namespace indexer {
 			}
 		}
 
-		// Delete consecutive elements. Only keeping the first.
-
+		// Delete consecutive equal elements. Only keeping the first unique.
 		auto last = std::unique(records.begin(), records.end());
 		records.erase(last, records.end());
 
-		std::sort(records.begin(), records.end(), typename data_record::truncate_order());
 
-		if (records.size() > 1000000) {
-			records.resize(1000000);
+		if (records.size() > m_max_results) {
+			// Sort before truncation
+			std::sort(records.begin(), records.end(), typename data_record::truncate_order());
+			records.resize(config::ft_max_results_per_section);
+
+			// Future fix here is to add hyper log log counting for words with too many urls.
 		}
 
 		std::sort(records.begin(), records.end());

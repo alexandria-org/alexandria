@@ -135,7 +135,7 @@ namespace indexer {
 
 		std::vector<data_record> ret = ::algorithm::intersection(results, num_results);
 
-		if (ret.size() > limit) {
+		if (limit && ret.size() > limit) {
 			std::nth_element(ret.begin(), ret.begin () + (limit - 1), ret.end(), [](const auto &a, const auto &b) {
 				return a.m_score > b.m_score;
 			});

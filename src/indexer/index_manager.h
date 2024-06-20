@@ -27,6 +27,7 @@
 #pragma once
 
 #include <memory>
+#include "full_text/search_metric.h"
 #include "index_builder.h"
 #include "index.h"
 #include "sharded_index_builder.h"
@@ -66,7 +67,7 @@ namespace indexer {
 		void truncate();
 		void truncate_links();
 
-		std::vector<return_record> find(size_t &total_num_results, const std::string &query);
+		std::vector<return_record> find(const std::string &query, full_text::search_metric &metric);
 		std::vector<return_record> find(const std::string &query);
 
 	private:
@@ -82,6 +83,11 @@ namespace indexer {
 
 		std::unique_ptr<hash_table2::builder> m_hash_table_builder;
 		std::unique_ptr<hash_table2::hash_table> m_hash_table;
+
+		size_t apply_domain_link_scores(const vector<domain_link_record> &links, std::vector<url_record> &results);
+		size_t apply_link_scores(const vector<link_record> &links, std::vector<url_record> &results);
+		std::vector<return_record> decorate_search_result(const std::vector<url_record> &results);
+		std::vector<url_record> deduplicate_search_results(const std::vector<url_record> &results, size_t limit);
 
 	};
 

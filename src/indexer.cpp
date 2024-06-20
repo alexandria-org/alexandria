@@ -33,6 +33,7 @@
 #include "tools/calculate_harmonic.h"
 #include "tools/generate_url_lists.h"
 #include "tools/find_links.h"
+#include "indexer/index_manager.h"
 #include "URL.h"
 #include "indexer/console.h"
 #include <iostream>
@@ -72,6 +73,8 @@ int main(int argc, const char **argv) {
 
 	if (arg == "--split") {
 		tools::run_splitter();
+	} else if (arg == "--count-overflow-words") {
+		indexer::count_words_that_hit_max();
 	} else if (arg == "--count") {
 		tools::run_counter();
 		} else if (arg == "--count-domains") {
@@ -96,6 +99,20 @@ int main(int argc, const char **argv) {
 		 *
 		 * */
 		tools::run_split_links_with_relevant_domains();
+	} else if (arg == "--search") {
+
+		/*
+		 * split links should run after --split-with-links because it takes all the link batches and splits
+		 * them into LINK-{node id} folders but it ONLY takes links with target domain that is present in the
+		 * URL files stored in the NODE- folders.
+		 *
+		 * */
+		indexer::index_manager idx_manager;
+		auto response = idx_manager.find(argv[2]);
+
+		for (const auto &rec : response) {
+			std::cout << rec.m_url << " score " << rec.m_score << std::endl;
+		}
 	} else if (arg == "--download-batch") {
 		tools::download_batch(string(argv[2]));
 	} else if (arg == "--prepare-batch") {
@@ -120,7 +137,7 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--console") {
 		indexer::console();
 	} else if (arg == "--index-links") {
-		indexer::index_links(argv[2]);
+		indexer::index_links();
 	} else if (arg == "--index-urls") {
 		indexer::index_urls();
 	} else if (arg == "--make-domain-index") {

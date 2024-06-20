@@ -31,7 +31,7 @@
 namespace indexer {
 
 	void console();
-	void index_links(const std::string &batch);
+	void index_links();
 	void index_urls();
 	void truncate_links();
 	void domain_info_server();
@@ -40,5 +40,6 @@ namespace indexer {
 	void make_domain_index_scores();
 	void make_url_bloom_filter();
 	void optimize_urls();
+	void count_words_that_hit_max();
 
 }

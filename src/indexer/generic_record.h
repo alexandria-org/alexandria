@@ -77,14 +77,16 @@ namespace indexer {
 		}
 
 		generic_record operator+(const generic_record &b) const {
+			// can be overloaded to perform summation over scores but default behaviour is to not add scores.
 			generic_record sum;
 			sum.m_value = m_value;
-			sum.m_score = m_score + b.m_score;
+			sum.m_score = m_score /* + b.m_score */;
 			return sum;
 		}
 
 		generic_record &operator+=(const generic_record &b) {
-			m_score += b.m_score;
+			// can be overloaded to perform summation over scores but default behaviour is to not add scores.
+			// m_score += b.m_score;
 			return *this;
 		}
 

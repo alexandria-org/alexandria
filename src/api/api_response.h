@@ -33,14 +33,16 @@ namespace full_text {
 	struct search_metric;
 }
 
-namespace api {
+namespace indexer {
+	class return_record;
+}
 
-	class result_with_snippet;
+namespace api {
 
 	class api_response {
 
 		public:
-			api_response(std::vector<result_with_snippet> &results, const struct full_text::search_metric &metric, double profile);
+			api_response(const std::vector<indexer::return_record> &results, const struct full_text::search_metric &metric, double profile);
 			~api_response();
 
 			friend std::ostream &operator<<(std::ostream &os, const api_response &api_response);

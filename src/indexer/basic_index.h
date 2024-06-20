@@ -48,11 +48,13 @@ namespace indexer {
 
 		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t &num_records) const;
 		std::unique_ptr<data_record[]> find_ptr(uint64_t key, size_t limit, size_t &num_records) const;
+		size_t find_count(uint64_t key) const;
 
 		/*
 		 * Iterates the keys of the index and calls the callback with key and vector of records for that key.
 		 * */
 		void for_each(std::function<void(uint64_t key, std::vector<data_record> &recs)> on_each_key) const;
+		void for_each_key(std::function<void(uint64_t key)> on_each_key) const;
 
 	private:
 
@@ -188,6 +190,47 @@ namespace indexer {
 		m_reader->read((char *)ret.get(), len);
 
 		return ret;
+	}
+
+	template<typename data_record>
+	size_t basic_index<data_record>::find_count(uint64_t key) const {
+
+		std::lock_guard lock(this->m_lock);
+
+		size_t key_pos = read_key_pos(key);
+
+		if (key_pos == SIZE_MAX) {
+			return 0;
+		}
+
+		// Read page.
+		m_reader->seekg(key_pos);
+		size_t num_keys;
+		m_reader->read((char *)&num_keys, sizeof(size_t));
+
+		std::unique_ptr<uint64_t[]> keys_allocator = std::make_unique<uint64_t[]>(num_keys);
+		uint64_t *keys = keys_allocator.get();
+		m_reader->read((char *)keys, num_keys * sizeof(uint64_t));
+
+		size_t key_data_pos = SIZE_MAX;
+		for (size_t i = 0; i < num_keys; i++) {
+			if (keys[i] == key) {
+				key_data_pos = i;
+			}
+		}
+
+		if (key_data_pos == SIZE_MAX) {
+			return 0;
+		}
+
+		char buffer[64];
+
+		// Read length only.
+		m_reader->seekg(key_pos + 8 + (num_keys * 8)*2 + key_data_pos * 8);
+		m_reader->read(buffer, 8);
+		size_t len = *((size_t *)(&buffer[0]));
+
+		return len / sizeof(data_record);
 	}
 
 	/*

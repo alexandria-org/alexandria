@@ -29,6 +29,7 @@
 #include "domain_stats/domain_stats.h"
 #include "url_link/link.h"
 #include "algorithm/algorithm.h"
+#include "algorithm/sort.h"
 #include "utils/thread_pool.hpp"
 
 using namespace std;
@@ -110,6 +111,7 @@ namespace indexer {
 
 	void index_manager::add_index_files_threaded(const vector<string> &local_paths, size_t num_threads) {
 
+		num_threads = 1;
 		utils::thread_pool pool(num_threads);
 
 		for (const string &local_path : local_paths) {
@@ -141,8 +143,6 @@ namespace indexer {
 
 			parsed++;
 
-			added++;
-
 			URL source_url(col_values[0], col_values[1]);
 
 			float target_harmonic = domain_stats::harmonic_centrality(target_url);
@@ -171,6 +171,7 @@ namespace indexer {
 					for (auto token : tokens) {
 						m_link_index_builder->add(token, link_rec);
 					}
+					added++;
 				}
 			}
 
@@ -245,9 +246,7 @@ namespace indexer {
 		m_domain_link_index_builder->truncate();
 	}
 
-	std::vector<return_record> index_manager::find(size_t &total_num_results, const string &query) {
-
-		total_num_results = 0;
+	std::vector<return_record> index_manager::find(const string &query, full_text::search_metric &metric) {
 
 		auto words = text::get_full_text_words(query, config::query_max_words);
 		if (words.size() == 0) return {};
@@ -256,22 +255,142 @@ namespace indexer {
 
 		auto links = m_link_index->find_intersection(tokens, 500000);
 
-		sort(links.begin(), links.end(), [](const auto &a, const auto &b) {
+		std::sort(links.begin(), links.end(), [](const auto &a, const auto &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		auto domain_links = m_domain_link_index->find_intersection(tokens, 100000);
 
-		/*auto urls = m_url_index->find_intersection(tokens, config::result_limit, [&link_scores, &domain_link_scores](const auto &url_record) {
-			domain_link_scores[url_record.m_domain_hash]
-		});*/
+		auto results = m_url_index->find_intersection(tokens);
 
-		return {};
+		size_t applied_links = apply_domain_link_scores(domain_links, results);
+		size_t applied_domain_links = apply_link_scores(links, results);
+
+		(void)applied_links;
+		(void)applied_domain_links;
+
+		const auto sort_by = [](const auto &a, const auto &b) {
+			if (a.m_score == b.m_score) return a.m_value < b.m_value;
+			return a.m_score > b.m_score;
+		};
+
+		if (results.size() > config::pre_result_limit) {
+			nth_element(results.begin(), results.begin() + (config::pre_result_limit - 1), results.end(), sort_by);
+			std::sort(results.begin(), results.begin() + config::pre_result_limit, sort_by);
+			results.resize(config::pre_result_limit);
+		}
+
+		const auto deduplicated = deduplicate_search_results(results, config::result_limit);
+		const auto return_records = decorate_search_result(deduplicated);
+
+		return return_records;
+	}
+
+	std::vector<url_record> index_manager::deduplicate_search_results(const std::vector<url_record> &results, size_t limit) {
+
+		std::vector<url_record> deduped;
+		std::vector<url_record> non_deduped;
+
+		std::map<uint64_t, size_t> d_count;
+		for (const auto &result : results) {
+			if (d_count[result.m_domain_hash] < config::deduplicate_domain_count) {
+				deduped.push_back(result);
+			} else {
+				non_deduped.push_back(result);
+			}
+			d_count[result.m_domain_hash]++;
+		}
+		if (deduped.size() < limit) {
+			const size_t num_missing = limit - deduped.size();
+			if (non_deduped.size() > num_missing) {
+				non_deduped.resize(num_missing);
+			}
+			std::vector<url_record> ret;
+			::algorithm::sort::merge_arrays(deduped, non_deduped, [] (const auto &a, const auto &b) {
+				return a.m_score > b.m_score;
+			}, ret);
+			return ret;
+		}
+
+		deduped.resize(limit);
+
+		return deduped;
+	}
+
+	std::vector<return_record> index_manager::decorate_search_result(const std::vector<url_record> &results) {
+		std::vector<return_record> return_records;
+
+		for (const auto &res : results) {
+			const auto tsv_data = m_hash_table->find(res.m_value);
+			return_record ret(res.m_value, res.m_score, tsv_data);
+			return_records.push_back(std::move(ret));
+		}
+
+		return return_records;
+	}
+
+	size_t index_manager::apply_domain_link_scores(const vector<domain_link_record> &links, std::vector<url_record> &results) {
+		if (links.size() == 0) return 0;
+		size_t applied_links = 0;
+
+		{
+			unordered_map<uint64_t, float> domain_scores;
+			unordered_map<uint64_t, int> domain_counts;
+			map<pair<uint64_t, uint64_t>, uint64_t> domain_unique;
+			{
+				for (const auto &link : links) {
+					if (domain_unique.count(std::make_pair(link.m_source_domain, link.m_target_domain)) == 0) {
+						const float domain_score = expm1(25.0f*link.m_score) / 50.0f;
+						domain_scores[link.m_target_domain] += domain_score;
+						domain_counts[link.m_target_domain]++;
+						domain_unique[std::make_pair(link.m_source_domain, link.m_target_domain)] = link.m_source_domain;
+					}
+				}
+			}
+
+			for (auto &result : results) {
+				const float domain_score = domain_scores[result.m_domain_hash];
+				result.m_score += domain_score;
+				applied_links += domain_counts[result.m_domain_hash];
+			}
+		}
+
+		return applied_links;
+	}
+
+	size_t index_manager::apply_link_scores(const vector<link_record> &links, std::vector<url_record> &results) {
+
+		if (links.size() == 0) return 0;
+
+		size_t applied_links = 0;
+
+		size_t i = 0, j = 0;
+		std::map<std::pair<uint64_t, uint64_t>, uint64_t> domain_unique;
+		while (i < links.size() && j < results.size()) {
+			const uint64_t hash1 = links[i].m_target_hash;
+			const uint64_t hash2 = results[j].m_value;
+
+			if (hash1 < hash2) {
+				i++;
+			} else if (hash1 == hash2) {
+				if (domain_unique.count(std::make_pair(links[i].m_source_domain, links[i].m_target_hash)) == 0) {
+					const float url_score = expm1(25.0f*links[i].m_score) / 50.0f;
+					results[j].m_score += url_score;
+					applied_links++;
+					domain_unique[std::make_pair(links[i].m_source_domain, links[i].m_target_hash)] = links[i].m_source_domain;
+				}
+
+				i++;
+			} else {
+				j++;
+			}
+		}
+		return applied_links;
 	}
 
 	std::vector<return_record> index_manager::find(const string &query) {
-		size_t total_num_results = 0;
-		return find(total_num_results, query);
+		full_text::search_metric metric;
+		return find(query, metric);
 	}
 
 }

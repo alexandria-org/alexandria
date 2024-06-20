@@ -37,7 +37,6 @@
 #include "api/result_with_snippet.h"
 #include "api/api_response.h"
 #include "full_text/search_metric.h"
-#include "json.hpp"
 
 namespace server {
 
@@ -49,6 +48,8 @@ namespace server {
 
 		::http::server srv([&idx_manager](const http::request &req) {
 			http::response res;
+
+			res.content_type("application/json");
 
 			URL url = req.url();
 
@@ -78,8 +79,15 @@ namespace server {
 			}
 
 			if (query.find("q") != query.end() && deduplicate) {
-				size_t total_num_results;
-				auto response = idx_manager.find(total_num_results, query["q"]);
+
+				full_text::search_metric metric;
+
+				profiler::instance profiler;
+
+				auto results = idx_manager.find(query["q"], metric);
+
+				api::api_response api_res(results, metric, profiler.get());
+				body << api_res;
 			}
 
 			res.code(200);

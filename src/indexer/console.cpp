@@ -233,12 +233,9 @@ namespace indexer {
 	void console() {
 	}
 
-	void index_links(const std::string &batch) {
+	void index_link_batch(const std::string &batch) {
 
-		domain_stats::download_domain_stats();
-		LOG_INFO("Done download_domain_stats");
-
-		::algorithm::bloom_filter urls_to_index;
+		::algorithm::bloom_filter urls_to_index(625000027);
 		urls_to_index.read_file(config::data_path() + "/0/url_filter.bloom");
 
 		size_t limit = 1000;
@@ -248,11 +245,14 @@ namespace indexer {
 
 			merger::start_merge_thread();
 
-			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths.gz");
+			file::tsv_file_remote warc_paths_file(std::string("crawl-data/") + batch + "/warc.paths");
 			std::vector<std::string> warc_paths;
 			warc_paths_file.read_column_into(0, warc_paths, limit, offset);
 
-			if (warc_paths.size() == 0) break;
+			if (warc_paths.size() == 0) {
+				merger::stop_merge_thread();
+				break;
+			}
 
 			auto local_files = transfer::download_gz_files_to_disk(warc_paths);
 			cout << "starting indexer" << endl;
@@ -263,6 +263,16 @@ namespace indexer {
 			merger::stop_merge_thread();
 
 			offset += limit;
+		}
+	}
+
+	void index_links() {
+
+		domain_stats::download_domain_stats();
+		LOG_INFO("Done download_domain_stats");
+		
+		for (const std::string &batch : config::link_batches) {
+			index_link_batch(batch);
 		}
 	}
 
@@ -522,6 +532,22 @@ namespace indexer {
 
 		ht.for_each_key([&urls_to_index](uint64_t key) {
 			urls_to_index.insert(key);
+		});
+
+		urls_to_index.write_file(config::data_path() + "/0/url_filter.bloom");
+
+	}
+
+	void count_words_that_hit_max() {
+
+		sharded<basic_index, url_record> url_index("url_index", 4001);
+
+		size_t counter = 0;
+		url_index.for_each([&](uint64_t key, auto &records) {
+			if (records.size() >= config::ft_max_results_per_section) {
+				counter++;
+				std::cout << counter << std::endl;
+			}
 		});
 
 	}
