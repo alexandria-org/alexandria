@@ -186,6 +186,11 @@ add_executable(alexandria
 	${SRC_CLASSES}
 	${SRC_COMMON}
 )
+add_executable(benchmark
+"src/benchmark.cpp"
+${SRC_CLASSES}
+${SRC_COMMON}
+)
 
 target_compile_definitions(run_tests PUBLIC IS_TEST)
 target_compile_definitions(run_tests PUBLIC FT_NUM_SHARDS=16)
@@ -220,6 +225,11 @@ target_link_libraries(indexer PUBLIC
 	${CURL_LIBRARIES}
 	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
 target_link_libraries(alexandria PUBLIC
+	${FCGI_LIBRARY}
+	${FCGI_LIBRARYCPP}
+	${CURL_LIBRARIES}
+	${Boost_LIBRARIES} ZLIB::ZLIB Threads::Threads absl::strings absl::numeric roaring::roaring)
+target_link_libraries(benchmark PUBLIC
 	${FCGI_LIBRARY}
 	${FCGI_LIBRARYCPP}
 	${CURL_LIBRARIES}
