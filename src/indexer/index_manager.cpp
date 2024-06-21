@@ -255,19 +255,26 @@ namespace indexer {
 
 		auto links = m_link_index->find_intersection(tokens, 500000);
 
+		metric.m_total_url_links_found = links.size();
+		metric.m_links_handled = links.size();
+
 		std::sort(links.begin(), links.end(), [](const auto &a, const auto &b) {
 			return a.m_target_hash < b.m_target_hash;
 		});
 
 		auto domain_links = m_domain_link_index->find_intersection(tokens, 100000);
 
+		metric.m_total_domain_links_found = domain_links.size();
+
 		auto results = m_url_index->find_intersection(tokens);
 
-		size_t applied_links = apply_domain_link_scores(domain_links, results);
-		size_t applied_domain_links = apply_link_scores(links, results);
+		metric.m_total_found = results.size();
 
-		(void)applied_links;
-		(void)applied_domain_links;
+		size_t applied_domain_links = apply_domain_link_scores(domain_links, results);
+		size_t applied_url_links = apply_link_scores(links, results);
+
+		metric.m_link_url_matches = applied_url_links;
+		metric.m_link_domain_matches = applied_domain_links;
 
 		const auto sort_by = [](const auto &a, const auto &b) {
 			if (a.m_score == b.m_score) return a.m_value < b.m_value;
@@ -323,6 +330,7 @@ namespace indexer {
 		for (const auto &res : results) {
 			const auto tsv_data = m_hash_table->find(res.m_value);
 			return_record ret(res.m_value, res.m_score, tsv_data);
+			ret.m_domain_hash = res.m_domain_hash;
 			return_records.push_back(std::move(ret));
 		}
 
