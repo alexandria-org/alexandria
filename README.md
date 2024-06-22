@@ -30,19 +30,16 @@ cd /alexandria
 ```
 scripts/init-docker.sh
 ```
-7. Configure with cmake and build tests.
+7. Configure with cmake
 ```
-mkdir build; cd build; 
-
-## Build with debug symbols
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-## or build with compiler optimization
-cmake .. -DCMAKE_BUILD_TYPE=Release
-
-## build test suite
-make -j4 run_tests
-
-## run test suite
+mkdir build; cd build; cmake ..
+```
+8. Build all
+```
+make -j4
+```
+9. Run test suite
+```
 ./run_tests
 ```
 
