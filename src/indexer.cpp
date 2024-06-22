@@ -39,8 +39,6 @@
 #include <iostream>
 #include <set>
 #include "indexer/sharded_index.h"
-#include "indexer/level.h"
-#include "indexer/url_level.h"
 #include "transfer/transfer.h"
 
 using namespace std;

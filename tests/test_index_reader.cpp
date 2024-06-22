@@ -28,7 +28,6 @@
 #include "indexer/index_builder.h"
 #include "indexer/index.h"
 #include "indexer/generic_record.h"
-#include "indexer/level.h"
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "URL.h"

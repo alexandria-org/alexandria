@@ -29,7 +29,6 @@
 #include <iostream>
 #include "http/server.h"
 #include "indexer/index_manager.h"
-#include "indexer/domain_level.h"
 #include "indexer/url_record.h"
 
 namespace server {

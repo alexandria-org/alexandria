@@ -93,10 +93,6 @@ set(SRC_CLASSES
 	"src/scraper/scraper.cpp"
 	"src/scraper/scraper_store.cpp"
 
-	"src/indexer/level.cpp"
-	"src/indexer/domain_level.cpp"
-	"src/indexer/url_level.cpp"
-	"src/indexer/snippet.cpp"
 	"src/indexer/index_manager.cpp"
 	"src/indexer/console.cpp"
 	"src/indexer/merger.cpp"

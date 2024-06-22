@@ -32,7 +32,6 @@
 #include "index.h"
 #include "sharded_index_builder.h"
 #include "sharded_index.h"
-#include "snippet.h"
 #include "hash_table2/builder.h"
 #include "sharded_builder.h"
 #include "sharded.h"

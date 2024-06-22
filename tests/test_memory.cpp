@@ -29,7 +29,6 @@
 #include "memory/debugger.h"
 #include "indexer/index_builder.h"
 #include "indexer/basic_index_builder.h"
-#include "indexer/url_level.h"
 #include "indexer/domain_link_record.h"
 
 BOOST_AUTO_TEST_SUITE(test_memory)
