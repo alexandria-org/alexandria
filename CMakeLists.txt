@@ -85,7 +85,6 @@ set(SRC_CLASSES
 	"src/tools/splitter.cpp"
 	"src/tools/find_links.cpp"
 	"src/tools/counter.cpp"
-	"src/tools/download.cpp"
 	"src/tools/calculate_harmonic.cpp"
 	"src/tools/generate_url_lists.cpp"
 

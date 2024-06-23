@@ -29,7 +29,6 @@
 #include "logger/logger.h"
 #include "tools/splitter.h"
 #include "tools/counter.h"
-#include "tools/download.h"
 #include "tools/calculate_harmonic.h"
 #include "tools/generate_url_lists.h"
 #include "tools/find_links.h"
@@ -41,14 +40,12 @@
 #include "indexer/sharded_index.h"
 #include "transfer/transfer.h"
 
-using namespace std;
-
 void help() {
-	cout << "Usage: ./tools [OPTION]..." << endl;
-	cout << "--split run splitter" << endl;
-	cout << "--harmonic-hosts create file /tmp/hosts.txt with hosts for harmonic centrality" << endl;
-	cout << "--harmonic-links create file /tmp/edges.txt for edges for harmonic centrality" << endl;
-	cout << "--harmonic calculates harmonic centrality" << endl;
+	std::cout << "Usage: ./tools [OPTION]..." << std::endl;
+	std::cout << "--split run splitter" << std::endl;
+	std::cout << "--harmonic-hosts create file /tmp/hosts.txt with hosts for harmonic centrality" << std::endl;
+	std::cout << "--harmonic-links create file /tmp/edges.txt for edges for harmonic centrality" << std::endl;
+	std::cout << "--harmonic calculates harmonic centrality" << std::endl;
 }
 
 int main(int argc, const char **argv) {
@@ -67,7 +64,7 @@ int main(int argc, const char **argv) {
 		return 0;
 	}
 
-	const string arg(argc > 1 ? argv[1] : "");
+	const std::string arg(argc > 1 ? argv[1] : "");
 
 	if (arg == "--split") {
 		tools::run_splitter();
@@ -111,10 +108,6 @@ int main(int argc, const char **argv) {
 		for (const auto &rec : response) {
 			std::cout << rec.m_url << " score " << rec.m_score << std::endl;
 		}
-	} else if (arg == "--download-batch") {
-		tools::download_batch(string(argv[2]));
-	} else if (arg == "--prepare-batch") {
-		tools::prepare_batch(stoull(string(argv[2])));
 	} else if (arg == "--harmonic-hosts") {
 		tools::calculate_harmonic_hosts();
 	} else if (arg == "--harmonic-links") {
