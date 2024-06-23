@@ -68,11 +68,7 @@ int main(int argc, const char **argv) {
 
 	const string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--downloader" && argc > 4) {
-		downloader::warc_downloader(argv[2], std::stoull(argv[3]), std::stoull(argv[4]));
-	} else if (arg == "--downloader-missing" && argc > 4) {
-		downloader::warc_downloader_missing(string(argv[2]), std::stoull(argv[3]), std::stoull(argv[4]));
-	} else if (arg == "--hash-table-url" && argc > 2) {
+	if (arg == "--hash-table-url" && argc > 2) {
 		URL url(argv[2]);
 		hash_table2::hash_table ht("all_urls", 1019, 1000000, "/slow_data");
 

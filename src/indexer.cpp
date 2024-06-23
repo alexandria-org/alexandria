@@ -27,6 +27,7 @@
 #include <iostream>
 #include "config.h"
 #include "logger/logger.h"
+#include "downloader/warc_downloader.h"
 #include "tools/splitter.h"
 #include "tools/counter.h"
 #include "tools/calculate_harmonic.h"
@@ -66,7 +67,11 @@ int main(int argc, const char **argv) {
 
 	const std::string arg(argc > 1 ? argv[1] : "");
 
-	if (arg == "--split") {
+	if (arg == "--downloader" && argc > 2) {
+		downloader::warc_downloader(argv[2]);
+	} else if (arg == "--downloader-missing" && argc > 2) {
+		downloader::warc_downloader_missing(string(argv[2]));
+	} else if (arg == "--split") {
 		tools::run_splitter();
 	} else if (arg == "--count-overflow-words") {
 		indexer::count_words_that_hit_max();

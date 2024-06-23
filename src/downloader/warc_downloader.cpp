@@ -161,7 +161,7 @@ namespace downloader {
 
 	}
 
-	void warc_downloader_with_url(const std::string &batch, size_t limit, size_t offset, const std::string &warc_paths_url) {
+	void warc_downloader_with_url(const std::string &batch, const std::string &warc_paths_url) {
 	
 		std::vector<std::string> warc_paths;
 
@@ -173,23 +173,22 @@ namespace downloader {
 		std::string line;
 		size_t line_num = 0;
 		while (std::getline(ss, line)) {
-			if (line_num >= offset) {
+			if (line_num % config::nodes_in_cluster == config::node_id) {
 				warc_paths.emplace_back(std::move(line));
 			}
 
-			if (warc_paths.size() >= limit) break;
 			line_num++;
 		}
 
 		start_downloaders(warc_paths);
 	}
 
-	void warc_downloader(const std::string &batch, size_t limit, size_t offset) {
-		warc_downloader_with_url(batch, limit, offset, "https://data.commoncrawl.org/crawl-data/" + batch + "/warc.paths.gz");
+	void warc_downloader(const std::string &batch) {
+		warc_downloader_with_url(batch, "https://data.commoncrawl.org/crawl-data/" + batch + "/warc.paths.gz");
 	}
 
-	void warc_downloader_missing(const std::string &batch, size_t limit, size_t offset) {
-		warc_downloader_with_url(batch, limit, offset, "crawl-data/" + batch + "/missing.paths.gz");
+	void warc_downloader_missing(const std::string &batch) {
+		warc_downloader_with_url(batch, "crawl-data/" + batch + "/missing.paths.gz");
 	}
 }
 

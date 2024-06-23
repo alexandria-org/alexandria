@@ -34,6 +34,6 @@ namespace downloader {
 	std::vector<std::string> download_warc_paths();
 	bool upload_warc_paths(const std::vector<std::string> &warc_paths);
 
-	void warc_downloader(const std::string &batch, size_t limit, size_t offset);
-	void warc_downloader_missing(const std::string &batch, size_t limit, size_t offset);
+	void warc_downloader(const std::string &batch);
+	void warc_downloader_missing(const std::string &batch);
 }
