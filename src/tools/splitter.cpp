@@ -1,6 +1,7 @@
 
 #include "splitter.h"
 #include "config.h"
+#include "roaring/roaring64map.hh"
 #include <iostream>
 #include <vector>
 #include <unordered_set>
@@ -338,6 +339,56 @@ namespace tools {
 		write_file_mutex.unlock();
 	}
 
+	void splitter_with_roaring(const ::roaring::Roaring64Map &urls, const std::vector<std::string> &warc_paths, std::mutex &write_file_mutex) {
+
+		const size_t max_cache_size = 150000;
+		size_t file_index = 1;
+
+		std::vector<std::vector<std::string>> file_names(config::nodes_in_cluster);
+		std::vector<std::vector<std::string>> cache(config::nodes_in_cluster);
+		size_t idx = 0;
+		for (const std::string &warc_path : warc_paths) {
+			std::cout << warc_path << std::endl;
+			std::ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			std::string line;
+			while (getline(decompress_stream, line)) {
+				const URL url(line.substr(0, line.find("\t")));
+				if (urls.contains(url.hash() >> 20)) {
+					const size_t node_id = url.index_on_node();
+					cache[node_id].push_back(line);
+				}
+			}
+
+			for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
+				if (cache[node_id].size() > max_cache_size) {
+					file_names[node_id].push_back(write_cache(file_index++, cache[node_id], node_id));
+				}
+			}
+
+			if (idx % 100 == 0) {
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
+			} 
+			idx++;
+		}
+		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
+			file_names[node_id].push_back(write_cache(file_index++, cache[node_id], node_id));
+		}
+
+		write_file_mutex.lock();
+		for (size_t node_id = 0; node_id < config::nodes_in_cluster; node_id++) {
+			const std::string filename = config::data_path() + "/crawl-data/NODE-" + std::to_string(node_id) + s_suffix + "/warc.paths";
+			std::ofstream outfile(filename, std::ios::app);
+			for (const std::string &file : file_names[node_id]) {
+				outfile << file << "\n";
+			}
+		}
+		write_file_mutex.unlock();
+	}
+
 	std::unordered_set<size_t> build_link_set(const std::vector<std::string> &warc_paths, size_t hash_min, size_t hash_max) {
 
 		std::unordered_set<size_t> result;
@@ -380,6 +431,25 @@ namespace tools {
 		}
 
 		return hosts;
+	}
+
+	std::unordered_set<size_t> build_url_set(const std::vector<std::string> &warc_paths) {
+
+		std::unordered_set<size_t> url_hashes;
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			std::string line;
+			while (getline(decompress_stream, line)) {
+				const URL url(line.substr(0, line.find("\t")));
+				url_hashes.insert(url.hash());
+			}
+		}
+
+		return url_hashes;
 	}
 
 	void create_warc_directories() {
@@ -460,6 +530,31 @@ namespace tools {
 
 	}
 
+	void run_url_splitter_on_urls_in_roaring(const ::roaring::Roaring64Map &urls) {
+
+		tools::create_warc_directories();
+
+		std::vector<std::thread> threads;
+		auto files = generate_list_with_url_files();
+
+		std::vector<std::vector<std::string>> thread_input;
+		algorithm::vector_chunk(files, ceil((double)files.size() / s_num_threads), thread_input);
+
+		std::mutex write_file_mutex;
+
+		/*
+		Run splitter threads
+		*/
+		for (size_t i = 0; i < thread_input.size(); i++) {
+			threads.emplace_back(std::thread(splitter_with_roaring, std::cref(urls), std::cref(thread_input[i]), ref(write_file_mutex)));
+		}
+
+		for (std::thread &one_thread : threads) {
+			one_thread.join();
+		}
+
+	}
+
 	void run_link_splitter_on_links_with_target_host_in_set(const std::unordered_set<size_t> &hosts) {
 
 		tools::create_warc_directories();
@@ -485,7 +580,33 @@ namespace tools {
 
 	}
 
+	std::unordered_set<size_t> generate_set_of_urls() {
+
+		auto url_files = generate_list_with_url_files();
+
+		// create an unordered set that contains host hashes of all the urls.
+		std::cout << "building url hashes map" << std::endl;
+		std::unordered_set<size_t> url_hashes;
+
+		std::vector<std::vector<std::string>> thread_input;
+		algorithm::vector_chunk(url_files, ceil((double)url_files.size() / s_num_threads), thread_input);
+
+		std::vector<std::future<std::unordered_set<size_t>>> futures;
+
+		for (size_t i = 0; i < thread_input.size(); i++) {
+			futures.emplace_back(std::async(std::launch::async, build_url_set, thread_input[i]));
+		}
+
+		for (auto &fut : futures) {
+			auto result = fut.get();
+			url_hashes.insert(result.begin(), result.end());
+		}
+
+		return url_hashes;
+	}
+
 	void run_split_urls_with_direct_links_interval(size_t hash_min, size_t hash_max) {
+		std::string ok;
 
 		std::cout << "running run_split_urls_with_direct_links_interval with hash_min: " << hash_min << " hash_max: " << hash_max << std::endl;
 
@@ -493,7 +614,7 @@ namespace tools {
 
 		std::cout << "num_files: " << link_files.size() << std::endl;
 
-		// create an unordered set that contains target url hashes of all the links. this will be a huge set.
+		// create a roaring bitmap contains target url hashes of all the links.
 		std::unordered_set<size_t> total_result;
 
 		std::vector<std::vector<std::string>> link_thread_input;
@@ -507,10 +628,12 @@ namespace tools {
 
 		for (auto &fut : futures) {
 			auto result = fut.get();
-			total_result.insert(result.begin(), result.end());
+			total_result.insert(result.cbegin(), result.cend());
 		}
 
 		std::cout << "size: " << total_result.size() << std::endl;
+		std::cout << "continue?" << std::endl;
+		std::cin >> ok;
 
 		run_url_splitter_on_urls_in_set(total_result);
 	}
