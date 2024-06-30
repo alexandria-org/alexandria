@@ -81,6 +81,12 @@ int main(int argc, const char **argv) {
 		tools::run_counter_per_domain(argv[2]);
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
+	} else if (arg == "--split-build-url-bloom") {
+
+		/*
+		 * Make a bloom filter from all urls in the source batches.
+		 * */
+		tools::run_split_build_url_bloom();
 	} else if (arg == "--split-with-links") {
 
 		/*

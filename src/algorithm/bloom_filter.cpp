@@ -42,7 +42,7 @@ namespace algorithm {
 
 	// Dim should be a prime number..
 	bloom_filter::bloom_filter(size_t dim)
-	: m_dim(dim)
+	: m_dim(dim), m_bitlen(dim * 64)
 	{
 		m_bitmap = std::make_unique<uint64_t[]>(m_dim);
 		for (size_t i = 0; i < m_dim; i++) {
@@ -61,7 +61,21 @@ namespace algorithm {
 		insert(std::to_string(item));
 	}
 
-	void bloom_filter::commit() {
+	void bloom_filter::insert_many(std::vector<uint64_t> &items) {
+
+		std::vector<size_t> hashes;
+		for (const auto &item : items) {
+			const auto str_item = std::to_string(item);
+			for (size_t i = 0; i < m_seeds.size(); i++) {
+				const uint64_t hash = algorithm::hash_with_seed(str_item, m_seeds[i]);
+				hashes.push_back(hash);
+			}
+		}
+
+		std::lock_guard guard(m_mutex);
+		for (const auto &hash : hashes) {
+			set_bit(hash);
+		}
 	}
 
 	const char * bloom_filter::data() const {
@@ -105,15 +119,17 @@ namespace algorithm {
 	}
 
 	void bloom_filter::set_bit(size_t bit) {
-		const size_t x = bit % m_dim;
-		const size_t pos = bit % 64;
-		m_bitmap[x] = m_bitmap[x] | (0x1ull << pos);
+		const size_t x = bit % m_bitlen;
+		const size_t pos = static_cast<size_t>(x / 64);
+		const size_t bit_in_pos = x % 64;
+		m_bitmap[pos] = m_bitmap[pos] | (0x1ull << bit_in_pos);
 	}
 
 	bool bloom_filter::get_bit(size_t bit) const {
-		const size_t x = bit % m_dim;
-		const size_t pos = bit % 64;
-		return (m_bitmap[x] & (0x1ull << pos)) >> pos;
+		const size_t x = bit % m_bitlen;
+		const size_t pos = static_cast<size_t>(x / 64);
+		const size_t bit_in_pos = x % 64;
+		return (m_bitmap[pos] & (0x1ull << bit_in_pos)) >> bit_in_pos;
 	}
 
 }

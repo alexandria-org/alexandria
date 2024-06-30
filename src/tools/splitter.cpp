@@ -2,6 +2,7 @@
 #include "splitter.h"
 #include "config.h"
 #include "roaring/roaring64map.hh"
+#include "algorithm/bloom_filter.h"
 #include <iostream>
 #include <vector>
 #include <unordered_set>
@@ -670,6 +671,58 @@ namespace tools {
 		std::cout << "done. the map size is " << host_hashes.size() << std::endl;
 
 		run_link_splitter_on_links_with_target_host_in_set(host_hashes);
+	}
+
+	void split_make_bloom(::algorithm::bloom_filter &bloom, const std::vector<std::string> &warc_paths) {
+
+		std::vector<uint64_t> cache;
+
+		size_t idx = 0;
+		for (const std::string &warc_path : warc_paths) {
+			std::ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			std::string line;
+			while (getline(decompress_stream, line)) {
+				const URL url(line.substr(0, line.find("\t")));
+				cache.push_back(url.hash());
+			}
+
+			bloom.insert_many(cache);
+			cache.clear();
+
+			if (idx % 100 == 0) {
+				std::cout << warc_path << " done " << idx << "/" << warc_paths.size() << std::endl;
+			} 
+			idx++;
+		}
+
+	}
+
+	void run_split_build_url_bloom() {
+
+		std::vector<std::thread> threads;
+		auto files = generate_list_with_url_files();
+
+		std::vector<std::vector<std::string>> thread_input;
+		algorithm::vector_chunk(files, ceil((double)files.size() / s_num_threads), thread_input);
+
+		::algorithm::bloom_filter bloom;
+
+		/*
+		Run splitter threads
+		*/
+		for (size_t i = 0; i < thread_input.size(); i++) {
+			threads.emplace_back(std::thread(split_make_bloom, std::ref(bloom), std::cref(thread_input[i])));
+		}
+
+		for (std::thread &one_thread : threads) {
+			one_thread.join();
+		}
+
+		bloom.write_file(config::data_path() + "/0/url_filter_main.bloom");
 	}
 
 
