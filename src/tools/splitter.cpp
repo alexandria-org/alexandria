@@ -725,5 +725,65 @@ namespace tools {
 		bloom.write_file(config::data_path() + "/0/url_filter_main.bloom");
 	}
 
+	void split_make_direct_links(const ::algorithm::bloom_filter &bloom, const std::vector<std::string> &warc_paths) {
+
+		size_t done = 0;
+		for (const std::string &warc_path : warc_paths) {
+
+			std::cout << "done " << done << "/" << warc_paths.size() << std::endl;
+			done++;
+
+			auto target_warc_path = warc_path;
+			const size_t pos = target_warc_path.find(".warc.gz");
+
+			if (pos != std::string::npos) {
+				target_warc_path.replace(pos, 8, ".direct.links.gz");
+			}
+
+			std::ofstream outfile(target_warc_path, std::ios::trunc | std::ios::binary);
+
+			boost::iostreams::filtering_ostream compress_stream;
+			compress_stream.push(boost::iostreams::gzip_compressor());
+			compress_stream.push(outfile);
+
+			std::ifstream infile(warc_path);
+			boost::iostreams::filtering_istream decompress_stream;
+			decompress_stream.push(boost::iostreams::gzip_decompressor());
+			decompress_stream.push(infile);
+
+			std::string line;
+			while (getline(decompress_stream, line)) {
+				const url_link::link link(line);
+
+				if (bloom.exists(link.target_host_hash())) {
+					compress_stream << line << "\n";
+				}
+			}
+		}
+	}
+
+	void run_split_direct_links() {
+
+		::algorithm::bloom_filter bloom;
+		bloom.read_file(config::data_path() + "/0/url_filter_main.bloom");
+
+		std::vector<std::thread> threads;
+		auto files = generate_list_with_link_files();
+
+		std::vector<std::vector<std::string>> thread_input;
+		algorithm::vector_chunk(files, ceil((double)files.size() / s_num_threads), thread_input);
+
+		/*
+		Run splitter threads
+		*/
+		for (size_t i = 0; i < thread_input.size(); i++) {
+			threads.emplace_back(std::thread(split_make_direct_links, std::cref(bloom), std::cref(thread_input[i])));
+		}
+
+		for (std::thread &one_thread : threads) {
+			one_thread.join();
+		}
+	}
+
 
 }
