@@ -81,6 +81,12 @@ int main(int argc, const char **argv) {
 		tools::run_counter_per_domain(argv[2]);
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);
+	} else if (arg == "--split-make-direct-links") {
+
+		/*
+		 * Make direct links by using the url bloom filter.
+		 * */
+		tools::run_split_direct_links();
 	} else if (arg == "--split-build-url-bloom") {
 
 		/*
