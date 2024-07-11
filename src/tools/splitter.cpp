@@ -734,10 +734,13 @@ namespace tools {
 			done++;
 
 			auto target_warc_path = warc_path;
-			const size_t pos = target_warc_path.find(".warc.gz");
+			const size_t pos = target_warc_path.find(".links.gz");
 
 			if (pos != std::string::npos) {
-				target_warc_path.replace(pos, 8, ".direct.links.gz");
+				target_warc_path.replace(pos, 9, ".direct.links.gz");
+			} else {
+				std::cout << "ERROR: " << warc_path << std::endl;
+				return;
 			}
 
 			std::ofstream outfile(target_warc_path, std::ios::trunc | std::ios::binary);
@@ -755,7 +758,7 @@ namespace tools {
 			while (getline(decompress_stream, line)) {
 				const url_link::link link(line);
 
-				if (bloom.exists(link.target_host_hash())) {
+				if (bloom.exists(link.target_url().hash())) {
 					compress_stream << line << "\n";
 				}
 			}

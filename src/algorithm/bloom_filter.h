@@ -59,7 +59,7 @@ namespace algorithm {
 			#ifdef IS_TEST
 			size_t m_dim = 2695797;
 			#else
-			size_t m_dim = 2695797707;
+			size_t m_dim = 4043696581;
 			#endif
 
 			size_t m_bitlen = m_dim * 64;
