@@ -47,6 +47,7 @@ namespace tools {
 	void run_split_links_with_relevant_domains();
 	void run_split_build_url_bloom();
 	void run_split_direct_links();
+	void run_split_build_direct_link_bloom();
 
 }
 
