@@ -93,6 +93,12 @@ int main(int argc, const char **argv) {
 		 * Make a bloom filter from all urls in the source batches.
 		 * */
 		tools::run_split_build_url_bloom();
+	} else if (arg == "--split-build-direct-link-bloom") {
+
+		/*
+		 * Make a bloom filter from all direct links in the source batches.
+		 * */
+		tools::run_split_build_direct_link_bloom();
 	} else if (arg == "--split-with-links") {
 
 		/*
