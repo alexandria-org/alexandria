@@ -37,12 +37,10 @@ BOOST_AUTO_TEST_CASE(test_bloom_filter) {
 	algorithm::bloom_filter bf;
 
 	bf.insert("test");
-	bf.commit();
 	BOOST_CHECK(bf.exists("test"));
 	BOOST_CHECK(!bf.exists("test2"));
 
 	bf.insert("test2");
-	bf.commit();
 	BOOST_CHECK(bf.exists("test2"));
 }
 
@@ -51,12 +49,10 @@ BOOST_AUTO_TEST_CASE(test_bloom_filter_merge) {
 	algorithm::bloom_filter bf1;
 	bf1.insert("test1");
 	bf1.insert("test2");
-	bf1.commit();
 
 	algorithm::bloom_filter bf2;
 	bf2.insert("test3");
 	bf2.insert("test4");
-	bf2.commit();
 
 	bf1.merge(bf2);
 

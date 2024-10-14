@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include "roaring/roaring64map.hh"
 
 namespace algorithm {
@@ -39,7 +40,7 @@ namespace algorithm {
 
 			void insert(const std::string &item);
 			void insert(uint64_t item);
-			void commit();
+			void insert_many(std::vector<uint64_t> &items);
 			bool exists(const std::string &item) const;
 			bool exists(uint64_t data) const;
 			size_t size() const { return m_dim * sizeof(uint64_t); }
@@ -58,12 +59,16 @@ namespace algorithm {
 			#ifdef IS_TEST
 			size_t m_dim = 2695797;
 			#else
-			size_t m_dim = 2695797707;
+			size_t m_dim = 4043696581;
 			#endif
+
+			size_t m_bitlen = m_dim * 64;
 
 			// some random prime numbers
 			std::array<uint64_t, 10> m_seeds = {3339675911, 2695798769, 2695831867, 2695857877, 2695879891, 2695879891, 2695922687, 2695935521,
 					3339689791, 3339703163};
+
+			std::mutex m_mutex;
 
 			void set_bit(size_t bit);
 			bool get_bit(size_t bit) const;
