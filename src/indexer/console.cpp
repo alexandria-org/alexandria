@@ -552,4 +552,9 @@ namespace indexer {
 
 	}
 
+	size_t count_urls() {
+		indexer::index_manager idx_manager;
+		return idx_manager.url_count();
+	}
+
 }

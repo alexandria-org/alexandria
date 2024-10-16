@@ -41,5 +41,6 @@ namespace indexer {
 	void make_url_bloom_filter();
 	void optimize_urls();
 	void count_words_that_hit_max();
+	size_t count_urls();
 
 }

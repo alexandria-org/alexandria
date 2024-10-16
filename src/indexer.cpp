@@ -76,8 +76,8 @@ int main(int argc, const char **argv) {
 	} else if (arg == "--count-overflow-words") {
 		indexer::count_words_that_hit_max();
 	} else if (arg == "--count") {
-		tools::run_counter();
-		} else if (arg == "--count-domains") {
+		std::cout << "count: " << indexer::count_urls() << std::endl;
+	} else if (arg == "--count-domains") {
 		tools::run_counter_per_domain(argv[2]);
 	} else if (arg == "--make-urls" && argc > 2) {
 		tools::generate_url_lists(argv[2]);

@@ -66,6 +66,10 @@ namespace indexer {
 		void truncate();
 		void truncate_links();
 
+		size_t url_count() const {
+			return m_hash_table->size();
+		}
+
 		std::vector<return_record> find(const std::string &query, full_text::search_metric &metric);
 		std::vector<return_record> find(const std::string &query);
 
